@@ -108,7 +108,7 @@ The original Hermes plugin exposed these business capabilities through MCP. In t
 - `artifact.arxiv`: `ds_arxiv`.
 - `bash_exec`: `ds_bash_exec`.
 
-Equivalence is defined at the research workflow layer: durable quest state, memory/artifact writes, generated files, logs, status payloads, and recoverable error payloads. It intentionally does not preserve MCP protocol objects, FastMCP server behavior, `.mcp.json`, or MCP transport naming.
+Equivalence is defined at the research workflow layer: durable quest state, memory/artifact writes, generated files, logs, status payloads, and recoverable error payloads. It intentionally does not preserve MCP protocol objects, FastMCP server behavior, MCP project config files, or MCP transport naming.
 
 ## Bundled DeepScientist support skills
 
@@ -121,6 +121,20 @@ The Codex adapter packages the same DeepScientist-aware support skills as the He
 - `deepscientist-review`: skeptical draft/report audits, claim downgrade, revision logs, and follow-up experiment routing.
 
 These are native Codex skills, not MCP tools. Every durable DeepScientist operation still goes through `scripts/dsctl.py call ds_* ... --format json`.
+
+## Phase 7 control plane
+
+Use `scripts/csctl.py` for the upgraded Codex-Scientist control plane. It emits `transport="codex-native-cli"`, is not MCP, and keeps ordinary code edits/tests in Codex-native tools.
+
+```bash
+python scripts/csctl.py manifest validate --format json
+python scripts/csctl.py queue status --format json
+python scripts/csctl.py summary context-pack --max-chars 12000 --format json
+python scripts/csctl.py migrate legacy-quests --format json
+python scripts/csctl.py soak accelerated --days 10 --inject-failures --format json
+```
+
+The `migrate legacy quests` path preserves existing `DeepScientist/quests/*` sources and writes a migration report. The `accelerated soak` path writes `DeepScientist/summaries/long_run_validation.md`; if `wall-clock soak` is still `not_run`, do not claim stable ten-day wall-clock operation.
 
 ## Safety boundaries
 

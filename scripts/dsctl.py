@@ -19,6 +19,8 @@ PLUGIN_ROOT = Path(__file__).resolve().parents[1]
 if str(PLUGIN_ROOT) not in sys.path:
     sys.path.insert(0, str(PLUGIN_ROOT))
 
+from codex_scientist.adapters.cli import normalize_envelope
+
 
 def _load_native():
     from deepscientist_native import schemas, tools
@@ -237,9 +239,33 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _normalize_legacy_cli_args(argv: list[str]) -> list[str]:
+    normalized: list[str] = []
+    project_root: str | None = None
+    i = 0
+    while i < len(argv):
+        token = argv[i]
+        if token in {"--project", "--project-root"} and i + 1 < len(argv):
+            project_root = argv[i + 1]
+            i += 2
+            continue
+        if token == "--json":
+            if i + 1 < len(argv) and not argv[i + 1].startswith("-"):
+                normalized.append(token)
+            else:
+                normalized.extend(["--format", "json"])
+            i += 1
+            continue
+        normalized.append(token)
+        i += 1
+    if project_root is not None:
+        normalized = ["--project-root", project_root, *normalized]
+    return normalized
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
-    args = parser.parse_args(argv)
+    args = parser.parse_args(_normalize_legacy_cli_args(list(sys.argv[1:] if argv is None else argv)))
     if args.project_root:
         project_root = Path(args.project_root).expanduser().resolve()
         os.environ["DEEPSCIENTIST_PROJECT_ROOT"] = str(project_root)
@@ -248,7 +274,7 @@ def main(argv: list[str] | None = None) -> int:
         parser.print_help(sys.stderr)
         return 2
     fmt = getattr(args, "format", None) or "pretty"
-    payload = args.func(args)
+    payload = normalize_envelope(args.func(args))
     emit(payload, fmt)
     return 0 if payload.get("ok", False) else 1
 

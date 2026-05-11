@@ -1,113 +1,76 @@
 ---
 name: deepscientist-codex
-description: Use DeepScientist from Codex CLI through the native dsctl adapter for research semantics/provenance: quests, memory, artifacts, experiments, strict literature workflow, paper/resource operations, and formal ds_bash_exec evidence. Routine file/search/edit, shell, Git, tests/builds, and process work remains Codex-native. This adapter is not MCP and does not call external ds.
+description: Low-token router for using DeepScientist from Codex CLI through the native dsctl/csctl adapter. Use it for research semantics and provenance; keep routine coding work Codex-native. Not MCP.
 ---
 
 # DeepScientist Codex Native
 
-This skill is the Codex CLI operating manual for the native DeepScientist adapter.
+This skill is the low-token router for the native Codex plugin. It states policy, boundaries, and when to call the local control script; it is not a full tool manual.
 
 ## Core rules
 
-- Use `scripts/dsctl.py` as the native control surface.
-- Do not use MCP for DeepScientist. This plugin intentionally has no `.mcp.json` and no server-transport registry manifest entry.
-- Do not call the external npm `ds` command for normal operation.
-- Do not open removed Web surface, removed terminal UI, social connectors, browser connectors, or raw internal dispatchers.
-- Launch or operate from the research project root whenever possible. Runtime state lives in `<project>/DeepScientist/`.
-- Persist important research facts through DeepScientist memory/artifact tools, not only through ordinary files.
-- Treat this adapter as a Codex-native functional equivalent of the original DeepScientist Hermes MCP business surface, not as an MCP protocol clone. `list-tools` should report `transport="codex-native-cli"`, `mcp=false`, and only public canonical `ds_*` tools.
+- Use `scripts/csctl.py` as the primary native control surface; `scripts/dsctl.py` remains a compatibility alias.
+- Do not use MCP for this plugin. There is no `.mcp.json`, no server-transport registry entry, and no external npm `ds` call for normal operation.
+- Runtime state lives in `<project>/DeepScientist/` when operating from a research project root.
+- Persist durable research facts through native `ds_*` calls when they affect quest state, memory, artifacts, baselines, experiments, reviews, or evidence.
+- Load this skill first; load at most one stage/support skill when the current subtask actually needs it.
+
+## Default autonomy mode
+
+The default mode is `copilot`.
+
+In copilot mode, DeepScientist records, checks, organizes, retrieves, and summarizes research state. It may check novelty or duplicate risk for a user-provided or document-provided idea, but it must not own the research direction.
+
+`autonomous_idea_improvement` is disabled by default. Enable it only when the user explicitly asks for automatic idea/novelty improvement, or when a project manifest or handoff explicitly requires autonomous idea improvement. Otherwise, do not invent or improve ideas automatically; output candidate plans for user review instead of creating new running trials.
 
 ## Codex-native operation boundary
 
-DeepScientist mode may require an action, but Codex may already have the right native operation-layer tool for the mechanical part. Use this adapter for the research **semantic layer** and use Codex-native capabilities for routine **operation-layer** work.
-
 Codex-native operation layer:
 
-- file read/search/edit/patch, code navigation, ordinary markdown edits, and local document cleanup;
-- ordinary shell commands, dependency checks, tests, builds, lint/compile checks, and background process monitoring;
-- Git/GitHub mechanics such as status, diff, branch/worktree, commit, push, PR checks, and routine CI diagnosis;
-- ordinary planning, review prose, handoff drafting, and local web/PDF/arXiv retrieval before a result becomes DeepScientist evidence.
+- routine file, shell, Git, test, build, and process work;
+- file read/search/edit/patch and code navigation;
+- ordinary dependency checks, lint, smoke tests, commits, diffs, and process monitoring.
 
 DeepScientist semantic/provenance layer:
 
-- quest lifecycle and mode state: `ds_new_quest`, `ds_set_active_quest`, `ds_get_quest_state`, `ds_update_quest_mode`;
-- durable user requirements, quest memory, artifacts, milestones, decisions, main experiment records, analysis slices, baseline gates, paper bundles, and strict-research ledgers;
-- formal experiment, baseline, analysis-slice, or paper-facing commands whose logs must become quest-local evidence via `ds_bash_exec`.
+- quest lifecycle and mode state;
+- durable user requirements, memory, artifacts, milestones, decisions, baselines, experiment records, analysis slices, and paper/reliability ledgers;
+- formal evidence commands whose logs must be quest-local evidence.
 
-Practical rule: **Codex does the mechanical action; DeepScientist records the research meaning.** If a routine Codex-native command changes the research state or supports a claim, follow it with the relevant `ds_*` memory/artifact/experiment/paper call. Use `ds_bash_exec` only when the command itself must be auditable DeepScientist provenance with a `bash_id` and `.ds/bash_exec` log.
+Codex does the mechanical action; DeepScientist records the research meaning. Use `ds_bash_exec` only when the command itself must be auditable DeepScientist provenance, not as a general shell replacement.
 
-## First actions in a project
+## Start of work
 
 From the target project root:
 
 ```bash
-python /path/to/DeepScientist-codex/scripts/dsctl.py doctor --format json
-python /path/to/DeepScientist-codex/scripts/dsctl.py list-tools --format json
-python /path/to/DeepScientist-codex/scripts/dsctl.py call ds_list_quests --format json
+python /path/to/DeepScientist-codex/scripts/csctl.py doctor --format json
+python /path/to/DeepScientist-codex/scripts/csctl.py list-tools --format json
 ```
 
-If no relevant quest exists, create one:
+If no relevant quest exists, create one in copilot mode unless explicit instructions require autonomous mode:
 
 ```bash
-python /path/to/DeepScientist-codex/scripts/dsctl.py call ds_new_quest   --json '{"goal":"...","title":"...","workspace_mode":"copilot"}'   --format json
+python /path/to/DeepScientist-codex/scripts/csctl.py call ds_new_quest --json '{"goal":"...","title":"...","workspace_mode":"copilot"}' --format json
 ```
 
-## Calling native tools
+## Tool routing
 
-General form:
+Use the native control script for durable semantic actions: quest status, durable requirements, memory search/write, artifact records, baseline gates, formal experiment records, analysis state, paper/reliability ledgers, event reads, and compact summaries.
 
-```bash
-python /path/to/DeepScientist-codex/scripts/dsctl.py call <ds_tool_name> --json '<JSON object>' --format json
-```
+Use ordinary Codex-native tools for mechanical edits and checks. If a mechanical result supports a research claim or changes quest state, follow it with the appropriate durable record.
 
-Use canonical `ds_*` tool names in new Codex workflows. Historical `deepscientist_*` names are hidden legacy compatibility aliases only; if a legacy call is accepted, the response includes `deprecated_alias=true` and `canonical_tool` so you can migrate the call.
+## Output policy
 
-Examples:
-
-```bash
-python /path/to/DeepScientist-codex/scripts/dsctl.py call ds_get_quest_state --json '{"quest_id":"001"}' --format json
-python /path/to/DeepScientist-codex/scripts/dsctl.py call ds_memory_write --json '{"quest_id":"001","scope":"quest","kind":"constraint","title":"Constraint","content":"..."}' --format json
-python /path/to/DeepScientist-codex/scripts/dsctl.py call ds_artifact_record --json '{"quest_id":"001","kind":"milestone","summary":"...","payload":{"verdict":"pass"}}' --format json
-python /path/to/DeepScientist-codex/scripts/dsctl.py call ds_bash_exec --json '{"quest_id":"001","operation":"run","command":"python script.py","wait":true,"summary_mode":true}' --format json
-```
-
-## Tool selection
-
-Use DeepScientist tools when the result should become durable research state:
-
-- `ds_doctor`, `ds_list_quests`, `ds_get_quest_state`, `ds_set_active_quest`, `ds_new_quest`, `ds_update_quest_mode`, `ds_events`.
-- `ds_record_user_requirement`, `ds_add_user_message` with `record_only=true` when needed.
-- `ds_memory_search`, `ds_memory_read`, `ds_memory_write`, `ds_memory_list_recent`.
-- `ds_artifact_record`, `ds_resolve_runtime_refs`, `ds_get_global_status`, `ds_get_method_scoreboard`, `ds_get_optimization_frontier`, `ds_get_conversation_context`, `ds_get_paper_contract_health`, `ds_list_paper_outlines`, `ds_refresh_summary`, `ds_arxiv`, `ds_confirm_baseline`, `ds_waive_baseline`, `ds_attach_baseline`, `ds_create_local_baseline`.
-- `ds_submit_idea`, `ds_record_main_experiment`, analysis campaign tools, paper bundle tools.
-- `ds_bash_exec` for quest-local execution that must be logged as evidence.
-- strict research and paper tools: `ds_strict_research_prepare`, `ds_strict_research_record_candidate`, `ds_strict_research_upsert_candidate`, `ds_paper_fetch`, `ds_record_literature_reading_note`, `ds_strict_research_init_bibliography`, `ds_paper_reliability_verify`.
-
-Use ordinary Codex-native file/search/edit, shell/process, Git, test/build, and document tools for operation-layer work that does not itself need DeepScientist provenance. If the outcome changes the research state, supports a claim, or should survive across quest sessions, follow up with a `ds_*` memory/artifact/experiment/paper call.
-
-## Stage skills
-
-This plugin also ships adapted stage skills such as `deepscientist-experiment`, `deepscientist-strict-research`, `deepscientist-paper-fetch`, and `deepscientist-write`. Load only the active stage skill plus at most one companion skill.
-
-## Bundled support skills
-
-For DeepScientist-specific subtasks, load the adapted Codex skills instead of generic global skills:
-
-- `deepscientist-experiment-execution`
-- `deepscientist-quest-handoffs`
-- `deepscientist-writing-plans`
-- `deepscientist-paper-reliability-verification`
-- `deepscientist-review`
-
-Use only one companion support skill alongside the active stage skill. Continue to call durable operations through `scripts/dsctl.py call ds_* ... --format json`; do not use MCP or the external `ds` command.
+Prefer compact status, bounded log tails, artifact paths, hashes, and summaries. Do not inject full logs, full JSONL ledgers, full papers, or full reference repositories into Codex context unless an explicit raw/range read is required.
 
 ## Final reply checklist
 
-When completing a DeepScientist task, report:
+Report:
 
 - quest id and stage if used;
-- dsctl commands/tools used;
+- control commands or native tool classes used;
 - files created or modified;
-- new/updated DeepScientist memory/artifacts;
+- new or updated durable memory/artifacts;
 - verification results;
-- next recommended action.
+- next action or user-gated decision.
