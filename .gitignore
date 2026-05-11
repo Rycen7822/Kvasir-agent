@@ -13,11 +13,17 @@ __pycache__/
 htmlcov/
 
 # Virtual environments and packaging outputs
+.venv
 .venv/
+venv
 venv/
+env
 env/
+ENV
 ENV/
+build
 build/
+dist
 dist/
 *.egg-info/
 pip-wheel-metadata/
