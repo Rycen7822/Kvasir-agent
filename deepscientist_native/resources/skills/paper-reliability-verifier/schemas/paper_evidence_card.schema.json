@@ -1,0 +1,312 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PaperEvidenceCard",
+  "type": "object",
+  "required": [
+    "paper",
+    "citations",
+    "publication_status",
+    "tier",
+    "warnings",
+    "checked_at"
+  ],
+  "properties": {
+    "paper": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "doi": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "year": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "authors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "type": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source_ids": {
+          "type": "object"
+        }
+      }
+    },
+    "citations": {
+      "type": "object",
+      "properties": {
+        "openalex": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "semantic_scholar": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "semantic_scholar_influential": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "crossref": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "google_scholar_manual": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "counts_by_year": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "checked_at": {
+          "type": "string"
+        }
+      }
+    },
+    "venue": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "normalized_name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "type": {
+          "enum": [
+            "conference",
+            "workshop",
+            "symposium",
+            "unknown",
+            null
+          ]
+        },
+        "ccf_rank": {
+          "enum": [
+            "A",
+            "B",
+            "C",
+            "unranked",
+            "unknown",
+            null
+          ]
+        },
+        "core_rank": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "is_main_track_full_paper": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "evidence_source": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "journal": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "issn": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "ccf_rank": {
+          "enum": [
+            "A",
+            "B",
+            "C",
+            "unranked",
+            "unknown",
+            null
+          ]
+        },
+        "cas_quartile": {
+          "enum": [
+            "1区",
+            "2区",
+            "3区",
+            "4区",
+            "Q1",
+            "Q2",
+            "Q3",
+            "Q4",
+            "unknown",
+            null
+          ]
+        },
+        "jcr_quartile": {
+          "enum": [
+            "Q1",
+            "Q2",
+            "Q3",
+            "Q4",
+            "unknown",
+            null
+          ]
+        },
+        "impact_factor": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "sjr": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "openalex_summary_stats": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "evidence_source": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "accepted_publication": {
+      "type": "object",
+      "properties": {
+        "status": {"type": "string"},
+        "venue_name": {"type": ["string", "null"]},
+        "venue_type": {"type": ["string", "null"]},
+        "acronym": {"type": ["string", "null"]},
+        "evidence_source": {"type": ["string", "null"]},
+        "interface_version": {"type": "string"},
+        "acl_anthology": {"type": "object"},
+        "dblp": {"type": "object"},
+        "openreview": {"type": "object"},
+        "crossref": {"type": "object"}
+      }
+    },
+    "publication_status": {
+      "type": "object",
+      "properties": {
+        "is_retracted": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "is_preprint_only": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "has_expression_of_concern": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "updates": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "sources_checked": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "tier": {
+      "enum": [
+        "do_not_use",
+        "strong_evidence",
+        "supporting_evidence",
+        "weak_or_contextual_evidence",
+        "needs_human_review"
+      ]
+    },
+    "quality_flags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "raw_sources": {
+      "type": "object"
+    },
+    "checked_at": {
+      "type": "string"
+    }
+  }
+}

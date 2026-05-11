@@ -1,0 +1,24 @@
+{
+  "name": "deepscientist-codex",
+  "version": "0.1.0",
+  "description": "Native Codex CLI adapter for DeepScientist research semantics: quest state, memory, artifacts, baselines, experiments, paper workflows, and formal evidence provenance. Codex-native tools still handle routine file, shell, Git, test, build, and process work.",
+  "author": {
+    "name": "DeepScientist Hermes adaptation"
+  },
+  "skills": "./skills",
+  "interface": {
+    "displayName": "DeepScientist Codex Native",
+    "shortDescription": "Use DeepScientist research state from Codex CLI while leaving routine coding operations to Codex-native tools.",
+    "longDescription": "A self-contained Codex CLI plugin that embeds the retained headless DeepScientist runtime. It exposes project-local quest, memory, artifact, baseline, paper, analysis, and formal experiment provenance through scripts/dsctl.py, while ordinary file editing/search, shell, Git, tests, builds, and process management remain Codex-native responsibilities.",
+    "developerName": "DeepScientist Hermes adaptation",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Use DeepScientist Codex Native only for DeepScientist research semantics: quest state, durable user requirements, memory, artifacts, baselines, experiment records, paper/reliability workflows, analysis campaign state, and formal evidence provenance. Use Codex-native file/search/edit/shell/Git/test/build/process capabilities for routine operation-layer work. Treat ds_bash_exec as a provenance tool for formal experiment, baseline, analysis, or paper-facing commands, not as a general shell replacement. Load the deepscientist-codex skill first, then load bundled support skills only when the subtask needs them. Keep the native Codex transport boundary and do not reintroduce protocol-server transport."
+    ],
+    "brandColor": "#4D6A7A"
+  }
+}

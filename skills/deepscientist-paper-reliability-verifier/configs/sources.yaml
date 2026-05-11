@@ -1,0 +1,112 @@
+google_scholar:
+  automated_access: false
+  role: manual_only
+  allowed_use: ["human-pasted citation count"]
+  disallowed_use: ["scraping", "captcha solving", "proxy rotation", "claiming third-party scraper output is official"]
+
+openalex:
+  automated_access: true
+  base_url: https://api.openalex.org
+  fields:
+    works: [cited_by_count, counts_by_year, is_retracted, publication_year, primary_location.source, type]
+    sources: [display_name, issn_l, summary_stats.2yr_mean_citedness, summary_stats.h_index, summary_stats.i10_index]
+  env: {mailto: OPENALEX_MAILTO}
+  role: primary_open_citation_source
+
+semantic_scholar:
+  automated_access: true
+  base_url: https://api.semanticscholar.org/graph/v1
+  fields:
+    paper: [title, year, citationCount, influentialCitationCount, referenceCount, venue, publicationVenue, externalIds, fieldsOfStudy]
+  env: {api_key: SEMANTIC_SCHOLAR_API_KEY}
+  role: secondary_citation_source
+
+crossref:
+  automated_access: true
+  base_url: https://api.crossref.org/v1
+  swagger_docs: https://api.crossref.org/swagger-docs
+  swagger_ui: https://api.crossref.org/swagger-ui/index.html
+  fields:
+    works: [DOI, title, type, container-title, short-container-title, event, published, published-print, published-online, issued, is-referenced-by-count, reference-count, update-to, update-policy, relation, ISSN, ISBN, publisher, URL]
+  params: [mailto, select, query.title, filter, rows, sort, order]
+  env: {mailto: CROSSREF_MAILTO}
+  role: metadata_citation_update_signal_and_conservative_journal_proceedings_acceptance_fallback
+
+openreview:
+  automated_access: true
+  package: openreview-py
+  base_urls:
+    api2: https://api2.openreview.net
+    api1: https://api.openreview.net
+  documentation: https://docs.openreview.net/how-to-guides/data-retrieval-and-modification/how-to-get-all-notes-for-submissions-reviews-rebuttals-etc
+  env:
+    username: OPENREVIEW_USERNAME
+    password: OPENREVIEW_PASSWORD
+    secret_file: /home/xu/.hermes/secrets/openreview.env
+    venue_ids: OPENREVIEW_VENUE_IDS
+  fields:
+    publication_hit: [title, venueid, venue_label, decision_notes, openreview_id, forum, number, url, accepted, presentation_type]
+  role: specialized_accepted_venue_and_presentation_detection_for_openreview_hosted_venues
+
+acl_anthology:
+  automated_access: true
+  package: acl-anthology
+  documentation: https://acl-anthology.readthedocs.io/py-v1.1.0/
+  data_source: official ACL Anthology metadata repository via Anthology.from_repo()
+  env: {data_dir_override: ACL_ANTHOLOGY_DATA_DIR}
+  fields:
+    publication_hit: [title, year, doi, anthology_id, bibkey, url, pdf_url, venue_id, venue_acronym, venue_name, volume_title, source_xml]
+  role: first_specialized_automatic_accepted_venue_detection_for_nlp_cl
+
+dblp:
+  automated_access: true
+  base_url: https://dblp.org/search/publ/api
+  documentation: https://dblp.uni-trier.de/faq/How+to+use+the+dblp+search+API.html
+  fields:
+    publication_hit: [title, venue, year, type, key, doi, ee, url]
+  params: {format: json, c: 0, h: 10}
+  role: broad_cs_automatic_accepted_venue_detection_after_acl_anthology
+
+ccf:
+  automated_access: false
+  role: local_snapshot
+  expected_files:
+    - /home/xu/project/ds_dev/paper_reliability_verifier_skill/paper_ranking/conference_ranking.csv
+    - /home/xu/project/ds_dev/paper_reliability_verifier_skill/paper_ranking/journal_ranking.csv
+  fallback_files:
+    - paper_ranking/conference_ranking.csv
+    - paper_ranking/journal_ranking.csv
+
+core:
+  automated_access: false
+  role: local_snapshot_or_manual_portal
+  expected_files:
+    - /home/xu/project/ds_dev/paper_reliability_verifier_skill/paper_ranking/conference_ranking.csv
+  fallback_files:
+    - paper_ranking/conference_ranking.csv
+
+cas_journal_partition:
+  automated_access: false
+  role: local_cas_partition_snapshot_for_verified_accepted_journals
+  expected_files:
+    - /home/xu/project/ds_dev/paper_reliability_verifier_skill/paper_ranking/journal_ranking.csv
+  fallback_files:
+    - paper_ranking/journal_ranking.csv
+
+jcr_clarivate:
+  automated_access: false
+  role: local_jcr_2024_snapshot_merged_into_verified_accepted_journals
+  source_file:
+    - paper_ranking/JCR2024.csv
+  merged_fields:
+    - JCR类别
+    - JCR影响因子2024
+    - JCR分区2024
+  expected_files:
+    - /home/xu/project/ds_dev/paper_reliability_verifier_skill/paper_ranking/journal_ranking.csv
+  fallback_files:
+    - paper_ranking/journal_ranking.csv
+
+scimago_sjr:
+  automated_access: manual_or_project_dataset
+  role: public_journal_rank_fallback

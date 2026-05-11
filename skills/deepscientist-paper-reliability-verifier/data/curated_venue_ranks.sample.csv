@@ -1,0 +1,12 @@
+alias,canonical_name,kind,ccf_rank,core_rank,main_track_only,snapshot,notes
+NeurIPS,Conference on Neural Information Processing Systems,conference,A,unknown,true,CCF-2026-sample,Sample only; verify local CORE snapshot.
+NIPS,Conference on Neural Information Processing Systems,conference,A,unknown,true,CCF-2026-sample,Legacy alias.
+ICML,International Conference on Machine Learning,conference,A,unknown,true,CCF-2026-sample,Sample only.
+ACL,Annual Meeting of the Association for Computational Linguistics,conference,A,unknown,true,CCF-2026-sample,Findings must be flagged separately.
+CVPR,IEEE/CVF Conference on Computer Vision and Pattern Recognition,conference,A,unknown,true,CCF-2026-sample,Workshops must be flagged separately.
+ICCV,IEEE/CVF International Conference on Computer Vision,conference,A,unknown,true,CCF-2026-sample,Workshops must be flagged separately.
+AAAI,AAAI Conference on Artificial Intelligence,conference,A,unknown,true,CCF-2026-sample,Sample only.
+IJCAI,International Joint Conference on Artificial Intelligence,conference,A,unknown,true,CCF-2026-sample,Sample only.
+Findings of ACL,Findings of the Association for Computational Linguistics,conference,A,unknown,true,local-policy,ACL Anthology Findings inherits the confirmed parent ACL-family venue rank; workshops remain non-main-track.
+NeurIPS Workshop,Conference on Neural Information Processing Systems Workshop,workshop,unranked,unknown,false,local-policy,Co-located workshop.
+CVPR Workshop,IEEE/CVF Conference on Computer Vision and Pattern Recognition Workshop,workshop,unranked,unknown,false,local-policy,Co-located workshop.
