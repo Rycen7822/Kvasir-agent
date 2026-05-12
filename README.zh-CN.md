@@ -3,7 +3,7 @@
 </h1>
 
 <p align="center">
-  <a href="https://github.com/ResearAI/CodexScientist">上游 CodexScientist</a> |
+  <a href="https://github.com/ResearAI/DeepScientist">上游 DeepScientist</a> |
   <a href="README.md">English README</a> |
   <a href="docs/INSTALL.md">安装指南</a> |
   <a href="docs/USAGE.md">使用指南</a> |
@@ -30,9 +30,23 @@
 
 ---
 
-CodexScientist-codex 是给 Codex CLI 使用的 CodexScientist 插件，默认提供稳定 curated MCP 控制面，并保留 `scripts/csctl.py` 作为 CLI fallback。它把已有的 headless runtime、curated `cs_*` schemas、Codex skills、support skills、`scripts/cs_mcp.py` 和 `scripts/csctl.py` 打包进一个可安装的 Codex 插件目录。
+CodexScientist-codex 是基于 DeepScientist 二次开发、给 Codex CLI 使用的 CodexScientist 插件，默认提供稳定 curated MCP 控制面，并保留 `scripts/csctl.py` 作为 CLI fallback。它把 headless runtime、curated `cs_*` schemas、Codex skills、support skills、`scripts/cs_mcp.py` 和 `scripts/csctl.py` 打包进一个可安装的 Codex 插件目录。
 
-本 README 参考上游 CodexScientist 的展示风格，但边界保持清楚：MCP 是小而稳定的高频研究控制面，常规 file、shell、Git、test、build、process 工作仍由 Codex 原生能力完成。
+本 README 参考上游 DeepScientist 的展示风格，但边界保持清楚：MCP 是小而稳定的高频研究控制面，常规 file、shell、Git、test、build、process 工作仍由 Codex 原生能力完成。
+
+## 项目基础与参考项目
+
+本项目主要以 [DeepScientist](https://github.com/ResearAI/DeepScientist) 为基础进行二次开发，并面向 Codex CLI / Codex 插件运行方式做适配与重组。本仓库中的 `CodexScientist` 命名主要指向这一 Codex 插件化/runtime 适配层，而不是声明一个独立于 DeepScientist 的上游来源。
+
+本项目的设计与实现也参考或受到以下开源自动化研究 / AI Scientist 项目的启发：
+
+- [Auto-claude-code-research-in-sleep](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep)
+- [autoresearch](https://github.com/karpathy/autoresearch)
+- [EvoScientist](https://github.com/EvoScientist/EvoScientist)
+- [ai-researcher](https://github.com/hkuds/ai-researcher)
+- [AI-Scientist-v2](https://github.com/SakanaAI/AI-Scientist-v2)
+- [AgentLaboratory](https://github.com/SamuelSchmidgall/AgentLaboratory)
+- [ml-intern](https://github.com/huggingface/ml-intern)
 
 ## 为什么需要这个适配器？
 

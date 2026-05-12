@@ -3,7 +3,7 @@
 </h1>
 
 <p align="center">
-  <a href="https://github.com/ResearAI/CodexScientist">Upstream CodexScientist</a> |
+  <a href="https://github.com/ResearAI/DeepScientist">Upstream DeepScientist</a> |
   <a href="README.zh-CN.md">中文文档</a> |
   <a href="docs/INSTALL.md">Install Guide</a> |
   <a href="docs/USAGE.md">Usage Guide</a> |
@@ -30,9 +30,23 @@
 
 ---
 
-CodexScientist-codex presents the existing CodexScientist research runtime as a Codex CLI plugin with a stable curated MCP control plane. It packages the headless runtime, curated `cs_*` schemas, Codex skills, support skills, `scripts/cs_mcp.py`, and the `scripts/csctl.py` CLI fallback into one installable adapter.
+CodexScientist-codex presents a DeepScientist-derived research runtime as a Codex CLI plugin with a stable curated MCP control plane. It packages the headless runtime, curated `cs_*` schemas, Codex skills, support skills, `scripts/cs_mcp.py`, and the `scripts/csctl.py` CLI fallback into one installable adapter.
 
-It follows the upstream CodexScientist README style while keeping the adapter boundary explicit: MCP is the small stable control plane for repeated research workflows, while Codex-native tools still handle routine file, shell, Git, test, build, and process work.
+It follows the upstream DeepScientist README style while keeping the adapter boundary explicit: MCP is the small stable control plane for repeated research workflows, while Codex-native tools still handle routine file, shell, Git, test, build, and process work.
+
+## Foundation and References
+
+This project is primarily a secondary development and Codex-oriented adaptation based on [DeepScientist](https://github.com/ResearAI/DeepScientist). The `CodexScientist` naming in this repository refers to this Codex plugin/runtime adaptation layer rather than a claim of an independent upstream origin.
+
+The design and implementation also reference or draw inspiration from the following open-source automated-research / AI-scientist projects:
+
+- [Auto-claude-code-research-in-sleep](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep)
+- [autoresearch](https://github.com/karpathy/autoresearch)
+- [EvoScientist](https://github.com/EvoScientist/EvoScientist)
+- [ai-researcher](https://github.com/hkuds/ai-researcher)
+- [AI-Scientist-v2](https://github.com/SakanaAI/AI-Scientist-v2)
+- [AgentLaboratory](https://github.com/SamuelSchmidgall/AgentLaboratory)
+- [ml-intern](https://github.com/huggingface/ml-intern)
 
 ## Why This Adapter Exists
 
