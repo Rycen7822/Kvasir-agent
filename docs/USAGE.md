@@ -12,7 +12,7 @@ python scripts/cs_mcp.py --stdio-smoke tools/list
 python scripts/cs_mcp.py --stdio-smoke call cs_doctor '{}'
 ```
 
-The curated MCP exposes bounded `cs_*` tools, including doctor/status, manifest validation, queue status, context pack, and skill retrieval. It is intentionally smaller than the full native runtime.
+The curated MCP exposes bounded `cs_*` tools, including doctor/status, resume/checkpoint/delta, manifest validation, runner/queue status, log digest, artifact index, context pack, and skill retrieval. It is intentionally smaller than the full native runtime.
 
 Use CLI fallback when MCP is unavailable, when CI needs a plain command, or when debugging/recovery/migration requires terminal output:
 
@@ -49,12 +49,14 @@ CodexScientist semantic/provenance layer:
 
 Practical rule: Codex does the mechanical action; CodexScientist records the research meaning.
 
-## Skill retrieval
+## Skill retrieval and context budget
 
 Do not reread long skill files by default. Use:
 
 - `cs_skill_search` to get short skill cards.
 - `cs_skill_load` to load a bounded `preview`, `runtime`, `risk`, `sections`, or explicitly allowed `full` view.
+
+Long-task recovery should normally use `cs_status` plus `cs_resume_brief` in the 4K-8K range. Use `cs_pack_delta` for post-checkpoint changes, `cs_log_digest` before raw logs, `cs_artifact_index` before opening artifacts, and `cs_checkpoint` at stage boundaries. Context budget is not smaller is better; incident/debug/audit work may expand to 12K-24K while still avoiding raw full logs and full artifact content unless explicitly requested.
 
 ## Default autonomy
 

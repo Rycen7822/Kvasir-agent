@@ -54,3 +54,29 @@ def test_context_pack_cli_returns_path_digest_and_compact_content(tmp_path: Path
     assert result["sha256"]
     assert result["path"].endswith("CodexScientist/summaries/context_pack.md")
     assert "## active_state" in result["content"]
+
+
+def test_context_pack_includes_latest_checkpoint_anchor(tmp_path: Path):
+    from codex_scientist.services.checkpoint import CheckpointService
+    from codex_scientist.services.context_pack import ContextPackService
+    from codex_scientist.services.manifest import ManifestService
+    from codex_scientist.services.project_state import ProjectLayout
+
+    layout = ProjectLayout.from_project_root(tmp_path)
+    ManifestService(layout).init(name="Demo", goal="Improve")
+    checkpoint = CheckpointService(layout).create_checkpoint(
+        phase="P3-2",
+        completed=["resume"],
+        decisions=[],
+        validation=[],
+        next_action="continue delta",
+        artifact_refs=[],
+        risk_flags=[],
+    )
+
+    result = ContextPackService(layout).write_context_pack(max_chars=1000)
+
+    assert result["ok"] is True
+    assert "## last_checkpoint" in result["content"]
+    assert checkpoint["checkpoint_id"] in result["content"]
+    assert "continue delta" in result["content"]

@@ -4,6 +4,7 @@ import hashlib
 from pathlib import Path
 
 from .event_store import EventStore
+from .checkpoint import CheckpointService
 from .frontier import FrontierService
 from .journal import JournalService
 from .manifest import ManifestService
@@ -26,6 +27,7 @@ class ContextPackService:
         queue = QueueService(self.layout).status()
         frontier = FrontierService(self.layout).select(limit=3)
         events = EventStore(self.layout).read_events()[-3:]
+        latest_checkpoint = CheckpointService(self.layout).latest_checkpoint() or {}
         negative = JournalService(self.layout).list_negative_memory()[:3]
 
         project = manifest.get("project") if isinstance(manifest.get("project"), dict) else {}
@@ -33,8 +35,13 @@ class ContextPackService:
         budgets = manifest.get("budgets") if isinstance(manifest.get("budgets"), dict) else {}
         context = budgets.get("context") if isinstance(budgets.get("context"), dict) else {}
 
-        active_state = f"project={self._line(project.get('name', 'unknown'))}; goal={self._line(goal.get('title', 'unset'))}"
-        next_action = "inspect gates and choose one bounded next action"
+        active_state = f"project={self._line(project.get('name', 'unknown'))}; goal={self._line(goal.get('title', 'unset'))}; phase={self._line(latest_checkpoint.get('phase', 'unset'))}"
+        last_checkpoint = (
+            f"id={self._line(latest_checkpoint.get('checkpoint_id', 'none'))}; "
+            f"event_seq={self._line(latest_checkpoint.get('event_seq', 'none'))}; "
+            f"next={self._line(latest_checkpoint.get('next_action', 'unset'))}"
+        )
+        next_action = self._line(latest_checkpoint.get("next_action") or "inspect gates and choose one bounded next action")
         metric_frontier = ",".join(item.get("idea_id", "?") for item in frontier) or "none"
         recent_events = ",".join(event.get("event_type", "?") for event in events) or "none"
         negative_line = ",".join(item.get("idea_id", "?") for item in negative) or "none"
@@ -44,6 +51,7 @@ class ContextPackService:
 
         return [
             ("active_state", active_state),
+            ("last_checkpoint", last_checkpoint),
             ("next_action", next_action),
             ("metric_frontier", metric_frontier),
             ("recent_events", recent_events),

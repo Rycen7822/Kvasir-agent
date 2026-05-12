@@ -10,7 +10,7 @@ Runtime state remains project-local under:
 <project>/CodexScientist/
 ```
 
-This tree stores quest state, events, runtime files, artifacts, memory, queue/runner ledgers, summaries, and validation reports.
+This tree stores quest state, events, runtime files, artifacts, memory, queue/runner ledgers, summaries, and validation reports. P3 recovery state includes `events/events.jsonl`, `events/events.lock`, `events/corrupt/`, `runs/<run_id>/runner.json`, `runs/<run_id>/heartbeat.txt`, `runs/<run_id>/exit_code.txt`, `runs/<run_id>/run.log`, `runs/<run_id>/stderr.log`, `queue/queue_state.json`, `summaries/context_pack.md`, checkpoints, log digests, and artifact indexes.
 
 ## Default autonomy boundary
 
@@ -61,6 +61,8 @@ Codex does the mechanical action; CodexScientist records the research meaning.
 
 ## MCP boundary
 
-The stable curated MCP exposes a small `cs_*` tool family for repeated workflows such as doctor/status, manifest validation, queue status, context packs, and bounded skill retrieval. It deliberately avoids an all-tools/full-runtime MCP.
+The stable curated MCP exposes a small `cs_*` tool family for repeated workflows such as doctor/status, resume/checkpoint/delta, manifest validation, queue status, log digest, artifact index, context packs, and bounded skill retrieval. It deliberately avoids an all-tools/full-runtime MCP.
 
 Long procedures stay in skills and references, but the default access path is `cs_skill_search` followed by a bounded `cs_skill_load` view. CLI fallback remains available and should continue to pass parity smoke tests against representative MCP calls.
+
+Context recovery should preserve enough structure to continue correctly: normal resume uses 4K-8K chars, incident/debug/audit may use 12K-24K chars, and full skill/raw log/full artifact reads require explicit opt-in.

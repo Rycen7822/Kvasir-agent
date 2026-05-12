@@ -20,10 +20,12 @@ python scripts/cs_mcp.py --stdio-smoke call cs_manifest_validate '{"project":"/p
 
 ## Current curated tool families
 
+The default curated surface currently has 20 tools:
+
 - Core: `cs_doctor`, `cs_status`.
-- Context: `cs_context_pack`.
+- Context/recovery: `cs_context_pack`, `cs_resume_brief`, `cs_checkpoint`, `cs_pack_delta`.
 - Manifest/trial: `cs_manifest_validate`, `cs_trial_show`.
-- Runner/queue: `cs_runner_status`, `cs_queue_status`, `cs_queue_reconcile`.
+- Runner/queue: `cs_runner_status`, `cs_log_digest`, `cs_artifact_index`, `cs_queue_status`, `cs_queue_reconcile`.
 - Wiki/review/cost: `cs_wiki_query_pack`, `cs_review_status`, `cs_cost_status`.
 - Soak: `cs_soak_accelerated`, `cs_soak_crash_resume`.
 - Skill retrieval: `cs_skill_search`, `cs_skill_load`.

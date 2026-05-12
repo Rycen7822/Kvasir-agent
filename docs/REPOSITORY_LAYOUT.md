@@ -19,6 +19,15 @@ This repository is intentionally organized as a small Codex plugin plus a packag
 
 Project runtime state belongs under a user's research project directory, not in this plugin repository. The default runtime directory name inside a research project remains `CodexScientist/` for compatibility with existing project-local paths.
 
+Important project-local files created by the P3 recovery/control plane include:
+
+- `CodexScientist/events/events.jsonl` and `CodexScientist/events/events.lock`;
+- `CodexScientist/events/corrupt/` for quarantined corrupt JSONL lines;
+- `CodexScientist/runs/<run_id>/runner.json`, `run.log`, `stderr.log`, `heartbeat.txt`, and `exit_code.txt`;
+- `CodexScientist/queue/queue_state.json`;
+- `CodexScientist/artifacts/` and `CodexScientist/results/` indexed by `cs_artifact_index`;
+- `CodexScientist/summaries/` for context packs, long-run validation, and recovery reports.
+
 The plugin repository root should not contain `CodexScientist/` or `DeepScientist/`. If either directory appears here, treat it as accidental local runtime state and remove it after checking that it contains no user data.
 
 Do not commit runtime journals, queues, artifacts, or generated quest state.

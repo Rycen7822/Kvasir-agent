@@ -15,6 +15,8 @@ for path in (PLUGIN_ROOT, SCRIPTS_ROOT):
 
 import cs_native_cli  # type: ignore  # noqa: E402
 from codex_scientist.adapters.cli import normalize_envelope  # noqa: E402
+from codex_scientist.services.artifacts import ArtifactIndexService  # noqa: E402
+from codex_scientist.services.checkpoint import CheckpointService  # noqa: E402
 from codex_scientist.services.claims import ClaimEvidenceService  # noqa: E402
 from codex_scientist.services.context_pack import ContextPackService  # noqa: E402
 from codex_scientist.services.costs import CostApprovalService  # noqa: E402
@@ -26,6 +28,7 @@ from codex_scientist.services.project_state import ProjectLayout  # noqa: E402
 from codex_scientist.services.queue import QueueService  # noqa: E402
 from codex_scientist.services.research_wiki import ResearchWikiService  # noqa: E402
 from codex_scientist.services.review import ReviewService  # noqa: E402
+from codex_scientist.services.resume import ResumeService  # noqa: E402
 from codex_scientist.services.runner import RunnerService  # noqa: E402
 from codex_scientist.services.soak import SoakService  # noqa: E402
 from codex_scientist.services.trial import TrialService  # noqa: E402
@@ -94,6 +97,8 @@ def _runner_payload(args: argparse.Namespace) -> dict:
         return service.collect(args.run_id, exit_code=args.exit_code)
     if args.runner_command == "tail":
         return service.tail(args.run_id, limit=args.limit)
+    if args.runner_command == "log-digest":
+        return service.log_digest(args.run_id, max_tail_lines=args.max_tail_lines)
     if args.runner_command == "status":
         if args.run_id:
             return {"ok": True, "run": service.get(args.run_id)}
@@ -166,9 +171,33 @@ def _journal_payload(args: argparse.Namespace) -> dict:
 
 
 def _summary_payload(args: argparse.Namespace) -> dict:
-    service = ContextPackService(_layout(args))
+    layout = _layout(args)
     if args.summary_command == "context-pack":
-        return service.write_context_pack(max_chars=args.max_chars)
+        return ContextPackService(layout).write_context_pack(max_chars=args.max_chars)
+    if args.summary_command == "checkpoint":
+        return CheckpointService(layout).create_checkpoint(
+            phase=args.phase,
+            completed=args.completed or [],
+            decisions=args.decision or [],
+            validation=args.validation or [],
+            next_action=args.next_action,
+            artifact_refs=args.artifact_ref or [],
+            risk_flags=args.risk_flag or [],
+        )
+    if args.summary_command == "resume-brief":
+        return ResumeService(layout).resume_brief(
+            max_chars=args.max_chars,
+            include_recent_events=args.include_recent_events,
+            include_risks=not args.no_risks,
+        )
+    if args.summary_command == "pack-delta":
+        return ResumeService(layout).pack_delta(
+            since_event_seq=args.since_event_seq,
+            since_checkpoint_id=args.since_checkpoint_id,
+            max_chars=args.max_chars,
+        )
+    if args.summary_command == "artifact-index":
+        return ArtifactIndexService(layout).index(max_items=args.max_items)
     return {"ok": False, "error": "Unknown summary command", "error_type": "usage", "recoverable": True}
 
 
@@ -333,6 +362,11 @@ def build_cs_parser() -> argparse.ArgumentParser:
     runner_tail.add_argument("--limit", type=int, default=80)
     _add_format(runner_tail)
     runner_tail.set_defaults(func=_runner_payload)
+    runner_log_digest = runner_sub.add_parser("log-digest", help="Read bounded redacted runner log digest")
+    runner_log_digest.add_argument("run_id")
+    runner_log_digest.add_argument("--max-tail-lines", type=int, default=40)
+    _add_format(runner_log_digest)
+    runner_log_digest.set_defaults(func=_runner_payload)
     runner_status = runner_sub.add_parser("status", help="Show one or all runner records")
     runner_status.add_argument("run_id", nargs="?")
     _add_format(runner_status)
@@ -439,6 +473,32 @@ def build_cs_parser() -> argparse.ArgumentParser:
     context_pack.add_argument("--max-chars", type=int, required=True)
     _add_format(context_pack)
     context_pack.set_defaults(func=_summary_payload)
+    checkpoint = summary_sub.add_parser("checkpoint", help="Write a compact recovery checkpoint")
+    checkpoint.add_argument("--phase", required=True)
+    checkpoint.add_argument("--completed", action="append")
+    checkpoint.add_argument("--decision", action="append")
+    checkpoint.add_argument("--validation", action="append")
+    checkpoint.add_argument("--next-action", required=True)
+    checkpoint.add_argument("--artifact-ref", action="append")
+    checkpoint.add_argument("--risk-flag", action="append")
+    _add_format(checkpoint)
+    checkpoint.set_defaults(func=_summary_payload)
+    resume_brief = summary_sub.add_parser("resume-brief", help="Return stable compact recovery anchors")
+    resume_brief.add_argument("--max-chars", type=int, default=8000)
+    resume_brief.add_argument("--include-recent-events", type=int, default=5)
+    resume_brief.add_argument("--no-risks", action="store_true")
+    _add_format(resume_brief)
+    resume_brief.set_defaults(func=_summary_payload)
+    pack_delta = summary_sub.add_parser("pack-delta", help="Return event deltas since a checkpoint or event sequence")
+    pack_delta.add_argument("--since-event-seq", type=int)
+    pack_delta.add_argument("--since-checkpoint-id")
+    pack_delta.add_argument("--max-chars", type=int, default=6000)
+    _add_format(pack_delta)
+    pack_delta.set_defaults(func=_summary_payload)
+    artifact_index = summary_sub.add_parser("artifact-index", help="Return artifact refs, hashes, sizes, and types")
+    artifact_index.add_argument("--max-items", type=int, default=50)
+    _add_format(artifact_index)
+    artifact_index.set_defaults(func=_summary_payload)
 
     review = sub.add_parser("review", help="Create read-only review artifacts")
     review_sub = review.add_subparsers(dest="review_command", required=True)

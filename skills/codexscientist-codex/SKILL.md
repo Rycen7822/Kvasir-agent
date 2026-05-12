@@ -14,6 +14,9 @@ This skill is a thin router. It states policy and boundaries; it is not a full c
 - Keep `scripts/csctl.py` as CLI fallback for CI, debugging, recovery, migration, and MCP-unavailable environments.
 - Runtime state lives in `<project>/CodexScientist/`.
 - Persist durable research facts through `cs_*` calls when they affect quest state, memory, artifacts, baselines, experiments, reviews, or evidence.
+- For long-task recovery, call `cs_status` then `cs_resume_brief` with the default 4K-8K budget; use `cs_pack_delta` only when changes after a checkpoint are too large for the brief.
+- Use `cs_log_digest` before reading raw logs, and `cs_artifact_index` before opening artifact files.
+- End each completed stage with `cs_checkpoint` so later turns can resume without chat history.
 - Load at most one stage/support skill when the current subtask actually needs it.
 
 ## Default autonomy mode
@@ -60,7 +63,7 @@ Typical MCP-first flow:
 
 ## Output policy
 
-Prefer compact status, bounded log tails, artifact paths, hashes, and summaries. Do not inject full logs, full JSONL ledgers, full papers, or full reference repositories into Codex context unless an explicit raw/range read is required.
+Prefer compact status, bounded log tails, artifact paths, hashes, and summaries. Do not inject full logs, full JSONL ledgers, full papers, or full reference repositories into Codex context unless an explicit raw/range read is required. `full` skill views require `allow_full=true`; raw logs and full artifact content are explicit opt-in paths, not defaults.
 
 ## Final reply checklist
 

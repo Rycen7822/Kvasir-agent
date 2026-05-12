@@ -14,8 +14,6 @@ The accelerated layer writes `CodexScientist/summaries/long_run_validation.md`:
 python scripts/csctl.py soak accelerated --days 10 --inject-failures --format json
 ```
 
-If the report says `wall-clock: not_run`, do not claim stable ten-day wall-clock operation. A passing accelerated soak is necessary for CI, but it is not a substitute for the real wall-clock soak.
-
 ## Crash resume smoke
 
 ```bash
@@ -24,3 +22,30 @@ python scripts/csctl.py soak crash-resume --restart-label plugin-restart --forma
 ```
 
 Expired leases move to `reconcile_required`; they are not silently requeued as pending jobs.
+
+## P3 recovery artifacts
+
+Long-run recovery state is project-local under `CodexScientist/` and must never be committed into the plugin repository root. The important recovery files are:
+
+- `events/events.jsonl` plus `events/events.lock` for append-only event sequencing and cross-process append safety;
+- `events/corrupt/` for quarantined malformed JSONL lines;
+- `runs/<run_id>/runner.json`, `runs/<run_id>/run.log`, `runs/<run_id>/stderr.log`, `runs/<run_id>/heartbeat.txt`, and `runs/<run_id>/exit_code.txt` for process lifecycle, bounded log digest, stderr digest, cross-process exit status recovery, and stale-run detection;
+- `queue/queue_state.json` for job/run linkage, attempts, expected outputs, terminal status, and all_done_reason;
+- `summaries/context_pack.md` and checkpoint records for context recovery.
+
+## Recovery flow
+
+Use the bounded MCP-first recovery path before reading raw files:
+
+1. `cs_status` verifies the target project and state root.
+2. `cs_resume_brief` reconstructs the current task in a normal 4K-8K recovery budget.
+3. `cs_pack_delta` fetches post-checkpoint events when the latest brief is not enough.
+4. `cs_log_digest` summarizes long logs and classifies common failures before any raw log read.
+5. `cs_artifact_index` lists artifact path, type, size, and hash before opening full artifact content.
+6. `cs_checkpoint` records completed stage boundaries and factual validation state.
+
+Queue reconciliation classifies important stuck/failure states explicitly. Examples: `failed_artifact` for completed runs with missing expected outputs, `missing_heartbeat` for a running run whose heartbeat file vanished, and `reconcile_required` for expired leases or missing run snapshots.
+
+## Claim limits
+
+If the report says `wall-clock: not_run`, do not claim stable ten-day wall-clock operation. A passing accelerated soak is necessary for CI, but it is not a substitute for the real wall-clock soak.
