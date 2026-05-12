@@ -6,7 +6,7 @@ import sys
 from typing import Any, TextIO
 
 from codex_scientist.mcp.tool_registry import call_tool, tools_list_payload
-from codexscientist_native.redaction import redact_text
+from codex_scientist.runtime.redaction import redact_text
 
 
 def initialize_payload() -> dict[str, Any]:

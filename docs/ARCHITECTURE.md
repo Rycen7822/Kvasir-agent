@@ -37,7 +37,7 @@ MCP handlers and CLI parsers call the same service layer. The implementation mus
 
 ## CodexScientist native runtime
 
-`codexscientist_native` is the canonical local runtime package. Public schemas and tool handlers use `cs_*` names. Historical legacy package paths and non-`cs_*` public names are not part of the default surface.
+`codex_scientist/runtime` is the canonical local runtime package. Public schemas and tool handlers use `cs_*` names. Historical legacy package paths and non-`cs_*` public names are not part of the default surface.
 
 ## Operation boundary
 

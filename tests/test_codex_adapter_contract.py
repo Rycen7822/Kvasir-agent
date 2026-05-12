@@ -44,7 +44,7 @@ def test_codex_manifest_declares_stable_mcp_and_cli_fallback():
 
 def test_csctl_exposes_complete_native_schema_set():
     sys.path.insert(0, str(PLUGIN_ROOT))
-    from codexscientist_native import schemas
+    from codex_scientist.runtime import schemas
 
     payload = run_csctl("list-tools", "--format", "json")
     names = {item["name"] for item in payload["tools"]}
@@ -215,8 +215,8 @@ def test_codex_docs_define_operation_vs_semantic_boundary():
 def test_codex_stage_skills_do_not_force_routine_operations_through_cs_bash_exec():
     scanned_roots = [
         PLUGIN_ROOT / "skills",
-        PLUGIN_ROOT / "codexscientist_native" / "resources" / "skills",
-        PLUGIN_ROOT / "codexscientist_native" / "resources" / "repo" / "src" / "skills",
+        PLUGIN_ROOT / "codex_scientist" / "runtime" / "resources" / "skills",
+        PLUGIN_ROOT / "codex_scientist" / "runtime" / "resources" / "repo" / "src" / "skills",
     ]
     forbidden = [
         "Hard execution rule: every terminal command in this stage must go through `cs_bash_exec`",
@@ -247,8 +247,8 @@ def test_codex_plugin_packages_deep_integrated_codexscientist_skills():
         "review": ["paper/review/review.md", "cs_bash_exec", "claim downgrade"],
     }
     for skill_id, phrases in expected_skill_ids.items():
-        resource_skill = PLUGIN_ROOT / "codexscientist_native" / "resources" / "skills" / skill_id / "SKILL.md"
-        repo_resource_skill = PLUGIN_ROOT / "codexscientist_native" / "resources" / "repo" / "src" / "skills" / skill_id / "SKILL.md"
+        resource_skill = PLUGIN_ROOT / "codex_scientist" / "runtime" / "resources" / "skills" / skill_id / "SKILL.md"
+        repo_resource_skill = PLUGIN_ROOT / "codex_scientist" / "runtime" / "resources" / "repo" / "src" / "skills" / skill_id / "SKILL.md"
         codex_skill = PLUGIN_ROOT / "skills" / f"codexscientist-{skill_id}" / "SKILL.md"
         assert resource_skill.exists(), resource_skill
         assert repo_resource_skill.exists(), repo_resource_skill
@@ -275,11 +275,11 @@ def test_installer_registers_codex_plugin_without_mcp():
 def test_no_mcp_transport_or_old_tool_instructions_in_runtime_contexts():
     scanned_roots = [
         PLUGIN_ROOT / "skills",
-        PLUGIN_ROOT / "codexscientist_native" / "resources",
-        PLUGIN_ROOT / "codexscientist_native" / "vendor" / "codexscientist" / "runners",
-        PLUGIN_ROOT / "codexscientist_native" / "vendor" / "codexscientist" / "bash_exec",
-        PLUGIN_ROOT / "codexscientist_native" / "vendor" / "codexscientist" / "config",
-        PLUGIN_ROOT / "codexscientist_native" / "vendor" / "codexscientist" / "acp",
+        PLUGIN_ROOT / "codex_scientist" / "runtime" / "resources",
+        PLUGIN_ROOT / "codex_scientist" / "runtime" / "vendor" / "codexscientist" / "runners",
+        PLUGIN_ROOT / "codex_scientist" / "runtime" / "vendor" / "codexscientist" / "bash_exec",
+        PLUGIN_ROOT / "codex_scientist" / "runtime" / "vendor" / "codexscientist" / "config",
+        PLUGIN_ROOT / "codex_scientist" / "runtime" / "vendor" / "codexscientist" / "acp",
     ]
     forbidden = [
         "mcp_servers",
@@ -439,6 +439,6 @@ def test_mcp_equivalent_convenience_tools_work_without_mcp(tmp_path: Path):
 
 
 def test_no_mcp_package_or_server_surface_is_bundled():
-    vendor = PLUGIN_ROOT / "codexscientist_native" / "vendor" / "codexscientist"
+    vendor = PLUGIN_ROOT / "codex_scientist" / "runtime" / "vendor" / "codexscientist"
     assert not (vendor / "mcp").exists()
     assert not any("mcp" in str(path).lower() and path.name == "server.py" for path in vendor.rglob("*.py"))

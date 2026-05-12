@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from codexscientist_native import schemas
+from codex_scientist.runtime import schemas
 
 
 def _props(schema_name: str) -> dict:

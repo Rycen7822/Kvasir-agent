@@ -12,7 +12,7 @@ def test_default_profiles_are_curated_mcp_metadata_without_all_tools_surface():
     core = get_profile(None)
     assert core.name == "core"
     assert 1 <= len(core.tool_names) <= 12
-    assert set(core.tool_names) <= {schema["name"] for schema in __import__("codexscientist_native.schemas", fromlist=["PUBLIC_SCHEMAS"]).PUBLIC_SCHEMAS}
+    assert set(core.tool_names) <= {schema["name"] for schema in __import__("codex_scientist.runtime.schemas", fromlist=["PUBLIC_SCHEMAS"]).PUBLIC_SCHEMAS}
 
     for profile in PROFILES.values():
         assert profile.registers_mcp

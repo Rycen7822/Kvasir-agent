@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from codexscientist_native.redaction import redact_text
+from codex_scientist.runtime.redaction import redact_text
 
 from .event_store import EventStore
 from .project_state import ProjectLayout

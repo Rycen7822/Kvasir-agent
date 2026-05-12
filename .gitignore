@@ -35,11 +35,9 @@ pip-wheel-metadata/
 .env.*
 !.env.example
 
-# Logs, runtime state, and temporary files
+# Logs and temporary files
 *.log
 logs/
-/CodexScientist/
-/DeepScientist/
 tmp/
 temp/
 .cache/

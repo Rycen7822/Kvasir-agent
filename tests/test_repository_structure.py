@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import importlib
 import subprocess
+import sys
 import tomllib
 from pathlib import Path
 
@@ -8,10 +10,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_runtime_state_dirs_are_ignored_and_not_tracked():
+def test_runtime_state_dirs_are_not_repository_source_or_hidden():
     gitignore = (ROOT / ".gitignore").read_text(encoding="utf-8")
-    assert "/CodexScientist/" in gitignore
-    assert "/DeepScientist/" in gitignore
+    assert "/CodexScientist/" not in gitignore
+    assert "/DeepScientist/" not in gitignore
 
     tracked = subprocess.check_output(
         ["git", "ls-files", "CodexScientist", "DeepScientist"],
@@ -19,6 +21,37 @@ def test_runtime_state_dirs_are_ignored_and_not_tracked():
         text=True,
     ).splitlines()
     assert tracked == []
+    assert not (ROOT / "CodexScientist").exists()
+    assert not (ROOT / "DeepScientist").exists()
+
+
+def test_plugin_doctor_does_not_create_repository_runtime_state():
+    assert not (ROOT / "CodexScientist").exists()
+    assert not (ROOT / "DeepScientist").exists()
+
+    proc = subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "csctl.py"), "doctor", "--format", "json"],
+        cwd=ROOT,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        timeout=30,
+        check=False,
+    )
+
+    assert proc.returncode == 0, proc.stderr or proc.stdout
+    assert not (ROOT / "CodexScientist").exists()
+    assert not (ROOT / "DeepScientist").exists()
+
+
+def test_runtime_source_lives_under_main_plugin_package():
+    assert not (ROOT / "codexscientist_native").exists()
+    assert (ROOT / "codex_scientist" / "runtime" / "__init__.py").exists()
+    assert (ROOT / "codex_scientist" / "runtime" / "resources").is_dir()
+    assert (ROOT / "codex_scientist" / "runtime" / "vendor").is_dir()
+
+    runtime = importlib.import_module("codex_scientist.runtime")
+    assert runtime.__name__ == "codex_scientist.runtime"
 
 
 def test_root_pyproject_declares_minimal_project_metadata():
@@ -41,8 +74,8 @@ def test_repository_layout_doc_names_canonical_trees():
     required = [
         "codex_scientist/services",
         "codex_scientist/mcp",
-        "codexscientist_native/vendor",
-        "codexscientist_native/resources",
+        "codex_scientist/runtime/vendor",
+        "codex_scientist/runtime/resources",
         "skills/",
         "scripts/cs_mcp.py",
         "scripts/csctl.py",
@@ -56,8 +89,8 @@ def test_ci_workflow_runs_core_local_validation_gates():
     workflow = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
     for marker in [
         "python -m pytest -q",
-        "python -m vulture codex_scientist codexscientist_native scripts tests --min-confidence 100",
-        "python -m compileall -q codex_scientist codexscientist_native scripts tests",
+        "python -m vulture codex_scientist scripts tests --min-confidence 100",
+        "python -m compileall -q codex_scientist scripts tests",
         "scripts/cs_mcp.py --stdio-smoke tools/list",
     ]:
         assert marker in workflow

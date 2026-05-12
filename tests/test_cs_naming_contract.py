@@ -21,9 +21,9 @@ def run_csctl(*args: str) -> dict:
     return json.loads(completed.stdout)
 
 
-def test_canonical_runtime_package_is_codexscientist_native():
-    import codexscientist_native.schemas as schemas
-    import codexscientist_native.tools as tools
+def test_canonical_runtime_package_lives_under_codex_scientist_runtime():
+    import codex_scientist.runtime.schemas as schemas
+    import codex_scientist.runtime.tools as tools
 
     public_names = [schema["name"] for schema in schemas.PUBLIC_SCHEMAS]
     assert public_names

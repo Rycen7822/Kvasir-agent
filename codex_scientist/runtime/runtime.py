@@ -3,7 +3,8 @@ from __future__ import annotations
 
 import os
 import sys
-from dataclasses import dataclass
+import tempfile
+from dataclasses import dataclass, replace
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -68,10 +69,6 @@ def ensure_runtime_import_environment(config: NativeConfig | None = None) -> Non
     if vendor not in parts:
         os.environ["PYTHONPATH"] = os.pathsep.join([vendor, *parts])
     repo = str(resource_repo_root(cfg))
-    os.environ["CODEXSCIENTIST_REPO_ROOT"] = repo
-    os.environ["CODEXSCIENTIST_HOME"] = str(cfg.runtime_home.expanduser())
-    os.environ["CS_HOME"] = str(cfg.runtime_home.expanduser())
-    # Temporary internal bridge for the vendored runtime during package rename.
     os.environ["CODEXSCIENTIST_REPO_ROOT"] = repo
     os.environ["CODEXSCIENTIST_HOME"] = str(cfg.runtime_home.expanduser())
     os.environ["CS_HOME"] = str(cfg.runtime_home.expanduser())
@@ -166,12 +163,21 @@ def doctor() -> dict[str, Any]:
     check("resource_skills", expected_skills.issubset(present_skills), "CodexScientist stage/companion skills are present.", missing=sorted(expected_skills - present_skills), count=len(present_skills))
     check("resource_prompts", (RESOURCE_ROOT / "prompts").exists() and not (RESOURCE_ROOT / "prompts" / "connectors").exists(), "Prompt resources are present without connector prompts.")
     try:
-        services = get_services(cfg)
-        probe = services.home / "runtime" / ".codex-native-doctor"
-        probe.parent.mkdir(parents=True, exist_ok=True)
-        probe.write_text("ok\n", encoding="utf-8")
-        probe.unlink(missing_ok=True)
-        check("runtime_home_writable", True, "Runtime home is writable.", runtime_home=str(services.home))
+        with tempfile.TemporaryDirectory(prefix="codexscientist-doctor-") as tmp:
+            probe_home = Path(tmp) / "CodexScientist"
+            probe_cfg = replace(
+                cfg,
+                config_root=probe_home,
+                config_path=probe_home / "config" / "codex-native.yaml",
+                runtime_home=probe_home,
+                session_map_path=probe_home / "runtime" / "codex-session-map.json",
+            )
+            services = get_services(probe_cfg)
+            probe = services.home / "runtime" / ".codex-runtime-doctor"
+            probe.parent.mkdir(parents=True, exist_ok=True)
+            probe.write_text("ok\n", encoding="utf-8")
+            probe.unlink(missing_ok=True)
+        check("runtime_home_writable", True, "Runtime home is writable in an isolated probe directory.", configured_runtime_home=str(cfg.runtime_home))
     except Exception as exc:
         check("runtime_home_writable", False, f"Runtime home check failed: {exc}", runtime_home=str(cfg.runtime_home))
     forbidden = ["src/ui", "src/tui", "vendor/codexscientist/tui.py", "vendor/codexscientist/" + "connector" + "_runtime.py", "vendor/codexscientist/connector", "resources/prompts/connectors", "vendor/codexscientist/" + ("dae" + "mon")]

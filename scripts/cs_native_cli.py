@@ -23,7 +23,7 @@ from codex_scientist.adapters.cli import normalize_envelope
 
 
 def _load_native():
-    from codexscientist_native import schemas, tools
+    from codex_scientist.runtime import schemas, tools
     return schemas, tools
 
 

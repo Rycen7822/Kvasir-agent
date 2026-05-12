@@ -7,7 +7,7 @@ from dataclasses import dataclass, asdict
 from pathlib import Path
 from typing import Any, Callable
 
-from codexscientist_native import tools as native_tools
+from codex_scientist.runtime import tools as native_tools
 from codex_scientist.adapters.cli import normalize_envelope
 from codex_scientist.mcp.skill_index import load_skill, search_skills
 from codex_scientist.services.context_pack import ContextPackService
