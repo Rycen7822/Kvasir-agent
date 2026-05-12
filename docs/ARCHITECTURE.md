@@ -1,6 +1,6 @@
 # Codex-Scientist Architecture
 
-Codex-Scientist is a Codex CLI plugin with a stable curated MCP control plane. It is not a standalone autonomous research platform and it is not a replacement for Codex-native file, shell, Git, test, build, or process capabilities.
+Codex-Scientist is a Codex CLI plugin with an MCP-only default research control plane. It is not a standalone autonomous research platform and it is not a replacement for Codex-native file, shell, Git, test, build, or process capabilities.
 
 ## Runtime boundary
 
@@ -10,7 +10,7 @@ Runtime state remains project-local under:
 <project>/CodexScientist/
 ```
 
-This tree stores quest state, events, runtime files, artifacts, memory, queue/runner ledgers, summaries, and validation reports. P3 recovery state includes `events/events.jsonl`, `events/events.lock`, `events/corrupt/`, `runs/<run_id>/runner.json`, `runs/<run_id>/heartbeat.txt`, `runs/<run_id>/exit_code.txt`, `runs/<run_id>/run.log`, `runs/<run_id>/stderr.log`, `queue/queue_state.json`, `summaries/context_pack.md`, checkpoints, log digests, and artifact indexes.
+This tree stores quest state, events, runtime files, artifacts, memory, queue/runner ledgers, summaries, progress watchdog state, checkpoints, validation reports, novelty decisions, and claim gate records. P4 quest-scoped state lives under `CodexScientist/quests/<quest_id>/` while compatibility indexes may remain under project-local global state roots.
 
 ## Default autonomy boundary
 
@@ -22,8 +22,8 @@ In default mode, Codex-Scientist records, validates, organizes, retrieves, summa
 
 `codex_scientist/adapters` owns process-facing compatibility code:
 
-- `scripts/cs_mcp.py` is the stable curated MCP entrypoint for repeated high-frequency research-control workflows.
-- `scripts/csctl.py` is the CLI fallback for CI, debugging, migration, recovery, and MCP-unavailable environments.
+- `scripts/cs_mcp.py` is the MCP stdio entrypoint for repeated high-frequency research-control workflows.
+- hidden admin/debug CLI entrypoints are isolated for CI, debugging, migration, recovery, and MCP-unavailable environments.
 - Adapter code normalizes JSON envelopes, redaction, transport markers, and structured recoverable errors.
 - Adapter code does not contain research business logic.
 
@@ -31,9 +31,10 @@ In default mode, Codex-Scientist records, validates, organizes, retrieves, summa
 
 - project-local layout under `CodexScientist/`;
 - append-only event logs and atomic snapshots;
-- manifest, trial, runner, queue, wiki, frontier, journal, review, claim, cost, migration, and soak services.
+- manifest, trial, runner, queue, wiki, frontier, journal, review, claim, cost, migration, and soak services;
+- goal loop, stage router, method improvement, progress watchdog, checkpoint, resume, and context-pack services.
 
-MCP handlers and CLI parsers call the same service layer. The implementation must not shell out to `csctl.py` as the main MCP path.
+MCP handlers and terminal compatibility parsers call the same service layer. The MCP implementation must not shell out to terminal compatibility commands as its main path.
 
 ## CodexScientist native runtime
 
@@ -55,14 +56,20 @@ CodexScientist semantic/provenance layer:
 - durable user requirements;
 - memory and artifact records;
 - baseline, experiment, analysis, paper, reliability, and evidence ledgers;
+- method scoreboard/frontier, novelty scoring, duplicate block, related-work gate, claim gate, progress watchdog, checkpoint, and resume anchors;
 - formal commands whose logs must become quest-local provenance.
 
 Codex does the mechanical action; CodexScientist records the research meaning.
 
 ## MCP boundary
 
-The stable curated MCP exposes a small `cs_*` tool family for repeated workflows such as doctor/status, resume/checkpoint/delta, manifest validation, queue status, log digest, artifact index, context packs, and bounded skill retrieval. It deliberately avoids an all-tools/full-runtime MCP.
+The MCP boundary uses explicit profiles:
 
-Long procedures stay in skills and references, but the default access path is `cs_skill_search` followed by a bounded `cs_skill_load` view. CLI fallback remains available and should continue to pass parity smoke tests against representative MCP calls.
+- core profile: 14 tools for doctor/status, goal/context state, checkpoint/resume/delta, and bounded skill retrieval;
+- goal profile: 47 tools for Codex-native `/goal` context after stage gating;
+- active stage subset: each goal turn should use `cs_goal_context` and `allowed_tools_for_stage` before choosing a tool;
+- admin profile: not registered as default MCP and not referenced by default prompt/skill routing.
+
+Long procedures stay in skills and references, but the default access path is `cs_skill_search` followed by a bounded `cs_skill_load` view.
 
 Context recovery should preserve enough structure to continue correctly: normal resume uses 4K-8K chars, incident/debug/audit may use 12K-24K chars, and full skill/raw log/full artifact reads require explicit opt-in.

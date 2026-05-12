@@ -7,11 +7,14 @@ from .shared import ensure_dir
 
 
 def _looks_like_repo_root(path: Path) -> bool:
-    return (
-        (path / "pyproject.toml").exists()
-        and (path / "src" / "codexscientist").exists()
-        and (path / "src" / "skills").exists()
-    )
+    """Return true for full upstream repos and adapter resource repos.
+
+    CodexScientist's adapter ships a project-local resource repo containing
+    prompts/skills but not the upstream Python package under src/codexscientist.
+    Stage routing only needs pyproject.toml plus src/skills, so accepting that
+    lighter layout prevents an empty stage-skill set in native MCP calls.
+    """
+    return (path / "pyproject.toml").exists() and (path / "src" / "skills").exists()
 
 
 def repo_root() -> Path:

@@ -1,6 +1,6 @@
 # CodexScientist Usage
 
-CodexScientist is operated through a stable curated MCP control plane plus a CLI fallback.
+CodexScientist is operated through an MCP-only default research control plane plus isolated hidden admin/debug CLI documentation for human/admin/debug/CI/recovery compatibility.
 
 ## Recommended control plane
 
@@ -12,16 +12,9 @@ python scripts/cs_mcp.py --stdio-smoke tools/list
 python scripts/cs_mcp.py --stdio-smoke call cs_doctor '{}'
 ```
 
-The curated MCP exposes bounded `cs_*` tools, including doctor/status, resume/checkpoint/delta, manifest validation, runner/queue status, log digest, artifact index, context pack, and skill retrieval. It is intentionally smaller than the full native runtime.
+The MCP surface exposes bounded `cs_*` tools. Default `tools/list` returns the 14-tool core profile; Codex goal context uses the 47-tool goal profile filtered by active stage subset.
 
-Use CLI fallback when MCP is unavailable, when CI needs a plain command, or when debugging/recovery/migration requires terminal output:
-
-```bash
-python scripts/csctl.py doctor --format json
-python scripts/csctl.py list-tools --format json
-python scripts/csctl.py manifest validate --format json
-python scripts/csctl.py queue status --format json
-```
+Use `docs/ADMIN_CLI.md` only when a human/admin/debug/CI/recovery task explicitly needs terminal compatibility commands.
 
 ## Runtime path
 
@@ -31,7 +24,7 @@ Runtime state lives under:
 <project>/CodexScientist/
 ```
 
-This tree stores quests, memory, artifacts, logs, queue/runner state, config, cache, and summaries.
+This tree stores quests, memory, artifacts, logs, queue/runner state, config, cache, progress watchdog state, checkpoints, and summaries.
 
 ## Codex-native operation boundary
 
@@ -44,10 +37,22 @@ Codex-native operation layer:
 CodexScientist semantic/provenance layer:
 
 - quest lifecycle and mode state;
-- durable user requirements, quest memory, artifacts, milestones, decisions, main experiment records, analysis slices, baseline gates, paper bundles, and strict-research ledgers;
+- durable user requirements, quest memory, artifacts, milestones, decisions, main experiment records, analysis slices, baseline gates, paper bundles, strict-research ledgers, and claim gate decisions;
+- progress watchdog, checkpoint/resume, method scoreboard/frontier, novelty scoring, duplicate block, related-work gate, and evidence gate state;
 - formal experiment, baseline, analysis-slice, or paper-facing commands whose logs must become quest-local evidence.
 
 Practical rule: Codex does the mechanical action; CodexScientist records the research meaning.
+
+## Goal context flow
+
+`/goal` is Codex-native. CodexScientist does not implement slash commands. After Codex has entered goal context, use:
+
+1. `cs_new_quest` and `cs_record_user_requirement` to anchor the task;
+2. `cs_goal_context` to read `allowed_tools_for_stage`;
+3. baseline/idea/experiment/analysis tools for the active stage;
+4. `cs_goal_watchdog` during long-running work;
+5. `cs_checkpoint` at stage boundaries;
+6. `cs_resume_brief` and `cs_pack_delta` after context compaction or interruption.
 
 ## Skill retrieval and context budget
 
@@ -56,7 +61,7 @@ Do not reread long skill files by default. Use:
 - `cs_skill_search` to get short skill cards.
 - `cs_skill_load` to load a bounded `preview`, `runtime`, `risk`, `sections`, or explicitly allowed `full` view.
 
-Long-task recovery should normally use `cs_status` plus `cs_resume_brief` in the 4K-8K range. Use `cs_pack_delta` for post-checkpoint changes, `cs_log_digest` before raw logs, `cs_artifact_index` before opening artifacts, and `cs_checkpoint` at stage boundaries. Context budget is not smaller is better; incident/debug/audit work may expand to 12K-24K while still avoiding raw full logs and full artifact content unless explicitly requested.
+Long-task recovery should normally use `cs_status` plus `cs_resume_brief` in the 4K-8K range. Use `cs_pack_delta` for post-checkpoint changes, `cs_log_digest` before raw logs, `cs_artifact_index` before opening artifacts, `cs_goal_watchdog` before assuming a runner is healthy, and `cs_checkpoint` at stage boundaries. Context budget is not smaller is better; incident/debug/audit work may expand to 12K-24K while still avoiding raw full logs and full artifact content unless explicitly requested.
 
 ## Default autonomy
 
@@ -65,10 +70,10 @@ The default mode is `copilot`. Automatic idea or novelty improvement requires an
 ## Safety boundaries
 
 - Use only curated `cs_*` MCP tools in the default MCP path.
-- Keep CLI fallback available but do not use it as the primary MCP implementation.
+- Keep hidden admin/debug CLI available but isolated from the default agent-facing research path.
 - Avoid all-tools/full-runtime MCP registration.
 - Keep large logs, ledgers, papers, and reference repositories out of context unless an explicit bounded raw read is needed.
-- Use `cs_bash_exec` only when the command itself must be auditable CodexScientist provenance.
+- Use `cs_bash_exec` only when the command itself must be auditable CodexScientist provenance, not as a general shell replacement.
 
 ## Long-run claims
 

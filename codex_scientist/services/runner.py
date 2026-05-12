@@ -39,11 +39,17 @@ class RunnerService:
         return self.runs_dir / run_id / "runner.json"
 
     def _write(self, run: dict[str, Any]) -> None:
-        path = self._run_path(run["run_id"])
-        path.parent.mkdir(parents=True, exist_ok=True)
-        tmp = path.with_name(f"{path.name}.tmp")
-        tmp.write_text(json.dumps(run, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-        tmp.replace(path)
+        paths = [self._run_path(run["run_id"])]
+        detail_path = str(run.get("detail_path") or "").strip()
+        if detail_path:
+            detail = Path(detail_path)
+            if detail not in paths:
+                paths.insert(0, detail)
+        for path in paths:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            tmp = path.with_name(f"{path.name}.tmp")
+            tmp.write_text(json.dumps(run, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+            tmp.replace(path)
 
     def _write_heartbeat(self, run: dict[str, Any]) -> None:
         heartbeat_path = Path(run["heartbeat_path"])
@@ -51,7 +57,11 @@ class RunnerService:
         heartbeat_path.write_text(str(run["heartbeat_at"]) + "\n", encoding="utf-8")
 
     def get(self, run_id: str) -> dict[str, Any]:
-        return json.loads(self._run_path(run_id).read_text(encoding="utf-8"))
+        run = json.loads(self._run_path(run_id).read_text(encoding="utf-8"))
+        detail_path = str(run.get("detail_path") or "").strip()
+        if detail_path and Path(detail_path).exists():
+            return json.loads(Path(detail_path).read_text(encoding="utf-8"))
+        return run
 
     def list_runs(self) -> list[dict[str, Any]]:
         if not self.runs_dir.exists():
@@ -107,9 +117,10 @@ class RunnerService:
         except (OSError, ValueError):
             return None
 
-    def start(self, *, command: str, job_id: str | None = None, dry_run: bool = False) -> dict[str, Any]:
+    def start(self, *, command: str, job_id: str | None = None, dry_run: bool = False, quest_id: str | None = None) -> dict[str, Any]:
         run_id = self._next_run_id()
-        run_dir = self.runs_dir / run_id
+        quest = self.layout.ensure_quest_layout(quest_id) if quest_id else None
+        run_dir = (quest.runs_dir / run_id) if quest else (self.runs_dir / run_id)
         log_path = run_dir / "run.log"
         stderr_log_path = run_dir / "stderr.log"
         exit_code_path = run_dir / "exit_code.txt"
@@ -136,6 +147,8 @@ class RunnerService:
             "pid": None,
             "pgid": None,
         }
+        if quest is not None:
+            run.update({"quest_id": quest.quest_id, "quest_root": str(quest.quest_root), "detail_path": str(run_dir / "runner.json")})
         if not dry_run:
             wrapped_command = (
                 f"{command}\n"

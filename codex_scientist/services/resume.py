@@ -6,6 +6,7 @@ from typing import Any
 from .checkpoint import CheckpointService
 from .event_store import EventStore
 from .manifest import ManifestService
+from .goal_loop import GoalLoopService
 from .project_state import ProjectLayout
 from .queue import QueueService
 from .runner import RunnerService
@@ -43,7 +44,7 @@ class ResumeService:
     @staticmethod
     def _active_run_id(runs: list[dict[str, Any]]) -> str | None:
         for run in reversed(runs):
-            if not run.get("terminal") and run.get("status") not in {"completed", "failed_other", "cancelled", "stuck"}:
+            if run.get("status") in {"running", "leased", "pending", "stuck"}:
                 return str(run.get("run_id"))
         return None
 
@@ -53,6 +54,7 @@ class ResumeService:
         max_chars: int = 8000,
         include_recent_events: int = 5,
         include_risks: bool = True,
+        quest_id: str | None = None,
     ) -> dict[str, Any]:
         manifest = ManifestService(self.layout).read()
         latest = self.checkpoints.latest_checkpoint() or {}
@@ -69,16 +71,29 @@ class ResumeService:
             warnings.append("budget_too_small")
 
         risk_flags = list(latest.get("risk_flags") or []) if include_risks else []
+        goal_loop_state = GoalLoopService(self.layout).read_state(quest_id) if quest_id else None
+        current_gate = goal_loop_state.get("current_gate") if isinstance(goal_loop_state, dict) and isinstance(goal_loop_state.get("current_gate"), dict) else {}
+        next_action_obj = goal_loop_state.get("next_action") if isinstance(goal_loop_state, dict) and isinstance(goal_loop_state.get("next_action"), dict) else {}
+        next_required_tool = str(current_gate.get("required_tool") or next_action_obj.get("required_tool") or "").strip() or None
+        blocker = str(current_gate.get("blocking_reason") or blocked_reason or "").strip() or None
+        active_run_id = self._active_run_id(runs) or (str(current_gate.get("run_id")) if current_gate.get("run_id") else None)
         brief = {
             "ok": True,
             "goal": goal,
+            "current_quest": quest_id,
+            "active_stage": (goal_loop_state or {}).get("active_stage") if isinstance(goal_loop_state, dict) else None,
+            "current_gate": current_gate or None,
+            "last_completed_action": latest.get("completed", [None])[-1] if isinstance(latest.get("completed"), list) and latest.get("completed") else None,
+            "blocker": blocker,
+            "next_required_mcp_tool": next_required_tool,
             "autonomy_mode": self._autonomy_mode(manifest),
             "active_phase": latest.get("phase"),
             "active_trial_id": None,
             "active_job_id": self._active_job_id(queue_status),
-            "active_run_id": self._active_run_id(runs),
+            "active_run_id": active_run_id,
             "last_checkpoint": latest or None,
-            "next_action": str(latest.get("next_action") or "inspect gates and choose one bounded next action"),
+            "goal_loop_state": goal_loop_state,
+            "next_action": str(latest.get("next_action") or (goal_loop_state or {}).get("next_action") or "inspect gates and choose one bounded next action"),
             "blocked_reason": blocked_reason,
             "validation_status": list(latest.get("validation") or []),
             "budget_status": {
@@ -96,6 +111,7 @@ class ResumeService:
                 {"path": str(self.layout.state_root), "kind": "state_root"},
                 {"path": str(self.checkpoints.latest_path), "kind": "latest_checkpoint"},
                 {"path": str(self.layout.event_log_path), "kind": "event_log"},
+                *([{"path": str(GoalLoopService(self.layout).state_path(quest_id)), "kind": "goal_loop_state"}] if quest_id else []),
             ],
             "warnings": warnings,
         }

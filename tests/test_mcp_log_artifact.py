@@ -31,11 +31,16 @@ def _run_csctl(project: Path, *args: str) -> dict:
     return json.loads(completed.stdout)
 
 
-def test_p3_log_and_artifact_tools_are_registered():
-    names = {tool["name"] for tool in tools_list_payload()["tools"]}
+def test_p3_log_and_artifact_tools_are_registered_in_explicit_goal_profile():
+    default_names = {tool["name"] for tool in tools_list_payload()["tools"]}
+    goal_names = {tool["name"] for tool in tools_list_payload({"profile": "goal"})["tools"]}
 
-    assert {"cs_log_digest", "cs_artifact_index"} <= names
-    assert len(names) == 20
+    assert {"cs_log_digest", "cs_artifact_index"}.isdisjoint(default_names)
+    assert {"cs_log_digest", "cs_artifact_index"} <= goal_names
+    assert len(default_names) <= 14
+    assert "cs_goal_state" in default_names
+    assert "cs_goal_next_action" in default_names
+    assert len(goal_names) < 48
 
 
 def test_mcp_log_digest_and_artifact_index_match_cli_core_fields(tmp_path: Path):

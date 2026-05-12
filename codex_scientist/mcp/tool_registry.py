@@ -1,22 +1,22 @@
 """Curated MCP tool registry for CodexScientist."""
 from __future__ import annotations
 
-import json
 import re
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Callable
 
-from codex_scientist.runtime import tools as native_tools
-from codex_scientist.adapters.cli import normalize_envelope
+from codex_scientist.mcp import goal_context, research_tools
 from codex_scientist.mcp.envelope import apply_budget_envelope
 from codex_scientist.mcp.skill_index import load_skill, search_skills
+from codex_scientist.profiles import DEFAULT_PROFILE_NAME, get_profile_tool_names
 from codex_scientist.services.artifacts import ArtifactIndexService
 from codex_scientist.services.checkpoint import CheckpointService
 from codex_scientist.services.context_pack import ContextPackService
 from codex_scientist.services.costs import CostApprovalService
 from codex_scientist.services.manifest import ManifestService
 from codex_scientist.services.project_state import ProjectLayout
+from codex_scientist.services.progress_watchdog import ProgressWatchdogService
 from codex_scientist.services.queue import QueueService
 from codex_scientist.services.research_wiki import ResearchWikiService
 from codex_scientist.services.review import ReviewService
@@ -33,13 +33,16 @@ _RUN_ID_RE = re.compile(r"^R\d{4}$")
 class ToolSpec:
     name: str
     description: str
+    group: str = "core"
     read_only: bool = True
     destructive: bool = False
     idempotent: bool = True
     open_world: bool = False
+    required_context_keys: tuple[str, ...] = ()
 
     def as_dict(self) -> dict[str, Any]:
         data = asdict(self)
+        data["required_context_keys"] = list(self.required_context_keys)
         data["inputSchema"] = {"type": "object", "additionalProperties": True}
         data["annotations"] = {
             "readOnlyHint": self.read_only,
@@ -55,29 +58,17 @@ def _layout(args: dict[str, Any]) -> ProjectLayout:
     return ProjectLayout.from_project_root(project)
 
 
-def _native_call(tool_name: str, args: dict[str, Any]) -> dict[str, Any]:
-    handler = getattr(native_tools, tool_name)
-    raw = handler(args)
-    payload = json.loads(raw) if isinstance(raw, str) else dict(raw)
-    payload = normalize_envelope(payload)
-    payload["transport"] = "codexscientist-mcp"
-    payload["mcp"] = True
-    payload["tool"] = tool_name
-    return payload
-
-
 def _simple_status(args: dict[str, Any]) -> dict[str, Any]:
     project = Path(args.get("project") or ".").resolve()
     state_root = project / "CodexScientist"
-    fallback_state_root = project / "CodexScientist"
     return {
         "ok": True,
         "transport": "codexscientist-mcp",
         "mcp": True,
         "tool": "cs_status",
         "project": str(project),
-        "state_root": str(state_root if state_root.exists() else fallback_state_root),
-        "state_root_exists": state_root.exists() or fallback_state_root.exists(),
+        "state_root": str(state_root),
+        "state_root_exists": state_root.exists(),
     }
 
 
@@ -133,7 +124,7 @@ def _artifact_index(args: dict[str, Any]) -> dict[str, Any]:
 
 def _context_pack(args: dict[str, Any]) -> dict[str, Any]:
     max_chars = max(200, min(int(args.get("max_chars") or 4000), 12000))
-    return ContextPackService(_layout(args)).write_context_pack(max_chars=max_chars)
+    return ContextPackService(_layout(args)).write_context_pack(max_chars=max_chars, quest_id=str(args.get("quest_id") or "").strip() or None)
 
 
 def _resume_brief(args: dict[str, Any]) -> dict[str, Any]:
@@ -144,11 +135,13 @@ def _resume_brief(args: dict[str, Any]) -> dict[str, Any]:
         max_chars=max_chars,
         include_recent_events=include_recent_events,
         include_risks=include_risks,
+        quest_id=str(args.get("quest_id") or "").strip() or None,
     )
 
 
 def _checkpoint(args: dict[str, Any]) -> dict[str, Any]:
-    return CheckpointService(_layout(args)).create_checkpoint(
+    layout = _layout(args)
+    payload = CheckpointService(layout).create_checkpoint(
         phase=str(args.get("phase") or "unknown"),
         completed=list(args.get("completed") or []),
         decisions=list(args.get("decisions") or []),
@@ -158,6 +151,19 @@ def _checkpoint(args: dict[str, Any]) -> dict[str, Any]:
         risk_flags=list(args.get("risk_flags") or []),
         idempotency_key=args.get("idempotency_key"),
     )
+    quest_id = str(args.get("quest_id") or "").strip()
+    if quest_id and payload.get("ok"):
+        payload.update(ProgressWatchdogService(layout).reset_after_checkpoint(quest_id=quest_id, checkpoint=payload))
+    return payload
+
+
+def _goal_watchdog(args: dict[str, Any]) -> dict[str, Any]:
+    quest_id = str(args.get("quest_id") or "").strip()
+    if not quest_id:
+        return {"ok": False, "error": "quest_id is required", "error_type": "missing_argument", "recoverable": True}
+    raw_timeout = args.get("timeout_seconds")
+    timeout_seconds = 1800 if raw_timeout in {None, ""} else max(0, min(int(raw_timeout), 604800))
+    return ProgressWatchdogService(_layout(args)).reconcile_goal_runtime(quest_id=quest_id, timeout_seconds=timeout_seconds)
 
 
 def _pack_delta(args: dict[str, Any]) -> dict[str, Any]:
@@ -209,20 +215,53 @@ def _soak_crash_resume(args: dict[str, Any]) -> dict[str, Any]:
     return SoakService(_layout(args)).crash_resume_smoke(restart_label=restart_label)
 
 
+def _schema_description(name: str, fallback: str) -> str:
+    schema = research_tools.PUBLIC_SCHEMA_BY_NAME.get(name) or research_tools.SCHEMA_BY_NAME.get(name) or {}
+    return str(schema.get("description") or fallback)
+
+
+def _spec(name: str, fallback: str, *, group: str, read_only: bool = True, idempotent: bool = True, required: tuple[str, ...] = ()) -> ToolSpec:
+    return ToolSpec(
+        name=name,
+        description=_schema_description(name, fallback),
+        group=group,
+        read_only=read_only,
+        idempotent=idempotent,
+        required_context_keys=required,
+    )
+
+
 _HANDLERS: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
-    "cs_doctor": lambda args: _native_call("cs_doctor", args),
+    "cs_doctor": research_tools.native_handler("cs_doctor"),
     "cs_status": _simple_status,
+    "cs_goal_context": goal_context.goal_context,
+    "cs_goal_state": goal_context.goal_state,
+    "cs_goal_next_action": goal_context.goal_next_action,
+    "cs_tool_schema": research_tools.tool_schema,
+    "cs_get_quest_state": research_tools.native_handler("cs_get_quest_state"),
+    "cs_set_active_quest": research_tools.native_handler("cs_set_active_quest"),
     "cs_context_pack": _context_pack,
     "cs_resume_brief": _resume_brief,
     "cs_checkpoint": _checkpoint,
+    "cs_goal_watchdog": _goal_watchdog,
     "cs_pack_delta": _pack_delta,
+    "cs_manifest_init": research_tools.manifest_init,
+    "cs_manifest_record_baseline": research_tools.manifest_record_baseline,
     "cs_manifest_validate": _manifest_validate,
-    "cs_trial_show": _trial_show,
+    "cs_queue_submit": research_tools.queue_submit,
+    "cs_queue_start_attempt": research_tools.queue_start_attempt,
+    "cs_queue_status": _queue_status,
+    "cs_queue_reconcile": _queue_reconcile,
+    "cs_runner_start": research_tools.runner_start,
     "cs_runner_status": _runner_status,
     "cs_log_digest": _log_digest,
     "cs_artifact_index": _artifact_index,
-    "cs_queue_status": _queue_status,
-    "cs_queue_reconcile": _queue_reconcile,
+    "cs_trial_propose": research_tools.trial_propose,
+    "cs_trial_plan": research_tools.trial_plan,
+    "cs_trial_ready": research_tools.trial_ready,
+    "cs_trial_evaluate": research_tools.trial_evaluate,
+    "cs_trial_decide": research_tools.trial_decide,
+    "cs_trial_show": _trial_show,
     "cs_wiki_query_pack": _wiki_query_pack,
     "cs_review_status": _review_status,
     "cs_cost_status": _cost_status,
@@ -232,37 +271,128 @@ _HANDLERS: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
     "cs_skill_load": load_skill,
 }
 
+for _native_name in [
+    "cs_new_quest",
+    "cs_record_user_requirement",
+    "cs_memory_search",
+    "cs_memory_write",
+    "cs_artifact_record",
+    "cs_create_local_baseline",
+    "cs_confirm_baseline",
+    "cs_submit_idea",
+    "cs_get_method_scoreboard",
+    "cs_get_optimization_frontier",
+    "cs_record_main_experiment",
+    "cs_create_analysis_campaign",
+    "cs_get_analysis_campaign",
+    "cs_record_analysis_slice",
+    "cs_bash_exec",
+    "cs_submit_paper_outline",
+    "cs_submit_paper_bundle",
+    "cs_refresh_summary",
+    "cs_paper_fetch",
+]:
+    _HANDLERS[_native_name] = research_tools.native_handler(_native_name)
+
+_HANDLERS["cs_submit_idea"] = research_tools.submit_idea
+_HANDLERS["cs_record_main_experiment"] = research_tools.record_main_experiment
+_HANDLERS["cs_record_negative_result"] = research_tools.record_negative_result
+_HANDLERS["cs_update_method_scoreboard"] = research_tools.update_method_scoreboard
+_HANDLERS["cs_select_next_idea"] = research_tools.select_next_idea
+_HANDLERS["cs_claim_gate"] = research_tools.claim_gate
+
 _SPECS: list[ToolSpec] = [
-    ToolSpec("cs_doctor", "Run CodexScientist diagnostics without external legacy commands.", read_only=False),
-    ToolSpec("cs_status", "Return a compact CodexScientist project status snapshot."),
-    ToolSpec("cs_context_pack", "Generate or read a bounded context pack.", read_only=False),
-    ToolSpec("cs_resume_brief", "Return stable low-token recovery anchors for a project."),
-    ToolSpec("cs_checkpoint", "Persist a compact project-local recovery checkpoint.", read_only=False),
-    ToolSpec("cs_pack_delta", "Return event deltas since an event sequence or checkpoint."),
-    ToolSpec("cs_manifest_validate", "Validate the project-local research manifest.", read_only=False),
-    ToolSpec("cs_trial_show", "Read one trial record by id."),
-    ToolSpec("cs_runner_status", "Read one or all runner records."),
-    ToolSpec("cs_log_digest", "Return a bounded redacted digest for one runner log."),
-    ToolSpec("cs_artifact_index", "Return artifact references, hashes, sizes, and types without file content."),
-    ToolSpec("cs_queue_status", "Read queue status."),
-    ToolSpec("cs_queue_reconcile", "Reconcile expired queue leases.", read_only=False),
-    ToolSpec("cs_wiki_query_pack", "Build a bounded research wiki query pack."),
-    ToolSpec("cs_review_status", "Read review artifact status."),
-    ToolSpec("cs_cost_status", "Read latest cost and approval gate status."),
-    ToolSpec("cs_soak_accelerated", "Run accelerated fake-clock long-run validation.", read_only=False, idempotent=False),
-    ToolSpec("cs_soak_crash_resume", "Record restart and reconcile expired leases.", read_only=False, idempotent=False),
-    ToolSpec("cs_skill_search", "Search local CodexScientist skills and return short candidate cards."),
-    ToolSpec("cs_skill_load", "Load a bounded view of one indexed CodexScientist skill."),
+    _spec("cs_doctor", "Run CodexScientist diagnostics.", group="core", read_only=False),
+    _spec("cs_status", "Return a compact CodexScientist project status snapshot.", group="core"),
+    _spec("cs_goal_context", "Return active-only Codex goal context for the current quest stage.", group="goal", required=("quest_id",)),
+    _spec("cs_goal_state", "Read or update project-local Codex goal loop state.", group="goal", read_only=False, required=("quest_id",)),
+    _spec("cs_goal_next_action", "Return the machine-readable next goal gate action.", group="goal", required=("quest_id",)),
+    _spec("cs_tool_schema", "Return full schema for one MCP tool on demand.", group="schema"),
+    _spec("cs_get_quest_state", "Read compact or full state for a quest.", group="quest", required=("quest_id",)),
+    _spec("cs_set_active_quest", "Set the active quest for this session.", group="quest", read_only=False, required=("quest_id",)),
+    _spec("cs_context_pack", "Generate or read a bounded context pack.", group="checkpoint", read_only=False),
+    _spec("cs_resume_brief", "Return stable low-token recovery anchors for a project.", group="checkpoint"),
+    _spec("cs_checkpoint", "Persist a compact project-local recovery checkpoint.", group="checkpoint", read_only=False, idempotent=False),
+    _spec("cs_goal_watchdog", "Reconcile goal progress, stuck runners, and checkpoint pressure.", group="checkpoint", read_only=False, required=("quest_id",)),
+    _spec("cs_pack_delta", "Return event deltas since an event sequence or checkpoint.", group="checkpoint"),
+    _spec("cs_skill_search", "Search local CodexScientist skills and return short candidate cards.", group="skill"),
+    _spec("cs_skill_load", "Load a bounded view of one indexed CodexScientist skill.", group="skill"),
+    _spec("cs_new_quest", "Create a new quest natively.", group="quest", read_only=False, idempotent=False, required=("goal",)),
+    _spec("cs_record_user_requirement", "Record a durable user requirement.", group="quest", read_only=False, idempotent=False, required=("message",)),
+    _spec("cs_memory_search", "Search memory cards.", group="memory", required=("query",)),
+    _spec("cs_memory_write", "Write a memory card.", group="memory", read_only=False, idempotent=False, required=("title",)),
+    _spec("cs_artifact_record", "Record a generic artifact.", group="artifact", read_only=False, idempotent=False, required=("quest_id",)),
+    _spec("cs_create_local_baseline", "Create a local baseline stub.", group="baseline", read_only=False, idempotent=False, required=("quest_id", "baseline_id")),
+    _spec("cs_confirm_baseline", "Confirm a baseline gate.", group="baseline", read_only=False, idempotent=False, required=("quest_id", "baseline_path")),
+    _spec("cs_submit_idea", "Submit or revise an idea candidate with a novelty contract.", group="idea", read_only=False, idempotent=False, required=("quest_id", "title", "novelty_contract")),
+    _spec("cs_get_method_scoreboard", "Read or refresh the method scoreboard.", group="idea", read_only=False, required=("quest_id",)),
+    _spec("cs_get_optimization_frontier", "Read optimization frontier summary.", group="idea", required=("quest_id",)),
+    _spec("cs_record_negative_result", "Record a negative method result into quest method memory.", group="idea", read_only=False, idempotent=False, required=("quest_id", "idea_id")),
+    _spec("cs_update_method_scoreboard", "Update method improvement scoreboard and frontier after an experiment.", group="idea", read_only=False, idempotent=False, required=("quest_id", "idea_id")),
+    _spec("cs_select_next_idea", "Select the next non-duplicate idea candidate from the frontier.", group="idea", read_only=False, required=("quest_id",)),
+    _spec("cs_claim_gate", "Check whether a paper-facing claim has enough baseline, metric, evidence, analysis, and seed support.", group="analysis", read_only=False, idempotent=False, required=("quest_id", "claim_id")),
+    _spec("cs_record_main_experiment", "Record a main experiment run.", group="experiment", read_only=False, idempotent=False, required=("quest_id", "run_id")),
+    _spec("cs_create_analysis_campaign", "Create an analysis campaign.", group="analysis", read_only=False, idempotent=False, required=("quest_id", "campaign_title")),
+    _spec("cs_get_analysis_campaign", "Read analysis campaign state.", group="analysis", required=("quest_id",)),
+    _spec("cs_record_analysis_slice", "Record an analysis slice result.", group="analysis", read_only=False, idempotent=False, required=("quest_id", "campaign_id", "slice_id")),
+    _spec("cs_bash_exec", "Run/list/read/wait/stop quest-local bash sessions.", group="experiment", read_only=False, idempotent=False, required=("quest_id",)),
+    _spec("cs_submit_paper_outline", "Submit/select/revise a paper outline.", group="paper", read_only=False, idempotent=False, required=("quest_id",)),
+    _spec("cs_submit_paper_bundle", "Submit a paper bundle manifest.", group="paper", read_only=False, idempotent=False, required=("quest_id",)),
+    _spec("cs_refresh_summary", "Refresh SUMMARY.md from recent state.", group="paper", read_only=False, idempotent=False, required=("quest_id",)),
+    _spec("cs_paper_fetch", "Fetch official paper PDF into the quest library.", group="paper", read_only=False, idempotent=False, required=("quest_id",)),
+    _spec("cs_manifest_init", "Initialize a project-local research manifest.", group="manifest", read_only=False, idempotent=False, required=("name", "goal")),
+    _spec("cs_manifest_record_baseline", "Record manifest baseline readiness.", group="manifest", read_only=False, idempotent=False, required=("baseline_id",)),
+    _spec("cs_manifest_validate", "Validate the project-local research manifest.", group="manifest", read_only=False),
+    _spec("cs_queue_submit", "Submit a local runner queue job.", group="queue", read_only=False, idempotent=False, required=("job_id", "command")),
+    _spec("cs_queue_start_attempt", "Start a queued job attempt.", group="queue", read_only=False, idempotent=False, required=("job_id",)),
+    _spec("cs_queue_status", "Read queue status.", group="queue"),
+    _spec("cs_queue_reconcile", "Reconcile expired queue leases.", group="queue", read_only=False),
+    _spec("cs_runner_start", "Start or dry-run a project-local runner record.", group="runner", read_only=False, idempotent=False, required=("command",)),
+    _spec("cs_runner_status", "Read one or all runner records.", group="runner"),
+    _spec("cs_log_digest", "Return a bounded redacted digest for one runner log.", group="runner", required=("run_id",)),
+    _spec("cs_artifact_index", "Return artifact references, hashes, sizes, and types without file content.", group="artifact"),
+    _spec("cs_trial_propose", "Propose a trial.", group="trial", read_only=False, idempotent=False, required=("quest_id", "idea_id")),
+    _spec("cs_trial_plan", "Plan a proposed trial.", group="trial", read_only=False, idempotent=False, required=("trial_id",)),
+    _spec("cs_trial_ready", "Move a planned trial through readiness gates.", group="trial", read_only=False, idempotent=False, required=("trial_id",)),
+    _spec("cs_trial_evaluate", "Evaluate a ready trial against metric contracts.", group="trial", read_only=False, idempotent=False, required=("trial_id",)),
+    _spec("cs_trial_decide", "Keep or revert an evaluated trial.", group="trial", read_only=False, idempotent=False, required=("trial_id",)),
+    _spec("cs_trial_show", "Read one trial record by id.", group="trial", required=("trial_id",)),
+    _spec("cs_wiki_query_pack", "Build a bounded research wiki query pack.", group="wiki"),
+    _spec("cs_review_status", "Read review artifact status.", group="review"),
+    _spec("cs_cost_status", "Read latest cost and approval gate status.", group="cost"),
+    _spec("cs_soak_accelerated", "Run accelerated fake-clock long-run validation.", group="soak", read_only=False, idempotent=False),
+    _spec("cs_soak_crash_resume", "Record restart and reconcile expired leases.", group="soak", read_only=False, idempotent=False),
 ]
 
-
-def list_tool_specs() -> list[ToolSpec]:
-    return list(_SPECS)
+_SPECS_BY_NAME = {spec.name: spec for spec in _SPECS}
 
 
-def tools_list_payload() -> dict[str, Any]:
+def list_tool_specs(profile: str | None = None, stage: str | None = None) -> list[ToolSpec]:
+    profile_name = profile or DEFAULT_PROFILE_NAME
+    names = get_profile_tool_names(profile_name, stage=stage)
+    return [spec for name in names if (spec := _SPECS_BY_NAME.get(name)) is not None]
+
+
+def tools_list_payload(args: dict[str, Any] | None = None) -> dict[str, Any]:
+    payload_args = dict(args or {})
+    profile = str(payload_args.get("profile") or DEFAULT_PROFILE_NAME).strip() or DEFAULT_PROFILE_NAME
+    stage = str(payload_args.get("stage") or payload_args.get("active_stage") or "").strip() or None
+    try:
+        specs = list_tool_specs(profile, stage)
+    except KeyError as exc:
+        return apply_budget_envelope(
+            {"ok": False, "error": str(exc), "error_type": "unknown_profile", "recoverable": True, "profile": profile},
+            tool_name="tools/list",
+        )
     return apply_budget_envelope(
-        {"ok": True, "server": "codexscientist_mcp", "tools": [spec.as_dict() for spec in _SPECS]},
+        {
+            "ok": True,
+            "server": "codexscientist_mcp",
+            "profile": profile,
+            "stage": stage,
+            "compact": True,
+            "tools": [spec.as_dict() for spec in specs],
+        },
         tool_name="tools/list",
     )
 
@@ -271,8 +401,19 @@ def _finalize_tool_payload(payload: dict[str, Any], *, tool_name: str | None = N
     return apply_budget_envelope(payload, tool_name=tool_name)
 
 
+def _maybe_apply_progress_watchdog(name: str, args: dict[str, Any], payload: dict[str, Any]) -> dict[str, Any]:
+    spec = _SPECS_BY_NAME.get(name)
+    if spec is None or spec.read_only or not payload.get("ok") or name == "cs_checkpoint":
+        return payload
+    quest_id = str(args.get("quest_id") or payload.get("quest_id") or "").strip()
+    if not quest_id:
+        return payload
+    payload.update(ProgressWatchdogService(_layout(args)).record_state_changing_tool(quest_id=quest_id, tool_name=name, args=args, payload=payload))
+    return payload
+
+
 def call_tool(name: str, args: dict[str, Any] | None = None) -> dict[str, Any]:
-    if name not in {spec.name for spec in _SPECS}:
+    if name not in _SPECS_BY_NAME:
         return _finalize_tool_payload(
             {
                 "ok": False,
@@ -291,12 +432,13 @@ def call_tool(name: str, args: dict[str, Any] | None = None) -> dict[str, Any]:
                 "error": f"MCP tool not implemented yet: {name}",
                 "error_type": "not_implemented",
                 "recoverable": True,
-                "suggested_next_action": "Use CLI fallback for this tool family while Phase M3 is in progress.",
+                "suggested_next_action": "Run cs_doctor and implement or enable this MCP tool family; do not switch the default agent research flow to an admin/debug CLI path.",
             },
             tool_name=name,
         )
+    call_args = dict(args or {})
     try:
-        payload = handler(dict(args or {}))
+        payload = handler(call_args)
     except Exception as exc:
         return _finalize_tool_payload(
             {
@@ -307,4 +449,5 @@ def call_tool(name: str, args: dict[str, Any] | None = None) -> dict[str, Any]:
             },
             tool_name=name,
         )
+    payload = _maybe_apply_progress_watchdog(name, call_args, payload)
     return _finalize_tool_payload(payload, tool_name=name)

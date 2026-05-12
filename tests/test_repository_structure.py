@@ -78,7 +78,7 @@ def test_ci_workflow_installs_project_with_dev_dependencies():
     assert "python -m pip install pytest vulture" not in workflow
 
 
-def test_repository_layout_doc_names_canonical_trees():
+def test_repository_layout_doc_names_default_agent_facing_trees():
     layout = (ROOT / "docs" / "REPOSITORY_LAYOUT.md").read_text(encoding="utf-8")
     required = [
         "codex_scientist/services",
@@ -87,11 +87,16 @@ def test_repository_layout_doc_names_canonical_trees():
         "codex_scientist/runtime/resources",
         "skills/",
         "scripts/cs_mcp.py",
-        "scripts/csctl.py",
         "CodexScientist/",
     ]
     for marker in required:
         assert marker in layout
+    assert "scripts/csctl.py" not in layout
+    assert "CLI fallback" not in layout
+
+    admin_cli = (ROOT / "docs" / "ADMIN_CLI.md").read_text(encoding="utf-8")
+    assert "scripts/csctl.py" in admin_cli
+    assert "not part of the default agent research path" in admin_cli
 
 
 def test_ci_workflow_runs_core_local_validation_gates():

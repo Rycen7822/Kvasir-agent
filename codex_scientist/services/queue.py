@@ -82,6 +82,23 @@ class QueueService:
                 job.update({key: value for key, value in payload.items() if key != "job_id"})
         return state
 
+    def _quest_refs(self, quest_id: str | None, relative_path: str | Path) -> dict[str, str]:
+        if not quest_id:
+            return {}
+        quest = self.layout.ensure_quest_layout(quest_id)
+        detail_path = quest.detail_path(relative_path)
+        return {"quest_id": quest.quest_id, "quest_root": str(quest.quest_root), "detail_path": str(detail_path)}
+
+    def _write_job_detail(self, job: dict[str, Any]) -> None:
+        detail_path = str(job.get("detail_path") or "").strip()
+        if not detail_path:
+            return
+        path = Path(detail_path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = path.with_name(f"{path.name}.tmp")
+        tmp.write_text(json.dumps(job, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        tmp.replace(path)
+
     @staticmethod
     def _decorate(job: dict[str, Any]) -> dict[str, Any]:
         decorated = dict(job)
@@ -96,7 +113,7 @@ class QueueService:
         decorated.setdefault("resource", {})
         return decorated
 
-    def submit(self, *, job_id: str, command: str, max_attempts: int = 3, retry_policy: str = "oom_or_transient", resource: dict[str, Any] | None = None) -> dict[str, Any]:
+    def submit(self, *, job_id: str, command: str, max_attempts: int = 3, retry_policy: str = "oom_or_transient", resource: dict[str, Any] | None = None, quest_id: str | None = None) -> dict[str, Any]:
         state = self._read_snapshot()
         job = {
             "job_id": job_id,
@@ -109,10 +126,12 @@ class QueueService:
             "max_attempts": max(1, int(max_attempts or 1)),
             "retry_policy": str(retry_policy or "oom_or_transient"),
             "resource": dict(resource or {}),
+            **self._quest_refs(quest_id, Path("runtime") / "queue" / f"{job_id}.json"),
         }
         state["jobs"][job_id] = job
+        self._write_job_detail(job)
         self._write_snapshot(state)
-        self.events.append("queue.job_submitted", {"job_id": job_id, "command": command, "max_attempts": job["max_attempts"], "retry_policy": job["retry_policy"], "resource": job["resource"]}, idempotency_key=f"queue.submit:{job_id}")
+        self.events.append("queue.job_submitted", {"job_id": job_id, "command": command, "max_attempts": job["max_attempts"], "retry_policy": job["retry_policy"], "resource": job["resource"], "quest_id": job.get("quest_id"), "quest_root": job.get("quest_root"), "detail_path": job.get("detail_path")}, idempotency_key=f"queue.submit:{job_id}")
         return {"ok": True, "job": self._decorate(job)}
 
     def update_job(self, job_id: str, status: str, **fields: Any) -> dict[str, Any]:
@@ -121,6 +140,7 @@ class QueueService:
         job["status"] = status
         job.update(fields)
         job["updated_at"] = _utc_now()
+        self._write_job_detail(job)
         self._write_snapshot(state)
         event_payload = {"job_id": job_id, "status": status, **fields}
         self.events.append("queue.job_updated", event_payload)
@@ -167,7 +187,7 @@ class QueueService:
                 "job": self._decorate(job),
             }
         runner = runner or RunnerService(self.layout)
-        started = runner.start(command=str(job.get("command") or ""), job_id=job_id, dry_run=dry_run)
+        started = runner.start(command=str(job.get("command") or ""), job_id=job_id, dry_run=dry_run, quest_id=job.get("quest_id"))
         run = started["run"]
         run_ids = list(job.get("run_ids") or [])
         run_ids.append(run["run_id"])
@@ -181,6 +201,7 @@ class QueueService:
         else:
             job.setdefault("expected_outputs", [])
         job["updated_at"] = _utc_now()
+        self._write_job_detail(job)
         self._write_snapshot(state)
         self.events.append(
             "queue.job_attempt_started",

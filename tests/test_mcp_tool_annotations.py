@@ -20,15 +20,13 @@ def test_mcp_tool_specs_include_safety_annotations():
 
 
 def test_mcp_annotations_mark_state_writing_tools_as_not_read_only():
-    specs = {spec.name: spec.as_dict()["annotations"] for spec in list_tool_specs()}
+    specs = {spec.name: spec.as_dict()["annotations"] for spec in list_tool_specs("goal")}
 
     for name in [
         "cs_doctor",
         "cs_context_pack",
         "cs_manifest_validate",
-        "cs_queue_reconcile",
-        "cs_soak_accelerated",
-        "cs_soak_crash_resume",
+        "cs_goal_state",
     ]:
         assert specs[name]["readOnlyHint"] is False
 

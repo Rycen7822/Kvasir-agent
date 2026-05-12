@@ -51,21 +51,35 @@ class TrialService:
         return self.trials_dir / trial_id / "trial.json"
 
     def _write(self, trial: dict[str, Any]) -> None:
-        path = self._trial_path(trial["trial_id"])
-        path.parent.mkdir(parents=True, exist_ok=True)
-        tmp = path.with_name(f"{path.name}.tmp")
-        tmp.write_text(json.dumps(trial, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-        tmp.replace(path)
+        paths = [self._trial_path(trial["trial_id"])]
+        detail_path = str(trial.get("detail_path") or "").strip()
+        if detail_path:
+            detail = Path(detail_path)
+            if detail not in paths:
+                paths.insert(0, detail)
+        for path in paths:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            tmp = path.with_name(f"{path.name}.tmp")
+            tmp.write_text(json.dumps(trial, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+            tmp.replace(path)
 
     def get(self, trial_id: str) -> dict[str, Any]:
         path = self._trial_path(trial_id)
-        return json.loads(path.read_text(encoding="utf-8"))
+        trial = json.loads(path.read_text(encoding="utf-8"))
+        detail_path = str(trial.get("detail_path") or "").strip()
+        if detail_path and Path(detail_path).exists():
+            return json.loads(Path(detail_path).read_text(encoding="utf-8"))
+        return trial
 
     def propose(self, *, quest_id: str, idea_id: str, hypothesis: str, mechanism: str) -> dict[str, Any]:
         now = _utc_now()
+        trial_id = self._next_trial_id()
+        quest = self.layout.ensure_quest_layout(quest_id)
         trial = {
-            "trial_id": self._next_trial_id(),
-            "quest_id": quest_id,
+            "trial_id": trial_id,
+            "quest_id": quest.quest_id,
+            "quest_root": str(quest.quest_root),
+            "detail_path": str(self.layout.quest_trial_path(quest.quest_id, trial_id)),
             "parent_node_id": None,
             "idea_id": idea_id,
             "status": "proposed",

@@ -1,6 +1,6 @@
 # Install CodexScientist
 
-CodexScientist installs as a Codex CLI plugin with a stable curated MCP entrypoint and a CLI fallback.
+CodexScientist installs as a Codex CLI plugin with a stable curated MCP entrypoint and a hidden admin/debug CLI.
 
 ## Local install
 
@@ -38,13 +38,12 @@ python scripts/cs_mcp.py --stdio-smoke tools/list
 python scripts/cs_mcp.py --stdio-smoke call cs_doctor '{}'
 ```
 
-## CLI fallback
+## hidden admin/debug CLI
 
-Use CLI fallback for CI, debugging, migration, recovery, and MCP-unavailable environments:
+Use hidden admin/debug CLI for CI, debugging, migration, recovery, and MCP-unavailable environments:
 
 ```bash
-python scripts/csctl.py doctor --format json
-python scripts/csctl.py list-tools --format json
+See `docs/ADMIN_CLI.md` for human/admin/debug/CI/recovery commands.
 ```
 
 Runtime state will live in:

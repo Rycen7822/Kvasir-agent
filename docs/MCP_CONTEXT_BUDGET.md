@@ -15,36 +15,44 @@ Do not compress normal recovery into a few hundred characters. Use a bounded str
 ## Default recovery flow
 
 1. Call `cs_status` for project and state-root sanity.
-2. Call `cs_resume_brief` with `max_chars` in the 4K-8K range.
-3. If a prior checkpoint exists and many events changed, call `cs_pack_delta` from that event sequence or checkpoint id.
-4. Load at most one skill with `cs_skill_search` then `cs_skill_load(view="preview"|"runtime")` when a procedure is needed.
-5. Inspect long logs through `cs_log_digest` before any bounded raw tail.
-6. Inspect artifacts through `cs_artifact_index` before opening artifact files.
-7. Finish each stage with `cs_checkpoint` so the next turn can recover without chat history.
+2. Call `cs_goal_context` to get the active stage and `allowed_tools_for_stage`.
+3. Call `cs_resume_brief` with `max_chars` in the 4K-8K range.
+4. If a prior checkpoint exists and many events changed, call `cs_pack_delta` from that event sequence or checkpoint id.
+5. Load at most one skill with `cs_skill_search` then `cs_skill_load(view="preview"|"runtime")` when a procedure is needed.
+6. Inspect long logs through `cs_log_digest` before any bounded raw tail.
+7. Inspect artifacts through `cs_artifact_index` before opening artifact files.
+8. Use `cs_goal_watchdog` to reconcile stuck runners and checkpoint pressure.
+9. Finish each stage with `cs_checkpoint` so the next turn can recover without chat history.
 
-## Current curated MCP tools
+## Current MCP profiles
+
+The default core profile has 14 tools. The goal profile has 47 tools and is filtered by active stage subset after Codex has entered `/goal` context.
+
+Important current tools include:
 
 ```text
 cs_doctor
 cs_status
+cs_goal_context
+cs_goal_state
+cs_goal_next_action
+cs_tool_schema
 cs_context_pack
 cs_resume_brief
 cs_checkpoint
 cs_pack_delta
+cs_skill_search
+cs_skill_load
 cs_manifest_validate
 cs_trial_show
 cs_runner_status
 cs_log_digest
 cs_artifact_index
 cs_queue_status
-cs_queue_reconcile
-cs_wiki_query_pack
-cs_review_status
-cs_cost_status
-cs_soak_accelerated
-cs_soak_crash_resume
-cs_skill_search
-cs_skill_load
+cs_goal_watchdog
+cs_update_method_scoreboard
+cs_select_next_idea
+cs_claim_gate
 ```
 
 ## Explicit opt-in paths
@@ -60,4 +68,4 @@ Every curated MCP response should preserve a budget envelope with `tokens_estima
 
 ## Boundary reminder
 
-Codex handles normal file, shell, git, test, build, and process work. CodexScientist handles research semantics, provenance, runner/queue state, context packs, checkpoints, log digests, artifact indexes, and evidence ledgers. Keep the MCP curated; do not expose an all-tools/full-runtime MCP.
+Codex handles normal file, shell, git, test, build, and process work. CodexScientist handles research semantics, provenance, runner/queue state, context packs, progress watchdog, checkpoints, log digests, artifact indexes, claim gates, and evidence ledgers. Keep the MCP curated; do not expose an all-tools/full-runtime MCP.

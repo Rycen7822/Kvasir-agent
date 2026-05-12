@@ -28,7 +28,7 @@ def run_csctl(*args: str, project_root: Path | None = None) -> dict:
     return json.loads(proc.stdout)
 
 
-def test_codex_manifest_declares_stable_mcp_and_cli_fallback():
+def test_codex_manifest_declares_mcp_only_default_and_hidden_admin_cli_boundary():
     manifest_path = PLUGIN_ROOT / ".codex-plugin" / "plugin.json"
     assert manifest_path.exists()
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -36,10 +36,12 @@ def test_codex_manifest_declares_stable_mcp_and_cli_fallback():
     assert manifest["name"] == "codexscientist-codex"
     assert manifest["skills"] == "./skills"
     assert "mcpServers" not in manifest
-    assert "stable curated MCP" in manifest_text
-    assert "CLI fallback" in manifest_text
+    assert "MCP-only default" in manifest_text
+    assert "`/goal` is Codex-native" in manifest_text
+    assert "does not implement slash commands" in manifest_text
     assert "scripts/cs_mcp.py" in manifest_text
-    assert "scripts/csctl.py" in manifest_text
+    assert "scripts/csctl.py" not in manifest_text
+    assert "CLI fallback" not in manifest_text
 
 
 def test_csctl_exposes_complete_native_schema_set():
@@ -163,10 +165,11 @@ def test_assets_and_docs_are_codex_native_not_hermes_or_mcp_only():
     usage = (PLUGIN_ROOT / "docs" / "USAGE.md").read_text(encoding="utf-8")
     combined = readme + "\n" + usage
     assert "Codex CLI" in combined
-    assert "stable curated MCP" in combined
-    assert "CLI fallback" in combined
+    assert "MCP-only default" in combined
     assert "scripts/cs_mcp.py" in combined
-    assert "scripts/csctl.py" in combined
+    assert "hidden admin/debug CLI" in combined
+    assert "CLI fallback" not in combined
+    assert "scripts/csctl.py" not in combined
 
 
 def test_bilingual_readmes_document_current_install_flow():

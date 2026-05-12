@@ -26,11 +26,17 @@ jobs:
       - name: Run tests
         run: python -m pytest -q
 
+      - name: Run P4 acceptance gate
+        run: python scripts/p4_acceptance.py
+
       - name: Run high-confidence dead-code scan
         run: python -m vulture codex_scientist scripts tests --min-confidence 100
 
       - name: Compile Python sources
         run: python -m compileall -q codex_scientist scripts tests
+
+      - name: Smoke-test MCP initialize
+        run: python scripts/cs_mcp.py --stdio-smoke initialize
 
       - name: Smoke-test MCP tool list
         run: python scripts/cs_mcp.py --stdio-smoke tools/list

@@ -21,8 +21,8 @@ def initialize_payload() -> dict[str, Any]:
     }
 
 
-def list_tools_payload() -> dict[str, Any]:
-    return tools_list_payload()
+def list_tools_payload(args: dict[str, Any] | None = None) -> dict[str, Any]:
+    return tools_list_payload(args)
 
 
 def call_tool_payload(name: str, args: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -60,7 +60,7 @@ def handle_jsonrpc_message(message: dict[str, Any]) -> dict[str, Any] | None:
     if method == "initialize":
         return _jsonrpc_result(message_id, initialize_payload())
     if method == "tools/list":
-        return _jsonrpc_result(message_id, list_tools_payload())
+        return _jsonrpc_result(message_id, list_tools_payload(params))
     if method == "tools/call":
         name = params.get("name")
         arguments = params.get("arguments") if isinstance(params.get("arguments"), dict) else {}

@@ -8,22 +8,22 @@ DOC = ROOT / "docs" / "MCP_CONTEXT_BUDGET.md"
 EXPECTED_TOOLS = {
     "cs_doctor",
     "cs_status",
+    "cs_goal_context",
+    "cs_goal_state",
+    "cs_goal_next_action",
     "cs_context_pack",
     "cs_resume_brief",
     "cs_checkpoint",
     "cs_pack_delta",
-    "cs_manifest_validate",
     "cs_trial_show",
     "cs_runner_status",
     "cs_log_digest",
     "cs_artifact_index",
     "cs_queue_status",
-    "cs_queue_reconcile",
-    "cs_wiki_query_pack",
-    "cs_review_status",
-    "cs_cost_status",
-    "cs_soak_accelerated",
-    "cs_soak_crash_resume",
+    "cs_goal_watchdog",
+    "cs_update_method_scoreboard",
+    "cs_select_next_idea",
+    "cs_claim_gate",
     "cs_skill_search",
     "cs_skill_load",
 }
@@ -45,7 +45,7 @@ def test_context_budget_doc_exists_and_rejects_over_compression():
     assert "next_action" in text
 
 
-def test_docs_list_current_twenty_tool_surface_and_no_all_tools_mcp():
+def test_docs_list_current_p4_profiles_and_no_all_tools_mcp():
     docs = "\n".join(
         (ROOT / "docs" / name).read_text(encoding="utf-8")
         for name in ("MCP.md", "USAGE.md", "ARCHITECTURE.md", "LONG_RUN.md", "MCP_CONTEXT_BUDGET.md")
@@ -53,7 +53,9 @@ def test_docs_list_current_twenty_tool_surface_and_no_all_tools_mcp():
     for tool in EXPECTED_TOOLS:
         assert tool in docs
     assert "all-tools/full-runtime MCP" in docs
-    assert "20" in (ROOT / "docs" / "MCP.md").read_text(encoding="utf-8")
+    mcp = (ROOT / "docs" / "MCP.md").read_text(encoding="utf-8")
+    assert "core profile: 14 tools" in mcp
+    assert "goal profile: 47 tools" in mcp
 
 
 def test_long_run_doc_names_recovery_artifacts_and_validation_limits():

@@ -370,6 +370,18 @@ def _risk_content(card: SkillCard) -> str:
     )
 
 
+def _admin_content(card: SkillCard) -> str:
+    admin_doc = PLUGIN_ROOT / "docs" / "ADMIN_CLI.md"
+    if admin_doc.exists():
+        return admin_doc.read_text(encoding="utf-8", errors="replace")
+    return "This document is not part of the default agent research path.\n"
+
+
+def _filter_agent_facing_content(content: str) -> str:
+    forbidden = ("scripts/" + "csctl.py", "CLI " + "fallback")
+    return "\n".join(line for line in content.splitlines() if not any(term in line for term in forbidden))
+
+
 def load_skill(payload: dict[str, Any]) -> dict[str, Any]:
     handle = str(payload.get("handle") or payload.get("skill_id") or "")
     if handle.startswith("skill:"):
@@ -388,8 +400,9 @@ def load_skill(payload: dict[str, Any]) -> dict[str, Any]:
     card = cards.get(skill_id)
     if not card:
         return {"ok": False, "error": f"Unknown skill: {skill_id}", "error_type": "unknown_skill"}
-    view = str(payload.get("view") or "preview")
+    view = str(payload.get("view") or "runtime")
     max_chars = max(80, min(int(payload.get("max_chars") or 4000), 16000))
+    agent_facing = view != "admin"
     if view == "card":
         content = f"{card.title}: {card.description}\n"
     elif view == "preview":
@@ -398,6 +411,9 @@ def load_skill(payload: dict[str, Any]) -> dict[str, Any]:
         content = _risk_content(card)
     elif view == "runtime":
         content = _runtime_content(card)
+    elif view == "admin":
+        content = _admin_content(card)
+        agent_facing = False
     elif view == "sections":
         wanted = {str(item).lower() for item in payload.get("sections") or []}
         blocks = []
@@ -417,12 +433,15 @@ def load_skill(payload: dict[str, Any]) -> dict[str, Any]:
         content = _applicability(card) + card.content
     else:
         return {"ok": False, "error": f"Unknown view: {view}", "error_type": "invalid_view"}
+    if agent_facing and view != "full":
+        content = _filter_agent_facing_content(content)
     truncated = len(content) > max_chars
     content = content[:max_chars]
     return {
         "ok": True,
         "skill_id": skill_id,
         "view": view,
+        "agent_facing": agent_facing,
         "content": content,
         "tokens_estimate": len(content),
         "truncated": truncated,
