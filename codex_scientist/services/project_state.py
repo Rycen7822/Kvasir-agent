@@ -16,7 +16,7 @@ class ProjectLayout:
 
     @property
     def state_root(self) -> Path:
-        return self.project_root / "DeepScientist"
+        return self.project_root / "CodexScientist"
 
     @property
     def events_dir(self) -> Path:

@@ -11,7 +11,7 @@ def test_review_service_is_readonly_and_redacts_secret_like_content(tmp_path: Pa
     result = review.create_review(
         claim_text="Model improves accuracy; token=abc123",
         trial_ids=["T0001"],
-        artifact_paths=["DeepScientist/trials/T0001/metrics.json"],
+        artifact_paths=["CodexScientist/trials/T0001/metrics.json"],
         verdict="needs_fix",
         notes="Do not trust password=hunter2",
     )

@@ -4,14 +4,14 @@ import json
 from pathlib import Path
 
 
-def test_project_layout_uses_project_local_deepscientist_tree(tmp_path: Path):
+def test_project_layout_uses_project_local_codexscientist_tree(tmp_path: Path):
     from codex_scientist.services.project_state import ProjectLayout
 
     layout = ProjectLayout.from_project_root(tmp_path)
     assert layout.project_root == tmp_path
-    assert layout.state_root == tmp_path / "DeepScientist"
-    assert layout.project_state_path == tmp_path / "DeepScientist" / "project_state.json"
-    assert layout.event_log_path == tmp_path / "DeepScientist" / "events" / "events.jsonl"
+    assert layout.state_root == tmp_path / "CodexScientist"
+    assert layout.project_state_path == tmp_path / "CodexScientist" / "project_state.json"
+    assert layout.event_log_path == tmp_path / "CodexScientist" / "events" / "events.jsonl"
 
     layout.ensure_core_dirs()
     assert layout.state_root.is_dir()

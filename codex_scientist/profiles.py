@@ -8,14 +8,14 @@ from typing import Mapping
 class ToolProfile:
     """Metadata for an explicit Codex-Scientist tool profile.
 
-    Profiles are metadata only in the default native plugin. They do not register
-    MCP servers or change the plugin manifest; adapters may use them later to
-    expose a small, audited surface.
+    Profiles describe curated tool groups. The stable MCP server is the default
+    high-frequency control plane; CLI fallback can still use the same profile
+    metadata for audited surfaces.
     """
 
     name: str
     tool_names: tuple[str, ...]
-    registers_mcp: bool = False
+    registers_mcp: bool = True
 
 
 DEFAULT_PROFILE_NAME = "core"
@@ -24,39 +24,39 @@ PROFILES: Mapping[str, ToolProfile] = {
     "core": ToolProfile(
         name="core",
         tool_names=(
-            "ds_doctor",
-            "ds_list_quests",
-            "ds_get_quest_state",
-            "ds_new_quest",
-            "ds_set_active_quest",
-            "ds_record_user_requirement",
-            "ds_memory_search",
-            "ds_memory_write",
-            "ds_memory_list_recent",
-            "ds_artifact_record",
-            "ds_events",
-            "ds_refresh_summary",
+            "cs_doctor",
+            "cs_list_quests",
+            "cs_get_quest_state",
+            "cs_new_quest",
+            "cs_set_active_quest",
+            "cs_record_user_requirement",
+            "cs_memory_search",
+            "cs_memory_write",
+            "cs_memory_list_recent",
+            "cs_artifact_record",
+            "cs_events",
+            "cs_refresh_summary",
         ),
     ),
     "dl_trial": ToolProfile(
         name="dl_trial",
         tool_names=(
-            "ds_create_local_baseline",
-            "ds_confirm_baseline",
-            "ds_waive_baseline",
-            "ds_attach_baseline",
-            "ds_submit_idea",
-            "ds_record_main_experiment",
-            "ds_bash_exec",
+            "cs_create_local_baseline",
+            "cs_confirm_baseline",
+            "cs_waive_baseline",
+            "cs_attach_baseline",
+            "cs_submit_idea",
+            "cs_record_main_experiment",
+            "cs_bash_exec",
         ),
     ),
     "review": ToolProfile(
         name="review",
         tool_names=(
-            "ds_get_paper_contract_health",
-            "ds_get_conversation_context",
-            "ds_list_paper_outlines",
-            "ds_refresh_summary",
+            "cs_get_paper_contract_health",
+            "cs_get_conversation_context",
+            "cs_list_paper_outlines",
+            "cs_refresh_summary",
         ),
     ),
 }

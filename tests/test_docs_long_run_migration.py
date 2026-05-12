@@ -12,13 +12,13 @@ def test_long_run_and_migration_docs_are_native_and_do_not_overclaim_wall_clock_
     combined = usage + "\n" + long_run + "\n" + migration
 
     for phrase in [
+        "stable curated MCP",
+        "CLI fallback",
         "scripts/csctl.py",
-        "codex-native-cli",
-        "not MCP",
+        "scripts/cs_mcp.py",
         "accelerated soak",
         "wall-clock soak",
         "do not claim stable ten-day wall-clock operation",
         "migrate legacy quests",
     ]:
         assert phrase in combined
-    assert ".mcp.json" not in combined

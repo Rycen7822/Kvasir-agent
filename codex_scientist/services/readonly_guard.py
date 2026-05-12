@@ -16,7 +16,11 @@ def check_readonly_changes(
 ) -> dict:
     blocked: list[str] = []
     for path in changed_paths:
-        if _matches_any(path, readonly_paths) or _matches_any(path, eval_paths):
+        is_editable = _matches_any(path, editable_paths)
+        is_guarded = _matches_any(path, readonly_paths) or _matches_any(path, eval_paths)
+        if not is_editable and not is_guarded:
+            continue
+        if is_guarded:
             blocked.append(path)
     if blocked:
         return {"ok": False, "error": "Readonly or eval paths changed", "error_type": "failed_readonly", "recoverable": False, "blocked_paths": blocked}

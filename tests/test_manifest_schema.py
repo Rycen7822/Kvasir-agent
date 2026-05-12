@@ -25,7 +25,7 @@ def run_csctl(*args: str, project_root: Path) -> dict:
 def test_manifest_init_validate_show_cli_creates_project_local_research_yaml(tmp_path: Path):
     init_payload = run_csctl("manifest", "init", "--name", "Demo", "--goal", "Improve result", "--format", "json", project_root=tmp_path)
 
-    manifest_path = tmp_path / "DeepScientist" / "research.yaml"
+    manifest_path = tmp_path / "CodexScientist" / "research.yaml"
     assert init_payload["ok"] is True
     assert init_payload["path"] == str(manifest_path)
     assert manifest_path.exists()

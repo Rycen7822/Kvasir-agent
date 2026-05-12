@@ -1,0 +1,74 @@
+---
+name: codexscientist-codex
+description: Low-token router for CodexScientist in Codex CLI. Prefer stable curated MCP for repeated research-control workflows; use CLI fallback for debugging, CI, and MCP-unavailable environments.
+---
+
+# CodexScientist Codex Router
+
+This skill is a thin router. It states policy and boundaries; it is not a full command manual.
+
+## Core rules
+
+- Prefer the stable curated MCP surface in `scripts/cs_mcp.py` for repeated research-control workflows.
+- Use `cs_skill_search` and `cs_skill_load` to lazy-load stage/support procedures instead of reading long skill files by default.
+- Keep `scripts/csctl.py` as CLI fallback for CI, debugging, recovery, migration, and MCP-unavailable environments.
+- Runtime state lives in `<project>/CodexScientist/`.
+- Persist durable research facts through `cs_*` calls when they affect quest state, memory, artifacts, baselines, experiments, reviews, or evidence.
+- Load at most one stage/support skill when the current subtask actually needs it.
+
+## Default autonomy mode
+
+The default mode is `copilot`.
+
+In copilot mode, CodexScientist records, checks, organizes, retrieves, and summarizes research state. It may check novelty or duplicate risk for a user-provided or document-provided idea, but it must not own the research direction.
+
+`autonomous_idea_improvement` is disabled by default. Enable it only when the user explicitly asks for automatic idea/novelty improvement, or when a project manifest or handoff explicitly requires autonomous idea improvement. Otherwise, do not invent or improve ideas automatically; output candidate plans for user review instead of creating new running trials.
+
+## Operation boundary
+
+Codex-native operation layer:
+
+- routine file, shell, Git, test, build, and process work;
+- file read/search/edit/patch and code navigation;
+- ordinary dependency checks, lint, smoke tests, commits, diffs, and process monitoring.
+
+CodexScientist semantic/provenance layer:
+
+- quest lifecycle and mode state;
+- durable user requirements, memory, artifacts, milestones, decisions, baselines, experiment records, analysis slices, and paper/reliability ledgers;
+- formal evidence commands whose logs must be quest-local evidence.
+
+Codex does the mechanical action; CodexScientist records the research meaning. Use `cs_bash_exec` only when the command itself must be auditable CodexScientist provenance, not as a general shell replacement.
+
+## Start of work
+
+From the target project root:
+
+```bash
+python /path/to/CodexScientist-codex/scripts/cs_mcp.py --stdio-smoke initialize
+python /path/to/CodexScientist-codex/scripts/cs_mcp.py --stdio-smoke tools/list
+python /path/to/CodexScientist-codex/scripts/csctl.py doctor --format json
+```
+
+Typical MCP-first flow:
+
+1. Call `cs_status` or `cs_doctor`.
+2. Call `cs_skill_search` with the user request and workflow query.
+3. Call `cs_skill_load` for one bounded runtime view when a procedure is needed.
+4. Use the relevant curated `cs_*` MCP tool for status, manifest, queue, context pack, or durable research state.
+5. Fall back to `scripts/csctl.py` only when MCP is unavailable or a debugging/CI path needs CLI output.
+
+## Output policy
+
+Prefer compact status, bounded log tails, artifact paths, hashes, and summaries. Do not inject full logs, full JSONL ledgers, full papers, or full reference repositories into Codex context unless an explicit raw/range read is required.
+
+## Final reply checklist
+
+Report:
+
+- quest id and stage if used;
+- MCP tools or CLI fallback commands used;
+- files created or modified;
+- new or updated durable memory/artifacts;
+- verification results;
+- next action or user-gated decision.

@@ -1,6 +1,6 @@
 # Migration
 
-Codex-Scientist migration uses `scripts/csctl.py` and remains `codex-native-cli`; it is not MCP.
+Codex-Scientist migration uses the stable curated MCP control plane for repeated validation/status calls and `scripts/csctl.py` CLI fallback for bulk migration, CI, and recovery.
 
 ## Migrate legacy quests
 
@@ -10,7 +10,7 @@ Run from the target project root:
 python scripts/csctl.py migrate legacy-quests --format json
 ```
 
-The `migrate legacy quests` command scans `DeepScientist/quests/*` for legacy `quest.yaml` or `quest.json` metadata, creates `DeepScientist/research.yaml` when no upgraded manifest exists, and writes `DeepScientist/migrations/migration_report.json`.
+The `migrate legacy quests` command scans `CodexScientist/quests/*` for legacy `quest.yaml` or `quest.json` metadata, creates `CodexScientist/research.yaml` when no upgraded manifest exists, and writes `CodexScientist/migrations/migration_report.json`.
 
 Migration is conservative:
 

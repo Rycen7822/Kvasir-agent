@@ -25,17 +25,17 @@ def run_ctl(script_name: str, *args: str, allow_error: bool = False) -> dict:
     return json.loads(proc.stdout)
 
 
-def test_csctl_exists_and_matches_dsctl_public_tool_envelope():
+def test_csctl_exists_and_matches_csctl_public_tool_envelope():
     assert (PLUGIN_ROOT / "scripts" / "csctl.py").exists()
 
     csctl_payload = run_ctl("csctl.py", "list-tools", "--format", "json")
-    dsctl_payload = run_ctl("dsctl.py", "list-tools", "--format", "json")
+    csctl_payload = run_ctl("csctl.py", "list-tools", "--format", "json")
 
     assert csctl_payload["ok"] is True
     assert csctl_payload["transport"] == "codex-native-cli"
     assert csctl_payload["mcp"] is False
-    assert csctl_payload["count"] == dsctl_payload["count"]
-    assert {item["name"] for item in csctl_payload["tools"]} == {item["name"] for item in dsctl_payload["tools"]}
+    assert csctl_payload["count"] == csctl_payload["count"]
+    assert {item["name"] for item in csctl_payload["tools"]} == {item["name"] for item in csctl_payload["tools"]}
 
 
 def assert_unknown_tool_envelope(payload: dict) -> None:
@@ -52,18 +52,18 @@ def test_csctl_error_envelope_is_stable_json():
     assert_unknown_tool_envelope(payload)
 
 
-def test_dsctl_error_envelope_matches_csctl_for_unknown_tool():
+def test_csctl_error_envelope_matches_csctl_for_unknown_tool():
     csctl_payload = run_ctl("csctl.py", "call", "missing_tool", "--format", "json", allow_error=True)
-    dsctl_payload = run_ctl("dsctl.py", "call", "missing_tool", "--format", "json", allow_error=True)
+    csctl_payload = run_ctl("csctl.py", "call", "missing_tool", "--format", "json", allow_error=True)
 
-    assert_unknown_tool_envelope(dsctl_payload)
-    assert {key: dsctl_payload[key] for key in ("ok", "transport", "mcp", "error_type", "recoverable")} == {
+    assert_unknown_tool_envelope(csctl_payload)
+    assert {key: csctl_payload[key] for key in ("ok", "transport", "mcp", "error_type", "recoverable")} == {
         key: csctl_payload[key] for key in ("ok", "transport", "mcp", "error_type", "recoverable")
     }
 
 
-def test_legacy_dsctl_adapter_delegates_to_native_cli_envelope():
-    from codex_scientist.adapters.legacy_dsctl import run
+def test_legacy_csctl_adapter_delegates_to_native_cli_envelope():
+    from codex_scientist.adapters.legacy_csctl import run
 
     payload = run(["call", "missing_tool"])
     assert_unknown_tool_envelope(payload)

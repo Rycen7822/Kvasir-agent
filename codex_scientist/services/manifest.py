@@ -40,7 +40,7 @@ class ManifestService:
                 "readonly_paths": ["data/**", "eval/**"],
                 "eval_paths": ["eval/**"],
                 "artifact_paths": ["artifacts/**", "results/**"],
-                "exclude_paths": ["DeepScientist/**", ".git/**"],
+                "exclude_paths": ["CodexScientist/**", ".git/**"],
                 "reference_repo_paths": [],
                 "path_integrity": {
                     "require_clean_git_before_trial": True,

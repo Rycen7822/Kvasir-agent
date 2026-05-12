@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from deepscientist_native.redaction import redact_payload
+from codexscientist_native.redaction import redact_payload
 
 TRANSPORT = "codex-native-cli"
 MCP_ENABLED = False

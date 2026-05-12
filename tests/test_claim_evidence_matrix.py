@@ -24,7 +24,7 @@ def test_claim_with_evidence_writes_matrix_and_can_enter_results(tmp_path: Path)
         text="Method improves accuracy",
         supporting_trial_ids=["T0001"],
         metric_values={"accuracy": 0.91},
-        artifact_paths=["DeepScientist/trials/T0001/metrics.json"],
+        artifact_paths=["CodexScientist/trials/T0001/metrics.json"],
         limitations=["toy data"],
         contradictory_trial_ids=["T0002"],
         reviewer_verdict="pass",

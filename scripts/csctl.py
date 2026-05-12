@@ -13,7 +13,7 @@ for path in (PLUGIN_ROOT, SCRIPTS_ROOT):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
-import dsctl  # type: ignore  # noqa: E402
+import cs_native_cli  # type: ignore  # noqa: E402
 from codex_scientist.adapters.cli import normalize_envelope  # noqa: E402
 from codex_scientist.services.claims import ClaimEvidenceService  # noqa: E402
 from codex_scientist.services.context_pack import ContextPackService  # noqa: E402
@@ -33,7 +33,7 @@ from codex_scientist.services.trial import TrialService  # noqa: E402
 
 def _set_project_root(project_root: str | None) -> Path:
     root = Path(project_root).expanduser().resolve() if project_root else Path.cwd().resolve()
-    os.environ["DEEPSCIENTIST_PROJECT_ROOT"] = str(root)
+    os.environ["CODEXSCIENTIST_PROJECT_ROOT"] = str(root)
     os.chdir(root)
     return root
 
@@ -243,23 +243,23 @@ def _add_format(parser: argparse.ArgumentParser) -> None:
 
 
 def build_cs_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Codex-Scientist native csctl. No MCP, no external ds.")
-    parser.add_argument("--project-root", help="Project root whose ./DeepScientist runtime should be used. Defaults to cwd.")
+    parser = argparse.ArgumentParser(description="Codex-Scientist native csctl. MCP is available through cs_mcp.py; this remains the CLI fallback.")
+    parser.add_argument("--project-root", help="Project root whose ./CodexScientist runtime should be used. Defaults to cwd.")
     parser.add_argument("--format", choices=["json", "pretty"], default="pretty")
     sub = parser.add_subparsers(dest="command")
 
-    manifest = sub.add_parser("manifest", help="Manage project-local DeepScientist/research.yaml")
+    manifest = sub.add_parser("manifest", help="Manage project-local CodexScientist/research.yaml")
     manifest_sub = manifest.add_subparsers(dest="manifest_command", required=True)
-    init = manifest_sub.add_parser("init", help="Create DeepScientist/research.yaml")
+    init = manifest_sub.add_parser("init", help="Create CodexScientist/research.yaml")
     init.add_argument("--name", required=True)
     init.add_argument("--goal", required=True)
     init.add_argument("--overwrite", action="store_true")
     _add_format(init)
     init.set_defaults(func=_manifest_payload)
-    validate = manifest_sub.add_parser("validate", help="Validate DeepScientist/research.yaml")
+    validate = manifest_sub.add_parser("validate", help="Validate CodexScientist/research.yaml")
     _add_format(validate)
     validate.set_defaults(func=_manifest_payload)
-    show = manifest_sub.add_parser("show", help="Show DeepScientist/research.yaml")
+    show = manifest_sub.add_parser("show", help="Show CodexScientist/research.yaml")
     _add_format(show)
     show.set_defaults(func=_manifest_payload)
 
@@ -435,7 +435,7 @@ def build_cs_parser() -> argparse.ArgumentParser:
 
     summary = sub.add_parser("summary", help="Build compact summaries for Codex /goal")
     summary_sub = summary.add_subparsers(dest="summary_command", required=True)
-    context_pack = summary_sub.add_parser("context-pack", help="Write bounded DeepScientist/summaries/context_pack.md")
+    context_pack = summary_sub.add_parser("context-pack", help="Write bounded CodexScientist/summaries/context_pack.md")
     context_pack.add_argument("--max-chars", type=int, required=True)
     _add_format(context_pack)
     context_pack.set_defaults(func=_summary_payload)
@@ -481,9 +481,9 @@ def build_cs_parser() -> argparse.ArgumentParser:
     _add_format(cost_status)
     cost_status.set_defaults(func=_cost_payload)
 
-    migrate = sub.add_parser("migrate", help="Migrate legacy DeepScientist state into the project-local control plane")
+    migrate = sub.add_parser("migrate", help="Migrate legacy CodexScientist state into the project-local control plane")
     migrate_sub = migrate.add_subparsers(dest="migrate_command", required=True)
-    legacy_quests = migrate_sub.add_parser("legacy-quests", help="Migrate legacy DeepScientist/quests metadata without deleting sources")
+    legacy_quests = migrate_sub.add_parser("legacy-quests", help="Migrate legacy CodexScientist/quests metadata without deleting sources")
     _add_format(legacy_quests)
     legacy_quests.set_defaults(func=_migration_payload)
 
@@ -506,7 +506,7 @@ def _looks_like_cs_command(argv: list[str]) -> bool:
 
 
 def main(argv: list[str] | None = None) -> int:
-    raw_argv = dsctl._normalize_legacy_cli_args(list(sys.argv[1:] if argv is None else argv))
+    raw_argv = cs_native_cli._normalize_legacy_cli_args(list(sys.argv[1:] if argv is None else argv))
     if _looks_like_cs_command(raw_argv):
         parser = build_cs_parser()
         args = parser.parse_args(raw_argv)
@@ -515,10 +515,10 @@ def main(argv: list[str] | None = None) -> int:
             return 2
         fmt = getattr(args, "format", None) or "pretty"
         payload = normalize_envelope(args.func(args))
-        dsctl.emit(payload, fmt)
+        cs_native_cli.emit(payload, fmt)
         return 0 if payload.get("ok", False) else 1
 
-    parser = dsctl.build_parser()
+    parser = cs_native_cli.build_parser()
     args = parser.parse_args(raw_argv)
     if args.project_root:
         _set_project_root(args.project_root)
@@ -527,7 +527,7 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     fmt = getattr(args, "format", None) or "pretty"
     payload = normalize_envelope(args.func(args))
-    dsctl.emit(payload, fmt)
+    cs_native_cli.emit(payload, fmt)
     return 0 if payload.get("ok", False) else 1
 
 

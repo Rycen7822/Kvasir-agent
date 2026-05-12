@@ -1,6 +1,6 @@
 # Long Run Validation
 
-Codex-Scientist is a Codex CLI plugin and its upgraded control plane is `scripts/csctl.py`. The control plane reports `codex-native-cli` and is not MCP.
+Codex-Scientist is a Codex CLI plugin with a stable curated MCP control plane and `scripts/csctl.py` CLI fallback. Long-run validation must state whether each run used MCP, CLI fallback, or both.
 
 ## Validation layers
 
@@ -8,7 +8,7 @@ Codex-Scientist is a Codex CLI plugin and its upgraded control plane is `scripts
 2. `overnight soak`: a local wall-clock run of at least 12 hours with real process/log/reconcile behavior.
 3. `wall-clock soak`: a release validation of at least ten natural days.
 
-The accelerated layer writes `DeepScientist/summaries/long_run_validation.md`:
+The accelerated layer writes `CodexScientist/summaries/long_run_validation.md`:
 
 ```bash
 python scripts/csctl.py soak accelerated --days 10 --inject-failures --format json

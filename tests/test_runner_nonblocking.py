@@ -13,7 +13,7 @@ def test_runner_start_is_nonblocking_and_collect_failed_other_is_terminal(tmp_pa
     assert started["ok"] is True
     assert started["run"]["run_id"] == "R0001"
     assert started["run"]["status"] == "dry_run"
-    assert Path(started["run"]["log_path"]).is_relative_to(tmp_path / "DeepScientist")
+    assert Path(started["run"]["log_path"]).is_relative_to(tmp_path / "CodexScientist")
 
     collected = runner.collect("R0001", exit_code=1)
     assert collected["ok"] is True

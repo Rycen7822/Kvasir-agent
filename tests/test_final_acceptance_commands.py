@@ -24,7 +24,7 @@ def run(script: str, *args: str, cwd: Path | None = None) -> dict:
 
 def test_planned_final_acceptance_command_group_works_with_legacy_flags(tmp_path: Path):
     run("csctl.py", "doctor", "--json")
-    run("dsctl.py", "doctor", "--json")
+    run("csctl.py", "doctor", "--json")
     run("csctl.py", "manifest", "init", "--project", str(tmp_path), "--name", "Demo", "--goal", "Improve", "--json")
 
     assert run("csctl.py", "manifest", "validate", "--project", str(tmp_path), "--json")["ok"] is True

@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
-from deepscientist_native.redaction import redact_payload, redact_text
+from codexscientist_native.redaction import redact_payload, redact_text
 
 from .event_store import EventStore
 from .project_state import ProjectLayout

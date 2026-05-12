@@ -23,7 +23,7 @@ def _run(script: str, *args: str) -> dict:
 
 
 def test_doctor_accepts_legacy_json_output_flag_for_final_acceptance_commands():
-    for script in ["dsctl.py", "csctl.py"]:
+    for script in ["csctl.py", "csctl.py"]:
         payload = _run(script, "doctor", "--json")
         assert payload["ok"] is True
         assert payload["transport"] == "codex-native-cli"

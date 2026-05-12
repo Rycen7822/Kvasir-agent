@@ -5,21 +5,22 @@ from pathlib import Path
 PLUGIN_ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_default_profiles_are_metadata_only_and_do_not_register_mcp():
+def test_default_profiles_are_curated_mcp_metadata_without_all_tools_surface():
     from codex_scientist.profiles import DEFAULT_PROFILE_NAME, PROFILES, get_profile
 
     assert DEFAULT_PROFILE_NAME == "core"
     core = get_profile(None)
     assert core.name == "core"
     assert 1 <= len(core.tool_names) <= 12
-    assert set(core.tool_names) <= {schema["name"] for schema in __import__("deepscientist_native.schemas", fromlist=["PUBLIC_SCHEMAS"]).PUBLIC_SCHEMAS}
+    assert set(core.tool_names) <= {schema["name"] for schema in __import__("codexscientist_native.schemas", fromlist=["PUBLIC_SCHEMAS"]).PUBLIC_SCHEMAS}
 
     for profile in PROFILES.values():
-        assert not profile.registers_mcp
+        assert profile.registers_mcp
         assert profile.tool_names
 
     manifest_text = (PLUGIN_ROOT / ".codex-plugin" / "plugin.json").read_text(encoding="utf-8")
     assert "mcpServers" not in manifest_text
+    assert "stable curated MCP" in manifest_text
 
 
 def test_profile_lookup_rejects_all_tools_profile_by_default():

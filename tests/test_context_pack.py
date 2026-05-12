@@ -52,5 +52,5 @@ def test_context_pack_cli_returns_path_digest_and_compact_content(tmp_path: Path
     assert result["ok"] is True
     assert result["chars"] <= 400
     assert result["sha256"]
-    assert result["path"].endswith("DeepScientist/summaries/context_pack.md")
+    assert result["path"].endswith("CodexScientist/summaries/context_pack.md")
     assert "## active_state" in result["content"]

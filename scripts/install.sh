@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-PLUGIN_NAME="deepscientist-codex"
-# Default install path: ~/.codex/plugins/deepscientist-codex
+PLUGIN_NAME="codexscientist-codex"
+# Default install path: ~/.codex/plugins/codexscientist-codex
 SOURCE_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 CODEX_HOME="${CODEX_HOME:-${HOME}/.codex}"
 INSTALL_DIR="${CODEX_HOME}/plugins/${PLUGIN_NAME}"
@@ -10,12 +10,12 @@ AGENTS_HOME="${AGENTS_HOME:-${HOME}/.agents}"
 MARKETPLACE_FILE="${AGENTS_HOME}/plugins/marketplace.json"
 CONFIG_FILE="${CODEX_HOME}/config.toml"
 
-log() { printf '[DeepScientist-codex] %s\n' "$*"; }
-fail() { printf '[DeepScientist-codex] ERROR: %s\n' "$*" >&2; exit 1; }
+log() { printf '[CodexScientist-codex] %s\n' "$*"; }
+fail() { printf '[CodexScientist-codex] ERROR: %s\n' "$*" >&2; exit 1; }
 
-[ -f "${SOURCE_ROOT}/.codex-plugin/plugin.json" ] || fail "Run install.sh from a complete DeepScientist-codex source tree."
+[ -f "${SOURCE_ROOT}/.codex-plugin/plugin.json" ] || fail "Run install.sh from a complete CodexScientist-codex source tree."
 if grep -R "mcp""Servers" -n "${SOURCE_ROOT}/.codex-plugin" >/dev/null 2>&1; then
-  fail "MCP server registration is forbidden for this native adapter."
+  fail "plugin.json should not inline MCP server registrations; use scripts/cs_mcp.py as the stable stdio entrypoint."
 fi
 
 mkdir -p "$(dirname -- "${INSTALL_DIR}")"
@@ -48,8 +48,8 @@ from pathlib import Path
 import json, sys
 path = Path(sys.argv[1])
 entry = {
-    "name": "deepscientist-codex",
-    "source": {"source": "local", "path": "./.codex/plugins/deepscientist-codex"},
+    "name": "codexscientist-codex",
+    "source": {"source": "local", "path": "./.codex/plugins/codexscientist-codex"},
     "policy": {"installation": "AVAILABLE", "authentication": "ON_INSTALL"},
     "category": "Productivity",
 }
@@ -73,7 +73,7 @@ python3 - "${CONFIG_FILE}" <<'PY'
 from pathlib import Path
 import re, sys
 path = Path(sys.argv[1])
-section = '[plugins."deepscientist-codex@local-personal"]'
+section = '[plugins."codexscientist-codex@local-personal"]'
 enabled = 'enabled = true\n'
 if not path.exists():
     path.write_text(section + '\n' + enabled, encoding='utf-8')
@@ -113,5 +113,5 @@ PY
 python3 "${INSTALL_DIR}/scripts/doctor.py" >/dev/null
 log "Installed ${PLUGIN_NAME} to ${INSTALL_DIR}"
 log "Registered marketplace: ${MARKETPLACE_FILE}"
-log "Enabled [plugins.\"deepscientist-codex@local-personal\"] in ${CONFIG_FILE}"
-log "Use from a research project root: python ${INSTALL_DIR}/scripts/dsctl.py doctor --format json"
+log "Enabled [plugins.\"codexscientist-codex@local-personal\"] in ${CONFIG_FILE}"
+log "Use from a research project root: python ${INSTALL_DIR}/scripts/csctl.py doctor --format json"
