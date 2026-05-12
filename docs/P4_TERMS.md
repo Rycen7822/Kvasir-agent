@@ -4,9 +4,9 @@ P4 fixes the default research control plane for CodexScientist. These terms are 
 
 ## agent-facing surface
 
-Content that Codex may see by default when operating the CodexScientist plugin: plugin metadata, defaultPrompt, the operator skill, runtime skill views, MCP tool descriptions, and MCP suggested actions.
+Content that Codex may see by default when operating the CodexScientist plugin: plugin metadata, defaultPrompt, the operator skill, runtime skill views loaded through MCP, MCP tool descriptions, MCP error payloads, and MCP suggested actions.
 
-The agent-facing surface must present MCP-only default as the normal research path and must not advertise terminal compatibility commands as the default research path.
+The agent-facing surface must present MCP-only default as the normal research path and must not advertise terminal compatibility commands as the default research path. Bare compatibility-command wording, including naked `csctl` references in MCP-loaded runtime skill content, is treated as agent-facing CLI guidance risk even when it is not an automatic fallback.
 
 ## hidden admin/debug CLI
 

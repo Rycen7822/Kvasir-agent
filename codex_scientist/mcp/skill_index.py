@@ -9,6 +9,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from codex_scientist.mcp.surface_allowlist import find_agent_facing_cli_terms
+
 PLUGIN_ROOT = Path(__file__).resolve().parents[2]
 _CACHE_VERSION = 1
 _SKILL_CACHE: dict[str, tuple[tuple[tuple[str, int, int], ...], list["SkillCard"]]] = {}
@@ -377,9 +379,18 @@ def _admin_content(card: SkillCard) -> str:
     return "This document is not part of the default agent research path.\n"
 
 
-def _filter_agent_facing_content(content: str) -> str:
-    forbidden = ("scripts/" + "csctl.py", "CLI " + "fallback")
-    return "\n".join(line for line in content.splitlines() if not any(term in line for term in forbidden))
+def _filter_agent_facing_content(content: str) -> tuple[str, list[str]]:
+    filtered_lines: list[str] = []
+    filtered_terms: list[str] = []
+    for line in content.splitlines():
+        terms = find_agent_facing_cli_terms(line)
+        if terms:
+            for term in terms:
+                if term not in filtered_terms:
+                    filtered_terms.append(term)
+            continue
+        filtered_lines.append(line)
+    return "\n".join(filtered_lines), filtered_terms
 
 
 def load_skill(payload: dict[str, Any]) -> dict[str, Any]:
@@ -433,8 +444,9 @@ def load_skill(payload: dict[str, Any]) -> dict[str, Any]:
         content = _applicability(card) + card.content
     else:
         return {"ok": False, "error": f"Unknown view: {view}", "error_type": "invalid_view"}
+    filtered_agent_facing_cli_terms: list[str] = []
     if agent_facing and view != "full":
-        content = _filter_agent_facing_content(content)
+        content, filtered_agent_facing_cli_terms = _filter_agent_facing_content(content)
     truncated = len(content) > max_chars
     content = content[:max_chars]
     return {
@@ -445,6 +457,7 @@ def load_skill(payload: dict[str, Any]) -> dict[str, Any]:
         "content": content,
         "tokens_estimate": len(content),
         "truncated": truncated,
+        "filtered_agent_facing_cli_terms": filtered_agent_facing_cli_terms,
         "source_path": str(card.path),
         "source_sha256": card.source_sha256,
         "updated_at": card.updated_at,

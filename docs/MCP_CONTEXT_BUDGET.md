@@ -62,6 +62,14 @@ cs_claim_gate
 - Full artifact content is not default context. Use `cs_artifact_index` first; open a full artifact only when the current task explicitly requires it.
 - Full papers, full JSONL ledgers, full reference repositories, and full skill files are never part of the default resume path.
 
+## Selective schema and bounded skill loading
+
+`cs_tool_schema` is a selective lazy full-schema endpoint. It is intentionally not a full registry catalog; unsupported names fail closed with `unknown_tool` even when the tool exists in `tools/list` as a compact card.
+
+`cs_skill_search` returns short cards and `cs_skill_load` returns bounded preview/runtime views by default. Agent-facing skill loads should not expose terminal compatibility command guidance. Full skill text remains explicit opt-in only through `view="full"`, `allow_full=true`, and a bounded `max_chars`.
+
+These constraints preserve the no all-tools/full-runtime MCP boundary: stage subsets, lightweight tool cards, selective schemas, bounded skills, log digests, artifact indexes, checkpoints, and resume briefs are the default recovery mechanism.
+
 ## Envelope expectations
 
 Every curated MCP response should preserve a budget envelope with `tokens_estimate`, `chars`, `truncated`, `source_refs`, `warnings`, and actionable `next_call` / `next_action` style guidance when another tool call is the expected continuation.

@@ -156,11 +156,23 @@ def get_profile(name: str | None) -> ToolProfile:
     return PROFILES[profile_name]
 
 
+def normalize_stage(stage: str | None) -> tuple[str | None, bool]:
+    if stage is None:
+        return None, True
+    raw = str(stage or "").strip().lower()
+    if not raw:
+        return None, True
+    normalized = STAGE_ALIASES.get(raw, raw)
+    return normalized, normalized in STAGE_TOOL_ADDITIONS
+
+
 def get_profile_tool_names(name: str | None, *, stage: str | None = None) -> tuple[str, ...]:
     profile = get_profile(name)
     if stage is None or profile.name != "goal":
         return profile.tool_names
-    stage_key = STAGE_ALIASES.get(str(stage or "").strip().lower(), str(stage or "").strip().lower())
-    additions = STAGE_TOOL_ADDITIONS.get(stage_key, STAGE_TOOL_ADDITIONS["scout"])
+    stage_key, stage_ok = normalize_stage(stage)
+    if not stage_ok or stage_key is None:
+        return tuple()
+    additions = STAGE_TOOL_ADDITIONS[stage_key]
     allowed = set(profile.tool_names)
     return tuple(tool for tool in dict.fromkeys((*CORE_TOOLS, *additions)) if tool in allowed)

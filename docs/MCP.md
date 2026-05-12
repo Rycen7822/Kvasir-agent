@@ -25,7 +25,9 @@ python scripts/cs_mcp.py --stdio-smoke call cs_goal_context '{"active_stage":"ex
 - core profile: 14 tools. This is the default `tools/list` surface and contains doctor/status, goal/context state, checkpoint/resume/delta, and bounded skill retrieval.
 - goal profile: 47 tools. CodexScientist uses it only after Codex has entered a goal context.
 - active stage subset: goal profile calls should pass the active stage so the current turn sees only the relevant stage tools.
-- admin profile: not registered as default MCP; human/admin/debug/CI/recovery commands are documented separately.
+- unknown goal stage fails closed with `error_type="unknown_stage"`, `allowed_stages`, and `stage_aliases`; it does not silently fall back to scout tools.
+- core profile ignores a supplied stage and returns `warnings=["ignored_stage_for_core_profile"]` without changing the core tool set.
+- admin profile: not registered as default MCP. `tools/list({"profile":"admin"})` returns `error_type="profile_not_registered_for_mcp"` and no tool list; human/admin/debug/CI/recovery commands are documented separately.
 
 Important goal tools include:
 
@@ -83,10 +85,13 @@ Long-running goal work should keep recovery anchors fresh:
 
 `cs_skill_search` returns short cards only. `cs_skill_load` loads bounded views and rejects forged handles, path traversal, unknown ids, and full-view loads without explicit `allow_full=true`.
 
+Agent-facing `preview` / `runtime` skill loads filter terminal compatibility command guidance. Bundled runtime skills should describe durable state through MCP `cs_*` tools, not through hidden admin/debug command examples.
+
 ## Safety
 
 - No all-tools/full-runtime MCP.
 - Tool annotations expose read-only/destructive/idempotent/open-world hints.
+- State-changing tools with declared required context keys fail closed on missing arguments before handlers create default resources.
 - Outputs must be bounded and redacted.
-- Errors return `ok=false`, `error_type`, `recoverable`, and a suggested next MCP action when useful.
+- Errors return `ok=false`, stable `error_type`, `recoverable`, and a suggested next MCP action when useful; known recoverable missing-resource cases should not leak raw `FileNotFoundError` / `ValueError` class names.
 - Missing tools fail closed: fix MCP/doctor/config or implement the missing MCP tool; do not switch the default research flow to terminal compatibility commands.

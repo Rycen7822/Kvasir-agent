@@ -9,7 +9,14 @@ from typing import Any, Callable
 from codex_scientist.mcp import goal_context, research_tools
 from codex_scientist.mcp.envelope import apply_budget_envelope
 from codex_scientist.mcp.skill_index import load_skill, search_skills
-from codex_scientist.profiles import DEFAULT_PROFILE_NAME, get_profile_tool_names
+from codex_scientist.profiles import (
+    DEFAULT_PROFILE_NAME,
+    STAGE_ALIASES,
+    STAGE_TOOL_ADDITIONS,
+    get_profile,
+    get_profile_tool_names,
+    normalize_stage,
+)
 from codex_scientist.services.artifacts import ArtifactIndexService
 from codex_scientist.services.checkpoint import CheckpointService
 from codex_scientist.services.context_pack import ContextPackService
@@ -332,7 +339,7 @@ _SPECS: list[ToolSpec] = [
     _spec("cs_select_next_idea", "Select the next non-duplicate idea candidate from the frontier.", group="idea", read_only=False, required=("quest_id",)),
     _spec("cs_claim_gate", "Check whether a paper-facing claim has enough baseline, metric, evidence, analysis, and seed support.", group="analysis", read_only=False, idempotent=False, required=("quest_id", "claim_id")),
     _spec("cs_record_main_experiment", "Record a main experiment run.", group="experiment", read_only=False, idempotent=False, required=("quest_id", "run_id")),
-    _spec("cs_create_analysis_campaign", "Create an analysis campaign.", group="analysis", read_only=False, idempotent=False, required=("quest_id", "campaign_title")),
+    _spec("cs_create_analysis_campaign", "Create an analysis campaign.", group="analysis", read_only=False, idempotent=False, required=("quest_id", "campaign_title", "campaign_goal", "slices")),
     _spec("cs_get_analysis_campaign", "Read analysis campaign state.", group="analysis", required=("quest_id",)),
     _spec("cs_record_analysis_slice", "Record an analysis slice result.", group="analysis", read_only=False, idempotent=False, required=("quest_id", "campaign_id", "slice_id")),
     _spec("cs_bash_exec", "Run/list/read/wait/stop quest-local bash sessions.", group="experiment", read_only=False, idempotent=False, required=("quest_id",)),
@@ -351,7 +358,7 @@ _SPECS: list[ToolSpec] = [
     _spec("cs_runner_status", "Read one or all runner records.", group="runner"),
     _spec("cs_log_digest", "Return a bounded redacted digest for one runner log.", group="runner", required=("run_id",)),
     _spec("cs_artifact_index", "Return artifact references, hashes, sizes, and types without file content.", group="artifact"),
-    _spec("cs_trial_propose", "Propose a trial.", group="trial", read_only=False, idempotent=False, required=("quest_id", "idea_id")),
+    _spec("cs_trial_propose", "Propose a trial.", group="trial", read_only=False, idempotent=False, required=("quest_id", "idea_id", "hypothesis")),
     _spec("cs_trial_plan", "Plan a proposed trial.", group="trial", read_only=False, idempotent=False, required=("trial_id",)),
     _spec("cs_trial_ready", "Move a planned trial through readiness gates.", group="trial", read_only=False, idempotent=False, required=("trial_id",)),
     _spec("cs_trial_evaluate", "Evaluate a ready trial against metric contracts.", group="trial", read_only=False, idempotent=False, required=("trial_id",)),
@@ -365,6 +372,167 @@ _SPECS: list[ToolSpec] = [
 ]
 
 _SPECS_BY_NAME = {spec.name: spec for spec in _SPECS}
+_STRICT_REQUIRED_ARG_TOOLS = frozenset(
+    {
+        "cs_manifest_init",
+        "cs_manifest_record_baseline",
+        "cs_queue_submit",
+        "cs_runner_start",
+        "cs_trial_propose",
+        "cs_trial_plan",
+        "cs_trial_ready",
+        "cs_trial_evaluate",
+        "cs_trial_decide",
+        "cs_create_analysis_campaign",
+    }
+)
+
+
+def _is_missing_arg(value: Any) -> bool:
+    if value is None:
+        return True
+    if isinstance(value, str):
+        return not value.strip()
+    if isinstance(value, (list, tuple, set, dict)):
+        return len(value) == 0
+    return False
+
+
+def _known_project_and_quest_args(args: dict[str, Any]) -> dict[str, Any]:
+    known: dict[str, Any] = {}
+    for key in ("project", "quest_id"):
+        value = args.get(key)
+        if not _is_missing_arg(value):
+            known[key] = value
+    return known
+
+
+def _known_args(args: dict[str, Any], keys: list[str]) -> dict[str, Any]:
+    return {key: args[key] for key in keys if key in args and not _is_missing_arg(args.get(key))}
+
+
+def _default_error_action(error_type: str) -> str:
+    if error_type == "missing_argument":
+        return "Retry the same MCP tool with the listed missing arguments."
+    if error_type == "invalid_argument":
+        return "Retry the same MCP tool with corrected argument values."
+    if error_type == "not_found":
+        return "Create or select the missing MCP resource, then retry the same MCP tool."
+    if error_type == "unknown_tool":
+        return "Call tools/list and choose one of the curated cs_* tools."
+    if error_type in {"unknown_profile", "profile_not_registered_for_mcp"}:
+        return "Retry tools/list with the core or goal MCP profile."
+    if error_type == "unknown_stage":
+        return "Retry tools/list with one allowed stage or omit stage for the full goal profile."
+    if error_type == "gate_blocked":
+        return "Satisfy the reported gate requirements before retrying."
+    if error_type == "external_io_failed":
+        return "Check the referenced external resource or local file path, then retry."
+    return "Inspect the MCP error details and retry after correcting the underlying issue."
+
+
+def _error_payload(error_type: str, error: str, recoverable: bool, tool_name: str | None = None, **extra: Any) -> dict[str, Any]:
+    payload = {"ok": False, "error": str(error), "error_type": error_type, "recoverable": recoverable, **extra}
+    if tool_name is not None:
+        payload.setdefault("tool", tool_name)
+    if error_type == "gate_blocked":
+        payload.setdefault("error_family", "gate_blocked")
+    if recoverable and not (payload.get("suggested_next_action") or payload.get("next_call") or payload.get("retry_template")):
+        payload["suggested_next_action"] = _default_error_action(error_type)
+    if not recoverable and not payload.get("suggested_next_action"):
+        payload["suggested_next_action"] = "No automatic recovery is available for this MCP error."
+    return payload
+
+
+def _analysis_campaign_retry_template(args: dict[str, Any]) -> dict[str, Any]:
+    required = ["quest_id", "campaign_title", "campaign_goal", "slices"]
+    return {
+        "name": "cs_create_analysis_campaign",
+        "required_arguments": required,
+        "missing_arguments": [key for key in required if _is_missing_arg(args.get(key))],
+        "known_arguments": _known_args(args, required),
+    }
+
+
+def _value_error_type(message: str) -> str:
+    lowered = message.lower()
+    not_found_markers = ("no active", "not found", "unknown quest", "does not exist", "missing active")
+    return "not_found" if any(marker in lowered for marker in not_found_markers) else "invalid_argument"
+
+
+def _normalized_failure_payload(payload: dict[str, Any], *, tool_name: str | None, args: dict[str, Any] | None = None) -> dict[str, Any]:
+    if payload.get("ok", True):
+        return payload
+    call_args = dict(args or {})
+    current = dict(payload)
+    original_type = str(current.get("error_type") or "").strip()
+    error = str(current.get("error") or f"{tool_name or 'MCP tool'} failed")
+    if original_type in {"FileNotFoundError", "NotADirectoryError"}:
+        error_type = "not_found"
+        recoverable = True
+    elif original_type == "ValueError":
+        error_type = _value_error_type(error)
+        recoverable = True
+    elif original_type == "claim_gate_blocked":
+        error_type = original_type
+        recoverable = True
+        current.setdefault("error_family", "gate_blocked")
+    elif original_type in {"", "error"} and error.lower().startswith("missing required"):
+        error_type = "missing_argument"
+        recoverable = True
+    elif original_type == "not_implemented":
+        error_type = "internal_error"
+        recoverable = True
+    else:
+        error_type = original_type or "internal_error"
+        recoverable = bool(current.get("recoverable", True))
+    current["error_type"] = error_type
+    current["recoverable"] = recoverable
+    current.setdefault("error", error)
+    if error_type == "not_found" and tool_name == "cs_get_analysis_campaign":
+        current.setdefault("retry_template", _analysis_campaign_retry_template(call_args))
+    if recoverable and not (current.get("suggested_next_action") or current.get("next_call") or current.get("retry_template")):
+        current["suggested_next_action"] = _default_error_action(error_type)
+    return current
+
+
+def _missing_argument_payload(name: str, spec: ToolSpec, missing: list[str], args: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "ok": False,
+        "error": f"Missing required MCP argument(s): {', '.join(missing)}",
+        "error_type": "missing_argument",
+        "recoverable": True,
+        "missing_context_keys": missing,
+        "required_context_keys": list(spec.required_context_keys),
+        "suggested_next_action": "Retry the same MCP tool with the listed missing arguments; do not switch to CLI.",
+        "retry_template": {
+            "name": name,
+            "required_arguments": list(spec.required_context_keys),
+            "missing_arguments": missing,
+            "known_arguments": _known_project_and_quest_args(args),
+        },
+    }
+
+
+def _validate_required_args(name: str, args: dict[str, Any], spec: ToolSpec) -> dict[str, Any] | None:
+    if name not in _STRICT_REQUIRED_ARG_TOOLS:
+        return None
+    missing = [key for key in spec.required_context_keys if _is_missing_arg(args.get(key))]
+    if not missing:
+        return None
+    return _missing_argument_payload(name, spec, missing, args)
+
+
+def _bash_exec_preflight(args: dict[str, Any]) -> dict[str, Any] | None:
+    operation = str(args.get("operation") or ("run" if args.get("command") else "list")).strip().lower()
+    if operation == "run" and _is_missing_arg(args.get("command")):
+        spec = _SPECS_BY_NAME["cs_bash_exec"]
+        return _missing_argument_payload("cs_bash_exec", spec, ["command"], args)
+    if operation == "list" and _is_missing_arg(args.get("command")):
+        quest_id = str(args.get("quest_id") or "").strip()
+        if quest_id and not (_layout(args).quest_root_for(quest_id) / "quest.yaml").exists():
+            return {"ok": True, "quest_id": quest_id, "sessions": [], "summary": {"session_count": 0}}
+    return None
 
 
 def list_tool_specs(profile: str | None = None, stage: str | None = None) -> list[ToolSpec]:
@@ -378,12 +546,49 @@ def tools_list_payload(args: dict[str, Any] | None = None) -> dict[str, Any]:
     profile = str(payload_args.get("profile") or DEFAULT_PROFILE_NAME).strip() or DEFAULT_PROFILE_NAME
     stage = str(payload_args.get("stage") or payload_args.get("active_stage") or "").strip() or None
     try:
-        specs = list_tool_specs(profile, stage)
+        profile_obj = get_profile(profile)
     except KeyError as exc:
-        return apply_budget_envelope(
-            {"ok": False, "error": str(exc), "error_type": "unknown_profile", "recoverable": True, "profile": profile},
+        return _finalize_tool_payload(
+            _error_payload("unknown_profile", str(exc), True, "tools/list", profile=profile),
             tool_name="tools/list",
+            args=payload_args,
         )
+    if not profile_obj.registers_mcp:
+        return _finalize_tool_payload(
+            _error_payload(
+                "profile_not_registered_for_mcp",
+                f"Profile is not registered for default MCP: {profile}",
+                True,
+                "tools/list",
+                profile=profile,
+                suggested_next_action="Use core or goal MCP profile. Hidden admin/debug CLI remains outside default MCP.",
+            ),
+            tool_name="tools/list",
+            args=payload_args,
+        )
+    warnings: list[str] = []
+    if stage and profile_obj.name == "goal":
+        normalized_stage, stage_ok = normalize_stage(stage)
+        if not stage_ok:
+            return _finalize_tool_payload(
+                _error_payload(
+                    "unknown_stage",
+                    f"Unknown CodexScientist goal stage: {stage}",
+                    True,
+                    "tools/list",
+                    profile=profile,
+                    stage=stage,
+                    allowed_stages=sorted(STAGE_TOOL_ADDITIONS),
+                    stage_aliases=dict(STAGE_ALIASES),
+                    suggested_next_action="Retry tools/list with one allowed stage or omit stage for the full goal profile.",
+                ),
+                tool_name="tools/list",
+                args=payload_args,
+            )
+        stage = normalized_stage
+    elif stage and profile_obj.name == "core":
+        warnings.append("ignored_stage_for_core_profile")
+    specs = list_tool_specs(profile, stage)
     return apply_budget_envelope(
         {
             "ok": True,
@@ -392,13 +597,14 @@ def tools_list_payload(args: dict[str, Any] | None = None) -> dict[str, Any]:
             "stage": stage,
             "compact": True,
             "tools": [spec.as_dict() for spec in specs],
+            "warnings": warnings,
         },
         tool_name="tools/list",
     )
 
 
-def _finalize_tool_payload(payload: dict[str, Any], *, tool_name: str | None = None) -> dict[str, Any]:
-    return apply_budget_envelope(payload, tool_name=tool_name)
+def _finalize_tool_payload(payload: dict[str, Any], *, tool_name: str | None = None, args: dict[str, Any] | None = None) -> dict[str, Any]:
+    return apply_budget_envelope(_normalized_failure_payload(payload, tool_name=tool_name, args=args), tool_name=tool_name)
 
 
 def _maybe_apply_progress_watchdog(name: str, args: dict[str, Any], payload: dict[str, Any]) -> dict[str, Any]:
@@ -415,39 +621,39 @@ def _maybe_apply_progress_watchdog(name: str, args: dict[str, Any], payload: dic
 def call_tool(name: str, args: dict[str, Any] | None = None) -> dict[str, Any]:
     if name not in _SPECS_BY_NAME:
         return _finalize_tool_payload(
-            {
-                "ok": False,
-                "error": f"Unknown MCP tool: {name}",
-                "error_type": "unknown_tool",
-                "recoverable": True,
-                "suggested_next_action": "Call tools/list and choose one of the curated cs_* tools.",
-            },
+            _error_payload("unknown_tool", f"Unknown MCP tool: {name}", True, name),
             tool_name=name,
+            args=args,
         )
     handler = _HANDLERS.get(name)
     if handler is None:
         return _finalize_tool_payload(
-            {
-                "ok": False,
-                "error": f"MCP tool not implemented yet: {name}",
-                "error_type": "not_implemented",
-                "recoverable": True,
-                "suggested_next_action": "Run cs_doctor and implement or enable this MCP tool family; do not switch the default agent research flow to an admin/debug CLI path.",
-            },
+            _error_payload(
+                "internal_error",
+                f"MCP tool not implemented yet: {name}",
+                True,
+                name,
+                suggested_next_action="Run cs_doctor and implement or enable this MCP tool family; keep hidden admin/debug CLI outside the default agent research flow.",
+            ),
             tool_name=name,
+            args=args,
         )
     call_args = dict(args or {})
+    if name == "cs_bash_exec":
+        bash_preflight = _bash_exec_preflight(call_args)
+        if bash_preflight is not None:
+            return _finalize_tool_payload(bash_preflight, tool_name=name, args=call_args)
+    spec = _SPECS_BY_NAME[name]
+    required_error = _validate_required_args(name, call_args, spec)
+    if required_error is not None:
+        return _finalize_tool_payload(required_error, tool_name=name, args=call_args)
     try:
         payload = handler(call_args)
+    except FileNotFoundError as exc:
+        return _finalize_tool_payload(_error_payload("not_found", str(exc), True, name), tool_name=name, args=call_args)
+    except ValueError as exc:
+        return _finalize_tool_payload(_error_payload(_value_error_type(str(exc)), str(exc), True, name), tool_name=name, args=call_args)
     except Exception as exc:
-        return _finalize_tool_payload(
-            {
-                "ok": False,
-                "error": f"MCP tool failed: {exc}",
-                "error_type": "tool_error",
-                "recoverable": True,
-            },
-            tool_name=name,
-        )
+        return _finalize_tool_payload(_error_payload("internal_error", f"MCP tool failed: {exc}", True, name), tool_name=name, args=call_args)
     payload = _maybe_apply_progress_watchdog(name, call_args, payload)
-    return _finalize_tool_payload(payload, tool_name=name)
+    return _finalize_tool_payload(payload, tool_name=name, args=call_args)

@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from contextlib import contextmanager
 from typing import Any, Callable, Iterator
 
@@ -41,6 +42,7 @@ MCP_ONLY_SCHEMAS: tuple[dict[str, Any], ...] = (
 )
 SCHEMA_BY_NAME: dict[str, dict[str, Any]] = {schema["name"]: schema for schema in [*native_schemas.ALL_SCHEMAS, *MCP_ONLY_SCHEMAS]}
 PUBLIC_SCHEMA_BY_NAME: dict[str, dict[str, Any]] = {schema["name"]: schema for schema in native_schemas.PUBLIC_SCHEMAS}
+_TRIAL_ID_RE = re.compile(r"^T\d{4}$")
 
 
 @contextmanager
@@ -307,10 +309,62 @@ def trial_propose(args: dict[str, Any]) -> dict[str, Any]:
         return {"ok": True, "trial": trial}
 
 
+def _trial_id_contract_error(error_type: str, trial_id: str = "") -> dict[str, Any]:
+    if error_type == "missing_argument":
+        return {
+            "ok": False,
+            "error": "Missing trial_id",
+            "error_type": "missing_argument",
+            "recoverable": True,
+            "missing_context_keys": ["trial_id"],
+            "required_context_keys": ["trial_id"],
+            "retry_template": {"name": "cs_trial_show", "required_arguments": ["trial_id"], "missing_arguments": ["trial_id"]},
+            "suggested_next_action": "Provide trial_id for cs_trial_show, or call cs_trial_propose to create a new trial.",
+        }
+    if error_type == "invalid_trial_id":
+        return {
+            "ok": False,
+            "error": f"Invalid trial_id: {trial_id}",
+            "error_type": "invalid_trial_id",
+            "recoverable": True,
+            "required_context_keys": ["trial_id"],
+            "retry_template": {"name": "cs_trial_show", "required_arguments": ["trial_id"], "missing_arguments": []},
+            "suggested_next_action": "Retry cs_trial_show with a trial_id formatted like T0001, or call cs_trial_propose to create a new trial.",
+        }
+    return {
+        "ok": False,
+        "error": f"Trial not found: {trial_id}",
+        "error_type": "not_found",
+        "recoverable": True,
+        "required_context_keys": ["trial_id"],
+        "retry_template": {
+            "name": "cs_trial_propose",
+            "required_arguments": ["quest_id", "idea_id", "hypothesis"],
+            "missing_arguments": "required_arguments minus keys already present in args",
+        },
+        "suggested_next_action": "Use cs_trial_show to verify an existing trial_id, or call cs_trial_propose to create a new trial.",
+    }
+
+
+def _validate_trial_id_for_action(args: dict[str, Any], service: TrialService) -> tuple[str, dict[str, Any] | None]:
+    trial_id = str(args.get("trial_id") or "").strip()
+    if not trial_id:
+        return trial_id, _trial_id_contract_error("missing_argument")
+    if not _TRIAL_ID_RE.fullmatch(trial_id):
+        return trial_id, _trial_id_contract_error("invalid_trial_id", trial_id)
+    try:
+        service.get(trial_id)
+    except FileNotFoundError:
+        return trial_id, _trial_id_contract_error("not_found", trial_id)
+    return trial_id, None
+
+
 def _trial_call(args: dict[str, Any], method: str) -> dict[str, Any]:
     with mcp_environment(args) as context:
         service = TrialService(context.resolve_project_layout())
-        trial_id = str(args.get("trial_id") or "")
+        trial_id, error = _validate_trial_id_for_action(args, service)
+        if error is not None:
+            return error
         if method == "plan":
             return service.plan(
                 trial_id,

@@ -10,7 +10,7 @@ metadata:
 skill_role: companion
 ---
 
-> Codex adapter note: this support skill is bundled for CodexScientist. Prefer the stable curated MCP tools for repeated CodexScientist state/status/context workflows; use `scripts/csctl.py call <cs_tool_name> --json ... --format json` as CLI fallback. Load at most one support skill alongside the active stage. Runtime state lives under `<project>/CodexScientist/`.
+> Codex adapter note: this support skill is bundled for CodexScientist. Prefer the stable curated MCP `cs_*` tools for repeated CodexScientist state/status/context workflows. Load at most one support skill alongside the active stage. Runtime state lives under `<project>/CodexScientist/`.
 > When a handoff becomes durable, record it with `cs_artifact_record` as a milestone/report and include the absolute quest path in the payload.
 
 # Research Quest Handoffs

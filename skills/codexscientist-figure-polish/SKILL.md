@@ -4,7 +4,7 @@ description: Use when a quest needs a polished milestone chart, paper-facing fig
 skill_role: companion
 ---
 
-> Codex adapter note: this stage skill is bundled for CodexScientist. Prefer the stable curated MCP tools for repeated CodexScientist state/status/context workflows; use `scripts/csctl.py call <cs_tool_name> --json ... --format json` as CLI fallback. Load this support skill only when its stage is relevant. Runtime state lives under `<project>/CodexScientist/`.
+> Codex adapter note: this stage skill is bundled for CodexScientist. Prefer the stable curated MCP `cs_*` tools for repeated CodexScientist state/status/context workflows. Load this support skill only when its stage is relevant. Runtime state lives under `<project>/CodexScientist/`.
 
 # Figure Polish
 
