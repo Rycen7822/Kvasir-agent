@@ -145,7 +145,7 @@ python ~/.codex/plugins/codexscientist-codex/scripts/csctl.py call <cs_tool_name
 
 常规 Codex 使用建议保持 `CODEX_HOME` 和 `AGENTS_HOME` 默认值；这两个环境变量主要用于隔离 smoke test 或明确的非默认安装。
 
-更多细节见 [docs/INSTALL.md](docs/INSTALL.md) 和 [docs/USAGE.md](docs/USAGE.md)。
+更多细节见 [docs/INSTALL.md](docs/INSTALL.md)、[docs/USAGE.md](docs/USAGE.md) 和 [docs/REPOSITORY_LAYOUT.md](docs/REPOSITORY_LAYOUT.md)。
 
 ## Stable curated MCP 与 CLI fallback 边界
 

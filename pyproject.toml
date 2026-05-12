@@ -1,3 +1,33 @@
+[build-system]
+requires = ["hatchling>=1.21"]
+build-backend = "hatchling.build"
+
+[project]
+name = "codex-scientist"
+version = "0.1.0"
+description = "Codex CLI plugin with a stable curated MCP control plane for research provenance workflows."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "CodexScientist Hermes adaptation" }]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8",
+  "vulture>=2.14",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["codex_scientist", "codexscientist_native"]
+artifacts = [
+  ".codex-plugin/**",
+  "docs/**",
+  "scripts/**",
+  "skills/**",
+]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+
+[tool.ruff]
+line-length = 100

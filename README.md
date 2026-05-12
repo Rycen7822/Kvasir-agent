@@ -145,7 +145,7 @@ This keeps quests, artifacts, memory, bash provenance, and paper bundles with th
 
 For normal Codex use, leave `CODEX_HOME` and `AGENTS_HOME` unset. They are honored for isolated smoke tests or deliberate non-default installs.
 
-See [docs/INSTALL.md](docs/INSTALL.md) and [docs/USAGE.md](docs/USAGE.md) for full details.
+See [docs/INSTALL.md](docs/INSTALL.md), [docs/USAGE.md](docs/USAGE.md), and [docs/REPOSITORY_LAYOUT.md](docs/REPOSITORY_LAYOUT.md) for install, usage, and repository organization details.
 
 ## Original Hermes MCP Equivalence
 
