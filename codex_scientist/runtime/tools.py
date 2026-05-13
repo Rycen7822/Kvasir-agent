@@ -1341,6 +1341,30 @@ def cs_record_analysis_slice(args: dict[str, Any]) -> dict[str, Any]:
     return services.artifact.record_analysis_slice(root, **kwargs)
 
 
+def _normalize_mcp_detailed_outline(value: object) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+    if value is None or isinstance(value, dict):
+        return value, None
+    if isinstance(value, list):
+        if all(isinstance(item, str) for item in value):
+            titles = [str(item).strip() for item in value if str(item).strip()]
+            return {"experimental_designs": titles}, None
+        if all(isinstance(item, dict) for item in value):
+            return {"sections": [dict(item) for item in value]}, None
+    return None, {
+        "ok": False,
+        "error": "detailed_outline must be an object, a list of section-title strings, or a list of section objects.",
+        "error_type": "invalid_argument",
+        "recoverable": True,
+        "retry_template": {
+            "name": "cs_submit_paper_outline",
+            "detailed_outline_examples": [
+                {"experimental_designs": ["Experiment 1", "Ablation"]},
+                [{"title": "Introduction"}, {"title": "Method"}],
+            ],
+        },
+    }
+
+
 @_guard
 def cs_submit_paper_outline(args: dict[str, Any]) -> dict[str, Any]:
     if err := _require(args, "quest_id"):
@@ -1349,6 +1373,11 @@ def cs_submit_paper_outline(args: dict[str, Any]) -> dict[str, Any]:
     root = _quest_root(services, str(args["quest_id"]))
     keys = ["mode","outline_id","title","note","story","ten_questions","detailed_outline","review_result","selected_reason"]
     kwargs = {k: args[k] for k in keys if k in args}
+    if "detailed_outline" in kwargs:
+        detailed_outline, detail_error = _normalize_mcp_detailed_outline(kwargs.get("detailed_outline"))
+        if detail_error is not None:
+            return detail_error
+        kwargs["detailed_outline"] = detailed_outline
     if "mode" in kwargs:
         mode = str(kwargs.get("mode") or "candidate").strip().lower() or "candidate"
         if mode == "selected":

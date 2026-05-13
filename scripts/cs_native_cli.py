@@ -92,13 +92,30 @@ def _load_args(json_text: str | None, arg_items: list[str] | None, stdin_json: b
 
 def _tool_map() -> dict[str, Any]:
     schemas, tools = _load_native()
-    mapping: dict[str, Any] = {}
+    mapping: dict[str, Any] = {"cs_status": _native_status}
     for schema in schemas.ALL_SCHEMAS:
         name = schema["name"]
         handler = getattr(tools, name, None)
         if handler is not None:
             mapping[name] = handler
     return mapping
+
+
+def _project_root_from_args(args: dict[str, Any]) -> Path:
+    return Path(args.get("project") or args.get("project_root") or os.environ.get("CODEXSCIENTIST_PROJECT_ROOT") or ".").expanduser().resolve()
+
+
+def _native_status(args: dict[str, Any]) -> dict[str, Any]:
+    project = _project_root_from_args(args)
+    state_root = project / "CodexScientist"
+    return {
+        "ok": True,
+        "tool": "cs_status",
+        "project": str(project),
+        "state_root": str(state_root),
+        "state_root_exists": state_root.exists(),
+        "mcp_hint": "Use scripts/cs_mcp.py for the default MCP registry surface.",
+    }
 
 
 def _schemas_by_name(*, include_legacy: bool = False) -> dict[str, dict[str, Any]]:

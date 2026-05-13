@@ -53,13 +53,16 @@ class ToolSpec:
         return data
 
 
+def _project_root_arg(args: dict[str, Any]) -> Path:
+    return Path(args.get("project") or args.get("project_root") or ".").expanduser().resolve()
+
+
 def _layout(args: dict[str, Any]) -> ProjectLayout:
-    project = Path(args.get("project") or ".").expanduser().resolve()
-    return ProjectLayout.from_project_root(project)
+    return ProjectLayout.from_project_root(_project_root_arg(args))
 
 
 def _simple_status(args: dict[str, Any]) -> dict[str, Any]:
-    project = Path(args.get("project") or ".").resolve()
+    project = _project_root_arg(args)
     state_root = project / "CodexScientist"
     return {
         "ok": True,
@@ -218,6 +221,68 @@ def _schema_description(name: str, fallback: str) -> str:
     return description if len(description) <= 160 else f"{description[:157].rstrip()}..."
 
 
+def _minimal_property_for_key(key: str) -> dict[str, Any]:
+    if key.endswith("_id") or key in {"project", "project_root", "name", "goal", "title", "query", "baseline_path"}:
+        return {"type": "string"}
+    if key in {"slices", "completed", "decisions", "validation", "expected_outputs", "evidence_paths"}:
+        return {"type": "array"}
+    if key == "novelty_contract":
+        return {
+            "type": "object",
+            "required": ["mechanism", "related_work_refs", "expected_difference"],
+            "properties": {
+                "mechanism": {"type": "string"},
+                "related_work_refs": {"type": "array", "items": {"type": "string"}},
+                "expected_difference": {"type": "string"},
+            },
+        }
+    return {"type": "string"}
+
+
+def _schema_with_registry_contract(schema: dict[str, Any], spec: ToolSpec) -> dict[str, Any]:
+    merged = dict(schema)
+    merged.setdefault("name", spec.name)
+    merged.setdefault("description", spec.description)
+    input_schema = dict(merged.get("input_schema") or merged.get("inputSchema") or {"type": "object"})
+    properties = dict(input_schema.get("properties") or {})
+    for key in ("project", "project_root", *spec.required_context_keys):
+        properties.setdefault(key, _minimal_property_for_key(key))
+    required = list(input_schema.get("required") or [])
+    for key in spec.required_context_keys:
+        if key not in required:
+            required.append(key)
+    input_schema["type"] = "object"
+    input_schema["properties"] = properties
+    input_schema["required"] = required
+    input_schema.setdefault("additionalProperties", True)
+    merged["input_schema"] = input_schema
+    return merged
+
+
+def _minimal_schema_from_spec(spec: ToolSpec) -> dict[str, Any]:
+    return _schema_with_registry_contract(
+        {
+            "name": spec.name,
+            "description": spec.description,
+            "mcp_registry_only": True,
+            "input_schema": {"type": "object", "properties": {}, "required": [], "additionalProperties": True},
+        },
+        spec,
+    )
+
+
+def _tool_schema(args: dict[str, Any]) -> dict[str, Any]:
+    name = str(args.get("name") or args.get("tool") or "").strip()
+    if not name:
+        return {"ok": False, "error": "Missing tool name", "error_type": "missing_argument", "recoverable": True}
+    spec = _SPECS_BY_NAME.get(name)
+    if spec is None:
+        return {"ok": False, "error": f"Unknown tool schema: {name}", "error_type": "unknown_tool", "recoverable": True}
+    native_schema = research_tools.SCHEMA_BY_NAME.get(name) or research_tools.PUBLIC_SCHEMA_BY_NAME.get(name)
+    schema = _schema_with_registry_contract(native_schema, spec) if isinstance(native_schema, dict) else _minimal_schema_from_spec(spec)
+    return {"ok": True, "schema": schema}
+
+
 def _spec(name: str, fallback: str, *, group: str, read_only: bool = True, idempotent: bool = True, required: tuple[str, ...] = ()) -> ToolSpec:
     return ToolSpec(
         name=name,
@@ -235,7 +300,7 @@ _HANDLERS: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
     "cs_goal_context": goal_context.goal_context,
     "cs_goal_state": goal_context.goal_state,
     "cs_goal_next_action": goal_context.goal_next_action,
-    "cs_tool_schema": research_tools.tool_schema,
+    "cs_tool_schema": _tool_schema,
     "cs_get_quest_state": research_tools.native_handler("cs_get_quest_state"),
     "cs_set_active_quest": research_tools.native_handler("cs_set_active_quest"),
     "cs_context_pack": _context_pack,
@@ -409,7 +474,7 @@ def _is_missing_arg(value: Any) -> bool:
 
 def _known_project_and_quest_args(args: dict[str, Any]) -> dict[str, Any]:
     known: dict[str, Any] = {}
-    for key in ("project", "quest_id"):
+    for key in ("project", "project_root", "quest_id"):
         value = args.get(key)
         if not _is_missing_arg(value):
             known[key] = value
@@ -497,7 +562,24 @@ def _normalized_failure_payload(payload: dict[str, Any], *, tool_name: str | Non
         recoverable = bool(current.get("recoverable", True))
     current["error_type"] = error_type
     current["recoverable"] = recoverable
-    current.setdefault("error", error)
+    current["error"] = error
+    if tool_name == "cs_confirm_baseline" and "baseline_path" in error and "quest_root" in error:
+        current.setdefault("retry_template", {
+            "name": "cs_confirm_baseline",
+            "required_arguments": ["quest_id", "baseline_path"],
+            "path_constraint": "baseline_path must be under quest_root; use cs_create_local_baseline to create a canonical quest-local baseline first.",
+        })
+        current["suggested_next_action"] = "Use cs_create_local_baseline, then retry cs_confirm_baseline with the returned confirm_args."
+    if tool_name in {"cs_record_main_experiment", "cs_create_analysis_campaign", "cs_record_analysis_slice", "cs_claim_gate"} and (
+        "artifact.confirm_baseline" in error or "artifact.waive_baseline" in error
+    ):
+        current["error"] = error.replace("artifact.confirm_baseline(...)", "cs_confirm_baseline").replace("artifact.waive_baseline(...)", "cs_waive_baseline")
+        current.setdefault("retry_template", {
+            "name": "cs_confirm_baseline_or_cs_waive_baseline",
+            "options": ["cs_confirm_baseline", "cs_waive_baseline"],
+            "required_before_retry": [tool_name],
+        })
+        current["suggested_next_action"] = "Open the baseline gate with cs_confirm_baseline, or explicitly record a waiver with cs_waive_baseline, then retry this MCP tool."
     if error_type == "not_found" and tool_name == "cs_get_analysis_campaign":
         current.setdefault("retry_template", _analysis_campaign_retry_template(call_args))
     if recoverable and not (current.get("suggested_next_action") or current.get("next_call") or current.get("retry_template")):
@@ -556,6 +638,47 @@ def _memory_preflight(name: str, args: dict[str, Any]) -> dict[str, Any] | None:
 
 
 _FORMAL_BASH_COMMAND_CLASSES = frozenset({"formal_experiment", "benchmark", "paper_build", "reproduction", "official_evaluation"})
+
+
+def _paper_reliability_preflight(args: dict[str, Any]) -> dict[str, Any] | None:
+    dry_run = bool(args.get("dry_run"))
+    network_raw = args.get("network", args.get("allow_network", True))
+    network_enabled = False if network_raw is False or str(network_raw).strip().lower() in {"0", "false", "no", "off"} else True
+    title = str(args.get("title") or args.get("doi") or args.get("arxiv_url") or args.get("url") or "").strip()
+    if not title:
+        return _error_payload(
+            "missing_argument",
+            "Provide at least one of title, doi, arxiv_url, or url for cs_paper_reliability_verify.",
+            True,
+            "cs_paper_reliability_verify",
+            missing_context_keys=["title"],
+        )
+    if not dry_run and network_enabled:
+        has_external_url = bool(str(args.get("url") or "").strip())
+        has_resolvable_identifier = bool(str(args.get("doi") or args.get("arxiv_url") or "").strip())
+        if has_external_url and not has_resolvable_identifier:
+            return _error_payload(
+                "external_io_requires_bounded_mode",
+                "External URL-only paper reliability checks must be bounded: pass dry_run=true or network=false, or provide a DOI/arxiv_url for a full verifier run.",
+                True,
+                "cs_paper_reliability_verify",
+                retry_template={
+                    "name": "cs_paper_reliability_verify",
+                    "required_arguments": ["quest_id", "title"],
+                    "bounded_options": [{"dry_run": True, "network": False}, {"doi": "10.xxxx/example"}, {"arxiv_url": "https://arxiv.org/abs/xxxx.xxxxx"}],
+                },
+            )
+        return None
+    return {
+        "ok": True,
+        "dry_run": True,
+        "network": False,
+        "title": str(args.get("title") or "").strip() or None,
+        "doi": str(args.get("doi") or "").strip() or None,
+        "arxiv_url": str(args.get("arxiv_url") or args.get("url") or "").strip() or None,
+        "required_evidence": ["official_pdf_or_metadata", "venue_or_source_evidence", "reliability_card_output"],
+        "suggested_next_action": "Retry cs_paper_reliability_verify without dry_run/network=false after official paper metadata is available and external IO is acceptable.",
+    }
 
 
 def _bash_exec_preflight(args: dict[str, Any]) -> dict[str, Any] | None:
@@ -668,6 +791,10 @@ def call_tool(name: str, args: dict[str, Any] | None = None) -> dict[str, Any]:
             args=args,
         )
     call_args = dict(args or {})
+    if name == "cs_paper_reliability_verify":
+        reliability_preflight = _paper_reliability_preflight(call_args)
+        if reliability_preflight is not None:
+            return _finalize_tool_payload(reliability_preflight, tool_name=name, args=call_args)
     if name == "cs_bash_exec":
         bash_preflight = _bash_exec_preflight(call_args)
         if bash_preflight is not None:

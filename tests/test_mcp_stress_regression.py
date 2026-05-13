@@ -81,13 +81,14 @@ def test_profile_stage_and_schema_stress_subset_matches_upgrade6_contract():
     assert "tools" not in admin
 
     full_schema = call_tool("cs_tool_schema", {"name": "cs_submit_idea"})
-    selective_schema_miss = call_tool("cs_tool_schema", {"name": "cs_status"})
+    registry_schema = call_tool("cs_tool_schema", {"name": "cs_status"})
     assert full_schema["ok"] is True
     assert full_schema["schema"]["name"] == "cs_submit_idea"
-    assert selective_schema_miss["ok"] is False
-    assert selective_schema_miss["error_type"] == "unknown_tool"
-    assert "tool schema" in selective_schema_miss["error"].lower()
-    _assert_no_cli_leak([core, goal, unknown_stage, admin, full_schema, selective_schema_miss])
+    assert "novelty_contract" in full_schema["schema"]["input_schema"]["required"]
+    assert registry_schema["ok"] is True
+    assert registry_schema["schema"]["name"] == "cs_status"
+    assert registry_schema["schema"].get("mcp_registry_only") is True
+    _assert_no_cli_leak([core, goal, unknown_stage, admin, full_schema, registry_schema])
 
 
 def test_failure_envelope_stress_subset_has_no_tool_error_or_cli_leakage(tmp_path: Path):

@@ -122,6 +122,24 @@ def goal_context(args: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _novelty_contract_retry_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    current = dict(payload)
+    current.setdefault("recoverable", True)
+    current.setdefault("required_fields", ["novelty_contract.mechanism", "novelty_contract.related_work_refs", "novelty_contract.expected_difference"])
+    current["retry_template"] = {
+        "name": "cs_submit_idea",
+        "required_arguments": ["quest_id", "title", "novelty_contract"],
+        "minimal_novelty_contract": {
+            "mechanism": "Short description of the proposed technical mechanism.",
+            "related_work_refs": ["Local citation key or paper title"],
+            "expected_difference": "Specific difference versus the related work.",
+        },
+    }
+    missing = str(current.get("error") or "novelty_contract field is missing")
+    current["suggested_next_action"] = f"Retry cs_submit_idea with a complete novelty_contract; {missing}."
+    return current
+
+
 def submit_idea(args: dict[str, Any]) -> dict[str, Any]:
     context = CodexScientistMcpContext.from_env(args)
     layout = context.resolve_project_layout()
@@ -129,7 +147,7 @@ def submit_idea(args: dict[str, Any]) -> dict[str, Any]:
     quest_id = str(args.get("quest_id") or context.quest_id or "").strip()
     validation = service.validate_novelty_contract(args.get("novelty_contract"))
     if not validation.get("ok"):
-        return validation
+        return _novelty_contract_retry_payload(validation)
     contract = dict(validation["novelty_contract"])
     duplicate = service.duplicate_check(quest_id=quest_id, mechanism=str(contract.get("mechanism") or args.get("mechanism") or "")) if quest_id else {"decision": "allow", "similar_failed_ideas": []}
     if duplicate.get("decision") == "block_duplicate":
