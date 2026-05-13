@@ -26,20 +26,21 @@ def test_mcp_tool_registry_is_curated_cs_only():
 
     core_tools = list_tool_specs()
     core_names = [tool.name for tool in core_tools]
+    evidence_names = [tool.name for tool in list_tool_specs("evidence")]
     goal_names = [tool.name for tool in list_tool_specs("goal")]
     assert "cs_doctor" in core_names
-    assert "cs_skill_search" in core_names
-    assert "cs_skill_load" in core_names
+    assert "cs_tool_schema" in core_names
     assert "cs_manifest_validate" not in core_names
     assert "cs_queue_status" not in core_names
-    assert "cs_manifest_validate" in goal_names
-    assert "cs_queue_status" in goal_names
-    assert all(name.startswith("cs_") for name in goal_names)
-    assert not any(name.startswith("d" + "s_") or name.startswith("codexscientist_") for name in goal_names)
-    assert len(core_names) <= 14
-    assert "cs_goal_state" in core_names
-    assert "cs_goal_next_action" in core_names
-    assert len(goal_names) < 48
+    assert "cs_goal_state" not in core_names
+    assert "cs_goal_next_action" not in core_names
+    assert "cs_manifest_validate" in evidence_names
+    assert "cs_queue_status" not in evidence_names
+    assert set(goal_names) == set(evidence_names)
+    assert all(name.startswith("cs_") for name in evidence_names)
+    assert not any(name.startswith("d" + "s_") or name.startswith("codexscientist_") for name in evidence_names)
+    assert len(core_names) <= 12
+    assert len(evidence_names) < 48
 
 
 def test_mcp_stdio_smoke_initialize_list_and_call_doctor():
@@ -50,7 +51,7 @@ def test_mcp_stdio_smoke_initialize_list_and_call_doctor():
     listed = smoke("tools/list")
     names = [tool["name"] for tool in listed["tools"]]
     assert "cs_doctor" in names
-    assert "cs_skill_search" in names
+    assert "cs_tool_schema" in names
     assert all(name.startswith("cs_") for name in names)
 
     doctor = smoke("call", "cs_doctor", "{}")

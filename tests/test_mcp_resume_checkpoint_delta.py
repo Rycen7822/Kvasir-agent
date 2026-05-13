@@ -36,8 +36,8 @@ def test_p3_resume_checkpoint_delta_tools_are_registered_in_default_core():
 
     assert {"cs_resume_brief", "cs_checkpoint", "cs_pack_delta"} <= names
     assert len(names) <= 14
-    assert "cs_goal_state" in names
-    assert "cs_goal_next_action" in names
+    assert "cs_goal_state" not in names
+    assert "cs_goal_next_action" not in names
     assert "cs_queue_submit" not in names
 
 def test_mcp_checkpoint_resume_and_delta_core_flow_matches_cli(tmp_path: Path):

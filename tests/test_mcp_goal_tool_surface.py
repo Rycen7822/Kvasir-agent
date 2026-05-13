@@ -6,8 +6,7 @@ from codex_scientist.mcp.context import CodexScientistMcpContext
 from codex_scientist.mcp.tool_registry import call_tool, tools_list_payload
 from codex_scientist.profiles import DEFAULT_PROFILE_NAME, PROFILES
 
-REQUIRED_GOAL_TOOLS = {
-    "cs_goal_context",
+REQUIRED_EVIDENCE_TOOLS = {
     "cs_tool_schema",
     "cs_new_quest",
     "cs_record_user_requirement",
@@ -15,7 +14,6 @@ REQUIRED_GOAL_TOOLS = {
     "cs_confirm_baseline",
     "cs_submit_idea",
     "cs_record_main_experiment",
-    "cs_create_analysis_campaign",
     "cs_record_analysis_slice",
     "cs_get_method_scoreboard",
     "cs_get_optimization_frontier",
@@ -23,16 +21,14 @@ REQUIRED_GOAL_TOOLS = {
     "cs_resume_brief",
     "cs_manifest_init",
     "cs_manifest_validate",
-    "cs_queue_submit",
-    "cs_queue_status",
-    "cs_runner_start",
-    "cs_runner_status",
-    "cs_trial_propose",
-    "cs_trial_plan",
-    "cs_trial_show",
 }
 
 FORBIDDEN = ("scripts/csctl.py", "CLI fallback")
+
+
+def _names(payload: dict) -> set[str]:
+    assert payload["ok"] is True, payload
+    return {tool["name"] for tool in payload["tools"]}
 
 
 def test_mcp_context_reads_goal_environment(monkeypatch, tmp_path: Path):
@@ -58,16 +54,22 @@ def test_mcp_context_reads_goal_environment(monkeypatch, tmp_path: Path):
     assert context.resolve_project_layout().state_root == tmp_path / "CodexScientist"
 
 
-def test_goal_profile_tools_are_explicit_annotated_and_cli_free():
+def test_goal_profile_is_deprecated_evidence_alias_and_cli_free():
     assert DEFAULT_PROFILE_NAME == "core"
     assert "goal" in PROFILES
+    assert PROFILES["goal"].deprecated
     assert "all" not in PROFILES or not PROFILES["all"].registers_mcp
 
     payload = tools_list_payload({"profile": "goal"})
-    names = {tool["name"] for tool in payload["tools"]}
+    names = _names(payload)
 
-    assert REQUIRED_GOAL_TOOLS.issubset(names)
+    assert REQUIRED_EVIDENCE_TOOLS.issubset(names)
+    assert "cs_goal_context" not in names
+    assert "cs_queue_submit" not in names
+    assert "cs_runner_start" not in names
+    assert "cs_trial_propose" not in names
     assert len(names) < 48
+    assert any("profile_deprecated" in warning for warning in payload["warnings"])
     for tool in payload["tools"]:
         assert tool["name"].startswith("cs_")
         assert tool["group"]
@@ -97,17 +99,12 @@ def test_tools_list_is_compact_and_schema_is_lazy():
     assert "title" in schema["schema"]["input_schema"]["properties"]
 
 
-def test_goal_stage_subset_filters_heavy_tools():
+def test_goal_stage_label_does_not_filter_tools():
+    goal = tools_list_payload({"profile": "goal"})
     analysis = tools_list_payload({"profile": "goal", "stage": "analysis"})
-    names = {tool["name"] for tool in analysis["tools"]}
 
-    assert "cs_goal_context" in names
-    assert "cs_create_analysis_campaign" in names
-    assert "cs_record_analysis_slice" in names
-    assert "cs_paper_fetch" not in names
-    assert len(names) < 24
-
-    context = call_tool("cs_goal_context", {"active_stage": "analysis"})
-    assert context["ok"] is True
-    assert "cs_create_analysis_campaign" in context["allowed_tools_for_stage"]
-    assert "cs_paper_fetch" not in context["allowed_tools_for_stage"]
+    assert _names(analysis) == _names(goal)
+    assert analysis["stage_label"] == "analysis"
+    assert "stage_label_not_used_for_tool_filtering" in analysis["warnings"]
+    assert "cs_goal_context" not in _names(analysis)
+    assert "cs_paper_fetch" not in _names(analysis)

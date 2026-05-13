@@ -153,6 +153,19 @@ def _friendly_payload(tool_name: str, payload: dict[str, Any]) -> dict[str, Any]
 
 
 def call_tool(name: str, args: dict[str, Any]) -> dict[str, Any]:
+    legacy_aliases = _legacy_alias_to_canonical()
+    if name in legacy_aliases:
+        return {
+            "ok": False,
+            "error": f"Legacy alias is disabled by default: {name}",
+            "error_type": "legacy_alias_disabled",
+            "recoverable": True,
+            "transport": "codex-native-cli",
+            "mcp": False,
+            "deprecated_alias": True,
+            "legacy_tool": name,
+            "canonical_tool": legacy_aliases[name],
+        }
     mapping = _tool_map()
     if name not in mapping:
         return {"ok": False, "error": f"Unknown tool: {name}", "available_tools": sorted(mapping), "transport": "codex-native-cli", "mcp": False}

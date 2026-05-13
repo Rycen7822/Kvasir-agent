@@ -63,23 +63,23 @@ cs_record_analysis_slice
 
 ## Method improvement and claim gate
 
-After experiment or analysis evidence, `cs_record_main_experiment` or related analysis tools may create a method improvement gate. The safe loop is:
+After experiment or analysis evidence, `cs_record_main_experiment` and related tools record evidence only; Codex remains the planner. The safe loop is:
 
 1. record evidence and negative memory where applicable;
-2. call `cs_update_method_scoreboard` to update method scores and frontier state;
-3. call `cs_select_next_idea` to choose a novelty-checked next candidate;
+2. call `cs_update_method_scoreboard` when the method ledger should record an outcome;
+3. let Codex decide any next idea or follow-up action;
 4. call `cs_claim_gate` before making any external-facing claim.
 
-Evidence-poor or duplicate candidates fail closed and return a required next MCP tool rather than encouraging an ungrounded claim.
+Evidence-poor or duplicate candidates fail closed with structured evidence gaps rather than encouraging an ungrounded claim.
 
 ## Progress watchdog, checkpoint, and resume
 
 Long-running goal work should keep recovery anchors fresh:
 
-1. state-changing MCP tools return `checkpoint_due` and `progress_watchdog` metadata when a checkpoint is needed;
-2. `cs_goal_watchdog` reconciles running jobs, stale heartbeat state, and stuck runners;
+1. state-changing MCP tools do not auto-inject checkpoint/watchdog gate metadata;
+2. `cs_goal_watchdog` reports running jobs, stale heartbeat state, and stuck runners as a manual diagnostic;
 3. `cs_checkpoint` records completed stage boundaries, decisions, validation, and artifact refs;
-4. `cs_resume_brief` returns `current_quest`, `active_stage`, `current_gate`, `active_run_id`, `next_required_mcp_tool`, `source_refs`, and bounded text for compaction recovery.
+4. `cs_resume_brief` returns `current_quest`, `active_run_id`, passive `recovery_anchor`, `source_refs`, and bounded text for compaction recovery.
 
 ## Skill retrieval
 

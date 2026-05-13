@@ -11,7 +11,7 @@ def _ok(payload: dict) -> dict:
     return payload
 
 
-def test_state_changing_tools_report_checkpoint_due_and_watchdog_state(tmp_path: Path):
+def test_state_changing_tools_do_not_report_or_write_progress_watchdog(tmp_path: Path):
     quest = _ok(call_tool("cs_new_quest", {"project": str(tmp_path), "goal": "watchdog", "title": "Watchdog"}))
     quest_id = quest["quest"]["quest_id"]
 
@@ -27,8 +27,6 @@ def test_state_changing_tools_report_checkpoint_due_and_watchdog_state(tmp_path:
             },
         )
     )
-    assert first["checkpoint_due"] is False
-
     second = _ok(
         call_tool(
             "cs_record_user_requirement",
@@ -41,18 +39,18 @@ def test_state_changing_tools_report_checkpoint_due_and_watchdog_state(tmp_path:
             },
         )
     )
-    assert second["checkpoint_due"] is True
-    assert second["checkpoint_reason"] == "tool_call_threshold"
-    assert second["next_checkpoint_tool"] == "cs_checkpoint"
+
+    for payload in (first, second):
+        assert "checkpoint_due" not in payload
+        assert "checkpoint_reason" not in payload
+        assert "next_checkpoint_tool" not in payload
+        assert "progress_watchdog" not in payload
 
     state_path = tmp_path / "CodexScientist" / "quests" / quest_id / "runtime" / "progress_watchdog.json"
-    state = json.loads(state_path.read_text(encoding="utf-8"))
-    assert state["tool_calls_since_last_checkpoint"] == 2
-    assert state["last_state_changing_tool"] == "cs_record_user_requirement"
-    assert state["pending_checkpoint_reason"] == "tool_call_threshold"
+    assert not state_path.exists()
 
 
-def test_checkpoint_resets_progress_watchdog_and_writes_runtime_checkpoint(tmp_path: Path):
+def test_checkpoint_writes_passive_checkpoint_without_watchdog_or_goal_gate(tmp_path: Path):
     quest = _ok(call_tool("cs_new_quest", {"project": str(tmp_path), "goal": "watchdog reset", "title": "Watchdog Reset"}))
     quest_id = quest["quest"]["quest_id"]
     _ok(
@@ -79,12 +77,16 @@ def test_checkpoint_resets_progress_watchdog_and_writes_runtime_checkpoint(tmp_p
             },
         )
     )
-    assert checkpoint["checkpoint_due"] is False
-    assert checkpoint["runtime_checkpoint_path"].endswith(".md")
-    assert Path(checkpoint["runtime_checkpoint_path"]).exists()
-    assert Path(checkpoint["runtime_summary_path"]).exists()
-    assert Path(checkpoint["goal_state_path"]).exists()
+    assert checkpoint["checkpoint_id"]
+    assert Path(checkpoint["latest_path"]).exists()
+    assert Path(checkpoint["checkpoint_log_path"]).exists()
+    assert "checkpoint_due" not in checkpoint
+    assert "next_checkpoint_tool" not in checkpoint
+    assert "runtime_checkpoint_path" not in checkpoint
+    assert "goal_state_path" not in checkpoint
+    assert "progress_watchdog" not in checkpoint
 
-    state = json.loads((tmp_path / "CodexScientist" / "quests" / quest_id / "runtime" / "progress_watchdog.json").read_text(encoding="utf-8"))
-    assert state["tool_calls_since_last_checkpoint"] == 0
-    assert state["pending_checkpoint_reason"] is None
+    quest_runtime = tmp_path / "CodexScientist" / "quests" / quest_id / "runtime"
+    assert not (quest_runtime / "progress_watchdog.json").exists()
+    goal_state = quest_runtime / "goal_state.json"
+    assert not goal_state.exists()

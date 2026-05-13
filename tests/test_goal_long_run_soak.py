@@ -27,7 +27,7 @@ def _confirm_baseline(tmp_path: Path, quest_id: str) -> None:
     _ok(call_tool("cs_confirm_baseline", {"project": str(tmp_path), **baseline["confirm_args"]}))
 
 
-def test_goal_long_run_soak_reaches_checkpoint_without_cli_surface(tmp_path: Path):
+def test_goal_long_run_soak_reaches_passive_checkpoint_without_cli_surface(tmp_path: Path):
     quest = _ok(call_tool("cs_new_quest", {"project": str(tmp_path), "goal": "toy long run", "title": "Toy Long Run"}))
     quest_id = quest["quest"]["quest_id"]
     _ok(call_tool("cs_record_user_requirement", {"project": str(tmp_path), "quest_id": quest_id, "message": "toy only"}))
@@ -51,7 +51,7 @@ def test_goal_long_run_soak_reaches_checkpoint_without_cli_surface(tmp_path: Pat
         )
     )
     _ok(call_tool("cs_runner_start", {"project": str(tmp_path), "quest_id": quest_id, "command": "python train.py", "dry_run": True}))
-    _ok(
+    experiment = _ok(
         call_tool(
             "cs_record_main_experiment",
             {
@@ -71,9 +71,11 @@ def test_goal_long_run_soak_reaches_checkpoint_without_cli_surface(tmp_path: Pat
     checkpoint = _ok(call_tool("cs_checkpoint", {"project": str(tmp_path), "quest_id": quest_id, "phase": "soak", "completed": ["toy-loop"], "next_action": "analysis"}))
     resume = _ok(call_tool("cs_resume_brief", {"project": str(tmp_path), "quest_id": quest_id, "max_chars": 5000}))
 
+    assert "method_improvement_due" not in experiment
     assert checkpoint["checkpoint_id"]
     assert resume["current_quest"] == quest_id
-    assert resume["next_required_mcp_tool"]
+    assert resume["recovery_anchor"] == "analysis"
+    assert "next_required_mcp_tool" not in resume
     repo_text = "\n".join(path.read_text(encoding="utf-8", errors="replace") for path in tmp_path.rglob("*.json") if path.is_file())
     assert "scripts/csctl.py" not in repo_text
     assert "CLI fallback" not in repo_text

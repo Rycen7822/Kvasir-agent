@@ -38,8 +38,8 @@ def test_p3_log_and_artifact_tools_are_registered_in_explicit_goal_profile():
     assert {"cs_log_digest", "cs_artifact_index"}.isdisjoint(default_names)
     assert {"cs_log_digest", "cs_artifact_index"} <= goal_names
     assert len(default_names) <= 14
-    assert "cs_goal_state" in default_names
-    assert "cs_goal_next_action" in default_names
+    assert "cs_goal_state" not in default_names
+    assert "cs_goal_next_action" not in default_names
     assert len(goal_names) < 48
 
 

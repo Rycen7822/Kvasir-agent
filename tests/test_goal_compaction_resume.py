@@ -6,7 +6,7 @@ from pathlib import Path
 from codex_scientist.mcp.tool_registry import call_tool
 
 
-def test_goal_state_survives_context_compaction_via_resume_and_context_pack(tmp_path: Path):
+def test_legacy_goal_state_is_ignored_by_resume_and_context_pack(tmp_path: Path):
     quest_id = "QRESUME"
     call_tool(
         "cs_manifest_init",
@@ -28,14 +28,15 @@ def test_goal_state_survives_context_compaction_via_resume_and_context_pack(tmp_
 
     resume = call_tool("cs_resume_brief", {"project": str(tmp_path), "quest_id": quest_id, "max_chars": 4000})
     assert resume["ok"] is True
-    assert resume["goal_loop_state"]["quest_id"] == quest_id
-    assert resume["goal_loop_state"]["active_stage"] == "analysis-campaign"
-    assert resume["goal_loop_state"]["current_gate"]["required_tool"] == "cs_record_analysis_slice"
+    assert "goal_loop_state" not in resume
+    assert "next_required_mcp_tool" not in resume
+    assert any(ref["kind"] == "legacy_goal_state_ignored" for ref in resume["source_refs"])
 
     pack = call_tool("cs_context_pack", {"project": str(tmp_path), "quest_id": quest_id, "max_chars": 4000})
     assert pack["ok"] is True
-    assert "goal_loop_state" in pack["content"]
-    assert "analysis-campaign" in pack["content"]
-    assert "cs_record_analysis_slice" in pack["content"]
+    assert "## quest_state" in pack["content"]
+    assert "## recovery_anchor" in pack["content"]
+    assert "goal_loop_state" not in pack["content"]
+    assert "cs_record_analysis_slice" not in pack["content"]
     assert "scripts/csctl.py" not in json.dumps({"resume": resume, "pack": pack}, ensure_ascii=False)
     assert "CLI fallback" not in json.dumps({"resume": resume, "pack": pack}, ensure_ascii=False)

@@ -64,18 +64,18 @@ def test_stdio_jsonrpc_stress_subset_has_stable_protocol_responses():
     _assert_no_cli_leak(responses)
 
 
-def test_profile_stage_and_schema_stress_subset_matches_upgrade5_contract():
+def test_profile_stage_and_schema_stress_subset_matches_upgrade6_contract():
     core = tools_list_payload()
     goal = tools_list_payload({"profile": "goal"})
     unknown_stage = tools_list_payload({"profile": "goal", "stage": "unknown-stage"})
     admin = tools_list_payload({"profile": "admin"})
 
-    assert len(list_tool_specs()) == 14
-    assert len(core["tools"]) == 14
-    assert len(goal["tools"]) == 47
-    assert unknown_stage["ok"] is False
-    assert unknown_stage["error_type"] == "unknown_stage"
-    assert "tools" not in unknown_stage
+    assert len(list_tool_specs()) == 11
+    assert len(core["tools"]) == 11
+    assert len(goal["tools"]) == 31
+    assert unknown_stage["ok"] is True
+    assert unknown_stage["stage_label"] == "unknown-stage"
+    assert {tool["name"] for tool in unknown_stage["tools"]} == {tool["name"] for tool in goal["tools"]}
     assert admin["ok"] is False
     assert admin["error_type"] == "profile_not_registered_for_mcp"
     assert "tools" not in admin

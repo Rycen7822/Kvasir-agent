@@ -11,7 +11,7 @@ def _ok(payload: dict) -> dict:
     return payload
 
 
-def test_crash_resume_links_stuck_runner_to_goal_next_action_and_resume_brief(tmp_path: Path):
+def test_goal_watchdog_reports_stuck_runner_without_writing_goal_gate(tmp_path: Path):
     quest = _ok(call_tool("cs_new_quest", {"project": str(tmp_path), "goal": "crash resume", "title": "Crash Resume"}))
     quest_id = quest["quest"]["quest_id"]
 
@@ -30,14 +30,15 @@ def test_crash_resume_links_stuck_runner_to_goal_next_action_and_resume_brief(tm
     run_id = started["run"]["run_id"]
     watchdog = _ok(call_tool("cs_goal_watchdog", {"project": str(tmp_path), "quest_id": quest_id, "timeout_seconds": 0}))
     assert watchdog["stuck_runs"] == [run_id]
+    assert watchdog["diagnostic"]["runner_stuck"] is True
+    assert set(watchdog["diagnostic"]["recommended_evidence"]) == {"cs_log_digest", "cs_runner_status", "cs_queue_reconcile"}
+    assert "current_gate" not in watchdog
 
-    action = _ok(call_tool("cs_goal_next_action", {"project": str(tmp_path), "quest_id": quest_id}))
-    assert action["next_action"]["required_tool"] in {"cs_log_digest", "cs_runner_status", "cs_queue_reconcile"}
-    assert action["next_action"]["blocking_reason"] == "runner_stuck"
-    assert action["next_action"]["run_id"] == run_id
+    goal_state_path = tmp_path / "CodexScientist" / "quests" / quest_id / "runtime" / "goal_state.json"
+    assert not goal_state_path.exists()
 
     resume = _ok(call_tool("cs_resume_brief", {"project": str(tmp_path), "quest_id": quest_id, "max_chars": 4000}))
     assert resume["active_run_id"] == run_id
-    assert resume["blocker"] == "runner_stuck"
-    assert resume["next_required_mcp_tool"] in {"cs_log_digest", "cs_runner_status", "cs_queue_reconcile"}
-    assert any(ref["kind"] == "goal_loop_state" for ref in resume["source_refs"])
+    assert resume["blocker"] != "runner_stuck"
+    assert "next_required_mcp_tool" not in resume
+    assert any(ref["kind"] == "legacy_goal_state_ignored" for ref in resume["source_refs"])

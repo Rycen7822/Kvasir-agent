@@ -7,7 +7,6 @@ from .event_store import EventStore
 from .checkpoint import CheckpointService
 from .frontier import FrontierService
 from .journal import JournalService
-from .goal_loop import GoalLoopService
 from .manifest import ManifestService
 from .project_state import ProjectLayout
 from .queue import QueueService
@@ -42,28 +41,20 @@ class ContextPackService:
             f"event_seq={self._line(latest_checkpoint.get('event_seq', 'none'))}; "
             f"next={self._line(latest_checkpoint.get('next_action', 'unset'))}"
         )
-        next_action = self._line(latest_checkpoint.get("next_action") or "inspect gates and choose one bounded next action")
+        recovery_anchor = self._line(latest_checkpoint.get("next_action") or "manual review of latest checkpoint and evidence gaps")
         metric_frontier = ",".join(item.get("idea_id", "?") for item in frontier) or "none"
         recent_events = ",".join(event.get("event_type", "?") for event in events) or "none"
         negative_line = ",".join(item.get("idea_id", "?") for item in negative) or "none"
         artifact_index = "paths+sha256 only; no inline large artifacts"
         log_digest = "bounded tails only"
         budget_state = f"max_context={context.get('max_context_pack_chars', 'unset')}; jobs={len(queue.get('jobs', {}))}"
-        goal_loop_state = "none"
-        if quest_id:
-            state = GoalLoopService(self.layout).read_state(quest_id)
-            goal_loop_state = (
-                f"quest_id={self._line(state.get('quest_id', quest_id))}; "
-                f"active_stage={self._line(state.get('active_stage', 'unset'))}; "
-                f"gate={self._line((state.get('current_gate') or {}).get('required_tool', 'unset'))}; "
-                f"next={self._line((state.get('next_action') or {}).get('required_tool', 'unset'))}"
-            )
+        quest_state = f"quest_id={self._line(quest_id or 'unset')}; source=quest-local passive anchors"
 
         return [
             ("active_state", active_state),
             ("last_checkpoint", last_checkpoint),
-            ("goal_loop_state", goal_loop_state),
-            ("next_action", next_action),
+            ("quest_state", quest_state),
+            ("recovery_anchor", recovery_anchor),
             ("metric_frontier", metric_frontier),
             ("recent_events", recent_events),
             ("relevant_negative_memory", negative_line),

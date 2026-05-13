@@ -18,7 +18,6 @@ from codex_scientist.runtime import schemas as native_schemas
 from codex_scientist.runtime import tools as native_tools
 from codex_scientist.services.manifest import ManifestService
 from codex_scientist.services.method_improvement import MethodImprovementService
-from codex_scientist.services.goal_loop import GoalLoopService
 from codex_scientist.services.queue import QueueService
 from codex_scientist.services.runner import RunnerService
 from codex_scientist.services.trial import TrialService
@@ -154,23 +153,6 @@ def record_main_experiment(args: dict[str, Any]) -> dict[str, Any]:
     payload = native_tool_call("cs_record_main_experiment", args)
     if not payload.get("ok", True):
         return payload
-    context = CodexScientistMcpContext.from_env(args)
-    quest_id = str(args.get("quest_id") or context.quest_id or "").strip()
-    payload["method_improvement_due"] = True
-    payload["next_required_tool"] = "cs_update_method_scoreboard"
-    if quest_id:
-        GoalLoopService(context.resolve_project_layout()).write_state(
-            quest_id,
-            active_stage="optimize",
-            current_gate={
-                "stage": "optimize",
-                "action_type": "method_improvement_gate",
-                "required_tool": "cs_update_method_scoreboard",
-                "required_inputs": ["quest_id", "idea_id", "outcome", "metric_delta"],
-                "blocking_reason": "method_improvement_due",
-                "done_when": "method scoreboard, frontier, and negative memory are updated from the latest experiment",
-            },
-        )
     return payload
 
 
@@ -202,17 +184,6 @@ def update_method_scoreboard(args: dict[str, Any]) -> dict[str, Any]:
         metric_delta=float(args.get("metric_delta") or 0.0),
         lesson=str(args.get("lesson") or ""),
         mechanism=str(args.get("mechanism") or ""),
-    )
-    GoalLoopService(context.resolve_project_layout()).write_state(
-        quest_id,
-        active_stage="idea",
-        current_gate={
-            "stage": "idea",
-            "action_type": "select_next_idea",
-            "required_tool": "cs_select_next_idea",
-            "required_inputs": ["quest_id"],
-            "done_when": "next non-duplicate idea is selected or user is asked for a decision",
-        },
     )
     return payload
 

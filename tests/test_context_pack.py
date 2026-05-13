@@ -27,7 +27,7 @@ def test_context_pack_service_writes_bounded_fixed_sections(tmp_path: Path):
     assert result["ok"] is True
     assert result["chars"] <= 500
     assert Path(result["path"]).read_text(encoding="utf-8") == result["content"]
-    for section in ["active_state", "next_action", "metric_frontier", "recent_events", "relevant_negative_memory", "artifact_index", "log_digest", "budget_state"]:
+    for section in ["active_state", "quest_state", "recovery_anchor", "metric_frontier", "recent_events", "relevant_negative_memory", "artifact_index", "log_digest", "budget_state"]:
         assert f"## {section}" in result["content"]
 
 

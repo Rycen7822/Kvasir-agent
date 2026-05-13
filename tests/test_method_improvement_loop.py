@@ -26,10 +26,9 @@ def _confirm_baseline(tmp_path: Path, quest_id: str) -> None:
     _ok(call_tool("cs_confirm_baseline", {"project": str(tmp_path), **baseline["confirm_args"]}))
 
 
-def test_main_experiment_forces_method_improvement_gate(tmp_path: Path):
-    quest = _ok(call_tool("cs_new_quest", {"project": str(tmp_path), "goal": "method gate", "title": "Method Gate"}))
+def test_main_experiment_records_evidence_without_method_planner_gate(tmp_path: Path):
+    quest = _ok(call_tool("cs_new_quest", {"project": str(tmp_path), "goal": "method ledger", "title": "Method Ledger"}))
     quest_id = quest["quest"]["quest_id"]
-    _ok(call_tool("cs_goal_state", {"project": str(tmp_path), "quest_id": quest_id, "active_stage": "experiment"}))
     _confirm_baseline(tmp_path, quest_id)
     _ok(
         call_tool(
@@ -65,13 +64,8 @@ def test_main_experiment_forces_method_improvement_gate(tmp_path: Path):
             },
         )
     )
-    assert recorded["method_improvement_due"] is True
-    assert recorded["next_required_tool"] == "cs_update_method_scoreboard"
-
-    action = _ok(call_tool("cs_goal_next_action", {"project": str(tmp_path), "quest_id": quest_id, "user_goal": "继续"}))
-    assert action["active_stage"] == "optimize"
-    assert action["next_action"]["action_type"] == "method_improvement_gate"
-    assert action["next_action"]["required_tool"] == "cs_update_method_scoreboard"
+    assert "method_improvement_due" not in recorded
+    assert "next_required_tool" not in recorded
 
     updated = _ok(
         call_tool(
@@ -90,5 +84,6 @@ def test_main_experiment_forces_method_improvement_gate(tmp_path: Path):
     assert updated["scoreboard"]["ideas"]["I-regressed"]["outcome"] == "negative"
     assert updated["recorded_negative_memory"] is True
 
-    after = _ok(call_tool("cs_goal_next_action", {"project": str(tmp_path), "quest_id": quest_id}))
-    assert after["next_action"]["required_tool"] == "cs_select_next_idea"
+    state_path = tmp_path / "CodexScientist" / "quests" / quest_id / "runtime" / "goal_state.json"
+    if state_path.exists():
+        assert "cs_select_next_idea" not in state_path.read_text(encoding="utf-8")

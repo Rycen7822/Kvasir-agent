@@ -15,7 +15,7 @@ _REQUIRED_RESUME_KEYS = {
     "active_job_id",
     "active_run_id",
     "last_checkpoint",
-    "next_action",
+    "recovery_anchor",
     "blocked_reason",
     "validation_status",
     "budget_status",
@@ -46,7 +46,7 @@ def test_resume_brief_contains_stable_recovery_anchors(tmp_path: Path):
     assert brief["autonomy_mode"] == "copilot"
     assert brief["active_phase"] == "P3-2"
     assert brief["last_checkpoint"]["checkpoint_id"] == checkpoint["checkpoint_id"]
-    assert brief["next_action"] == "implement delta pack"
+    assert brief["recovery_anchor"] == "implement delta pack"
     assert brief["artifact_refs"]
     assert brief["source_refs"]
 
@@ -60,4 +60,4 @@ def test_resume_brief_warns_instead_of_dropping_anchors_when_budget_is_too_small
     assert brief["ok"] is True
     assert _REQUIRED_RESUME_KEYS <= set(brief)
     assert "budget_too_small" in brief["warnings"]
-    assert brief["next_action"]
+    assert brief["recovery_anchor"]

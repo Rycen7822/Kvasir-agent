@@ -9,14 +9,7 @@ from typing import Any, Callable
 from codex_scientist.mcp import goal_context, research_tools
 from codex_scientist.mcp.envelope import apply_budget_envelope
 from codex_scientist.mcp.skill_index import load_skill, search_skills
-from codex_scientist.profiles import (
-    DEFAULT_PROFILE_NAME,
-    STAGE_ALIASES,
-    STAGE_TOOL_ADDITIONS,
-    get_profile,
-    get_profile_tool_names,
-    normalize_stage,
-)
+from codex_scientist.profiles import DEFAULT_PROFILE_NAME, get_profile, get_profile_tool_names
 from codex_scientist.services.artifacts import ArtifactIndexService
 from codex_scientist.services.checkpoint import CheckpointService
 from codex_scientist.services.context_pack import ContextPackService
@@ -158,9 +151,6 @@ def _checkpoint(args: dict[str, Any]) -> dict[str, Any]:
         risk_flags=list(args.get("risk_flags") or []),
         idempotency_key=args.get("idempotency_key"),
     )
-    quest_id = str(args.get("quest_id") or "").strip()
-    if quest_id and payload.get("ok"):
-        payload.update(ProgressWatchdogService(layout).reset_after_checkpoint(quest_id=quest_id, checkpoint=payload))
     return payload
 
 
@@ -224,7 +214,8 @@ def _soak_crash_resume(args: dict[str, Any]) -> dict[str, Any]:
 
 def _schema_description(name: str, fallback: str) -> str:
     schema = research_tools.PUBLIC_SCHEMA_BY_NAME.get(name) or research_tools.SCHEMA_BY_NAME.get(name) or {}
-    return str(schema.get("description") or fallback)
+    description = str(schema.get("description") or fallback)
+    return description if len(description) <= 160 else f"{description[:157].rstrip()}..."
 
 
 def _spec(name: str, fallback: str, *, group: str, read_only: bool = True, idempotent: bool = True, required: tuple[str, ...] = ()) -> ToolSpec:
@@ -282,6 +273,8 @@ for _native_name in [
     "cs_new_quest",
     "cs_record_user_requirement",
     "cs_memory_search",
+    "cs_memory_read",
+    "cs_memory_list_recent",
     "cs_memory_write",
     "cs_artifact_record",
     "cs_create_local_baseline",
@@ -298,6 +291,13 @@ for _native_name in [
     "cs_submit_paper_bundle",
     "cs_refresh_summary",
     "cs_paper_fetch",
+    "cs_arxiv",
+    "cs_strict_research_prepare",
+    "cs_strict_research_record_candidate",
+    "cs_strict_research_upsert_candidate",
+    "cs_record_literature_reading_note",
+    "cs_strict_research_init_bibliography",
+    "cs_paper_reliability_verify",
 ]:
     _HANDLERS[_native_name] = research_tools.native_handler(_native_name)
 
@@ -326,8 +326,10 @@ _SPECS: list[ToolSpec] = [
     _spec("cs_skill_load", "Load a bounded view of one indexed CodexScientist skill.", group="skill"),
     _spec("cs_new_quest", "Create a new quest natively.", group="quest", read_only=False, idempotent=False, required=("goal",)),
     _spec("cs_record_user_requirement", "Record a durable user requirement.", group="quest", read_only=False, idempotent=False, required=("message",)),
-    _spec("cs_memory_search", "Search memory cards.", group="memory", required=("query",)),
-    _spec("cs_memory_write", "Write a memory card.", group="memory", read_only=False, idempotent=False, required=("title",)),
+    _spec("cs_memory_search", "Search quest-local memory cards.", group="memory", required=("quest_id", "query")),
+    _spec("cs_memory_read", "Read one quest-local memory card by id or path.", group="memory", required=("quest_id",)),
+    _spec("cs_memory_list_recent", "List recent quest-local memory cards.", group="memory", required=("quest_id",)),
+    _spec("cs_memory_write", "Write a quest-local memory card.", group="memory", read_only=False, idempotent=False, required=("quest_id", "title")),
     _spec("cs_artifact_record", "Record a generic artifact.", group="artifact", read_only=False, idempotent=False, required=("quest_id",)),
     _spec("cs_create_local_baseline", "Create a local baseline stub.", group="baseline", read_only=False, idempotent=False, required=("quest_id", "baseline_id")),
     _spec("cs_confirm_baseline", "Confirm a baseline gate.", group="baseline", read_only=False, idempotent=False, required=("quest_id", "baseline_path")),
@@ -347,6 +349,13 @@ _SPECS: list[ToolSpec] = [
     _spec("cs_submit_paper_bundle", "Submit a paper bundle manifest.", group="paper", read_only=False, idempotent=False, required=("quest_id",)),
     _spec("cs_refresh_summary", "Refresh SUMMARY.md from recent state.", group="paper", read_only=False, idempotent=False, required=("quest_id",)),
     _spec("cs_paper_fetch", "Fetch official paper PDF into the quest library.", group="paper", read_only=False, idempotent=False, required=("quest_id",)),
+    _spec("cs_arxiv", "Read or list the quest-local arXiv library.", group="literature", required=("quest_id",)),
+    _spec("cs_strict_research_prepare", "Initialize strict literature research mode for a quest.", group="literature", read_only=False, idempotent=False, required=("quest_id",)),
+    _spec("cs_strict_research_record_candidate", "Append a strict-research candidate paper row.", group="literature", read_only=False, idempotent=False, required=("quest_id", "title")),
+    _spec("cs_strict_research_upsert_candidate", "Upsert a strict-research candidate paper row.", group="literature", read_only=False, idempotent=False, required=("quest_id",)),
+    _spec("cs_record_literature_reading_note", "Record a strict-research reading note.", group="literature", read_only=False, idempotent=False, required=("quest_id", "title")),
+    _spec("cs_strict_research_init_bibliography", "Initialize strict-research bibliography working files.", group="literature", read_only=False, idempotent=False, required=("quest_id",)),
+    _spec("cs_paper_reliability_verify", "Verify and store one paper reliability evidence card.", group="literature", read_only=False, idempotent=False, required=("quest_id", "title")),
     _spec("cs_manifest_init", "Initialize a project-local research manifest.", group="manifest", read_only=False, idempotent=False, required=("name", "goal")),
     _spec("cs_manifest_record_baseline", "Record manifest baseline readiness.", group="manifest", read_only=False, idempotent=False, required=("baseline_id",)),
     _spec("cs_manifest_validate", "Validate the project-local research manifest.", group="manifest", read_only=False),
@@ -523,11 +532,56 @@ def _validate_required_args(name: str, args: dict[str, Any], spec: ToolSpec) -> 
     return _missing_argument_payload(name, spec, missing, args)
 
 
+_MEMORY_TOOLS = frozenset({"cs_memory_search", "cs_memory_read", "cs_memory_list_recent", "cs_memory_write"})
+
+
+def _memory_preflight(name: str, args: dict[str, Any]) -> dict[str, Any] | None:
+    if name not in _MEMORY_TOOLS:
+        return None
+    spec = _SPECS_BY_NAME[name]
+    quest_id = str(args.get("quest_id") or "").strip()
+    if not quest_id:
+        return _missing_argument_payload(name, spec, ["quest_id"], args)
+    scope = str(args.get("scope") or "quest").strip().lower() or "quest"
+    if scope != "quest":
+        return {
+            "ok": False,
+            "error": f"Unsupported memory scope for agent-facing MCP path: {scope}",
+            "error_type": "unsupported_scope",
+            "recoverable": True,
+            "scope": scope,
+            "allowed_scopes": ["quest"],
+        }
+    return None
+
+
+_FORMAL_BASH_COMMAND_CLASSES = frozenset({"formal_experiment", "benchmark", "paper_build", "reproduction", "official_evaluation"})
+
+
 def _bash_exec_preflight(args: dict[str, Any]) -> dict[str, Any] | None:
     operation = str(args.get("operation") or ("run" if args.get("command") else "list")).strip().lower()
-    if operation == "run" and _is_missing_arg(args.get("command")):
-        spec = _SPECS_BY_NAME["cs_bash_exec"]
-        return _missing_argument_payload("cs_bash_exec", spec, ["command"], args)
+    if operation == "run":
+        missing: list[str] = []
+        for key in ("command", "command_class", "provenance_reason", "experiment_or_artifact_id", "cwd_policy"):
+            if _is_missing_arg(args.get(key)):
+                missing.append(key)
+        if _is_missing_arg(args.get("expected_outputs")) and _is_missing_arg(args.get("evidence_paths")):
+            missing.append("expected_outputs_or_evidence_paths")
+        if missing:
+            spec = _SPECS_BY_NAME["cs_bash_exec"]
+            payload = _missing_argument_payload("cs_bash_exec", spec, missing, args)
+            payload["missing_arguments"] = missing
+            return payload
+        command_class = str(args.get("command_class") or "").strip()
+        if command_class not in _FORMAL_BASH_COMMAND_CLASSES:
+            return {
+                "ok": False,
+                "error": f"Unsupported cs_bash_exec command_class for formal-run provenance: {command_class}",
+                "error_type": "invalid_command_class",
+                "recoverable": True,
+                "allowed_command_classes": sorted(_FORMAL_BASH_COMMAND_CLASSES),
+                "command_class": command_class,
+            }
     if operation == "list" and _is_missing_arg(args.get("command")):
         quest_id = str(args.get("quest_id") or "").strip()
         if quest_id and not (_layout(args).quest_root_for(quest_id) / "quest.yaml").exists():
@@ -543,58 +597,44 @@ def list_tool_specs(profile: str | None = None, stage: str | None = None) -> lis
 
 def tools_list_payload(args: dict[str, Any] | None = None) -> dict[str, Any]:
     payload_args = dict(args or {})
-    profile = str(payload_args.get("profile") or DEFAULT_PROFILE_NAME).strip() or DEFAULT_PROFILE_NAME
-    stage = str(payload_args.get("stage") or payload_args.get("active_stage") or "").strip() or None
+    requested_profile = str(payload_args.get("profile") or DEFAULT_PROFILE_NAME).strip() or DEFAULT_PROFILE_NAME
+    stage_label = str(payload_args.get("stage") or payload_args.get("active_stage") or "").strip() or None
     try:
-        profile_obj = get_profile(profile)
+        profile_obj = get_profile(requested_profile)
     except KeyError as exc:
         return _finalize_tool_payload(
-            _error_payload("unknown_profile", str(exc), True, "tools/list", profile=profile),
-            tool_name="tools/list",
-            args=payload_args,
-        )
-    if not profile_obj.registers_mcp:
-        return _finalize_tool_payload(
-            _error_payload(
-                "profile_not_registered_for_mcp",
-                f"Profile is not registered for default MCP: {profile}",
-                True,
-                "tools/list",
-                profile=profile,
-                suggested_next_action="Use core or goal MCP profile. Hidden admin/debug CLI remains outside default MCP.",
-            ),
+            _error_payload("unknown_profile", str(exc), True, "tools/list", profile=requested_profile),
             tool_name="tools/list",
             args=payload_args,
         )
     warnings: list[str] = []
-    if stage and profile_obj.name == "goal":
-        normalized_stage, stage_ok = normalize_stage(stage)
-        if not stage_ok:
-            return _finalize_tool_payload(
-                _error_payload(
-                    "unknown_stage",
-                    f"Unknown CodexScientist goal stage: {stage}",
-                    True,
-                    "tools/list",
-                    profile=profile,
-                    stage=stage,
-                    allowed_stages=sorted(STAGE_TOOL_ADDITIONS),
-                    stage_aliases=dict(STAGE_ALIASES),
-                    suggested_next_action="Retry tools/list with one allowed stage or omit stage for the full goal profile.",
-                ),
-                tool_name="tools/list",
-                args=payload_args,
-            )
-        stage = normalized_stage
-    elif stage and profile_obj.name == "core":
-        warnings.append("ignored_stage_for_core_profile")
-    specs = list_tool_specs(profile, stage)
+    if profile_obj.deprecated:
+        warnings.append(f"profile_deprecated:{profile_obj.name}->" f"{profile_obj.replacement or DEFAULT_PROFILE_NAME}")
+    if stage_label:
+        warnings.append("stage_label_not_used_for_tool_filtering")
+    if not profile_obj.registers_mcp:
+        return _finalize_tool_payload(
+            _error_payload(
+                "profile_not_registered_for_mcp",
+                f"Profile is not registered for default MCP: {requested_profile}",
+                True,
+                "tools/list",
+                profile=requested_profile,
+                stage_label=stage_label,
+                warnings=warnings,
+                suggested_next_action="Use an agent-facing profile such as core, evidence, formal_run, literature, or paper_write.",
+            ),
+            tool_name="tools/list",
+            args=payload_args,
+        )
+    specs = list_tool_specs(requested_profile)
     return apply_budget_envelope(
         {
             "ok": True,
             "server": "codexscientist_mcp",
-            "profile": profile,
-            "stage": stage,
+            "profile": requested_profile,
+            "stage": stage_label,
+            "stage_label": stage_label,
             "compact": True,
             "tools": [spec.as_dict() for spec in specs],
             "warnings": warnings,
@@ -605,17 +645,6 @@ def tools_list_payload(args: dict[str, Any] | None = None) -> dict[str, Any]:
 
 def _finalize_tool_payload(payload: dict[str, Any], *, tool_name: str | None = None, args: dict[str, Any] | None = None) -> dict[str, Any]:
     return apply_budget_envelope(_normalized_failure_payload(payload, tool_name=tool_name, args=args), tool_name=tool_name)
-
-
-def _maybe_apply_progress_watchdog(name: str, args: dict[str, Any], payload: dict[str, Any]) -> dict[str, Any]:
-    spec = _SPECS_BY_NAME.get(name)
-    if spec is None or spec.read_only or not payload.get("ok") or name == "cs_checkpoint":
-        return payload
-    quest_id = str(args.get("quest_id") or payload.get("quest_id") or "").strip()
-    if not quest_id:
-        return payload
-    payload.update(ProgressWatchdogService(_layout(args)).record_state_changing_tool(quest_id=quest_id, tool_name=name, args=args, payload=payload))
-    return payload
 
 
 def call_tool(name: str, args: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -643,6 +672,9 @@ def call_tool(name: str, args: dict[str, Any] | None = None) -> dict[str, Any]:
         bash_preflight = _bash_exec_preflight(call_args)
         if bash_preflight is not None:
             return _finalize_tool_payload(bash_preflight, tool_name=name, args=call_args)
+    memory_preflight = _memory_preflight(name, call_args)
+    if memory_preflight is not None:
+        return _finalize_tool_payload(memory_preflight, tool_name=name, args=call_args)
     spec = _SPECS_BY_NAME[name]
     required_error = _validate_required_args(name, call_args, spec)
     if required_error is not None:
@@ -655,5 +687,4 @@ def call_tool(name: str, args: dict[str, Any] | None = None) -> dict[str, Any]:
         return _finalize_tool_payload(_error_payload(_value_error_type(str(exc)), str(exc), True, name), tool_name=name, args=call_args)
     except Exception as exc:
         return _finalize_tool_payload(_error_payload("internal_error", f"MCP tool failed: {exc}", True, name), tool_name=name, args=call_args)
-    payload = _maybe_apply_progress_watchdog(name, call_args, payload)
     return _finalize_tool_payload(payload, tool_name=name, args=call_args)

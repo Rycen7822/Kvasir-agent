@@ -107,15 +107,14 @@ def test_bash_exec_list_without_command_is_readonly_and_run_without_command_fail
     assert_no_cli_guidance(run_payload)
 
 
-def test_goal_unknown_stage_does_not_silently_return_scout_subset():
+def test_goal_unknown_stage_is_label_only_and_does_not_filter_tools():
     payload = tools_list_payload({"profile": "goal", "stage": "unknown-stage"})
 
-    assert payload["ok"] is False
-    assert payload["error_type"] == "unknown_stage", payload
-    assert payload["recoverable"] is True
+    assert payload["ok"] is True
     assert payload["stage"] == "unknown-stage"
-    assert "allowed_stages" in payload
-    assert "tools" not in payload
+    assert payload["stage_label"] == "unknown-stage"
+    assert "stage_label_not_used_for_tool_filtering" in payload["warnings"]
+    assert {tool["name"] for tool in payload["tools"]} == {tool["name"] for tool in tools_list_payload({"profile": "goal"})["tools"]}
     assert_no_cli_guidance(payload)
 
 
@@ -146,5 +145,5 @@ def test_known_recoverable_failures_use_stable_error_taxonomy(tmp_path: Path):
     assert retry_template.get("missing_arguments") == ["campaign_title", "campaign_goal", "slices"]
     assert retry_template.get("known_arguments") == {"quest_id": "Q1"}
 
-    invalid_kind = call_tool("cs_memory_search", {"project": str(tmp_path), "query": "x", "kind": "bad-kind"})
-    assert_failure_envelope(invalid_kind, expected_error_type="invalid_argument", tool_name="cs_memory_search")
+    missing_quest_memory = call_tool("cs_memory_search", {"project": str(tmp_path), "query": "x", "kind": "bad-kind"})
+    assert_failure_envelope(missing_quest_memory, expected_error_type="missing_argument", tool_name="cs_memory_search")

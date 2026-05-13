@@ -129,14 +129,16 @@ def test_mcp_doc_lists_current_profiles_and_goal_tools():
 def test_long_run_doc_spells_out_watchdog_checkpoint_resume_contract():
     text = _read("docs/LONG_RUN.md")
     for phrase in [
-        "progress watchdog",
-        "checkpoint_due",
+        "manual watchdog diagnostics",
         "cs_goal_watchdog",
+        "without writing goal gates",
         "cs_checkpoint",
         "cs_resume_brief",
         "runner_stuck",
-        "next_required_mcp_tool",
+        "recovery_anchor",
         "active_run_id",
         "wall-clock: not_run",
     ]:
         assert phrase in text
+    for obsolete in ["checkpoint_due", "next_required_mcp_tool", "current_gate"]:
+        assert obsolete not in text

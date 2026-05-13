@@ -61,7 +61,7 @@ Do not reread long skill files by default. Use:
 - `cs_skill_search` to get short skill cards.
 - `cs_skill_load` to load a bounded `preview`, `runtime`, `risk`, `sections`, or explicitly allowed `full` view.
 
-Long-task recovery should normally use `cs_status` plus `cs_resume_brief` in the 4K-8K range. Use `cs_pack_delta` for post-checkpoint changes, `cs_log_digest` before raw logs, `cs_artifact_index` before opening artifacts, `cs_goal_watchdog` before assuming a runner is healthy, and `cs_checkpoint` at stage boundaries. Context budget is not smaller is better; incident/debug/audit work may expand to 12K-24K while still avoiding raw full logs and full artifact content unless explicitly requested.
+Long-task recovery should normally use `cs_status` plus `cs_resume_brief` in the 4K-8K range. Use `cs_pack_delta` for post-checkpoint changes, `cs_log_digest` before raw logs, `cs_artifact_index` before opening artifacts, and `cs_checkpoint` at phase boundaries. Context budget is not smaller is better; incident/debug/audit work may expand to 12K-24K while still avoiding raw full logs and full artifact content unless explicitly requested.
 
 ## Default autonomy
 
@@ -77,4 +77,4 @@ The default mode is `copilot`. Automatic idea or novelty improvement requires an
 
 ## Long-run claims
 
-Accelerated soak and fake-clock validation do not prove real overnight or ten-day wall-clock stability. If real wall-clock soak has not been run, report it as `not_run`.
+Accelerated admin-only stability validation does not prove real overnight or ten-day wall-clock stability. If real wall-clock validation has not been run, report it as `not_run`.
