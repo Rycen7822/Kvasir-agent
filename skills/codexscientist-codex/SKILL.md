@@ -11,13 +11,13 @@ This skill is a thin router. It states policy and boundaries; it is not a full c
 
 - MCP-only default: use the curated `cs_*` MCP surface for repeated research-control workflows.
 - `/goal` is Codex-native. CodexScientist does not implement slash commands; after Codex has entered goal context, this router maps research semantics to MCP calls, project-local state, checkpoint, and resume contracts.
-- Use `cs_skill_search` and `cs_skill_load` to lazy-load stage/support procedures instead of reading long skill files by default.
+- Start from the visible MCP surface: inspect `tools/list`, then call `cs_tool_schema` for the one tool you intend to use.
 - Runtime state lives in `<project>/CodexScientist/`.
 - Persist durable research facts through `cs_*` calls when they affect quest state, memory, artifacts, baselines, experiments, reviews, analysis, method improvement, or evidence.
 - For long-task recovery, call `cs_status` then `cs_resume_brief` with the default 4K-8K budget; use `cs_pack_delta` only when changes after a checkpoint are too large for the brief.
 - Use `cs_log_digest` before reading raw logs, and `cs_artifact_index` before opening artifact files.
 - End each completed stage with `cs_checkpoint` so later turns can resume without chat history.
-- Load at most one stage/support skill when the current subtask actually needs it.
+- Load bundled Codex plugin support skills only through the Codex-native skill mechanism, and only when the current subtask actually needs one.
 
 ## Default autonomy mode
 
@@ -48,14 +48,16 @@ Codex does the mechanical action; CodexScientist records the research meaning. U
 From the target project root, initialize and inspect the MCP surface with CodexScientist MCP smoke helpers or direct MCP `initialize` / `tools/list`. Then follow this MCP-first flow:
 
 1. Call `cs_status` or `cs_doctor`.
-2. Call `cs_skill_search` with the user request and workflow query.
-3. Call `cs_skill_load` for one bounded runtime view when a procedure is needed.
-4. Use the relevant curated `cs_*` MCP tool for status, manifest, queue, context pack, durable research state, evidence, or recovery.
-5. If MCP is unavailable, fail closed in the default agent path: run diagnostics and repair MCP configuration instead of switching the research workflow to an admin/debug path.
+2. If no quest exists for this task, call `cs_new_quest`.
+3. Record stable user constraints with `cs_record_user_requirement`.
+4. Choose the explicit profile that matches the work: `evidence`, `formal_run`, `literature`, or `paper_write`.
+5. Call `cs_tool_schema` for the selected tool before using it when arguments are not obvious.
+6. Use only tools visible in the current profile for status, manifest, context pack, durable research state, evidence, literature, paper, or recovery.
+7. If MCP is unavailable, fail closed in the default agent path: run diagnostics and repair MCP configuration instead of switching the research workflow to an admin/debug path.
 
 ## Output policy
 
-Prefer compact status, bounded log tails, artifact paths, hashes, and summaries. Do not inject full logs, full JSONL ledgers, full papers, or full reference repositories into Codex context unless an explicit raw/range read is required. `full` skill views require `allow_full=true`; raw logs and full artifact content are explicit opt-in paths, not defaults.
+Prefer compact status, bounded log tails, artifact paths, hashes, and summaries. Do not inject full logs, full JSONL ledgers, full papers, or full reference repositories into Codex context unless an explicit raw/range read is required. Full support-skill text and raw artifact content are explicit opt-in paths, not defaults.
 
 ## Final reply checklist
 

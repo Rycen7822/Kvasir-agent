@@ -21,7 +21,7 @@
 
 CodexScientist-codex 是基于 DeepScientist 二次开发、给 Codex CLI 使用的 CodexScientist 插件。默认研究控制面是 MCP-only：Codex 通过紧凑的 `cs_*` MCP 工具记录研究语义，常规文件读写、搜索、编辑、shell、Git、测试、构建和进程工作继续走 Codex 原生能力。
 
-`/goal` is Codex-native。CodexScientist 不实现、不注册、不拦截、不模拟 slash command。Codex 已进入 goal 语境后，CodexScientist 只提供 MCP 工具、bounded prompt/skill routing、quest state、progress watchdog、checkpoint、resume、novelty 和 claim gate contract。
+`/goal` 是 Codex 原生能力。CodexScientist 不实现、不注册、不拦截、不模拟 slash command。Codex 进入 goal 语境后，CodexScientist 只提供用于 quest state、持久需求、memory、artifact、baseline、experiment、analysis、paper/reliability、checkpoint/resume、手动诊断、novelty support 和 claim gate 的 MCP 工具。
 
 管理员终端命令只在 [docs/ADMIN_CLI.md](docs/ADMIN_CLI.md) 中说明。它们服务 human/admin/debug/CI/recovery compatibility，不是默认 Codex research path。
 
@@ -53,12 +53,12 @@ CodexScientist-codex 是基于 DeepScientist 二次开发、给 Codex CLI 使用
 | 范围 | 内容 |
 | --- | --- |
 | 控制面 | 默认通过 `scripts/cs_mcp.py` 走 MCP-only default；管理员终端命令隔离在 `docs/ADMIN_CLI.md`。 |
-| 公开工具面 | 当前公开 48 个 canonical `cs_*` runtime 工具；历史 `codexscientist_*` 名称只作为隐藏兼容别名保留。 |
-| MCP profile | core profile: 14 tools；goal profile: 47 tools；active stage subset 保持每轮 `/goal` 语境紧凑。 |
-| 长程恢复 | `cs_goal_watchdog`、`cs_checkpoint`、`cs_resume_brief` 和 `cs_pack_delta` 提供 progress watchdog、checkpoint 和 resume anchors。 |
-| 方法改进 | `cs_update_method_scoreboard`、`cs_select_next_idea` 和 `cs_claim_gate` 闭合 experiment -> novelty -> evidence loop。 |
+| 公开工具面 | curated canonical `cs_*` 工具；历史 `codexscientist_*` 名称只作为隐藏兼容别名保留。 |
+| MCP profile | 默认 core profile 暴露 11 个工具；更宽的显式 profile 是 `evidence`、`formal_run`、`literature` 和 `paper_write`；`stage` 是 label，不过滤工具列表。 |
+| 长程恢复 | `cs_status`、`cs_resume_brief`、`cs_pack_delta` 和 `cs_checkpoint` 提供被动恢复锚点；`cs_goal_watchdog` 只作为手动诊断工具。 |
+| 方法改进 | `cs_update_method_scoreboard`、`cs_select_next_idea` 和 `cs_claim_gate` 在明确使用时闭合 experiment -> novelty -> evidence loop。 |
 | 研究状态 | 项目本地 quest、memory、artifact、baseline、experiment、paper bundle、analysis campaign 和 event 读取。 |
-| Codex skills | `codexscientist-codex` 以及实验、handoff、writing plan、paper reliability、review 等 adapted stage/support skills。 |
+| Codex skills | `codexscientist-codex` 以及 experiment、handoff、writing plan、paper reliability、review 等 adapted support skills。 |
 
 ## 快速开始
 
@@ -76,13 +76,19 @@ python scripts/p4_acceptance.py
 bash scripts/install.sh
 ```
 
+安装脚本会复制插件、启用 `[plugins."codexscientist-codex@local-personal"]`，并在 Codex config 中注册 MCP server。若需要手动注册，使用同一个 stdio 入口：
+
+```bash
+codex mcp add codexscientist-codex -- python ~/.codex/plugins/codexscientist-codex/scripts/cs_mcp.py
+```
+
 安装后在研究项目根目录初始化提示文件：
 
 ```bash
 bash ~/.codex/plugins/codexscientist-codex/scripts/init_project.sh /path/to/project
 ```
 
-之后通过 MCP `cs_*` 工具执行：`cs_new_quest`、`cs_goal_context`、`cs_record_user_requirement`、`cs_create_local_baseline`、`cs_submit_idea`、`cs_record_main_experiment`、`cs_goal_watchdog`、`cs_resume_brief`、`cs_checkpoint` 等。
+之后通过 MCP `cs_*` 工具执行：`cs_new_quest`、`cs_record_user_requirement`、`cs_create_local_baseline`、`cs_confirm_baseline`、`cs_submit_idea`、`cs_record_main_experiment`、`cs_create_analysis_campaign`、`cs_record_analysis_slice`、`cs_resume_brief`、`cs_checkpoint` 等。
 
 ## 项目本地 runtime
 
@@ -92,7 +98,7 @@ bash ~/.codex/plugins/codexscientist-codex/scripts/init_project.sh /path/to/proj
 <project>/CodexScientist/
 ```
 
-这会把 quests、artifacts、memory、bash provenance、watchdog state、checkpoints、analysis slices、claim decisions 和 paper bundles 留在研究项目里，而不是散落到全局 Codex 或 Hermes 状态中。
+这会把 quests、artifacts、memory、bash provenance、manual diagnostic records、checkpoints、analysis slices、claim decisions 和 paper bundles 留在研究项目里，而不是散落到全局 Codex 或 Hermes 状态中。
 
 ## 安装细节
 
@@ -102,7 +108,8 @@ bash ~/.codex/plugins/codexscientist-codex/scripts/init_project.sh /path/to/proj
 2. 如果目标目录已存在，先备份为 `~/.codex/plugins/codexscientist-codex.backup-<timestamp>`。
 3. 注册 `~/.agents/plugins/marketplace.json`。
 4. 在 `~/.codex/config.toml` 中启用 `[plugins."codexscientist-codex@local-personal"]`。
-5. 运行 `scripts/doctor.py`。
+5. 在 `~/.codex/config.toml` 中注册 `[mcp_servers.codexscientist-codex]`。
+6. 运行 `scripts/doctor.py`，且不在安装副本中保留 Python bytecode。
 
 常规 Codex 使用建议保持 `CODEX_HOME` 和 `AGENTS_HOME` 默认值；这两个环境变量主要用于隔离 smoke test 或明确的非默认安装。
 
@@ -117,17 +124,18 @@ bash ~/.codex/plugins/codexscientist-codex/scripts/init_project.sh /path/to/proj
 | `memory.write/read/search/list_recent` | `cs_memory_write`, `cs_memory_read`, `cs_memory_search`, `cs_memory_list_recent` |
 | `artifact.record` 和 quest artifact flows | `cs_artifact_record` 以及专用 `cs_*` artifact tools |
 | event reads | `cs_events` |
-| `bash_exec` | `cs_bash_exec`，保留 quest-local execution state 和 logs |
+| `bash_exec` | `cs_bash_exec`，在需要 formal provenance 时保留 quest-local execution state 和 logs |
 | artifact convenience/introspection helpers | `cs_get_global_status`, `cs_get_method_scoreboard`, `cs_refresh_summary`, `cs_arxiv` 等 `cs_*` wrappers |
 
 ## 不提供的内容
 
 - 不提供 all-tools/full-runtime MCP surface。
-- 正常研究路径不调用外部终端命令。
+- 不实现 slash commands。
+- 正常研究路径不使用 terminal compatibility commands。
 - 不恢复 Web UI、TUI、social/browser connector 或 raw dispatcher。
 
 ## Codex 原生操作边界
 
-CodexScientist-codex 负责研究语义层：quest 状态、持久用户需求、memory、artifact、baseline、正式实验记录、analysis campaign 状态、paper/reliability 流程、progress watchdog、checkpoint/resume、claim gate，以及正式证据命令的 `cs_bash_exec` provenance。
+CodexScientist-codex 负责研究语义层：quest 状态、持久用户需求、memory、artifact、baseline、正式实验记录、analysis campaign 状态、paper/reliability 流程、manual diagnostics、checkpoint/resume、claim gate，以及正式证据命令的 `cs_bash_exec` provenance。
 
 常规操作层继续使用 Codex 原生能力：文件读写搜索、普通 shell、Git/GitHub、测试/构建/lint、进程监控和本地文档编辑。

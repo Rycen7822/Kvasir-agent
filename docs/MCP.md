@@ -2,12 +2,12 @@
 
 CodexScientist provides an MCP-only default research control plane for Codex. It exposes compact `cs_*` tool profiles for repeated research-control workflows while Codex-native file/search/edit/shell/Git/test/build/process capabilities remain the normal mechanical operation layer.
 
-`/goal` is Codex-native. CodexScientist does not implement slash commands; after Codex has entered goal context, this plugin supplies MCP tool routing, bounded skill/context views, project-local state, progress watchdog, checkpoint, resume, novelty, and claim gate contracts.
+`/goal` is Codex-native. CodexScientist does not implement slash commands; after Codex has entered goal context, this plugin supplies MCP tools for project-local research state, bounded context views, passive checkpoint/resume anchors, manual diagnostics, novelty support, and claim gates.
 
 ## Goals
 
-- Keep the default Codex research surface MCP-only default and fail closed when a tool or server is unavailable.
-- Expose compact tool cards through `tools/list`; load full schemas lazily through `cs_tool_schema`.
+- Keep the default Codex research surface MCP-only and fail closed when a tool or server is unavailable.
+- Expose compact tool cards through `tools/list`; load detailed schemas lazily through `cs_tool_schema`.
 - Keep the hidden admin/debug CLI isolated in `docs/ADMIN_CLI.md` for human/admin/debug/CI/recovery compatibility.
 - Reuse `codex_scientist/services` directly rather than shelling out to terminal compatibility commands.
 
@@ -16,49 +16,40 @@ CodexScientist provides an MCP-only default research control plane for Codex. It
 ```bash
 python scripts/cs_mcp.py --stdio-smoke initialize
 python scripts/cs_mcp.py --stdio-smoke tools/list
+python scripts/cs_mcp.py --stdio-smoke tools/list '{"profile":"evidence"}'
 python scripts/cs_mcp.py --stdio-smoke call cs_doctor '{}'
-python scripts/cs_mcp.py --stdio-smoke call cs_goal_context '{"active_stage":"experiment"}'
 ```
 
 ## Current MCP profiles
 
-- core profile: 14 tools. This is the default `tools/list` surface and contains doctor/status, goal/context state, checkpoint/resume/delta, and bounded skill retrieval.
-- goal profile: 47 tools. CodexScientist uses it only after Codex has entered a goal context.
-- active stage subset: goal profile calls should pass the active stage so the current turn sees only the relevant stage tools.
-- unknown goal stage fails closed with `error_type="unknown_stage"`, `allowed_stages`, and `stage_aliases`; it does not silently fall back to scout tools.
-- core profile ignores a supplied stage and returns `warnings=["ignored_stage_for_core_profile"]` without changing the core tool set.
-- admin profile: not registered as default MCP. `tools/list({"profile":"admin"})` returns `error_type="profile_not_registered_for_mcp"` and no tool list; human/admin/debug/CI/recovery commands are documented separately.
+- `core`: 11 default tools for doctor/status, quest anchoring, schema lookup, passive context/resume/checkpoint/delta.
+- `evidence`: evidence recording profile for quest-local memory, manifest, baseline, artifact, experiment, analysis, method, and claim-gate workflows.
+- `formal_run`: evidence plus `cs_bash_exec` for formal provenance-gated commands.
+- `literature`: strict literature, paper fetch, paper reliability, bibliography, and quest-local reading notes.
+- `paper_write`: literature plus outline, paper bundle, summary refresh, and review status.
+- `goal`: deprecated compatibility alias for `evidence`; prefer `evidence` for Codex-native goal work.
+- `admin`, `autonomous`, and `legacy_compat`: not registered as default MCP surfaces; use only for explicit human/admin/debug/CI/recovery compatibility.
 
-Important goal tools include:
+The `stage` argument is a context label for records and prompts. It does not filter `tools/list` output.
+
+Important evidence/formal tools include:
 
 ```text
-cs_goal_context
-cs_goal_state
-cs_goal_next_action
 cs_new_quest
 cs_record_user_requirement
 cs_create_local_baseline
 cs_confirm_baseline
 cs_submit_idea
-cs_update_method_scoreboard
-cs_select_next_idea
-cs_claim_gate
 cs_record_main_experiment
-cs_goal_watchdog
+cs_create_analysis_campaign
+cs_get_analysis_campaign
+cs_record_analysis_slice
+cs_claim_gate
 cs_checkpoint
 cs_resume_brief
 cs_pack_delta
-cs_runner_start
-cs_runner_status
 cs_log_digest
 cs_artifact_index
-cs_queue_submit
-cs_queue_status
-cs_trial_propose
-cs_trial_plan
-cs_trial_show
-cs_create_analysis_campaign
-cs_record_analysis_slice
 ```
 
 ## Method improvement and claim gate
@@ -72,20 +63,18 @@ After experiment or analysis evidence, `cs_record_main_experiment` and related t
 
 Evidence-poor or duplicate candidates fail closed with structured evidence gaps rather than encouraging an ungrounded claim.
 
-## Progress watchdog, checkpoint, and resume
+## Manual diagnostics, checkpoint, and resume
 
 Long-running goal work should keep recovery anchors fresh:
 
-1. state-changing MCP tools do not auto-inject checkpoint/watchdog gate metadata;
+1. state-changing MCP tools do not auto-inject checkpoint/manual-diagnostic gate metadata;
 2. `cs_goal_watchdog` reports running jobs, stale heartbeat state, and stuck runners as a manual diagnostic;
-3. `cs_checkpoint` records completed stage boundaries, decisions, validation, and artifact refs;
-4. `cs_resume_brief` returns `current_quest`, `active_run_id`, passive `recovery_anchor`, `source_refs`, and bounded text for compaction recovery.
+3. `cs_checkpoint` records completed phase boundaries, decisions, validation, and artifact refs;
+4. `cs_resume_brief` returns current quest state, active run id, passive recovery anchor, source refs, and bounded text for compaction recovery.
 
-## Skill retrieval
+## Skills and support procedures
 
-`cs_skill_search` returns short cards only. `cs_skill_load` loads bounded views and rejects forged handles, path traversal, unknown ids, and full-view loads without explicit `allow_full=true`.
-
-Agent-facing `preview` / `runtime` skill loads filter terminal compatibility command guidance. Bundled runtime skills should describe durable state through MCP `cs_*` tools, not through hidden admin/debug command examples.
+Bundled support skills are loaded by the Codex plugin skill mechanism, not by the default MCP profile. Use them when a subtask needs a procedure, then use visible MCP tools from the selected profile to record durable research state.
 
 ## Safety
 

@@ -110,8 +110,53 @@ if not found:
 path.write_text(''.join(out), encoding='utf-8')
 PY
 
-python3 "${INSTALL_DIR}/scripts/doctor.py" >/dev/null
+python3 - "${CONFIG_FILE}" "${INSTALL_DIR}/scripts/cs_mcp.py" <<'PY'
+from pathlib import Path
+import json
+import sys
+
+path = Path(sys.argv[1])
+mcp_entry = Path(sys.argv[2])
+section = '[mcp_servers.codexscientist-codex]'
+body = [
+    'command = "python"\n',
+    f'args = [{json.dumps(str(mcp_entry))}]\n',
+]
+text = path.read_text(encoding='utf-8') if path.exists() else ''
+lines = text.splitlines(keepends=True)
+out: list[str] = []
+i = 0
+found = False
+while i < len(lines):
+    if lines[i].strip() == section:
+        found = True
+        out.append(section + '\n')
+        out.extend(body)
+        i += 1
+        while i < len(lines):
+            stripped = lines[i].strip()
+            if stripped.startswith('[') and stripped.endswith(']'):
+                break
+            i += 1
+        continue
+    out.append(lines[i])
+    i += 1
+if not found:
+    if out and out[-1].strip():
+        out.append('\n')
+    out.append(section + '\n')
+    out.extend(body)
+path.write_text(''.join(out), encoding='utf-8')
+PY
+
+PYTHONDONTWRITEBYTECODE=1 python3 "${INSTALL_DIR}/scripts/doctor.py" >/dev/null
+if [ "${SOURCE_ROOT}" != "${INSTALL_DIR}" ]; then
+  find "${INSTALL_DIR}" -type d \( -name '.git' -o -name '.pytest_cache' -o -name '__pycache__' \) -prune -exec rm -rf {} +
+  find "${INSTALL_DIR}" -type f -name '*.pyc' -delete
+fi
 log "Installed ${PLUGIN_NAME} to ${INSTALL_DIR}"
 log "Registered marketplace: ${MARKETPLACE_FILE}"
 log "Enabled [plugins.\"codexscientist-codex@local-personal\"] in ${CONFIG_FILE}"
-log "Use from a research project root: python ${INSTALL_DIR}/scripts/csctl.py doctor --format json"
+log "Registered MCP server [mcp_servers.codexscientist-codex] in ${CONFIG_FILE}"
+log "Verify with: codex mcp list && codex mcp get codexscientist-codex"
+log "Smoke test: python ${INSTALL_DIR}/scripts/cs_mcp.py --stdio-smoke call cs_doctor '{}'"

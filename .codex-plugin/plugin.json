@@ -17,7 +17,9 @@
       "Write"
     ],
     "defaultPrompt": [
-      "MCP-only default: use CodexScientist MCP `cs_*` tools only for CodexScientist research semantics: quest state, durable user requirements, memory, artifacts, baselines, experiment records, paper/reliability workflows, analysis campaign state, method improvement state, and formal evidence provenance. `/goal` is Codex-native; CodexScientist does not implement slash commands. When Codex is already in goal context, use CodexScientist only as the MCP research loop adapter with project-local state, checkpoint, and resume contracts. Use Codex-native file/search/edit/shell/Git/test/build/process capabilities for routine operation-layer work. Treat `cs_bash_exec` as a provenance tool for formal experiment, baseline, analysis, or paper-facing commands, not as a general shell replacement. Load the codexscientist-codex skill first, then load bundled support skills only when the subtask needs them. Keep the native Codex transport boundary and do not reintroduce protocol-server transport."
+      "MCP-only default: use scripts/cs_mcp.py and curated cs_* tools for project-local research state.",
+      "`/goal` is Codex-native; CodexScientist does not implement slash commands.",
+      "Use Codex-native file/shell/Git/test/build for routine work; cs_bash_exec is formal provenance only."
     ],
     "brandColor": "#4D6A7A"
   }

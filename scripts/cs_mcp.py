@@ -18,20 +18,28 @@ def _emit(payload: dict) -> None:
     print(json.dumps(payload, ensure_ascii=False))
 
 
+def _parse_json_object(raw: str | None) -> dict:
+    if raw is None:
+        return {}
+    payload = json.loads(raw)
+    if not isinstance(payload, dict):
+        raise SystemExit("smoke args must be a JSON object")
+    return payload
+
+
 def _run_smoke(argv: list[str]) -> int:
     if not argv or argv[0] == "initialize":
         _emit(initialize_payload())
         return 0
     if argv[0] == "tools/list":
-        _emit(list_tools_payload())
+        args = _parse_json_object(argv[1]) if len(argv) >= 2 else {}
+        _emit(list_tools_payload(args))
         return 0
     if argv[0] == "call" and len(argv) >= 2:
-        args = json.loads(argv[2]) if len(argv) >= 3 else {}
-        if not isinstance(args, dict):
-            raise SystemExit("call args must be a JSON object")
+        args = _parse_json_object(argv[2]) if len(argv) >= 3 else {}
         _emit(call_tool_payload(argv[1], args))
         return 0
-    raise SystemExit("--stdio-smoke expects initialize, tools/list, or call <tool> <json>")
+    raise SystemExit("--stdio-smoke expects initialize, tools/list [json], or call <tool> <json>")
 
 
 def main(argv: list[str] | None = None) -> int:

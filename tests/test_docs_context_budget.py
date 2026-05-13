@@ -8,24 +8,22 @@ DOC = ROOT / "docs" / "MCP_CONTEXT_BUDGET.md"
 EXPECTED_TOOLS = {
     "cs_doctor",
     "cs_status",
-    "cs_goal_context",
-    "cs_goal_state",
-    "cs_goal_next_action",
+    "cs_tool_schema",
+    "cs_new_quest",
+    "cs_record_user_requirement",
     "cs_context_pack",
     "cs_resume_brief",
     "cs_checkpoint",
     "cs_pack_delta",
-    "cs_trial_show",
-    "cs_runner_status",
+    "cs_create_local_baseline",
+    "cs_confirm_baseline",
+    "cs_submit_idea",
+    "cs_record_main_experiment",
+    "cs_create_analysis_campaign",
+    "cs_record_analysis_slice",
     "cs_log_digest",
     "cs_artifact_index",
-    "cs_queue_status",
-    "cs_goal_watchdog",
-    "cs_update_method_scoreboard",
-    "cs_select_next_idea",
     "cs_claim_gate",
-    "cs_skill_search",
-    "cs_skill_load",
 }
 
 
@@ -38,11 +36,10 @@ def test_context_budget_doc_exists_and_rejects_over_compression():
     assert "not smaller is better" in lower or "不是越小越好" in text
     assert "cs_status" in text and "cs_resume_brief" in text and "cs_checkpoint" in text
     assert "cs_pack_delta" in text and "cs_log_digest" in text and "cs_artifact_index" in text
-    assert "allow_full=true" in text
     assert "raw logs" in lower
     assert "full artifact" in lower
     assert "source_refs" in text
-    assert "next_action" in text
+    assert "validation" in text
 
 
 def test_docs_list_current_p4_profiles_and_no_all_tools_mcp():
@@ -53,9 +50,11 @@ def test_docs_list_current_p4_profiles_and_no_all_tools_mcp():
     for tool in EXPECTED_TOOLS:
         assert tool in docs
     assert "all-tools/full-runtime MCP" in docs
-    mcp = (ROOT / "docs" / "MCP.md").read_text(encoding="utf-8")
-    assert "core profile: 14 tools" in mcp
-    assert "goal profile: 47 tools" in mcp
+    assert "default core profile has 11 tools" in docs
+    assert "evidence" in docs and "formal_run" in docs and "literature" in docs and "paper_write" in docs
+    assert "stage` argument is a context label" in docs or "`stage` is a label" in docs
+    for stale in ["core profile: 14 tools", "goal profile: 47 tools", "active stage subset"]:
+        assert stale not in docs
 
 
 def test_long_run_doc_names_recovery_artifacts_and_validation_limits():

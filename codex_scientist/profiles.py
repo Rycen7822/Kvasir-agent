@@ -49,6 +49,8 @@ EVIDENCE_ADDITIONS = (
     "cs_artifact_index",
     "cs_log_digest",
     "cs_record_main_experiment",
+    "cs_create_analysis_campaign",
+    "cs_get_analysis_campaign",
     "cs_record_analysis_slice",
     "cs_claim_gate",
     "cs_submit_idea",

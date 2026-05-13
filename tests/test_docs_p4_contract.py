@@ -111,19 +111,22 @@ def test_default_docs_are_mcp_only_and_admin_cli_is_isolated():
 def test_mcp_doc_lists_current_profiles_and_goal_tools():
     text = _read("docs/MCP.md")
     for phrase in [
-        "core profile: 14 tools",
-        "goal profile: 47 tools",
-        "active stage subset",
-        "cs_goal_context",
+        "`core`: 11 default tools",
+        "`evidence`",
+        "`formal_run`",
+        "`literature`",
+        "`paper_write`",
+        "`stage` argument is a context label",
         "cs_goal_watchdog",
         "cs_update_method_scoreboard",
-        "cs_select_next_idea",
         "cs_claim_gate",
-        "cs_trial_show",
+        "cs_create_analysis_campaign",
+        "cs_record_analysis_slice",
         "fail closed",
     ]:
         assert phrase in text
-    assert "default curated surface currently has 20 tools" not in text
+    for obsolete in ["core profile: 14 tools", "goal profile: 47 tools", "active stage subset"]:
+        assert obsolete not in text
 
 
 def test_long_run_doc_spells_out_watchdog_checkpoint_resume_contract():

@@ -4,22 +4,31 @@ ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 PROJECT="${1:-$(pwd)}"
 mkdir -p "${PROJECT}/.codex"
 cat > "${PROJECT}/.codex/CODEXSCIENTIST_CODEX.md" <<EOF
-# CodexScientist Codex Native
+# CodexScientist Codex MCP Project Note
 
-Use this project with the CodexScientist Codex native adapter.
+Use this project with the CodexScientist Codex MCP control plane.
 
 - Runtime home: ${PROJECT}/CodexScientist
-- Native control script: ${ROOT}/scripts/csctl.py
-- No MCP transport is used.
-- Do not call the external npm cs command for normal work.
-- Bundled support skills include codexscientist-experiment-execution, codexscientist-quest-handoffs, codexscientist-writing-plans, codexscientist-paper-reliability-verification, and codexscientist-review.
+- MCP server entrypoint: ${ROOT}/scripts/cs_mcp.py
+- Routine file, shell, Git, test, build, and process work remains Codex-native.
+- Use CodexScientist MCP \`cs_*\` tools only for durable research semantics: quest state, requirements, memory, artifacts, baselines, experiments, analysis, paper/reliability, checkpoint, resume, and formal evidence provenance.
+- Bundled support skills include codexscientist-experiment-execution, codexscientist-quest-handoffs, codexscientist-writing-plans, cs-paper-reliability, and codexscientist-review.
 
-Smoke check:
+MCP smoke checks:
 
 \`\`\`bash
 cd "${PROJECT}"
-python "${ROOT}/scripts/csctl.py" doctor --format json
+python "${ROOT}/scripts/cs_mcp.py" --stdio-smoke initialize
+python "${ROOT}/scripts/cs_mcp.py" --stdio-smoke tools/list
+python "${ROOT}/scripts/cs_mcp.py" --stdio-smoke call cs_doctor '{"project":"${PROJECT}"}'
+\`\`\`
+
+If Codex cannot see the tools, verify the MCP registration:
+
+\`\`\`bash
+codex mcp list
+codex mcp get codexscientist-codex
 \`\`\`
 EOF
-python "${ROOT}/scripts/csctl.py" --project-root "${PROJECT}" doctor --format json >/dev/null
-printf 'Initialized CodexScientist Codex note in %s/.codex/CODEXSCIENTIST_CODEX.md\n' "${PROJECT}"
+PYTHONDONTWRITEBYTECODE=1 python "${ROOT}/scripts/cs_mcp.py" --stdio-smoke initialize >/dev/null
+printf 'Initialized CodexScientist Codex MCP note in %s/.codex/CODEXSCIENTIST_CODEX.md\n' "${PROJECT}"

@@ -1,10 +1,10 @@
 ---
-name: codexscientist-paper-reliability-verification
-description: Compact Codex-Scientist router for codexscientist-paper-reliability-verification; use for its research stage while keeping Codex-native operations outside the plugin runtime.
+name: cs-paper-reliability
+description: Compact Codex-Scientist router for paper reliability verification; use for bounded reliability checks while keeping Codex-native operations outside the plugin runtime.
 version: 2.0.0
 ---
 
-# codexscientist-paper-reliability-verification compact router
+# cs-paper-reliability compact router
 
 This active skill is intentionally compact. The historical long playbook was moved to `references/legacy-playbook.md` and is reference-only.
 

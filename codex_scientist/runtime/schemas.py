@@ -125,7 +125,30 @@ CS_LIST_PAPER_OUTLINES = _schema("cs_list_paper_outlines", "List candidate/revis
 CS_SUBMIT_PAPER_BUNDLE = _schema("cs_submit_paper_bundle", "Submit a paper bundle manifest.", {"quest_id": S["quest_id"], "title": S["title"], "summary": {"type": "string"}, "outline_path": S["path"], "draft_path": S["path"], "writing_plan_path": S["path"], "references_path": S["path"], "claim_evidence_map_path": S["path"], "compile_report_path": S["path"], "pdf_path": S["path"], "latex_root_path": S["path"], "prepare_open_source": {"type": "boolean"}}, ["quest_id"])
 CS_REFRESH_SUMMARY = _schema("cs_refresh_summary", "Refresh SUMMARY.md from recent artifact state, matching original artifact.refresh_summary.", {"quest_id": S["quest_id"], "reason": {"type": "string"}})
 CS_ARXIV = _schema("cs_arxiv", "Interact with the quest-local arXiv library, matching original artifact.arxiv through Codex-native transport.", {"quest_id": S["quest_id"], "paper_id": {"type": "string"}, "mode": {"type": "string", "enum": ["read", "list"], "default": "read"}, "full_text": {"type": "boolean", "default": False}})
-CS_BASH_EXEC = _schema("cs_bash_exec", "Run/list/read/wait/stop quest-local bash execution sessions natively. By default workdir is limited to the quest; set allow_project_root=true only for administrative project-plugin tasks that must run from <project>. Use summary_mode=true for compact provenance output.", {"quest_id": S["quest_id"], "command": S["command"], "operation": {"type": "string", "enum": ["run", "list", "status", "read", "wait", "stop"]}, "bash_id": {"type": "string"}, "workdir": {"type": "string"}, "allow_project_root": {"type": "boolean", "default": False}, "env": {"type": "object"}, "timeout_seconds": {"type": "integer"}, "wait": {"type": "boolean"}, "limit": S["limit"], "summary_mode": {"type": "boolean", "default": False}, "response_mode": {"type": "string", "enum": ["full", "summary", "compact"]}})
+CS_BASH_EXEC = _schema(
+    "cs_bash_exec",
+    "Run/list/read/wait/stop quest-local bash sessions. For operation=run this is a formal provenance tool, not a general shell: provide command, command_class, provenance_reason, experiment_or_artifact_id, cwd_policy, and expected_outputs or evidence_paths.",
+    {
+        "quest_id": S["quest_id"],
+        "command": S["command"],
+        "operation": {"type": "string", "enum": ["run", "list", "status", "read", "wait", "stop"], "description": "Use run only for formal CodexScientist evidence/provenance commands."},
+        "command_class": {"type": "string", "enum": ["formal_experiment", "benchmark", "paper_build", "reproduction", "official_evaluation"], "description": "Required for operation=run; classify the formal evidence command."},
+        "provenance_reason": {"type": "string", "description": "Required for operation=run; explain why this command must be recorded as quest-local evidence."},
+        "experiment_or_artifact_id": {"type": "string", "description": "Required for operation=run; link the command to a run, baseline, analysis slice, paper artifact, or official evaluation id."},
+        "cwd_policy": {"type": "string", "enum": ["quest", "project"], "description": "Required for operation=run; prefer quest, use project only when allow_project_root=true is justified."},
+        "expected_outputs": {"type": "array", "items": {"type": "string"}, "description": "For operation=run provide expected output files, metrics, or evidence products unless evidence_paths is already known."},
+        "evidence_paths": {"type": "array", "items": {"type": "string"}, "description": "For operation=run provide existing or planned evidence paths when expected_outputs is not used."},
+        "bash_id": {"type": "string"},
+        "workdir": {"type": "string"},
+        "allow_project_root": {"type": "boolean", "default": False},
+        "env": {"type": "object"},
+        "timeout_seconds": {"type": "integer"},
+        "wait": {"type": "boolean"},
+        "limit": S["limit"],
+        "summary_mode": {"type": "boolean", "default": False},
+        "response_mode": {"type": "string", "enum": ["full", "summary", "compact"]},
+    },
+)
 CS_WORKFLOW_SMOKE_REPORT = _schema("cs_workflow_smoke_report", "Return a lightweight Hermes-only CodexScientist full-workflow checklist and path readiness report without running training.", {"quest_id": S["quest_id"], "dataset_path": S["path"], "paper_path": S["path"], "report_dir": S["path"]})
 CS_STRICT_RESEARCH_PREPARE = _schema("cs_strict_research_prepare", "Initialize strict literature research mode in the active quest: create reference/candidate_references.md and return conservative screening workflow guidance.", {"quest_id": S["quest_id"], "intent": {"type": "string"}, "target_count": {"type": "integer"}, "complexity": {"type": "string", "enum": ["small", "medium", "large", "survey"]}})
 CS_STRICT_RESEARCH_RECORD_CANDIDATE = _schema("cs_strict_research_record_candidate", "Append a candidate paper to reference/candidate_references.md during broad scouting before deep reading.", {"quest_id": S["quest_id"], "title": S["title"], "doi": {"type": "string"}, "link": {"type": "string"}, "source": {"type": "string"}, "authors": {"type": "string"}, "year": {"type": "string"}, "note": {"type": "string"}, "status": {"type": "string"}}, ["title"])

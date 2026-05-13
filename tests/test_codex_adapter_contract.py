@@ -181,8 +181,8 @@ def test_bilingual_readmes_document_current_install_flow():
     assert "README.zh-CN.md" in readme
     assert "README.md" in zh_readme
     for phrase in [
-        "48-tool public canonical `cs_*`",
-        "48 个 canonical `cs_*`",
+        "Curated canonical `cs_*`",
+        "curated canonical `cs_*`",
         "legacy `codexscientist_*`",
         "历史 `codexscientist_*`",
         "cs_events",
@@ -193,6 +193,8 @@ def test_bilingual_readmes_document_current_install_flow():
         "CODEX_HOME",
         "AGENTS_HOME",
         "backup",
+        "[mcp_servers.codexscientist-codex]",
+        "codex mcp add codexscientist-codex",
     ]:
         assert phrase in combined_install
 
@@ -267,11 +269,13 @@ def test_codex_plugin_packages_deep_integrated_codexscientist_skills():
         assert "Use Hermes tools" not in combined
 
 
-def test_installer_registers_codex_plugin_without_mcp():
+def test_installer_registers_codex_plugin_and_mcp_server():
     installer = (PLUGIN_ROOT / "scripts" / "install.sh").read_text(encoding="utf-8")
     assert "~/.codex/plugins/codexscientist-codex" in installer
     assert "marketplace.json" in installer
     assert '[plugins."codexscientist-codex@local-personal"]' in installer
+    assert "[mcp_servers.codexscientist-codex]" in installer
+    assert "scripts/cs_mcp.py" in installer
     assert "mcpServers" not in installer
 
 

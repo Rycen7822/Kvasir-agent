@@ -69,7 +69,7 @@ Recommended flow after Codex has entered goal context:
 
 `cs_tool_schema` returns detailed native schemas when available and a minimal registry schema for MCP registry-only tools. Every tool returned by `tools/list` should at least expose required arguments through either `tools/list` or `cs_tool_schema`.
 
-Skill retrieval helpers (`cs_skill_search`, `cs_skill_load`) are hidden/direct tools rather than default profile tools. They may be called only by explicit compatibility or debugging flows that already know the tool names; they are not part of the default Codex-facing control plane.
+Bundled support skills are loaded through the Codex plugin skill mechanism when a subtask needs a procedure. They are not part of the default Codex-facing MCP profile.
 
 Long-task recovery should normally use `cs_status` plus `cs_resume_brief` in the 4K-8K range. Use `cs_pack_delta` for post-checkpoint changes, `cs_log_digest` before raw logs, `cs_artifact_index` before opening artifacts, and `cs_checkpoint` at phase boundaries. Context budget is not smaller is better; incident/debug/audit work may expand to 12K-24K while still avoiding raw full logs and full artifact content unless explicitly requested.
 

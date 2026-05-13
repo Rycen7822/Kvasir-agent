@@ -10,7 +10,7 @@ Runtime state remains project-local under:
 <project>/CodexScientist/
 ```
 
-This tree stores quest state, events, runtime files, artifacts, memory, queue/runner ledgers, summaries, progress watchdog state, checkpoints, validation reports, novelty decisions, and claim gate records. P4 quest-scoped state lives under `CodexScientist/quests/<quest_id>/` while compatibility indexes may remain under project-local global state roots.
+This tree stores quest state, events, runtime files, artifacts, memory, queue/runner ledgers, summaries, manual diagnostic records, checkpoints, validation reports, novelty decisions, and claim gate records. P4 quest-scoped state lives under `CodexScientist/quests/<quest_id>/` while compatibility indexes may remain under project-local global state roots.
 
 ## Default autonomy boundary
 
@@ -32,7 +32,7 @@ In default mode, Codex-Scientist records, validates, organizes, retrieves, summa
 - project-local layout under `CodexScientist/`;
 - append-only event logs and atomic snapshots;
 - manifest, trial, runner, queue, wiki, frontier, journal, review, claim, cost, migration, and soak services;
-- goal loop, stage router, method improvement, progress watchdog, checkpoint, resume, and context-pack services.
+- method improvement, manual diagnostics, checkpoint, resume, and context-pack services.
 
 MCP handlers and terminal compatibility parsers call the same service layer. The MCP implementation must not shell out to terminal compatibility commands as its main path.
 
@@ -56,7 +56,7 @@ CodexScientist semantic/provenance layer:
 - durable user requirements;
 - memory and artifact records;
 - baseline, experiment, analysis, paper, reliability, and evidence ledgers;
-- method scoreboard/frontier, novelty scoring, duplicate block, related-work gate, claim gate, progress watchdog, checkpoint, and resume anchors;
+- method scoreboard/frontier, novelty scoring, duplicate block, related-work gate, claim gate, manual diagnostics, checkpoint, and resume anchors;
 - formal commands whose logs must become quest-local provenance.
 
 Codex does the mechanical action; CodexScientist records the research meaning.
@@ -65,11 +65,15 @@ Codex does the mechanical action; CodexScientist records the research meaning.
 
 The MCP boundary uses explicit profiles:
 
-- core profile: 14 tools for doctor/status, goal/context state, checkpoint/resume/delta, and bounded skill retrieval;
-- goal profile: 47 tools for Codex-native `/goal` context after stage gating;
-- active stage subset: each goal turn should use `cs_goal_context` and `allowed_tools_for_stage` before choosing a tool;
-- admin profile: not registered as default MCP and not referenced by default prompt/skill routing.
+- `core`: 11 default tools for doctor/status, quest anchoring, schema lookup, passive context/resume/checkpoint/delta.
+- `evidence`: quest-local memory, manifest, baseline, artifact, experiment, analysis, method, and claim-gate workflows.
+- `formal_run`: evidence plus formal `cs_bash_exec` provenance-gated execution.
+- `literature`: strict literature, paper fetch, reliability, bibliography, and reading-note workflows.
+- `paper_write`: literature plus paper outline/bundle/summary/review work.
+- `admin`, `autonomous`, and `legacy_compat`: not registered as default MCP surfaces.
 
-Long procedures stay in skills and references, but the default access path is `cs_skill_search` followed by a bounded `cs_skill_load` view.
+The `stage` argument is a label for context and records. It does not select a smaller tool subset.
 
-Context recovery should preserve enough structure to continue correctly: normal resume uses 4K-8K chars, incident/debug/audit may use 12K-24K chars, and full skill/raw log/full artifact reads require explicit opt-in.
+Long procedures stay in Codex plugin skills and reference files. Load them through the Codex skill mechanism when the current subtask needs a procedure, then record durable state through visible MCP tools.
+
+Context recovery should preserve enough structure to continue correctly: normal resume uses 4K-8K chars, incident/debug/audit may use 12K-24K chars, and full raw log/artifact/reference reads require explicit opt-in.

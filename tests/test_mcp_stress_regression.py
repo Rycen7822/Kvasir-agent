@@ -72,7 +72,7 @@ def test_profile_stage_and_schema_stress_subset_matches_upgrade6_contract():
 
     assert len(list_tool_specs()) == 11
     assert len(core["tools"]) == 11
-    assert len(goal["tools"]) == 31
+    assert len(goal["tools"]) == 33
     assert unknown_stage["ok"] is True
     assert unknown_stage["stage_label"] == "unknown-stage"
     assert {tool["name"] for tool in unknown_stage["tools"]} == {tool["name"] for tool in goal["tools"]}
