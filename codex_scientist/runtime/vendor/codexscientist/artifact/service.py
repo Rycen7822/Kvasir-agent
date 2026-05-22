@@ -8308,16 +8308,31 @@ class ArtifactService:
             commit_message=f"experiment: record main {run_identifier}",
             workspace_root=workspace_root,
         )
-        metric_charts = self._generate_main_experiment_metric_charts(
-            quest_root,
-            workspace_root=workspace_root,
-            run_id=run_identifier,
-        )
+        try:
+            metric_charts = self._generate_main_experiment_metric_charts(
+                quest_root,
+                workspace_root=workspace_root,
+                run_id=run_identifier,
+            )
+        except Exception as exc:
+            metric_charts = []
+            message = str(exc)
+            metric_chart_status = {
+                "ok": False,
+                "error_type": "optional_dependency_missing" if "Pillow" in message else "chart_generation_failed",
+                "chart_count": 0,
+            }
+        else:
+            metric_chart_status = {"ok": True, "chart_count": len(metric_charts)}
+        result_payload["connector_metric_chart_status"] = metric_chart_status
         if metric_charts:
             result_payload["connector_metric_charts"] = metric_charts
-            write_json(result_json_path, result_payload)
+        write_json(result_json_path, result_payload)
+        if metric_charts or metric_chart_status.get("ok") is not True:
             artifact_record = dict(artifact.get("record") or {}) if isinstance(artifact.get("record"), dict) else {}
-            artifact_record["connector_metric_charts"] = metric_charts
+            if metric_charts:
+                artifact_record["connector_metric_charts"] = metric_charts
+            artifact_record["connector_metric_chart_status"] = metric_chart_status
             details = dict(artifact_record.get("details") or {}) if isinstance(artifact_record.get("details"), dict) else {}
             details["connector_chart_count"] = len(metric_charts)
             artifact_record["details"] = details
@@ -8475,6 +8490,7 @@ class ArtifactService:
             "artifact": artifact,
             "interaction": interaction,
             "connector_metric_charts": metric_charts,
+            "connector_metric_chart_status": metric_chart_status,
             "connector_metric_chart_delivery": chart_delivery,
             "research_state": research_state,
             "metrics_summary": normalized_metrics_summary,
