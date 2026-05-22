@@ -1,6 +1,6 @@
 ---
 name: codexscientist-strict-research
-description: "Strict literature research mode for CodexScientist quests: broad candidate scouting first, reliability verification, conservative filtering, quest-local PDF download, then iterative bibliography reading notes before answering/writing."
+description: "Strict literature research mode for CodexScientist projects: broad candidate scouting first, reliability verification, conservative filtering, project-local PDF download, then iterative bibliography reading notes before answering/writing."
 version: 0.1.0
 author: Codex Agent
 ---
@@ -13,14 +13,14 @@ Use this skill when the user asks the agent to **仔细调研论文、认真调�
 
 ## Agent-managed activation
 
-Strict research is **not** a keyword-only automatic mode. Heuristic routing may recommend this skill when it sees careful-research language, but the Codex agent must decide from the full user intent, task stakes, ambiguity, requested deliverable, and available time whether strict research is warranted. If selected, the agent should explicitly treat the quest as entering strict research and then follow the workflow below.
+Strict research is **not** a keyword-only automatic mode. Heuristic routing may recommend this skill when it sees careful-research language, but the Codex agent must decide from the full user intent, task stakes, ambiguity, requested deliverable, and available time whether strict research is warranted. If selected, the agent should explicitly treat the root-bound research state as entering strict research and then follow the workflow below.
 
 When the agent chooses strict research mode:
 
-1. Work inside the active CodexScientist quest. If no quest exists, create one with `cs_new_quest`; for strict literature-map intent use `final_goal="literature_scout"` and a strict/literature `delivery_mode` so the quest starts on `strict-research` rather than the baseline anchor.
-2. Call `cs_set_active_quest(stage="strict-research")` if re-entering an existing quest, then call `cs_strict_research_prepare` before reading papers deeply.
+1. Work inside the current project root and call `cs_status` to inspect the root-bound CodexScientist state. The first durable write lazily creates `<project>/CodexScientist/research.yaml` when needed.
+2. Call `cs_strict_research_prepare` before reading papers deeply; treat any `quest_id` field only as provenance metadata, not as a path selector.
 3. Broadly search for candidate papers first. Do **not** start detailed reading immediately.
-4. Record or update every plausible candidate in `CodexScientist/quests/<quest>/reference/candidate_references.md` with title, DOI if known, URLs, source, and short reason using `cs_strict_research_upsert_candidate` (or append-only `cs_strict_research_record_candidate` only for first-pass raw capture).
+4. Record or update every plausible candidate in `reference/candidate_references.md` under the root-bound research tree with title, DOI if known, URLs, source, and short reason using `cs_strict_research_upsert_candidate` (or append-only `cs_strict_research_record_candidate` only for first-pass raw capture).
 5. When the candidate pool is large enough for the task complexity (or the user-specified count), run `cs_paper_reliability_verify` in small batches. After each paper, use the returned top-level `paper`, `tier`, `quality_flags`, `warnings`, and `reliability_card_path` fields; avoid dumping all JSON cards into chat unless needed.
 6. After each small batch, immediately update the corresponding rows in `candidate_references.md` with `cs_strict_research_upsert_candidate(status=..., evidence_card=..., retain_reject_reason=...)` before starting the next batch.
 7. After all candidates are verified and marked, clean `candidate_references.md`: delete papers that cannot be referenced (`verified-rejected`, `do_not_use`, desk-reject-only, unverifiable) unless the user explicitly requested retention; keep `verified-retained`, `user-specified-retained`, and clearly marked `needs-human-review` rows.

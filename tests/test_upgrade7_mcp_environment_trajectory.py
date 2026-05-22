@@ -122,7 +122,8 @@ def test_phase1_mcp_schema_and_missing_argument_contracts_are_bounded():
     payload = schema_response["result"]["structuredContent"]
     assert payload.get("ok") is True, payload
     schema = payload["schema"]["input_schema"]
-    assert {"quest_id", "env_id", "trajectory_id", "run_id", "source_kind"} <= set(schema.get("required", []))
+    assert {"env_id", "trajectory_id", "run_id", "source_kind"} <= set(schema.get("required", []))
+    assert "quest_id" not in set(schema.get("required", []))
 
     missing = call_tool("cs_feedback_ingest", {"quest_id": QUEST_ID})
     assert missing.get("ok") is False, missing

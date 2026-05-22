@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from codex_scientist.services.project_state import ProjectLayout
+from codex_scientist.services.project_state import ProjectLayout, ProjectRootResolver
 
 
 def _path_value(value: Any) -> Path | None:
@@ -21,10 +21,10 @@ def _text_value(value: Any) -> str | None:
 
 @dataclass(frozen=True)
 class CodexScientistMcpContext:
-    """Resolved MCP context for a Codex-managed research turn.
+    """Resolved MCP context for a Codex-managed root-bound research turn.
 
-    The context is intentionally small: it reads environment/request values and
-    returns ProjectLayout paths. It does not execute commands or mutate state.
+    The Codex project root is the storage identity. `quest_id` is provenance only;
+    it never changes where durable state is read or written.
     """
 
     project_root: Path | None = None
@@ -40,19 +40,25 @@ class CodexScientistMcpContext:
     def from_env(cls, overrides: dict[str, Any] | None = None) -> "CodexScientistMcpContext":
         values = dict(overrides or {})
         env = os.environ
-        project_root = _path_value(values.get("project") or values.get("project_root") or env.get("CODEXSCIENTIST_PROJECT_ROOT"))
+        resolver_args: dict[str, Any] = {}
+        if "project" in values:
+            resolver_args["project"] = values.get("project")
+        elif "project_root" in values:
+            resolver_args["project_root"] = values.get("project_root")
+        elif env.get("CODEXSCIENTIST_PROJECT_ROOT"):
+            resolver_args["project_root"] = env.get("CODEXSCIENTIST_PROJECT_ROOT")
+        project_root = ProjectRootResolver.resolve(resolver_args)
+        research_root = project_root / "CodexScientist"
         quest_id = _text_value(values.get("quest_id") or env.get("CS_QUEST_ID"))
-        home = _path_value(values.get("home") or values.get("cs_home") or env.get("CS_HOME"))
-        quest_root = _path_value(values.get("quest_root") or env.get("CS_QUEST_ROOT"))
         run_id = _text_value(values.get("run_id") or env.get("CS_RUN_ID"))
         active_stage = _text_value(values.get("active_stage") or values.get("stage") or env.get("CS_ACTIVE_STAGE"))
         conversation_id = _text_value(values.get("conversation_id") or values.get("session_id") or env.get("CS_CONVERSATION_ID"))
         worktree_root = _path_value(values.get("worktree_root") or env.get("CS_WORKTREE_ROOT"))
         return cls(
             project_root=project_root,
-            home=home,
+            home=research_root,
             quest_id=quest_id,
-            quest_root=quest_root,
+            quest_root=research_root,
             run_id=run_id,
             active_stage=active_stage,
             conversation_id=conversation_id,
@@ -60,14 +66,13 @@ class CodexScientistMcpContext:
         )
 
     def require_project_root(self) -> Path:
-        return self.project_root or Path.cwd().resolve()
+        return self.project_root or ProjectRootResolver.resolve({})
+
+    def require_research_root(self) -> Path:
+        return self.require_project_root() / "CodexScientist"
 
     def require_quest_root(self) -> Path:
-        if self.quest_root is not None:
-            return self.quest_root
-        if not self.quest_id:
-            raise ValueError("quest_id or CS_QUEST_ROOT is required")
-        return self.require_project_root() / "CodexScientist" / "quests" / self.quest_id
+        return self.require_research_root()
 
     def resolve_project_layout(self) -> ProjectLayout:
         return ProjectLayout.from_project_root(self.require_project_root())

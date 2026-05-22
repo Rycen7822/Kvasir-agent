@@ -40,7 +40,7 @@ ARTIFACT_KIND_FIELD = {
 }
 
 S = {
-    "quest_id": {"type": "string", "description": "CodexScientist quest id. Omit to use active quest when supported."},
+    "quest_id": {"type": "string", "description": "Root-bound provenance id. Omit in normal Codex plugin use. When provided, it must match CodexScientist/research.yaml and never changes storage root."},
     "goal": {"type": "string", "description": "Research goal or request."},
     "title": {"type": "string"},
     "stage": {"type": "string"},
@@ -359,6 +359,22 @@ NATIVE_SCHEMAS = [
     CS_PAPER_FETCH, CS_RECORD_LITERATURE_READING_NOTE, CS_STRICT_RESEARCH_INIT_BIBLIOGRAPHY, CS_PAPER_RELIABILITY_VERIFY,
     CS_PAUSE_QUEST, CS_RESUME_QUEST, CS_STOP_QUEST,
 ]
+LEGACY_ONLY_SCHEMAS = [CS_LIST_QUESTS, CS_GET_QUEST_STATE, CS_SET_ACTIVE_QUEST, CS_NEW_QUEST, CS_UPDATE_QUEST_MODE]
+LEGACY_ONLY_SCHEMA_NAMES = {schema["name"] for schema in LEGACY_ONLY_SCHEMAS}
+
+
+def _root_bound_public_schema(schema: dict[str, Any]) -> dict[str, Any]:
+    current = dict(schema)
+    input_schema = dict(current.get("input_schema") or {})
+    properties = dict(input_schema.get("properties") or {})
+    if "quest_id" in properties:
+        quest_prop = dict(properties["quest_id"])
+        quest_prop["description"] = S["quest_id"]["description"]
+        properties["quest_id"] = quest_prop
+    input_schema["properties"] = properties
+    input_schema["required"] = [key for key in input_schema.get("required") or [] if key != "quest_id"]
+    current["input_schema"] = input_schema
+    return current
 ALIAS_SCHEMAS = [
     CODEXSCIENTIST_DOCTOR, CODEXSCIENTIST_LIST_QUESTS, CODEXSCIENTIST_STATUS,
     CODEXSCIENTIST_NEW_QUEST, CODEXSCIENTIST_SEND_MESSAGE, CODEXSCIENTIST_EVENTS,
@@ -369,7 +385,7 @@ ALIAS_SCHEMAS = [
 LEGACY_ALIAS_TO_CANONICAL = {
     "codexscientist_doctor": "cs_doctor",
     "codexscientist_list_quests": "cs_list_quests",
-    "codexscientist_status": "cs_get_quest_state",
+    "codexscientist_status": "cs_status",
     "codexscientist_new_quest": "cs_new_quest",
     "codexscientist_send_message": "cs_add_user_message",
     "codexscientist_events": "cs_events",
@@ -383,6 +399,6 @@ LEGACY_ALIAS_TO_CANONICAL = {
     "codexscientist_pause": "cs_pause_quest",
     "codexscientist_resume": "cs_resume_quest",
 }
-PUBLIC_SCHEMAS = NATIVE_SCHEMAS
+PUBLIC_SCHEMAS = [_root_bound_public_schema(schema) for schema in NATIVE_SCHEMAS if schema["name"] not in LEGACY_ONLY_SCHEMA_NAMES]
 LEGACY_ALIAS_SCHEMAS = ALIAS_SCHEMAS
-ALL_SCHEMAS = PUBLIC_SCHEMAS + LEGACY_ALIAS_SCHEMAS
+ALL_SCHEMAS = PUBLIC_SCHEMAS + LEGACY_ONLY_SCHEMAS + LEGACY_ALIAS_SCHEMAS

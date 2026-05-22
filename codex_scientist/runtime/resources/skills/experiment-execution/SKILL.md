@@ -1,6 +1,6 @@
 ---
 name: experiment-execution
-description: Execute CodexScientist quest experiment command documents with durable cs_* logging, manifest validation, and cautious baseline-gate handling.
+description: Execute CodexScientist project experiment command documents with durable cs_* logging, manifest validation, and cautious baseline-gate handling.
 version: 1.0.10
 author: CodexScientist Codex adapter
 license: MIT
@@ -11,17 +11,17 @@ metadata:
 skill_role: companion
 ---
 
-> Codex adapter note: this is a Codex-packaged CodexScientist support skill. Prefer public MCP `cs_*` tools visible in `tools/list`/`cs_tool_schema` for durable quest state, memory, artifacts, and recovery anchors; use admin CLI fallbacks only when explicitly following docs/ADMIN_CLI.md. Load it only when it is the relevant companion to the active stage.
+> Codex adapter note: this is a Codex-packaged CodexScientist support skill. Prefer public MCP `cs_*` tools visible in `tools/list`/`cs_tool_schema` for durable root-bound research state, memory, artifacts, and recovery anchors; use admin CLI fallbacks only when explicitly following docs/ADMIN_CLI.md. Load it only when it is the relevant companion to the active stage.
 
 # CodexScientist Experiment Execution
 
-Use this skill when a user asks to execute a CodexScientist quest experiment command document, run preparatory experiment phases, generate resource/split/floorplan manifests, or validate early experiment artifacts.
+Use this skill when a user asks to execute a CodexScientist project experiment command document, run preparatory experiment phases, generate resource/split/floorplan manifests, or validate early experiment artifacts.
 
 This is a class-level companion for CodexScientist experiment execution. If the Codex `codexscientist-experiment` skill is available, load it first and treat this skill as local operational guidance for pitfalls and reusable checks discovered in sessions.
 
 ## Core rules
 
-- Use public MCP `cs_*` tools visible in `tools/list`/`cs_tool_schema` for durable quest state and bash execution; do not call an external legacy CLI.
+- Use public MCP `cs_*` tools visible in `tools/list`/`cs_tool_schema` for durable root-bound research state and bash execution; do not call an external legacy CLI.
 - Run shell commands through `cs_bash_exec` so session ids, logs, and artifacts remain auditable.
 - This skill's support note `references/early-manifest-validation.md` captures the session-derived validation checklist for early resource/split/floorplan manifests.
 - This skill's support note `references/baseline-gate-vs-comparators.md` captures the baseline-gate waiver pattern for studies with internal comparators but no formal CodexScientist baseline artifact.
@@ -36,11 +36,11 @@ This is a class-level companion for CodexScientist experiment execution. If the 
 - This skill's support note `references/phase2-streaming-cursor-resume.md` captures the persisted streaming-cursor guardrails for cross-invocation corpus progress: load `cursor_before`, select from that cursor, update `cursor_after` only after plan compatibility succeeds, keep append-only consumption history, and keep cursor-validated chunks distinct from formal 100M `Y_recover`.
 - This skill's support note `references/phase2-autonomous-resume-loop.md` captures how to run repeated compatible Phase 2 `main_100m` resume chunks in autonomous experiment-only mode: use the quest environment, keep per-chunk JSONL summaries, validate cursor/state/records/checkpoint/eval after every chunk, and avoid overclaiming partial loop progress as formal `Y_recover`.
 - This skill's support note `references/formal-experiment-doc-maintenance.md` captures conservative maintenance of long active experiment docs: add compact current-status/navigation pointers, preserve source-of-truth history, verify artifact paths, and keep partial/provenance/corpus-source caveats explicit.
-- This skill's support note `references/quest-artifact-memory-pruning.md` captures conservative pruning of quest-local `artifacts/milestones` and `memory/knowledge`: preserve source-of-truth evidence and current handoffs, delete redundant progress/planned/blocked/chunk records, refresh `_index.jsonl`, compact active requirements, and verify counts/status.
+- This skill's support note `references/quest-artifact-memory-pruning.md` captures conservative pruning of project-local `artifacts/milestones` and `memory/knowledge`: preserve source-of-truth evidence and current handoffs, delete redundant progress/planned/blocked/chunk records, refresh `_index.jsonl`, compact active requirements, and verify counts/status.
 - When ongoing experiment documentation becomes too long for reliable continuation, use `codexscientist-quest-handoffs`'s `references/concise-current-status-maintenance.md` pattern: create a short current-status entry, point long command/plan docs to it, preserve source-of-truth history, and verify stale handoff text is gone.
 
-For resumable full-budget Phase 2 runners, verify cross-invocation corpus progress, not just per-invocation sampling. Persist and validate a per-family streaming cursor, keep append-only corpus-consumption history, and ensure incompatible resume attempts fail before cursor/record side effects. For autonomous experiment-only loops that must repeat many compatible chunks, use a quest-local loop summary and the quest's known-good Python environment; do not use bare `python` if the quest has a specific venv/conda environment, and avoid generic background terminal/process execution for CodexScientist work when `cs_bash_exec` can provide durable logs. See `references/phase2-streaming-cursor-resume.md` and `references/phase2-autonomous-resume-loop.md`.
-- This skill's support note `references/quest-quickstart-state-repair.md` captures how to repair stale quest quickstart/AGENTS guidance when current quest state diverges from handoff prose.
+For resumable full-budget Phase 2 runners, verify cross-invocation corpus progress, not just per-invocation sampling. Persist and validate a per-family streaming cursor, keep append-only corpus-consumption history, and ensure incompatible resume attempts fail before cursor/record side effects. For autonomous experiment-only loops that must repeat many compatible chunks, use a project-local loop summary and the quest's known-good Python environment; do not use bare `python` if the quest has a specific venv/conda environment, and avoid generic background terminal/process execution for CodexScientist work when `cs_bash_exec` can provide durable logs. See `references/phase2-streaming-cursor-resume.md` and `references/phase2-autonomous-resume-loop.md`.
+- This skill's support note `references/quest-quickstart-state-repair.md` captures how to repair stale research quickstart/AGENTS guidance when current research state diverges from handoff prose.
 - Do not claim model results unless real model forward/eval/training artifacts exist. Many early CLI commands may be planning recorders with `planned_not_executed` status.
 - Keep baseline gate state explicit. If `baseline_gate=pending` and the user has not chosen confirm/waive, execute only safe preparatory commands and report that the gate is still pending.
 - Distinguish formal CodexScientist baselines from experiment-internal comparators. Named scores/controls in idea files (for example CFC, ETD-score, RR-score, RawRepeat, Middle-cycle in GAAS-style protocols) are not automatically baseline artifacts; if the active idea/protocol says the study has no standalone baseline, waive the gate and preserve those names as internal comparators/ablation conditions.
@@ -67,7 +67,7 @@ If the ambiguity can safely be resolved by executing a broader bounded preparato
 
 ## Early-stage execution pattern
 
-1. Record the user requirement in quest state if CodexScientist mode is active.
+1. Record the user requirement in research state if CodexScientist mode is active.
 2. Read the command document section to be executed; do not rely on memory.
 3. Execute setup/environment/resource/smoke commands with one stable `RUNSTAMP` so outputs are correlated.
 4. For preparatory commands, generate:
@@ -77,7 +77,7 @@ If the ambiguity can safely be resolved by executing a broader bounded preparato
    - dataset split manifest
    - floorplan manifest and summary when requested
 5. Validate each artifact from disk, not only from stdout.
-6. Write a compact run summary JSON/MD under a quest-local logs/manifests directory.
+6. Write a compact run summary JSON/MD under a project-local logs/manifests directory.
 7. Record a milestone only after validation passes, or record a blocked/partial milestone if validation fails.
 
 ## Schema-aware manifest validation
@@ -120,23 +120,23 @@ When the user's completion criterion is paper-facing completeness (for example "
 
 See `references/planned-command-recorders.md` for the detailed Quest001-derived checklist.
 
-## Quest quickstart / AGENTS state repair
+## Research quickstart / AGENTS state repair
 
-During experiment execution, quest-local quickstart files such as `AGENTS.md` can lag behind durable quest state and formal command documents. If a stale quickstart says `baseline_gate=pending`, "confirm/attach baseline first", or similar while `cs_get_quest_state` and the command document show `baseline_gate=waived`, repair the quickstart before or alongside the next experiment step.
+During experiment execution, project-local quickstart files such as `AGENTS.md` can lag behind durable root-bound research state and formal command documents. If a stale quickstart says `baseline_gate=pending`, "confirm/attach baseline first", or similar while `cs_get_quest_state` and the command document show `baseline_gate=waived`, repair the quickstart before or alongside the next experiment step.
 
 Use this pattern:
 
 1. Treat `cs_get_quest_state` plus the active command document as source of truth over handoff prose.
 2. Patch quickstart text to state the current gate state, decision artifact path when known, and comparator semantics.
-3. If both a source quest copy and a loop/workspace copy of `AGENTS.md` exist, repair both and verify they are identical after patching.
-4. Search the file(s) for stale phrases such as `baseline_gate.*pending`, `Confirm/attach`, `still pending`, `no baseline is confirmed yet`, and stale active-stage text that conflicts with durable quest state.
+3. If both a source project copy and a loop/workspace copy of `AGENTS.md` exist, repair both and verify they are identical after patching.
+4. Search the file(s) for stale phrases such as `baseline_gate.*pending`, `Confirm/attach`, `still pending`, `no baseline is confirmed yet`, and stale active-stage text that conflicts with durable root-bound research state.
 5. Include the quickstart repair in the run summary and milestone when it is part of the user's requested continuation.
 
 See `references/quest-quickstart-state-repair.md` for the Quest001-derived checklist.
 
 ## Git and checkpoint hygiene
 
-After artifact recording/checkpointing, inspect quest-local status for unintended deletions or overwritten manifests. If a checkpoint reports deleted generated artifacts, verify whether that is expected before moving on. Repair or explain unexpected tracked-file changes in the next milestone.
+After artifact recording/checkpointing, inspect project-local status for unintended deletions or overwritten manifests. If a checkpoint reports deleted generated artifacts, verify whether that is expected before moving on. Repair or explain unexpected tracked-file changes in the next milestone.
 
 If `cs_record_main_experiment` returns an optional Pillow / metric timeline chart error after a call with numeric `metrics_summary`, verify `experiments/main/<run_id>/RUN.md`, `RESULT.json`, and `artifacts/runs/*.json` before retrying: the record may already have been written and committed before chart generation failed. Use a milestone/decision to finish durable routing if the main run files are present.
 

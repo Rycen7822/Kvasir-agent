@@ -1,6 +1,6 @@
 ---
 name: paper-fetch
-description: Use when a CodexScientist quest needs quest-local paper retrieval, arXiv/OpenReview PDF reading, or official resource verification without clipping into llm-wiki.
+description: Use when a CodexScientist project needs project-local paper retrieval, arXiv/OpenReview PDF reading, or official resource verification without clipping into llm-wiki.
 skill_role: support
 version: 1.0.0
 author: Codex Agent
@@ -21,7 +21,7 @@ Use it to retrieve, read, and verify papers for a quest, then persist the findin
 Keep this skill separate from `clip`:
 
 - `clip` archives sources into `llm-wiki` / Obsidian-style raw notes.
-- `paper-fetch` gets paper evidence for the current CodexScientist quest.
+- `paper-fetch` gets paper evidence for the current CodexScientist project.
 
 Do not update `llm-wiki`, `raw/clip`, `_meta` maps, topic indexes, image archives, or clipping logs from this skill unless the user explicitly asks for clipping/archiving as a separate task.
 
@@ -46,7 +46,7 @@ Do **not** use this skill for:
 
 ## Output Contract for CodexScientist
 
-For every paper retrieval that materially affects the quest, leave a durable quest-local record. Prefer one of these surfaces depending on the stage:
+For every paper retrieval that materially affects the quest, leave a durable project-local record. Prefer one of these surfaces depending on the stage:
 
 - `cs_memory_write` for compact paper facts, constraints, official-resource status, or citation notes.
 - `cs_artifact_record` for a structured retrieval report, literature-scout report, or evidence item.
@@ -193,7 +193,7 @@ Use a per-paper temp directory such as:
 /tmp/openreview_<note_id>/
 ```
 
-It may contain `paper.pdf`, `paper.txt`, `metadata.json`, `urls.txt`, and extraction status files. Delete it after you have persisted the quest evidence. Confirm it is gone. Do not delete it while the active shell/tool cwd is inside it.
+It may contain `paper.pdf`, `paper.txt`, `metadata.json`, `urls.txt`, and extraction status files. Delete it after you have persisted the research evidence. Confirm it is gone. Do not delete it while the active shell/tool cwd is inside it.
 
 ## ACM Digital Library Route
 

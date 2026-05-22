@@ -30,7 +30,8 @@ def test_legacy_goal_state_is_ignored_by_resume_and_context_pack(tmp_path: Path)
     assert resume["ok"] is True
     assert "goal_loop_state" not in resume
     assert "next_required_mcp_tool" not in resume
-    assert any(ref["kind"] == "legacy_goal_state_ignored" for ref in resume["source_refs"])
+    assert any(ref["kind"] == "goal_state" for ref in resume["source_refs"])
+    assert not any(ref["kind"] == "legacy_goal_state_ignored" for ref in resume["source_refs"])
 
     pack = call_tool("cs_context_pack", {"project": str(tmp_path), "quest_id": quest_id, "max_chars": 4000})
     assert pack["ok"] is True

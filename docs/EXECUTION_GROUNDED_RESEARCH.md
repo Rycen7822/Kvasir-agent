@@ -9,7 +9,7 @@ The default `copilot` path records research meaning and recovery anchors. It doe
 ## Subsystems
 
 - `ResearchEnvironment`: the trusted evaluation contract. It records immutable baseline paths, protected files, dataset hashes, allowed mutable paths, command contracts, metric parser contracts, and budget limits.
-- `FeedbackIngest`: bounded ingestion for logs, metrics, artifacts, and external run summaries. It copies or references evidence into quest-local artifacts and records hashes.
+- `FeedbackIngest`: bounded ingestion for logs, metrics, artifacts, and external run summaries. It copies or references evidence into root-bound artifacts and records hashes.
 - `TrajectoryStore`: complete lineage for idea, variant, patch, job, feedback, metric, failure class, cost, protected audit, and claimability.
 - `EvolutionaryRoundPlan`: plan-only exploit/explore selection over trusted trajectories. It proposes next candidates and diversity controls but does not submit jobs by itself.
 

@@ -13,7 +13,7 @@ This active skill is intentionally compact. The historical long playbook was mov
 - Codex-Scientist is a Codex CLI plugin, not a standalone autonomous framework.
 - Default mode is `copilot`; do not invent, improve, or expand ideas automatically unless the user or project manifest explicitly enables autonomous idea improvement.
 - Use Codex-native file search, edits, shell, tests, and git for ordinary development work.
-- Use MCP `cs_*` tools only when visible in the selected profile; prefer public families for quest state, memory, artifacts, baselines, experiments, analysis, literature, paper, method/frontier, claim gates, checkpoint/resume, and compact evidence.
+- Use MCP `cs_*` tools only when visible in the selected profile; prefer public families for root-bound research state, memory, artifacts, baselines, experiments, analysis, literature, paper, method/frontier, claim gates, checkpoint/resume, and compact evidence.
 - Keep outputs compact. Return paths, ids, hashes, metric values, short tails, and next action; do not paste full logs, full background notes, or full historical playbooks into context.
 - Do not execute old API names directly. Translate historical playbook wording to current MCP `cs_*` tool calls.
 

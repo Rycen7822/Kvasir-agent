@@ -10,7 +10,7 @@ Runtime state remains project-local under:
 <project>/CodexScientist/
 ```
 
-This tree stores quest state, events, runtime files, artifacts, memory, queue/runner ledgers, summaries, manual diagnostic records, checkpoints, validation reports, novelty decisions, and claim gate records. P4 quest-scoped state lives under `CodexScientist/quests/<quest_id>/` while compatibility indexes may remain under project-local global state roots.
+This tree stores one root-bound research state: `research.yaml`, events, runtime files, artifacts, memory, queue/runner ledgers, summaries, manual diagnostic records, checkpoints, validation reports, novelty decisions, and claim gate records. `CodexScientist/quests/<quest_id>/` is a legacy migration input only; new writes target the root-bound state tree directly.
 
 ## Default autonomy boundary
 
@@ -52,12 +52,12 @@ Codex-native operation layer:
 
 CodexScientist semantic/provenance layer:
 
-- quest lifecycle and active mode;
+- root-bound research state and provenance metadata;
 - durable user requirements;
 - memory and artifact records;
 - baseline, experiment, analysis, paper, reliability, and evidence ledgers;
 - method scoreboard/frontier, novelty scoring, duplicate block, related-work gate, claim gate, manual diagnostics, checkpoint, and resume anchors;
-- formal commands whose logs must become quest-local provenance.
+- formal commands whose logs must become project-local research provenance.
 
 Codex does the mechanical action; CodexScientist records the research meaning.
 
@@ -71,8 +71,8 @@ Automatic idea search, variant implementation, experiment scheduling, or executo
 
 The MCP boundary uses explicit profiles:
 
-- `core`: 11 default tools for doctor/status, quest anchoring, schema lookup, passive context/resume/checkpoint/delta.
-- `evidence`: quest-local memory, manifest, baseline, artifact, experiment, analysis, method, and claim-gate workflows.
+- `core`: default tools for doctor/status, schema lookup, passive context/resume/checkpoint/delta, and root-bound research anchoring.
+- `evidence`: root-bound memory, manifest, baseline, artifact, experiment, analysis, method, and claim-gate workflows.
 - `formal_run`: evidence plus formal `cs_bash_exec` provenance-gated execution.
 - `literature`: strict literature, paper fetch, reliability, bibliography, and reading-note workflows.
 - `paper_write`: literature plus paper outline/bundle/summary/review work.

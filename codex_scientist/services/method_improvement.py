@@ -22,28 +22,24 @@ def _stable_score(seed: str, *, low: float = 0.35, high: float = 0.95) -> float:
 
 
 class MethodImprovementService:
-    """Quest-scoped method improvement, novelty, and claim gates."""
+    """Root-bound method improvement, novelty, and claim gates."""
 
     def __init__(self, layout: ProjectLayout) -> None:
         self.layout = layout
         self.events = EventStore(layout)
 
-    def _quest(self, quest_id: str):
-        return self.layout.ensure_quest_layout(quest_id)
-
     def scoreboard_path(self, quest_id: str) -> Path:
-        return self._quest(quest_id).quest_root / "method_memory" / "scoreboard" / "scoreboard.json"
+        return self.layout.state_root / "method_memory" / "scoreboard" / "scoreboard.json"
 
     def frontier_path(self, quest_id: str) -> Path:
-        return self._quest(quest_id).quest_root / "method_memory" / "frontier" / "frontier.json"
+        return self.layout.state_root / "method_memory" / "frontier" / "frontier.json"
 
     def claim_gate_path(self, quest_id: str, claim_id: str) -> Path:
         safe = "".join(ch if ch.isalnum() or ch in "-_" else "_" for ch in str(claim_id or "claim")) or "claim"
-        return self._quest(quest_id).quest_root / "artifacts" / "decisions" / f"claim_gate_{safe}.json"
+        return self.layout.state_root / "artifacts" / "decisions" / f"claim_gate_{safe}.json"
 
     def _analysis_slice_statuses(self, quest_id: str) -> dict[str, dict[str, Any]]:
-        quest_root = self._quest(quest_id).quest_root
-        campaigns_root = quest_root / ".cs" / "analysis_campaigns"
+        campaigns_root = self.layout.state_root / ".cs" / "analysis_campaigns"
         statuses: dict[str, dict[str, Any]] = {}
         if not campaigns_root.exists():
             return statuses
@@ -233,7 +229,7 @@ class MethodImprovementService:
         for value in evidence_paths or []:
             path = Path(str(value)).expanduser()
             if not path.is_absolute():
-                path = self._quest(quest_id).quest_root / path
+                path = self.layout.state_root / path
             if path.exists():
                 resolved_paths.append(str(path))
         if not resolved_paths:

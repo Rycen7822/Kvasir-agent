@@ -114,7 +114,7 @@ def test_user_entry_docs_have_current_upgrade6_profile_contract() -> None:
     for phrase in forbidden:
         assert phrase not in combined
 
-    assert "default core profile exposes 11" in combined
+    assert "default core profile exposes bounded root-bound recovery tools" in combined or "default core profile exposes curated" in combined
     assert "evidence" in combined and "formal_run" in combined
     assert "stage is a label" in combined or "stage label" in combined
     assert "codex mcp add codexscientist-codex" in combined
@@ -180,7 +180,9 @@ def test_router_skill_default_flow_uses_visible_profile_tools_not_hidden_skill_h
     assert "cs_skill_search" not in text
     assert "cs_skill_load" not in text
     assert "cs_status" in text and "cs_doctor" in text
-    assert "cs_new_quest" in text and "cs_record_user_requirement" in text
+    assert "cs_new_quest" not in text
+    assert "cs_record_user_requirement" in text
+    assert "first durable write" in text or "lazily create" in text
     assert "evidence" in text and "formal_run" in text and "literature" in text and "paper_write" in text
 
 

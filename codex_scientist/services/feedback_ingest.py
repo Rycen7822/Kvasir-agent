@@ -77,8 +77,7 @@ class FeedbackIngestService:
         if trajectory.get("ok") is not True:
             return trajectory
 
-        quest = self.layout.ensure_quest_layout(quest_id)
-        artifact_dir = quest.detail_path(Path("artifacts") / "execution_grounded" / safe_run_id)
+        artifact_dir = self.layout.state_root / "artifacts" / "execution_grounded" / safe_run_id
         logs_dir = artifact_dir / "logs"
         artifact_dir.mkdir(parents=True, exist_ok=True)
         logs_dir.mkdir(parents=True, exist_ok=True)

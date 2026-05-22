@@ -34,8 +34,7 @@ class ArtifactIndexService:
         return [self.layout.state_root / name for name in _ARTIFACT_DIR_NAMES]
 
     def _quest_roots(self, quest_id: str) -> list[Path]:
-        quest_root = self.layout.quest_root_for(quest_id)
-        return [quest_root / "artifacts", quest_root / "results"]
+        return self._roots()
 
     def index(self, *, max_items: int = 50, quest_id: str | None = None) -> dict[str, Any]:
         max_items = max(1, min(int(max_items), 500))
@@ -44,7 +43,7 @@ class ArtifactIndexService:
         artifact_record_count = 0
         saw_more = False
         roots = self._quest_roots(quest_id) if quest_id else self._roots()
-        relative_base = self.layout.quest_root_for(quest_id) if quest_id else self.layout.state_root
+        relative_base = self.layout.state_root
         for root in roots:
             if not root.exists():
                 continue

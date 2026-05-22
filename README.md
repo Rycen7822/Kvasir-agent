@@ -21,7 +21,7 @@
 
 CodexScientist-codex presents a DeepScientist-derived research runtime as a Codex CLI plugin. The default research control plane is MCP-only: Codex uses compact `cs_*` MCP tools for research semantics, while Codex-native file/search/edit/shell/Git/test/build/process capabilities handle ordinary mechanical work.
 
-`/goal` is Codex-native. CodexScientist does not implement, register, intercept, or simulate slash commands. After Codex has entered goal context, CodexScientist provides curated MCP tools for quest state, durable requirements, memory, artifacts, baselines, experiments, analysis, paper/reliability work, checkpoint/resume anchors, manual diagnostics, novelty support, and claim gates.
+`/goal` is Codex-native. CodexScientist does not implement, register, intercept, or simulate slash commands. After Codex has entered goal context, CodexScientist provides curated MCP tools for root-bound research state, durable requirements, memory, artifacts, baselines, experiments, analysis, paper/reliability work, checkpoint/resume anchors, manual diagnostics, novelty support, and claim gates.
 
 Administrative terminal commands are documented only in [docs/ADMIN_CLI.md](docs/ADMIN_CLI.md). They are for human/admin/debug/CI/recovery compatibility, not the default Codex research path.
 
@@ -43,8 +43,8 @@ The design and implementation also reference or draw inspiration from:
 
 | Common pain point | What this adapter keeps durable |
 | --- | --- |
-| Research state disappears into chat history | Quest state, requirements, checkpoints, source refs, and milestones stay in the project runtime. |
-| Experiments and logs are scattered | Formal evidence commands can go through `cs_bash_exec` with quest-local logs and session state. |
+| Research state disappears into chat history | Root-bound research state, requirements, checkpoints, source refs, and milestones stay in the project runtime. |
+| Experiments and logs are scattered | Formal evidence commands can go through `cs_bash_exec` with project-local logs and session state. |
 | Paper/reliability work is hard to audit later | Paper bundles, strict-research ledgers, reliability cards, claim gate decisions, and analysis slices are recorded as CodexScientist artifacts. |
 | Native Codex work gets buried under plugin ceremony | Routine file, shell, Git, test, build, and process work remains Codex-native. |
 
@@ -57,7 +57,7 @@ The design and implementation also reference or draw inspiration from:
 | MCP profiles | Default core profile exposes 11 tools. Wider explicit profiles are `evidence`, `formal_run`, `literature`, and `paper_write`; `stage` is a label, not a tool-list filter. |
 | Long-run recovery | `cs_status`, `cs_resume_brief`, `cs_pack_delta`, and `cs_checkpoint` provide passive recovery anchors; watchdog-style diagnostics remain hidden/admin-only in the default Codex MCP surface. |
 | Method improvement | Public tools such as `cs_update_method_scoreboard`, `cs_get_optimization_frontier`, and `cs_claim_gate` close the experiment -> novelty -> evidence loop; autonomous idea selection remains hidden from default MCP. |
-| Research state | Project-local quests, memory, artifacts, baselines, experiments, paper bundles, analysis campaigns, and bounded event/delta summaries. |
+| Research state | A project-local `CodexScientist/` research root with memory, artifacts, baselines, experiments, paper bundles, analysis campaigns, and bounded event/delta summaries. |
 | Codex skills | `codexscientist-codex` plus adapted support skills for experiments, handoffs, writing plans, paper reliability, and review. |
 
 ## Quick Start
@@ -88,7 +88,7 @@ Initialize a research project with the project helper:
 bash ~/.codex/plugins/codexscientist-codex/scripts/init_project.sh /path/to/project
 ```
 
-Then operate through MCP `cs_*` tools such as `cs_new_quest`, `cs_record_user_requirement`, `cs_create_local_baseline`, `cs_confirm_baseline`, `cs_submit_idea`, `cs_record_main_experiment`, `cs_create_analysis_campaign`, `cs_record_analysis_slice`, `cs_resume_brief`, and `cs_checkpoint`.
+Then operate through MCP `cs_*` tools such as `cs_status`, `cs_record_user_requirement`, `cs_create_local_baseline`, `cs_confirm_baseline`, `cs_submit_idea`, `cs_record_main_experiment`, `cs_create_analysis_campaign`, `cs_record_analysis_slice`, `cs_resume_brief`, and `cs_checkpoint`. The first durable write lazily creates `<project>/CodexScientist/research.yaml`; no separate lifecycle initialization step is required.
 
 ## Project-Local Runtime
 
@@ -98,7 +98,7 @@ When commands run from a research project root, CodexScientist state is stored i
 <project>/CodexScientist/
 ```
 
-This keeps quests, artifacts, memory, bash provenance, manual diagnostic records, checkpoints, analysis slices, claim decisions, and paper bundles with the research project rather than in global Codex state.
+This keeps root-bound research state, artifacts, memory, bash provenance, manual diagnostic records, checkpoints, analysis slices, claim decisions, and paper bundles with the research project rather than in global Codex state. `CodexScientist/quests/` is only a legacy migration input, not a new-write target.
 
 ## Install Details
 
@@ -122,9 +122,9 @@ This adapter preserves business-workflow effects rather than MCP protocol shape:
 | Original CodexScientist surface | Codex-native equivalent |
 | --- | --- |
 | `memory.write/read/search/list_recent` | `cs_memory_write`, `cs_memory_read`, `cs_memory_search`, `cs_memory_list_recent` |
-| `artifact.record` and quest artifact flows | `cs_artifact_record` plus specialized public `cs_*` artifact tools such as `cs_artifact_index` |
+| `artifact.record` and research artifact flows | `cs_artifact_record` plus specialized public `cs_*` artifact tools such as `cs_artifact_index` |
 | event reads | `cs_status`, `cs_pack_delta`, and compact `cs_get_quest_state` summaries |
-| `bash_exec` | `cs_bash_exec`, retaining quest-local execution state and logs when formal provenance is required |
+| `bash_exec` | `cs_bash_exec`, retaining project-local execution state and logs when formal provenance is required |
 | artifact convenience/introspection helpers | Public `cs_*` wrappers such as `cs_status`, `cs_get_method_scoreboard`, `cs_refresh_summary`, and `cs_arxiv` |
 
 ## What It Deliberately Does Not Provide
@@ -136,6 +136,6 @@ This adapter preserves business-workflow effects rather than MCP protocol shape:
 
 ## Codex-Native Operation Boundary
 
-Use CodexScientist-codex for the research semantic layer: quest state, durable requirements, memory, artifacts, baselines, formal experiment records, analysis campaign state, paper/reliability workflows, manual diagnostics, checkpoint/resume, claim gate, and `cs_bash_exec` provenance for formal evidence commands.
+Use CodexScientist-codex for the research semantic layer: root-bound research state, durable requirements, memory, artifacts, baselines, formal experiment records, analysis campaign state, paper/reliability workflows, manual diagnostics, checkpoint/resume, claim gate, and `cs_bash_exec` provenance for formal evidence commands.
 
 Use Codex-native capabilities for routine operation-layer work: file/search/edit, ordinary shell, Git/GitHub mechanics, tests/builds/lint, process monitoring, and local prose editing.

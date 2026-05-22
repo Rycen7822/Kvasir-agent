@@ -7,7 +7,7 @@ from typing import Any
 
 from codex_scientist.profiles import get_profile_tool_names
 
-from .project_state import ProjectLayout
+from .project_state import ProjectLayout, _safe_segment
 from .stage_router import StageRouter
 
 
@@ -19,7 +19,7 @@ _DEFAULT_ACTIONS: dict[str, dict[str, Any]] = {
     "scout": {
         "action_type": "record_requirement",
         "required_tool": "cs_record_user_requirement",
-        "required_inputs": ["quest_id", "message"],
+        "required_inputs": ["message"],
         "blocking_reason": None,
         "done_when": "user requirement and initial research constraints are durable",
     },
@@ -33,42 +33,42 @@ _DEFAULT_ACTIONS: dict[str, dict[str, Any]] = {
     "baseline": {
         "action_type": "establish_baseline",
         "required_tool": "cs_create_local_baseline",
-        "required_inputs": ["quest_id", "baseline_id"],
+        "required_inputs": ["baseline_id"],
         "blocking_reason": "baseline_missing",
         "done_when": "baseline is confirmed or explicitly waived with rationale",
     },
     "idea": {
         "action_type": "submit_idea",
         "required_tool": "cs_submit_idea",
-        "required_inputs": ["quest_id", "title"],
+        "required_inputs": ["title"],
         "blocking_reason": None,
         "done_when": "one candidate idea has evidence and selection scores",
     },
     "optimize": {
         "action_type": "select_frontier",
         "required_tool": "cs_get_optimization_frontier",
-        "required_inputs": ["quest_id"],
+        "required_inputs": [],
         "blocking_reason": None,
         "done_when": "frontier is refreshed and one next idea is selected",
     },
     "experiment": {
         "action_type": "record_experiment",
         "required_tool": "cs_record_main_experiment",
-        "required_inputs": ["quest_id", "run_id"],
+        "required_inputs": ["run_id"],
         "blocking_reason": None,
         "done_when": "main experiment evidence, metric rows, and conclusion are recorded",
     },
     "analysis-campaign": {
         "action_type": "record_analysis",
         "required_tool": "cs_record_analysis_slice",
-        "required_inputs": ["quest_id", "campaign_id", "slice_id"],
+        "required_inputs": ["campaign_id", "slice_id"],
         "blocking_reason": None,
         "done_when": "next analysis slice is recorded with evidence",
     },
     "write": {
         "action_type": "submit_paper_bundle",
         "required_tool": "cs_submit_paper_bundle",
-        "required_inputs": ["quest_id"],
+        "required_inputs": [],
         "blocking_reason": None,
         "done_when": "paper bundle references claim-evidence-backed artifacts",
     },
@@ -109,17 +109,19 @@ class GoalLoopService:
         self.layout = layout
         self.router = StageRouter()
 
+    def _quest_id(self, quest_id: str) -> str:
+        return _safe_segment(quest_id, label="quest_id")
+
     def state_path(self, quest_id: str) -> Path:
-        quest = self.layout.ensure_quest_layout(quest_id)
-        return quest.runtime_dir / "goal_state.json"
+        return self.layout.state_root / "runtime" / "goal_state.json"
 
     def read_state(self, quest_id: str) -> dict[str, Any]:
         path = self.state_path(quest_id)
         if not path.exists():
             return {
                 "schema_version": 1,
-                "quest_id": self.layout.quest_layout(quest_id).quest_id,
-                "quest_root": str(self.layout.quest_root_for(quest_id)),
+                "quest_id": self._quest_id(quest_id),
+                "quest_root": str(self.layout.state_root),
                 "active_stage": "scout",
                 "current_gate": {},
                 "completion_criteria": [],
@@ -154,8 +156,8 @@ class GoalLoopService:
         action.setdefault("stage", stage)
         state = {
             "schema_version": 1,
-            "quest_id": self.layout.quest_layout(quest_id).quest_id,
-            "quest_root": str(self.layout.quest_root_for(quest_id)),
+            "quest_id": self._quest_id(quest_id),
+            "quest_root": str(self.layout.state_root),
             "active_stage": stage,
             "current_gate": gate,
             "completion_criteria": list(completion_criteria if completion_criteria is not None else existing.get("completion_criteria") or []),
@@ -187,8 +189,8 @@ class GoalLoopService:
         action["stage"] = route.active_stage
         return {
             "ok": True,
-            "quest_id": self.layout.quest_layout(quest_id).quest_id,
-            "quest_root": str(self.layout.quest_root_for(quest_id)),
+            "quest_id": self._quest_id(quest_id),
+            "quest_root": str(self.layout.state_root),
             "active_stage": route.active_stage,
             "next_action": action,
             "route_reason": route.reason,
@@ -213,8 +215,8 @@ class GoalLoopService:
         if route.companion_skill_id:
             companions.append({"skill_id": route.companion_skill_id, "excerpt": "Optional bounded companion; load at most this one if needed."})
         context = {
-            "quest_id": self.layout.quest_layout(quest_id).quest_id,
-            "quest_root": str(self.layout.quest_root_for(quest_id)),
+            "quest_id": self._quest_id(quest_id),
+            "quest_root": str(self.layout.state_root),
             "active_stage": route.active_stage,
             "current_gate": state.get("current_gate") or {},
             "completion_criteria": list(state.get("completion_criteria") or []),

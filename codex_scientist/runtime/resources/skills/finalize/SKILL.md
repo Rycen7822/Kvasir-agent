@@ -13,7 +13,7 @@ Use this skill to close or pause a quest responsibly.
 - Follow the shared interaction contract injected by the system prompt.
 - For ordinary active work, prefer a concise progress update once work has crossed roughly 6 tool calls with a human-meaningful delta, and do not drift beyond roughly 12 tool calls or about 8 minutes without a user-visible update.
 - Do not emit another finalize progress update when the user-visible state is unchanged.
-- If the runtime starts an auto-continue turn with no new user message, keep finalizing from the durable quest state and active requirements instead of replaying the previous user turn.
+- If the runtime starts an auto-continue turn with no new user message, keep finalizing from the durable root-bound research state and active requirements instead of replaying the previous user turn.
 - If a threaded user reply arrives, interpret it relative to the latest finalize progress update before assuming the task changed completely.
 - When finalize reaches a real closure state, pause-ready packet, or route-back decision, send one threaded `cs_artifact_record payload={'kind': 'milestone'}, ...)` update that names the recommendation, why it is the right call, and any reopen condition that still matters.
 - True quest completion still requires explicit user approval through the runtime completion flow before calling `a Codex-controlled finalize recommendation record(...)`.
@@ -68,7 +68,7 @@ For paper-like deliverables, do not finalize while any of these remain true:
 - the active paper line still reports open supplementary work that is expected to block the manuscript
 
 If the current paper-state blocker is not obvious from the existing files, call `artifact.get_paper_contract_health(detail='full')` before deciding whether finalize is legitimate.
-If the active quest/runtime state is unclear after restart or long pause, call `artifact.get_quest_state(detail='summary')` first.
+If the active research state/runtime state is unclear after restart or long pause, call `artifact.get_quest_state(detail='summary')` first.
 If the exact latest `SUMMARY.md`, `status.md`, or active user requirement wording matters for closure, call `artifact.read_quest_documents(...)`.
 If earlier user/assistant continuity matters for whether the quest should really stop, call `artifact.get_conversation_context(...)` instead of guessing from prompt context alone.
 

@@ -22,14 +22,20 @@ CORE_TOOLS = (
     "cs_doctor",
     "cs_status",
     "cs_tool_schema",
-    "cs_get_quest_state",
-    "cs_set_active_quest",
-    "cs_new_quest",
     "cs_record_user_requirement",
     "cs_context_pack",
     "cs_resume_brief",
     "cs_checkpoint",
     "cs_pack_delta",
+    "cs_skill_search",
+    "cs_skill_load",
+)
+
+LEGACY_REGISTRY_ADMIN_TOOLS = (
+    "cs_get_quest_state",
+    "cs_set_active_quest",
+    "cs_new_quest",
+    "cs_manifest_init",
 )
 
 QUEST_MEMORY_TOOLS = (
@@ -69,7 +75,6 @@ EXECUTOR_LOCAL_TOOLS = (
 
 EVIDENCE_ADDITIONS = (
     *QUEST_MEMORY_TOOLS,
-    "cs_manifest_init",
     "cs_manifest_record_baseline",
     "cs_manifest_validate",
     "cs_create_local_baseline",
@@ -162,7 +167,7 @@ GOAL_TOOLS = EVIDENCE_TOOLS
 
 LEGACY_STAGE_TOOL_ADDITIONS: Mapping[str, tuple[str, ...]] = {
     "scout": ("cs_new_quest", "cs_record_user_requirement", "cs_memory_search", "cs_memory_write", "cs_submit_idea"),
-    "baseline": ("cs_create_local_baseline", "cs_confirm_baseline", "cs_manifest_init", "cs_manifest_record_baseline", "cs_manifest_validate"),
+    "baseline": ("cs_create_local_baseline", "cs_confirm_baseline", "cs_manifest_record_baseline", "cs_manifest_validate"),
     "idea": ("cs_submit_idea", "cs_get_method_scoreboard", "cs_get_optimization_frontier", "cs_update_method_scoreboard", "cs_select_next_idea"),
     "experiment": ("cs_bash_exec", "cs_record_main_experiment", "cs_queue_submit", "cs_queue_status", "cs_runner_start", "cs_goal_watchdog"),
     "analysis": ("cs_create_analysis_campaign", "cs_get_analysis_campaign", "cs_record_analysis_slice", "cs_claim_gate"),
@@ -192,6 +197,7 @@ PROFILES: Mapping[str, ToolProfile] = {
     "goal": ToolProfile(name="goal", tool_names=EVIDENCE_TOOLS, deprecated=True, replacement="evidence"),
     "autonomous": ToolProfile(name="autonomous", tool_names=AUTONOMOUS_TOOLS, registers_mcp=False),
     "executor_local": ToolProfile(name="executor_local", tool_names=EXECUTOR_LOCAL_TOOLS, registers_mcp=False, mcp_gate="executor_local"),
+    "legacy_registry_admin": ToolProfile(name="legacy_registry_admin", tool_names=LEGACY_REGISTRY_ADMIN_TOOLS, registers_mcp=False),
     "admin": ToolProfile(name="admin", tool_names=ADMIN_TOOLS, registers_mcp=False),
     "legacy_compat": ToolProfile(name="legacy_compat", tool_names=LEGACY_COMPAT_TOOLS, registers_mcp=False),
 }

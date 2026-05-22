@@ -14,7 +14,7 @@ metadata:
 skill_role: companion
 ---
 
-> Codex adapter note: this is a Codex-packaged CodexScientist support skill. Prefer public MCP `cs_*` tools visible in `tools/list`/`cs_tool_schema` for durable quest state, memory, artifacts, and recovery anchors; use admin CLI fallbacks only when explicitly following docs/ADMIN_CLI.md. Load it only when it is the relevant companion to the active stage.
+> Codex adapter note: this is a Codex-packaged CodexScientist support skill. Prefer public MCP `cs_*` tools visible in `tools/list`/`cs_tool_schema` for durable root-bound research state, memory, artifacts, and recovery anchors; use admin CLI fallbacks only when explicitly following docs/ADMIN_CLI.md. Load it only when it is the relevant companion to the active stage.
 > Core review outputs include `paper/review/review.md`, `paper/review/revision_log.md`, and a concrete claim downgrade / follow-up route when needed.
 
 # Review
@@ -42,7 +42,7 @@ It is also not the same as `rebuttal`.
 - Follow the shared interaction contract injected by the system prompt.
 - For ordinary active work, prefer a concise progress update once work has crossed roughly 6 tool calls with a human-meaningful delta, and do not drift beyond roughly 12 tool calls or about 8 minutes without a user-visible update.
 - When the review report, revision plan, or follow-up experiment TODO list becomes durable, send a richer user-visible progress update that says what the main risks are, what should be fixed next, and whether the next route is writing, experiment, or claim downgrade.
-- Codex-native execution boundary: use Codex-native file/shell/Git/test/build tools for routine document builds, scripted checks, Git inspection, and file inspection. Use public MCP `cs_bash_exec` only when the command itself must become quest evidence; ordinary Codex file tools are preferred for direct file IO.
+- Codex-native execution boundary: use Codex-native file/shell/Git/test/build tools for routine document builds, scripted checks, Git inspection, and file inspection. Use public MCP `cs_bash_exec` only when the command itself must become research evidence; ordinary Codex file tools are preferred for direct file IO.
 
 ## Purpose
 
@@ -113,7 +113,7 @@ Use, in roughly this order:
 - nearby papers when novelty or comparison is unclear
 
 If the draft/result state is still unclear, perform a quick intake audit first before continuing the review workflow.
-Before proposing extra experiments, read those structured `evaluation_summary` blocks first so you do not request work that the recorded evidence already resolved.
+Before proposing extra experiments, read those structured `evaluation_summary` blocks first so you do not reresearch work that the recorded evidence already resolved.
 If the user provided draft files or manuscript bundles directly, first normalize them into durable working paths before planning experiments or section-level revisions.
 
 ## Core outputs

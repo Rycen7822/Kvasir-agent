@@ -27,10 +27,10 @@ def test_claim_gate_blocks_without_required_evidence(tmp_path: Path):
 
 
 def test_claim_gate_allows_evidence_backed_claim(tmp_path: Path):
-    evidence = tmp_path / "CodexScientist" / "quests" / "QCLAIM2" / "artifacts" / "analysis" / "metrics.json"
+    evidence = tmp_path / "CodexScientist" / "artifacts" / "analysis" / "metrics.json"
     evidence.parent.mkdir(parents=True, exist_ok=True)
     evidence.write_text("{}\n", encoding="utf-8")
-    manifest = tmp_path / "CodexScientist" / "quests" / "QCLAIM2" / ".cs" / "analysis_campaigns" / "analysis-regression.json"
+    manifest = tmp_path / "CodexScientist" / ".cs" / "analysis_campaigns" / "analysis-regression.json"
     manifest.parent.mkdir(parents=True, exist_ok=True)
     manifest.write_text(
         json.dumps({"campaign_id": "analysis-regression", "slices": [{"slice_id": "slice-1", "status": "completed"}]}),
@@ -57,7 +57,7 @@ def test_claim_gate_allows_evidence_backed_claim(tmp_path: Path):
 
 
 def test_claim_gate_blocks_unknown_analysis_slice_ids(tmp_path: Path):
-    evidence = tmp_path / "CodexScientist" / "quests" / "QCLAIM3" / "artifacts" / "analysis" / "metrics.json"
+    evidence = tmp_path / "CodexScientist" / "artifacts" / "analysis" / "metrics.json"
     evidence.parent.mkdir(parents=True, exist_ok=True)
     evidence.write_text("{}\n", encoding="utf-8")
 

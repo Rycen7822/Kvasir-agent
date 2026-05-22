@@ -52,7 +52,7 @@ def _registered_layout(tmp_path: Path) -> ProjectLayout:
 
 
 def _write_variant_record(layout: ProjectLayout, *, variant_id: str = "var_ctx", env_id: str = ENV_ID, idea_id: str = "idea_ctx") -> Path:
-    path = layout.quest_detail_path(QUEST_ID, Path("variants") / variant_id / "variant.json")
+    path = layout.state_root / "variants" / variant_id / "variant.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
         json.dumps(
@@ -259,7 +259,7 @@ def test_repair_context_includes_failure_digests_and_redacts_secrets(tmp_path: P
 
     layout = _registered_layout(tmp_path)
     _write_variant_record(layout)
-    variant_root = tmp_path / "CodexScientist" / "quests" / QUEST_ID / "variants" / "var_ctx"
+    variant_root = tmp_path / "CodexScientist" / "variants" / "var_ctx"
     variant_root.mkdir(parents=True, exist_ok=True)
     (variant_root / "checks.json").write_text(
         '{"smoke_status":"failed","failure_class":"syntax_fail","stderr_tail":"SyntaxError: token=sk-proj-SECRETSECRETSECRETSECRET"}',

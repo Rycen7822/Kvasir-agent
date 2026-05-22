@@ -23,7 +23,7 @@ from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
 from .redaction import dumps_json
-from .runtime import compact_snapshot, doctor as native_doctor, get_services
+from .runtime import compact_snapshot, doctor as native_doctor, ensure_runtime_import_environment, get_services
 from .state import StateStore
 
 
@@ -69,13 +69,207 @@ def _required_payload(args: dict[str, Any], *names: str) -> dict[str, Any] | Non
 
 
 def _project_root_arg(args: dict[str, Any]) -> Path:
-    return Path(args.get("project") or args.get("project_root") or os.environ.get("CODEXSCIENTIST_PROJECT_ROOT") or ".").expanduser().resolve()
+    from codex_scientist.services.project_state import ProjectRootResolver
+
+    root = ProjectRootResolver.resolve(args)
+    os.environ["CODEXSCIENTIST_PROJECT_ROOT"] = str(root)
+    return root
 
 
 def _project_layout(args: dict[str, Any]):
     from codex_scientist.services.project_state import ProjectLayout
 
     return ProjectLayout.from_project_root(_project_root_arg(args))
+
+
+def _validate_supplied_quest_id(args: dict[str, Any], manifest_quest_id: str | None, state_root: Path) -> dict[str, Any] | None:
+    supplied = str(args.get("quest_id") or "").strip()
+    if not supplied or supplied == str(manifest_quest_id or ""):
+        return None
+    return {
+        "ok": False,
+        "error": f"supplied quest_id {supplied!r} does not match root-bound manifest quest id {manifest_quest_id!r}",
+        "error_type": "root_bound_quest_id_mismatch",
+        "recoverable": True,
+        "supplied_quest_id": supplied,
+        "manifest_quest_id": manifest_quest_id,
+        "state_root": str(state_root),
+    }
+
+
+def _current_research(args: dict[str, Any], *, create: bool) -> dict[str, Any]:
+    from codex_scientist.services.manifest import ManifestService
+
+    layout = _project_layout(args)
+    service = ManifestService(layout)
+    inferred_goal = str(args.get("goal") or args.get("title") or layout.project_root.name).strip() or layout.project_root.name
+    result = service.ensure_initialized(
+        create=create,
+        inferred_goal=inferred_goal,
+        write_reason="root_bound_runtime_tool" if create else None,
+        quest_id=str(args.get("quest_id") or "").strip() or None,
+    )
+    if not result.get("ok"):
+        return {"ok": False, **result, "layout": layout, "state_root": layout.state_root, "quest_root": layout.state_root}
+    manifest = result["manifest"]
+    quest = manifest.get("quest") if isinstance(manifest.get("quest"), dict) else {}
+    quest_id = str(quest.get("id") or "").strip() or None
+    mismatch = _validate_supplied_quest_id(args, quest_id, layout.state_root)
+    if mismatch is not None:
+        return {**mismatch, "layout": layout, "manifest": manifest, "quest_id": quest_id, "quest_root": layout.state_root}
+    return {
+        "ok": True,
+        "layout": layout,
+        "manifest": manifest,
+        "quest_id": quest_id,
+        "quest_root": layout.state_root,
+        "state_root": layout.state_root,
+        "created_now": bool(result.get("created")),
+    }
+
+
+def _current_quest_id(args: dict[str, Any], *, create: bool) -> str | None:
+    ctx = _current_research(args, create=create)
+    return str(ctx.get("quest_id") or "").strip() or None if ctx.get("ok") else None
+
+
+def _current_quest_root(args: dict[str, Any], *, create: bool) -> Path:
+    ctx = _current_research(args, create=create)
+    return Path(ctx.get("quest_root") or _project_layout(args).state_root)
+
+
+def _root_bound_error(ctx: dict[str, Any]) -> dict[str, Any] | None:
+    if ctx.get("ok") is not False:
+        return None
+    payload: dict[str, Any] = {}
+    for key, value in ctx.items():
+        if key in {"layout", "manifest", "quest_root"}:
+            continue
+        payload[key] = str(value) if isinstance(value, Path) else value
+    return payload
+
+
+_ROOT_BOUND_ARTIFACT_DIRS = {
+    "baseline": "baselines",
+    "idea": "ideas",
+    "decision": "decisions",
+    "progress": "progress",
+    "answer": "answers",
+    "milestone": "milestones",
+    "run": "runs",
+    "report": "reports",
+    "approval": "approvals",
+    "graph": "graphs",
+}
+
+
+
+def _append_jsonl(path: Path, item: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(item, ensure_ascii=False, sort_keys=True) + "\n")
+
+
+def _root_bound_artifact_record(root: Path, payload: dict[str, Any], *, quest_id: str) -> dict[str, Any]:
+    kind = str(payload.get("kind") or "").strip()
+    if kind not in _ROOT_BOUND_ARTIFACT_DIRS:
+        return {"ok": False, "errors": [f"Unknown artifact kind: {kind}"]}
+    if kind == "decision":
+        missing = [field for field in ("verdict", "action", "reason") if not payload.get(field)]
+        if missing:
+            return {"ok": False, "errors": [f"Decision artifact requires `{field}`." for field in missing]}
+    if kind == "run" and not payload.get("run_kind"):
+        return {"ok": False, "errors": ["Run artifact requires `run_kind`."]}
+    now = _utc_now()
+    artifact_id = str(payload.get("artifact_id") or payload.get("id") or f"{kind}_{uuid.uuid4().hex[:12]}")
+    record = {
+        "kind": kind,
+        "schema_version": 1,
+        "artifact_id": artifact_id,
+        "id": artifact_id,
+        "quest_id": quest_id,
+        "created_at": payload.get("created_at", now),
+        "updated_at": now,
+        "source": payload.get("source") or {"kind": "codex", "role": "native-plugin"},
+        "status": payload.get("status") or ("active" if kind == "progress" else "completed"),
+        "workspace_root": str(root),
+        "workspace_rel_path": ".",
+        **payload,
+    }
+    artifact_dir = root / "artifacts" / _ROOT_BOUND_ARTIFACT_DIRS[kind]
+    artifact_dir.mkdir(parents=True, exist_ok=True)
+    artifact_path = artifact_dir / f"{artifact_id}.json"
+    artifact_path.write_text(json.dumps(record, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    index_line = {
+        "artifact_id": artifact_id,
+        "kind": kind,
+        "status": record.get("status"),
+        "quest_id": quest_id,
+        "path": str(artifact_path),
+        "summary": record.get("summary") or record.get("message"),
+        "updated_at": now,
+    }
+    _append_jsonl(root / "artifacts" / "_index.jsonl", index_line)
+    _append_jsonl(
+        root / ".cs" / "events.jsonl",
+        {
+            "type": "artifact.recorded",
+            "quest_id": quest_id,
+            "artifact_id": artifact_id,
+            "kind": kind,
+            "recorded_at": now,
+            "status": record.get("status"),
+            "summary": record.get("summary") or record.get("message"),
+            "artifact_path": str(artifact_path),
+            "workspace_root": str(root),
+        },
+    )
+    return {
+        "ok": True,
+        "artifact_id": artifact_id,
+        "path": str(artifact_path),
+        "recorded": kind,
+        "record": record,
+        "workspace_root": str(root),
+        "artifact_path": str(artifact_path),
+        "checkpoint": None,
+        "graph": None,
+        "baseline_registry_entry": None,
+    }
+
+
+def _root_bound_memory_service(state_root: Path):
+    ensure_runtime_import_environment()
+    memory_module = importlib.import_module("codexscientist.memory")
+    return memory_module.MemoryService(state_root)
+
+
+def ensure_root_bound_vendor_shim(state_root: Path, manifest: dict[str, Any] | None = None) -> None:
+    state_root.mkdir(parents=True, exist_ok=True)
+    (state_root / ".cs").mkdir(parents=True, exist_ok=True)
+    for rel_dir in (".cs/conversations", ".cs/runs", ".cs/worktrees", ".cs/bash_exec"):
+        (state_root / rel_dir).mkdir(parents=True, exist_ok=True)
+    quest_value = (manifest or {}).get("quest")
+    goal_value = (manifest or {}).get("goal")
+    quest = quest_value if isinstance(quest_value, dict) else {}
+    goal = goal_value if isinstance(goal_value, dict) else {}
+    quest_yaml = state_root / "quest.yaml"
+    if not quest_yaml.exists():
+        quest_yaml.write_text(
+            "quest_id: " + str(quest.get("id") or "root_bound") + "\n"
+            "layout_mode: root_bound\n"
+            "goal: " + json.dumps(str(goal.get("title") or "root-bound research"), ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
+    for filename, default in {
+        "brief.md": "# Root-bound research brief\n",
+        "plan.md": "# Root-bound research plan\n",
+        "status.md": "# Root-bound research status\n",
+        "summary.md": "# Root-bound research summary\n",
+    }.items():
+        path = state_root / filename
+        if not path.exists():
+            path.write_text(default, encoding="utf-8")
 
 
 def _phase1_result(payload: dict[str, Any]) -> dict[str, Any]:
@@ -396,7 +590,7 @@ def _patch_guidance_to_latest_anchor(guidance_vm: dict[str, Any], active_anchor:
             patched["recommended_action"] = "finalize"
             patched.setdefault(
                 "summary",
-                "Paper bundle submitted. Final verification and handoff should proceed from the latest quest state.",
+                "Paper bundle submitted. Final verification and handoff should proceed from the root-bound research state.",
             )
     return patched
 
@@ -580,19 +774,11 @@ def _session_id(args: dict[str, Any]) -> str:
     return str(args.get("session_id") or "local").strip() or "local"
 
 
-def _active_or_latest_quest_id(args: dict[str, Any], services=None) -> str | None:
-    qid = str(args.get("quest_id") or "").strip()
-    if qid:
-        return qid
-    store = StateStore()
-    qid = store.active_quest_id(_session_id(args)) or ""
-    if qid:
-        return qid
-    services = services or get_services()
-    quests = services.quest.list_quests()
-    if quests:
-        return str(quests[0].get("quest_id") or "").strip() or None
-    return None
+def _root_bound_manifest_quest_id(args: dict[str, Any], services=None) -> str | None:
+    ctx = _current_research(args, create=False)
+    if not ctx.get("ok"):
+        return None
+    return str(ctx.get("quest_id") or "").strip() or None
 
 
 def _quest_root(services, quest_id: str) -> Path:
@@ -612,53 +798,58 @@ def cs_doctor(args: dict[str, Any]) -> dict[str, Any]:
 
 @_guard
 def cs_list_quests(args: dict[str, Any]) -> dict[str, Any]:
-    services = get_services()
-    items = services.quest.list_quests()[: _limit(args, default=50, maximum=500)]
-    return {"quests": items, "count": len(items), "runtime_home": str(services.home)}
+    ctx = _current_research(args, create=False)
+    if ctx.get("ok"):
+        quest = {
+            "quest_id": ctx.get("quest_id"),
+            "quest_root": str(ctx.get("quest_root")),
+            "layout_mode": "root_bound",
+            "synthetic_current": True,
+        }
+        return {"quests": [quest], "count": 1, "runtime_home": str(ctx["state_root"]), "legacy_status": "manifest_current"}
+    layout = ctx.get("layout") or _project_layout(args)
+    legacy_dir = layout.legacy_quests_dir
+    legacy_ids = sorted(path.name for path in legacy_dir.iterdir() if path.is_dir()) if legacy_dir.exists() else []
+    legacy_status = "multiple_legacy_quests_blocked" if len(legacy_ids) > 1 else "single_legacy_detected" if len(legacy_ids) == 1 else "none"
+    return {"quests": [], "count": 0, "runtime_home": str(layout.state_root), "legacy_status": legacy_status, "legacy_quest_ids": legacy_ids}
 
 
 @_guard
 def cs_get_quest_state(args: dict[str, Any]) -> dict[str, Any]:
-    services = get_services()
-    quest_id = _active_or_latest_quest_id(args, services)
-    if not quest_id:
-        return {"ok": False, "error": "No quest_id supplied and no active quest exists.", "quests": []}
-    snapshot = services.quest.snapshot(quest_id)
-    return {"quest_id": quest_id, "snapshot": snapshot if args.get("full") else compact_snapshot(snapshot)}
+    ctx = _current_research(args, create=False)
+    if not ctx.get("ok"):
+        return {"ok": False, "error": "No root-bound research manifest exists.", "error_type": ctx.get("error_type", "no_research_state"), "recoverable": True, "state_root": str(ctx.get("state_root"))}
+    manifest = ctx["manifest"]
+    artifact_dir = Path(str(ctx.get("state_root") or ctx.get("quest_root"))) / "artifacts"
+    artifact_count = sum(1 for path in artifact_dir.rglob("*.json") if path.is_file()) if artifact_dir.exists() else 0
+    snapshot = {
+        "quest_id": ctx.get("quest_id"),
+        "quest_root": str(ctx.get("quest_root")),
+        "layout_mode": "root_bound",
+        "manifest": manifest,
+        "counts": {"artifacts": artifact_count},
+    }
+    return {"quest_id": ctx.get("quest_id"), "snapshot": snapshot}
 
 
 @_guard
 def cs_set_active_quest(args: dict[str, Any]) -> dict[str, Any]:
-    if err := _require(args, "quest_id"):
-        return {"ok": False, "error": err}
-    services = get_services()
-    quest_id = str(args["quest_id"])
-    snapshot = services.quest.snapshot(quest_id)
+    ctx = _current_research(args, create=False)
+    if error := _root_bound_error(ctx):
+        return error
     requested_stage = str(args.get("stage") or "").strip()
-    stage = requested_stage or str(snapshot.get("active_anchor") or "").strip() or "preparing"
-    relation = "session_only"
-    if requested_stage:
-        try:
-            snapshot = services.quest.update_settings(quest_id, active_anchor=requested_stage)
-            relation = "synced"
-        except Exception as exc:
-            relation = "not_synced"
-            snapshot = services.quest.snapshot(quest_id)
-            anchor_warning = f"active_stage was set for this Codex session, but quest active_anchor was not updated: {exc}"
-        else:
-            anchor_warning = "stage was treated as the current quest anchor and synchronized to quest.active_anchor."
-    else:
-        anchor_warning = "No stage supplied; active_stage follows the quest active_anchor."
-    state = StateStore().set_active_quest(quest_id, _session_id(args), active_stage=stage)
-    return {
+    state = StateStore().set_active_quest(str(ctx.get("quest_id") or ""), _session_id(args), active_stage=requested_stage or None, project_root=str(ctx["layout"].project_root))
+    payload = {
+        "deprecated_lifecycle_tool": True,
+        "root_bound_alias": "active_stage_updated" if requested_stage else "identity_switch_ignored",
+        "identity_switching": "disabled",
         "state": state,
-        "quest": compact_snapshot(snapshot),
-        "active_stage": stage,
-        "active_anchor": str((snapshot or {}).get("active_anchor") or ""),
-        "stage_anchor_relation": relation,
-        "anchor_semantics": "active_stage is the Hermes session routing label; active_anchor is the durable quest-stage anchor. When stage is supplied, the wrapper treats it as the desired current anchor and synchronizes both.",
-        "warning": anchor_warning if relation != "synced" or requested_stage else None,
+        "quest_id": ctx.get("quest_id"),
+        "quest_root": str(ctx.get("quest_root")),
     }
+    if requested_stage:
+        payload["active_stage"] = requested_stage
+    return payload
 
 
 @_guard
@@ -669,17 +860,26 @@ def cs_new_quest(args: dict[str, Any]) -> dict[str, Any]:
     if isinstance(startup_contract, tuple):
         _none, message = startup_contract
         return {"ok": False, "error": message}
-    services = get_services()
-    snapshot = services.quest.create(
-        str(args.get("goal") or ""),
-        quest_id=str(args.get("quest_id") or "").strip() or None,
-        runner="codex",
-        title=str(args.get("title") or "").strip() or None,
-        startup_contract=startup_contract,
-    )
-    state = StateStore().set_active_quest(str(snapshot.get("quest_id")), _session_id(args), active_stage=str(snapshot.get("active_anchor") or "scout"))
+    ctx = _current_research(args, create=True)
+    if error := _root_bound_error(ctx):
+        return error
+    ensure_root_bound_vendor_shim(Path(ctx["state_root"]), ctx.get("manifest"))
+    stage = str(args.get("stage") or "scout").strip() or "scout"
+    state = StateStore().set_active_quest(str(ctx.get("quest_id") or ""), _session_id(args), active_stage=stage, project_root=str(ctx["layout"].project_root))
+    quest = {
+        "quest_id": ctx.get("quest_id"),
+        "quest_root": str(ctx.get("quest_root")),
+        "layout_mode": "root_bound",
+        "active_anchor": stage,
+        "goal": str(args.get("goal") or ""),
+    }
     return {
-        "quest": compact_snapshot(snapshot),
+        "deprecated_lifecycle_tool": True,
+        "root_bound_alias": "research_manifest_initialized",
+        "quest_id": ctx.get("quest_id"),
+        "quest_root": str(ctx.get("quest_root")),
+        "manifest": ctx.get("manifest"),
+        "quest": compact_snapshot(quest),
         "state": state,
         "workspace_mode": startup_contract.get("workspace_mode"),
         "decision_policy": startup_contract.get("decision_policy"),
@@ -769,81 +969,63 @@ def cs_update_quest_mode(args: dict[str, Any]) -> dict[str, Any]:
 def _add_user_message_payload(args: dict[str, Any]) -> dict[str, Any]:
     if err := _require(args, "message"):
         return {"ok": False, "error": err}
-    services = get_services()
-    quest_id = _active_or_latest_quest_id(args, services)
-    if not quest_id:
-        return {"ok": False, "error": "quest_id is required when no active quest exists"}
+    ctx = _current_research(args, create=True)
+    if error := _root_bound_error(ctx):
+        return error
+    quest_id = str(ctx.get("quest_id") or "")
+    root = Path(ctx["quest_root"])
+    ensure_root_bound_vendor_shim(root, ctx.get("manifest"))
     record_only = _truthy(args.get("record_only")) or str(args.get("delivery_state") or "").strip().lower() == "record_only"
-    if record_only:
-        root = _quest_root(services, quest_id)
-        timestamp = _utc_now()
-        record = {
-            "id": f"msg_{uuid.uuid4().hex[:12]}",
-            "role": "user",
-            "content": str(args.get("message") or ""),
-            "source": str(args.get("source") or "hermes-requirement"),
-            "created_at": timestamp,
-            "delivery_state": "record_only",
-        }
-        if args.get("stage"):
-            record["skill_id"] = str(args.get("stage"))
-        try:
-            services.quest.bind_source(quest_id, record["source"])
-        except Exception:
-            pass
-        _append_jsonl_path(root / ".cs" / "conversations" / "main.jsonl", record)
-        _append_jsonl_path(
-            root / ".cs" / "events.jsonl",
-            {
-                "type": "conversation.message",
-                "quest_id": quest_id,
-                "message_id": record["id"],
-                "role": "user",
-                "source": record["source"],
-                "content": record["content"],
-                "run_id": None,
-                "skill_id": record.get("skill_id"),
-                "reply_to_interaction_id": None,
-                "client_message_id": None,
-                "delivery_state": "record_only",
-                "attachments": [],
-                "created_at": timestamp,
-            },
-        )
-        queue_path = root / ".cs" / "user_message_queue.json"
-        queue_payload = _read_json_path(queue_path) if queue_path.exists() else {"version": 1, "pending": [], "completed": []}
-        pending = [item for item in (queue_payload.get("pending") or []) if str(item.get("message_id") or "") != record["id"]]
-        queue_payload["pending"] = pending
-        queue_payload.setdefault("completed", [])
-        queue_payload.setdefault("version", 1)
-        _write_json_path(queue_path, queue_payload)
-        try:
-            services.quest._write_active_user_requirements(root, latest_requirement=record)
-        except Exception:
-            pass
-        try:
-            services.quest.update_runtime_state(quest_root=root, pending_user_message_count=len(pending))
-        except Exception:
-            pass
-    else:
-        record = services.quest.append_message(
-            quest_id,
-            role="user",
-            content=str(args.get("message") or ""),
-            source=str(args.get("source") or "hermes"),
-            skill_id=str(args.get("stage") or "").strip() or None,
-        )
+    timestamp = _utc_now()
+    record = {
+        "id": f"msg_{uuid.uuid4().hex[:12]}",
+        "role": "user",
+        "content": str(args.get("message") or ""),
+        "source": str(args.get("source") or ("hermes-requirement" if record_only else "hermes")),
+        "created_at": timestamp,
+        "delivery_state": "record_only" if record_only else "queued",
+    }
     if args.get("stage"):
-        try:
-            services.quest.update_settings(quest_id, active_anchor=str(args.get("stage")))
-            StateStore().set_active_stage(str(args.get("stage")), _session_id(args))
-        except Exception:
-            pass
+        record["skill_id"] = str(args.get("stage"))
+    _append_jsonl(root / ".cs" / "conversations" / "main.jsonl", record)
+    _append_jsonl(
+        root / ".cs" / "events.jsonl",
+        {
+            "type": "conversation.message",
+            "quest_id": quest_id,
+            "message_id": record["id"],
+            "role": "user",
+            "source": record["source"],
+            "content": record["content"],
+            "run_id": None,
+            "skill_id": record.get("skill_id"),
+            "reply_to_interaction_id": None,
+            "client_message_id": None,
+            "delivery_state": record["delivery_state"],
+            "attachments": [],
+            "created_at": timestamp,
+        },
+    )
+    queue_path = root / ".cs" / "user_message_queue.json"
+    queue_payload = _read_json_path(queue_path) if queue_path.exists() else {"version": 1, "pending": [], "completed": []}
+    pending = list(queue_payload.get("pending") or [])
+    if not record_only:
+        pending.append({"message_id": record["id"], "created_at": timestamp, "source": record["source"], "content": record["content"]})
+    queue_payload["pending"] = pending
+    queue_payload.setdefault("completed", [])
+    queue_payload.setdefault("version", 1)
+    _write_json_path(queue_path, queue_payload)
+    if record_only:
+        req_path = root / "active_user_requirements.md"
+        existing = req_path.read_text(encoding="utf-8") if req_path.exists() else "# Active user requirements\n"
+        req_path.write_text(existing.rstrip() + f"\n\n- {timestamp}: {record['content']}\n", encoding="utf-8")
+    snapshot = {"quest_id": quest_id, "quest_root": str(root), "layout_mode": "root_bound", "pending_user_message_count": len(pending)}
     return {
         "quest_id": quest_id,
+        "quest_root": str(root),
         "message": record,
         "record_only": record_only,
-        "snapshot": compact_snapshot(services.quest.snapshot(quest_id)),
+        "snapshot": snapshot,
     }
 
 
@@ -862,7 +1044,7 @@ def cs_record_user_requirement(args: dict[str, Any]) -> dict[str, Any]:
 
 def _read_events_payload(args: dict[str, Any]) -> dict[str, Any]:
     services = get_services()
-    quest_id = _active_or_latest_quest_id(args, services)
+    quest_id = _root_bound_manifest_quest_id(args, services)
     if not quest_id:
         return {"ok": False, "error": "quest_id is required"}
     root = _quest_root(services, quest_id)
@@ -889,7 +1071,7 @@ codexscientist_events = cs_events
 @_guard
 def cs_read_quest_documents(args: dict[str, Any]) -> dict[str, Any]:
     services = get_services()
-    quest_id = _active_or_latest_quest_id(args, services)
+    quest_id = _root_bound_manifest_quest_id(args, services)
     if not quest_id:
         return {"ok": False, "error": "quest_id is required"}
     docs = services.quest.list_documents(quest_id)
@@ -923,10 +1105,13 @@ def cs_read_quest_documents(args: dict[str, Any]) -> dict[str, Any]:
 def cs_memory_search(args: dict[str, Any]) -> dict[str, Any]:
     if err := _require(args, "query"):
         return {"ok": False, "error": err}
-    services = get_services()
-    quest_id = _active_or_latest_quest_id(args, services)
-    scope = str(args.get("scope") or ("both" if quest_id else "global"))
-    quest_root = _quest_root(services, quest_id) if quest_id and scope in {"quest", "both"} else None
+    ctx = _current_research(args, create=False)
+    if error := _root_bound_error(ctx):
+        return {"matches": [], "count": 0, "scope": str(args.get("scope") or "quest"), "quest_id": None, **error}
+    memory_service = _root_bound_memory_service(Path(ctx["state_root"]))
+    quest_id = str(ctx.get("quest_id") or "").strip() or None
+    scope = str(args.get("scope") or "quest").strip().lower() or "quest"
+    quest_root = Path(ctx["quest_root"]) if scope in {"quest", "both"} else None
     kind_info = None
     kind_arg = str(args.get("kind") or "").strip()
     if kind_arg:
@@ -936,7 +1121,7 @@ def cs_memory_search(args: dict[str, Any]) -> dict[str, Any]:
             return _memory_kind_error_payload(exc)
     requested_limit = _limit(args)
     service_limit = 500 if kind_info and kind_info.get("semantic_tag") else requested_limit
-    matches = services.memory.search(
+    matches = memory_service.search(
         str(args.get("query") or ""),
         scope=scope,
         quest_root=quest_root,
@@ -950,7 +1135,7 @@ def cs_memory_search(args: dict[str, Any]) -> dict[str, Any]:
             tags = {str(tag) for tag in (match.get("tags") or [])}
             if not tags:
                 try:
-                    card = services.memory.read_card(
+                    card = memory_service.read_card(
                         path=str(match.get("path") or ""),
                         scope=str(match.get("scope") or scope),
                         quest_root=quest_root,
@@ -969,19 +1154,22 @@ def cs_memory_search(args: dict[str, Any]) -> dict[str, Any]:
 
 @_guard
 def cs_memory_read(args: dict[str, Any]) -> dict[str, Any]:
-    services = get_services()
-    quest_id = _active_or_latest_quest_id(args, services)
-    scope = str(args.get("scope") or ("quest" if quest_id else "global"))
-    quest_root = _quest_root(services, quest_id) if quest_id and scope == "quest" else None
-    card = services.memory.read_card(card_id=str(args.get("card_id") or "").strip() or None, path=str(args.get("path") or "").strip() or None, scope=scope, quest_root=quest_root)
-    return {"card": card}
+    ctx = _current_research(args, create=False)
+    if error := _root_bound_error(ctx):
+        return error
+    memory_service = _root_bound_memory_service(Path(ctx["state_root"]))
+    quest_id = str(ctx.get("quest_id") or "").strip() or None
+    scope = str(args.get("scope") or "quest").strip().lower() or "quest"
+    quest_root = Path(ctx["quest_root"]) if quest_id and scope == "quest" else None
+    card = memory_service.read_card(card_id=str(args.get("card_id") or "").strip() or None, path=str(args.get("path") or "").strip() or None, scope=scope, quest_root=quest_root)
+    return {"card": card, "quest_id": quest_id, "quest_root": str(quest_root) if quest_root else None}
 
 
-def _memory_item_matches_semantic_tag(services: Any, item: dict[str, Any], semantic_tag: str, *, default_scope: str, quest_root: Path | None) -> bool:
+def _memory_item_matches_semantic_tag(memory_service: Any, item: dict[str, Any], semantic_tag: str, *, default_scope: str, quest_root: Path | None) -> bool:
     tags = {str(tag) for tag in (item.get("tags") or [])}
     if not tags:
         try:
-            card = services.memory.read_card(
+            card = memory_service.read_card(
                 path=str(item.get("path") or ""),
                 scope=str(item.get("scope") or default_scope),
                 quest_root=quest_root,
@@ -994,15 +1182,16 @@ def _memory_item_matches_semantic_tag(services: Any, item: dict[str, Any], seman
 
 @_guard
 def cs_memory_list_recent(args: dict[str, Any]) -> dict[str, Any]:
-    services = get_services()
-    quest_id = _active_or_latest_quest_id(args, services)
-    requested_scope = str(args.get("scope") or ("quest" if quest_id else "global")).strip().lower() or "global"
+    ctx = _current_research(args, create=False)
+    if error := _root_bound_error(ctx):
+        return {"items": [], "count": 0, "scope": str(args.get("scope") or "quest"), "requested_scope": str(args.get("scope") or "quest"), "quest_id": None, **error}
+    memory_service = _root_bound_memory_service(Path(ctx["state_root"]))
+    quest_id = str(ctx.get("quest_id") or "").strip() or None
+    requested_scope = str(args.get("scope") or "quest").strip().lower() or "quest"
     if requested_scope not in {"quest", "global", "both"}:
         return {"ok": False, "error": "scope must be `quest`, `global`, or `both`."}
     scope = requested_scope
-    if scope in {"quest", "both"} and not quest_id:
-        scope = "global"
-    quest_root = _quest_root(services, quest_id) if quest_id and scope in {"quest", "both"} else None
+    quest_root = Path(ctx["quest_root"]) if scope in {"quest", "both"} else None
     kind_info = None
     kind_arg = str(args.get("kind") or "").strip()
     if kind_arg:
@@ -1017,7 +1206,7 @@ def cs_memory_list_recent(args: dict[str, Any]) -> dict[str, Any]:
     for resolved_scope in scopes:
         if resolved_scope == "quest" and quest_root is None:
             continue
-        recent = services.memory.list_recent(
+        recent = memory_service.list_recent(
             scope=resolved_scope,
             quest_root=quest_root if resolved_scope == "quest" else None,
             limit=service_limit,
@@ -1029,7 +1218,7 @@ def cs_memory_list_recent(args: dict[str, Any]) -> dict[str, Any]:
             items.append(enriched)
     if len(scopes) > 1:
         try:
-            items.sort(key=services.memory._card_sort_key, reverse=True)  # type: ignore[attr-defined]
+            items.sort(key=memory_service._card_sort_key, reverse=True)  # type: ignore[attr-defined]
         except Exception:
             items.sort(key=lambda item: (str(item.get("updated_at") or ""), str(item.get("path") or "")), reverse=True)
     if kind_info and kind_info.get("semantic_tag"):
@@ -1038,7 +1227,7 @@ def cs_memory_list_recent(args: dict[str, Any]) -> dict[str, Any]:
         for item in items:
             item_scope = str(item.get("scope") or scope)
             item_quest_root = quest_root if item_scope == "quest" else None
-            if _memory_item_matches_semantic_tag(services, item, semantic_tag, default_scope=item_scope, quest_root=item_quest_root):
+            if _memory_item_matches_semantic_tag(memory_service, item, semantic_tag, default_scope=item_scope, quest_root=item_quest_root):
                 filtered.append(item)
         items = filtered
     items = items[:requested_limit]
@@ -1052,10 +1241,15 @@ def cs_memory_list_recent(args: dict[str, Any]) -> dict[str, Any]:
 def cs_memory_write(args: dict[str, Any]) -> dict[str, Any]:
     if err := _require(args, "title"):
         return {"ok": False, "error": err}
-    services = get_services()
-    quest_id = _active_or_latest_quest_id(args, services)
-    scope = str(args.get("scope") or ("quest" if quest_id else "global"))
-    quest_root = _quest_root(services, quest_id) if quest_id and scope == "quest" else None
+    ctx = _current_research(args, create=True)
+    if error := _root_bound_error(ctx):
+        return error
+    memory_service = _root_bound_memory_service(Path(ctx["state_root"]))
+    quest_id = str(ctx.get("quest_id") or "").strip() or None
+    scope = str(args.get("scope") or "quest").strip().lower() or "quest"
+    if scope not in {"quest", "global"}:
+        return {"ok": False, "error": "scope must be `quest` or `global`."}
+    quest_root = Path(ctx["quest_root"]) if scope == "quest" else None
     try:
         kind_info = _normalize_memory_kind(args.get("kind") or "knowledge")
     except ValueError as exc:
@@ -1070,7 +1264,7 @@ def cs_memory_write(args: dict[str, Any]) -> dict[str, Any]:
     metadata["normalized_kind"] = kind_info["normalized"]
     if kind_info.get("alias_applied"):
         metadata["kind_alias"] = {"requested": kind_info["requested"], "normalized": kind_info["normalized"]}
-    card = services.memory.write_card(
+    card = memory_service.write_card(
         scope=scope,
         kind=str(kind_info["normalized"]),
         title=str(args.get("title") or ""),
@@ -1081,15 +1275,17 @@ def cs_memory_write(args: dict[str, Any]) -> dict[str, Any]:
         tags=tags,
         metadata=metadata,
     )
-    return {"card": card, "quest_id": quest_id, "scope": scope, "memory_kind_alias": kind_info}
+    return {"card": card, "quest_id": quest_id, "quest_root": str(quest_root) if quest_root else None, "scope": scope, "memory_kind_alias": kind_info}
 
 
 @_guard
 def cs_artifact_record(args: dict[str, Any]) -> dict[str, Any]:
-    if err := _require(args, "quest_id"):
-        return {"ok": False, "error": err}
-    services = get_services()
-    root = _quest_root(services, str(args["quest_id"]))
+    ctx = _current_research(args, create=True)
+    if error := _root_bound_error(ctx):
+        return error
+    root = Path(ctx["quest_root"])
+    ensure_root_bound_vendor_shim(root, ctx.get("manifest"))
+    quest_id = str(ctx.get("quest_id") or "")
     payload = dict(args.get("payload") or {}) if isinstance(args.get("payload"), dict) else {}
     top_kind = str(args.get("kind") or "").strip()
     if payload:
@@ -1106,9 +1302,9 @@ def cs_artifact_record(args: dict[str, Any]) -> dict[str, Any]:
             "summary": str(args.get("summary") or "Codex-native artifact record."),
             "source": {"kind": "codex", "role": "native-plugin"},
         }
-    record = services.artifact.record(root, payload, checkpoint=args.get("checkpoint") if isinstance(args.get("checkpoint"), bool) else None)
+    record = _root_bound_artifact_record(root, payload, quest_id=quest_id)
     artifact_ok = bool(record.get("ok")) if isinstance(record, dict) and "ok" in record else True
-    response: dict[str, Any] = {"artifact": record, "artifact_ok": artifact_ok, "quest_id": str(args["quest_id"]), "payload_kind": payload.get("kind")}
+    response: dict[str, Any] = {"artifact": record, "artifact_ok": artifact_ok, "quest_id": quest_id, "quest_root": str(root), "payload_kind": payload.get("kind")}
     if not artifact_ok:
         errors = record.get("errors") if isinstance(record, dict) else None
         message = "; ".join(str(item) for item in errors) if isinstance(errors, list) else str(errors or "artifact record failed")
@@ -1120,44 +1316,69 @@ def cs_artifact_record(args: dict[str, Any]) -> dict[str, Any]:
 def cs_confirm_baseline(args: dict[str, Any]) -> dict[str, Any]:
     if err := _require(args, "quest_id", "baseline_path"):
         return {"ok": False, "error": err}
-    services = get_services()
-    root = _quest_root(services, str(args["quest_id"]))
-    return services.artifact.confirm_baseline(
-        root,
-        baseline_path=str(args.get("baseline_path") or ""),
-        comment=args.get("comment"),
-        baseline_id=str(args.get("baseline_id") or "").strip() or None,
-        variant_id=str(args.get("variant_id") or "").strip() or None,
-        summary=str(args.get("summary") or "").strip() or None,
-        metric_contract=args.get("metric_contract") if isinstance(args.get("metric_contract"), dict) else None,
-    )
+    quest_id, root, error = _artifact_root_from_args(args)
+    if error:
+        return error
+    assert root is not None
+    return _root_bound_confirm_baseline(args, root=root, quest_id=str(quest_id or args["quest_id"]))
 
 
 @_guard
 def cs_waive_baseline(args: dict[str, Any]) -> dict[str, Any]:
     if err := _require(args, "quest_id", "reason"):
         return {"ok": False, "error": err}
-    services = get_services()
-    root = _quest_root(services, str(args["quest_id"]))
-    return services.artifact.waive_baseline(root, reason=str(args.get("reason") or ""), comment=args.get("comment"))
+    quest_id, root, error = _artifact_root_from_args(args)
+    if error:
+        return error
+    assert root is not None
+    quest_id = str(quest_id or args["quest_id"])
+    baseline_id = _safe_slug(args.get("baseline_id") or "waived", "waived")
+    reason = str(args.get("reason") or "").strip()
+    record = {
+        "schema_version": 1,
+        "quest_id": quest_id,
+        "baseline_id": baseline_id,
+        "status": "waived",
+        "reason": reason,
+        "comment": args.get("comment"),
+        "updated_at": _utc_now(),
+    }
+    _write_json_file(root / "config" / "baselines" / "entries" / f"{baseline_id}.json", record)
+    _append_jsonl(root / "config" / "baselines" / "index.jsonl", record)
+    try:
+        from codex_scientist.services.manifest import ManifestService
+
+        ManifestService(_project_layout(args)).record_baseline(baseline_id=baseline_id, status="waived", waiver_reason=reason)
+    except Exception:
+        pass
+    return {"ok": True, "quest_id": quest_id, "quest_root": str(root), "baseline_id": baseline_id, "baseline_gate": "waived", "record": record}
 
 
 @_guard
 def cs_attach_baseline(args: dict[str, Any]) -> dict[str, Any]:
     if err := _require(args, "quest_id", "baseline_id"):
         return {"ok": False, "error": err}
-    services = get_services()
-    root = _quest_root(services, str(args["quest_id"]))
-    return services.artifact.attach_baseline(root, str(args.get("baseline_id") or ""), variant_id=str(args.get("variant_id") or "").strip() or None)
+    quest_id, root, error = _artifact_root_from_args(args)
+    if error:
+        return error
+    assert root is not None
+    baseline_id = _safe_slug(args.get("baseline_id"), "baseline")
+    variant_id = str(args.get("variant_id") or "").strip() or None
+    payload = {"baseline_id": baseline_id, "variant_id": variant_id, "quest_id": str(quest_id or args["quest_id"]), "updated_at": _utc_now()}
+    path = root / "config" / "baselines" / "attachments" / f"{baseline_id}.json"
+    _write_json_file(path, payload)
+    return {"ok": True, "quest_id": payload["quest_id"], "quest_root": str(root), "baseline_id": baseline_id, "variant_id": variant_id, "path": str(path)}
 
 
 @_guard
 def cs_create_local_baseline(args: dict[str, Any]) -> dict[str, Any]:
     if err := _require(args, "quest_id", "baseline_id"):
         return {"ok": False, "error": err}
-    services = get_services()
-    quest_id = str(args["quest_id"])
-    root = _quest_root(services, quest_id)
+    quest_id, root, error = _artifact_root_from_args(args)
+    if error:
+        return error
+    assert root is not None
+    quest_id = str(quest_id or args["quest_id"])
     baseline_id = _safe_slug(args.get("baseline_id"), "local_baseline")
     filename = _safe_slug(args.get("filename") or "baseline.md", "baseline.md")
     if not filename.endswith(".md"):
@@ -1231,11 +1452,11 @@ def cs_create_local_baseline(args: dict[str, Any]) -> dict[str, Any]:
 def cs_submit_idea(args: dict[str, Any]) -> dict[str, Any]:
     if err := _require(args, "quest_id", "title"):
         return {"ok": False, "error": err}
-    services = get_services()
-    root = _quest_root(services, str(args["quest_id"]))
-    keys = ["mode","submission_mode","idea_id","lineage_intent","title","problem","hypothesis","mechanism","method_brief","selection_scores","mechanism_family","change_layer","source_lens","expected_gain","evidence_paths","risks","decision_reason","foundation_ref","foundation_reason","next_target","draft_markdown","source_candidate_id"]
-    kwargs = {k: args[k] for k in keys if k in args}
-    return services.artifact.submit_idea(root, **kwargs)
+    quest_id, root, error = _artifact_root_from_args(args)
+    if error:
+        return error
+    assert root is not None
+    return _root_bound_submit_idea(args, root=root, quest_id=str(quest_id or args["quest_id"]))
 
 
 @_guard
@@ -1243,136 +1464,340 @@ def cs_list_research_branches(args: dict[str, Any]) -> dict[str, Any]:
     if err := _require(args, "quest_id"):
         return {"ok": False, "error": err}
     services = get_services()
-    return services.artifact.list_research_branches(_quest_root(services, str(args["quest_id"])))
+    quest_id, root, error = _artifact_root_from_args(args, services)
+    if error:
+        return error
+    return services.artifact.list_research_branches(root)
 
 
-def _artifact_root_from_args(args: dict[str, Any], services: Any) -> tuple[str | None, Path | None, dict[str, Any] | None]:
-    quest_id = _active_or_latest_quest_id(args, services)
-    if not quest_id:
-        return None, None, {"ok": False, "error": "quest_id is required when no active quest exists"}
-    return quest_id, _quest_root(services, quest_id), None
+def _artifact_root_from_args(args: dict[str, Any], services: Any | None = None) -> tuple[str | None, Path | None, dict[str, Any] | None]:
+    ctx = _current_research(args, create=False)
+    if error := _root_bound_error(ctx):
+        return None, None, error
+    root = Path(ctx["quest_root"])
+    ensure_root_bound_vendor_shim(root, ctx.get("manifest"))
+    return str(ctx.get("quest_id") or ""), root, None
+
+
+def _write_json_file(path: Path, payload: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def _path_relative_to_root(path: Path, root: Path) -> str | None:
+    try:
+        return path.resolve().relative_to(root.resolve()).as_posix()
+    except ValueError:
+        return None
+
+
+def _root_bound_confirm_baseline(args: dict[str, Any], *, root: Path, quest_id: str) -> dict[str, Any]:
+    raw_path = str(args.get("baseline_path") or "").strip()
+    if not raw_path:
+        return {"ok": False, "error": "baseline_path is required", "error_type": "missing_argument", "recoverable": True}
+    baseline_path = Path(raw_path).expanduser()
+    if not baseline_path.is_absolute():
+        baseline_path = root / raw_path
+    if not baseline_path.exists():
+        return {"ok": False, "error": f"baseline_path not found: {baseline_path}", "error_type": "not_found", "recoverable": True}
+    rel = _path_relative_to_root(baseline_path, root)
+    if rel is None:
+        return {"ok": False, "error": "baseline_path must stay within state_root", "error_type": "invalid_argument", "recoverable": True}
+    parts = Path(rel).parts
+    if len(parts) < 3 or parts[0] != "baselines" or parts[1] not in {"local", "imported"}:
+        return {
+            "ok": False,
+            "error": "baseline_path must live under baselines/local/<baseline_id>/... or baselines/imported/<baseline_id>/...",
+            "error_type": "invalid_argument",
+            "recoverable": True,
+        }
+    baseline_id = _safe_slug(args.get("baseline_id") or parts[2], "baseline")
+    metric_contract = str(args.get("metric_contract") or "primary").strip() or "primary"
+    summary = str(args.get("summary") or args.get("comment") or "Root-bound baseline confirmed.").strip()
+    now = _utc_now()
+    record = {
+        "schema_version": 1,
+        "quest_id": quest_id,
+        "baseline_id": baseline_id,
+        "status": "confirmed",
+        "baseline_path": str(baseline_path),
+        "baseline_root_rel_path": str(Path(*parts[:3])),
+        "metric_contract": metric_contract,
+        "summary": summary,
+        "confirmed_at": now,
+    }
+    _write_json_file(root / "config" / "baselines" / "entries" / f"{baseline_id}.json", record)
+    _append_jsonl(root / "config" / "baselines" / "index.jsonl", record)
+    _append_jsonl(root / ".cs" / "events.jsonl", {"type": "baseline.confirmed", **record})
+    try:
+        from codex_scientist.services.manifest import ManifestService
+
+        ManifestService(_project_layout(args)).record_baseline(
+            baseline_id=baseline_id,
+            status="confirmed",
+            metric_contract=metric_contract,
+            artifact_requirements=[str(baseline_path)],
+        )
+    except Exception:
+        pass
+    return {
+        "ok": True,
+        "quest_id": quest_id,
+        "quest_root": str(root),
+        "baseline_id": baseline_id,
+        "baseline_path": str(baseline_path),
+        "baseline_gate": "confirmed",
+        "record": record,
+    }
+
+
+def _root_bound_submit_idea(args: dict[str, Any], *, root: Path, quest_id: str) -> dict[str, Any]:
+    title = str(args.get("title") or "").strip()
+    idea_id = _safe_slug(args.get("idea_id") or title or f"idea_{uuid.uuid4().hex[:8]}", "idea")
+    record = {
+        "schema_version": 1,
+        "quest_id": quest_id,
+        "idea_id": idea_id,
+        "title": title,
+        "problem": args.get("problem"),
+        "hypothesis": args.get("hypothesis"),
+        "mechanism": args.get("mechanism"),
+        "expected_gain": args.get("expected_gain"),
+        "risks": list(args.get("risks") or []),
+        "selection_scores": args.get("selection_scores") if isinstance(args.get("selection_scores"), dict) else {},
+        "status": "submitted",
+        "created_at": _utc_now(),
+    }
+    path = root / "artifacts" / "ideas" / f"{idea_id}.json"
+    _write_json_file(path, record)
+    _append_jsonl(root / "artifacts" / "_index.jsonl", {"artifact_id": idea_id, "kind": "idea", "path": str(path), "quest_id": quest_id, "updated_at": record["created_at"]})
+    return {"ok": True, "quest_id": quest_id, "quest_root": str(root), "idea_id": idea_id, "idea": record, "path": str(path)}
+
+
+def _root_bound_record_main_experiment(args: dict[str, Any], *, root: Path, quest_id: str) -> dict[str, Any]:
+    run_id = _safe_slug(args.get("run_id"), "run")
+    record = {key: args.get(key) for key in ["title", "hypothesis", "setup", "execution", "results", "conclusion", "metric_rows", "metrics_summary", "evidence_paths", "verdict", "baseline_id"] if key in args}
+    record.update({"schema_version": 1, "quest_id": quest_id, "run_id": run_id, "status": args.get("status") or "recorded", "updated_at": _utc_now()})
+    path = root / "artifacts" / "experiments" / f"{run_id}.json"
+    _write_json_file(path, record)
+    _append_jsonl(root / "artifacts" / "_index.jsonl", {"artifact_id": run_id, "kind": "experiment", "path": str(path), "quest_id": quest_id, "updated_at": record["updated_at"]})
+    chart_status = {"ok": True, "chart_count": 0, "skipped": "root_bound_lightweight"}
+    return {
+        "ok": True,
+        "quest_id": quest_id,
+        "quest_root": str(root),
+        "run_id": run_id,
+        "experiment": record,
+        "path": str(path),
+        "connector_metric_charts": [],
+        "connector_metric_chart_status": chart_status,
+    }
+
+
+def _analysis_campaign_path(root: Path, campaign_id: str) -> Path:
+    return root / ".cs" / "analysis_campaigns" / f"{_safe_slug(campaign_id, 'active')}.json"
+
+
+def _root_bound_create_analysis_campaign(args: dict[str, Any], *, root: Path, quest_id: str) -> dict[str, Any]:
+    campaign_id = _safe_slug(args.get("campaign_id") or args.get("campaign_title") or "active", "active")
+    slices = []
+    for item in args.get("slices") or []:
+        if isinstance(item, dict):
+            slice_item = dict(item)
+            slice_item.setdefault("status", "pending")
+            slices.append(slice_item)
+    campaign = {
+        "schema_version": 1,
+        "quest_id": quest_id,
+        "campaign_id": campaign_id,
+        "campaign_title": str(args.get("campaign_title") or campaign_id),
+        "campaign_goal": str(args.get("campaign_goal") or ""),
+        "slices": slices,
+        "updated_at": _utc_now(),
+    }
+    path = _analysis_campaign_path(root, campaign_id)
+    _write_json_file(path, campaign)
+    return {"ok": True, "quest_id": quest_id, "quest_root": str(root), "campaign_id": campaign_id, "campaign": campaign, "path": str(path)}
+
+
+def _root_bound_get_analysis_campaign(args: dict[str, Any], *, root: Path, quest_id: str) -> dict[str, Any]:
+    campaign_id = _safe_slug(args.get("campaign_id") or "active", "active")
+    path = _analysis_campaign_path(root, campaign_id)
+    if not path.exists():
+        matches = sorted((root / ".cs" / "analysis_campaigns").glob("*.json"))
+        if len(matches) == 1:
+            path = matches[0]
+            campaign_id = path.stem
+        else:
+            return {"ok": False, "error": f"analysis campaign not found: {campaign_id}", "error_type": "not_found", "recoverable": True}
+    campaign = _read_json_path(path)
+    return {"ok": True, "quest_id": quest_id, "campaign_id": campaign_id, "campaign": campaign, "path": str(path)}
+
+
+def _root_bound_record_analysis_slice(args: dict[str, Any], *, root: Path, quest_id: str) -> dict[str, Any]:
+    campaign_id = _safe_slug(args.get("campaign_id") or "active", "active")
+    slice_id = _safe_slug(args.get("slice_id"), "slice")
+    current = _root_bound_get_analysis_campaign({**args, "campaign_id": campaign_id}, root=root, quest_id=quest_id)
+    existing = current.get("campaign") if current.get("ok") else None
+    campaign: dict[str, Any] = dict(existing) if isinstance(existing, dict) else {"schema_version": 1, "quest_id": quest_id, "campaign_id": campaign_id, "slices": []}
+    slices = campaign.setdefault("slices", [])
+    if not isinstance(slices, list):
+        slices = []
+        campaign["slices"] = slices
+    updated = None
+    for item in slices:
+        if isinstance(item, dict) and str(item.get("slice_id") or "") == slice_id:
+            item.update({key: args.get(key) for key in ["status", "setup", "execution", "results", "evidence_paths", "metric_rows"] if key in args})
+            updated = item
+            break
+    if updated is None:
+        updated = {key: args.get(key) for key in ["status", "setup", "execution", "results", "evidence_paths", "metric_rows"] if key in args}
+        updated["slice_id"] = slice_id
+        slices.append(updated)
+    updated.setdefault("status", "completed")
+    campaign["updated_at"] = _utc_now()
+    campaign_path = _analysis_campaign_path(root, campaign_id)
+    _write_json_file(campaign_path, campaign)
+    artifact = {"schema_version": 1, "quest_id": quest_id, "campaign_id": campaign_id, "slice_id": slice_id, "slice": updated, "updated_at": campaign["updated_at"]}
+    artifact_path = root / "artifacts" / "analysis" / f"{campaign_id}_{slice_id}.json"
+    _write_json_file(artifact_path, artifact)
+    return {"ok": True, "quest_id": quest_id, "quest_root": str(root), "campaign_id": campaign_id, "slice_id": slice_id, "slice": updated, "path": str(artifact_path), "campaign_path": str(campaign_path)}
 
 
 @_guard
 def cs_resolve_runtime_refs(args: dict[str, Any]) -> dict[str, Any]:
-    services = get_services()
-    quest_id, root, error = _artifact_root_from_args(args, services)
+    quest_id, root, error = _artifact_root_from_args(args)
     if error:
         return error
-    payload = services.artifact.resolve_runtime_refs(root)  # type: ignore[arg-type]
-    payload.setdefault("quest_id", quest_id)
-    return payload
+    branch = ""
+    try:
+        branch = subprocess.run(["git", "branch", "--show-current"], cwd=str(root), text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=3).stdout.strip()
+    except Exception:
+        branch = ""
+    return {
+        "quest_id": quest_id,
+        "quest_root": str(root),
+        "active_idea_id": None,
+        "active_analysis_campaign_id": None,
+        "current_canonical_branch": branch or "root-bound",
+        "runtime_refs": {},
+    }
 
 
 @_guard
 def cs_get_paper_contract_health(args: dict[str, Any]) -> dict[str, Any]:
-    services = get_services()
-    quest_id, root, error = _artifact_root_from_args(args, services)
+    quest_id, root, error = _artifact_root_from_args(args)
     if error:
         return error
-    payload = services.artifact.get_paper_contract_health(
-        root,  # type: ignore[arg-type]
-        detail=str(args.get("detail") or "summary").strip().lower() or "summary",
-    )
-    payload.setdefault("quest_id", quest_id)
-    return payload
+    return {
+        "quest_id": quest_id,
+        "quest_root": str(root),
+        "paper_contract_health": {"status": "not_started", "detail": str(args.get("detail") or "summary")},
+        "message": "Root-bound paper contract has no recorded bundle yet.",
+    }
 
 
 @_guard
 def cs_get_global_status(args: dict[str, Any]) -> dict[str, Any]:
-    services = get_services()
-    quest_id, root, error = _artifact_root_from_args(args, services)
+    quest_id, root, error = _artifact_root_from_args(args)
     if error:
         return error
-    payload = services.artifact.get_global_status(
-        root,  # type: ignore[arg-type]
-        detail=str(args.get("detail") or "brief").strip().lower() or "brief",
-        locale=str(args.get("locale") or "zh").strip().lower() or "zh",
-    )
-    payload.setdefault("quest_id", quest_id)
-    return payload
+    return {
+        "quest_id": quest_id,
+        "global_status": {
+            "quest_id": quest_id,
+            "quest_root": str(root),
+            "layout_mode": "root_bound",
+            "status": "active",
+        },
+    }
 
 
 @_guard
 def cs_get_method_scoreboard(args: dict[str, Any]) -> dict[str, Any]:
-    services = get_services()
-    quest_id, root, error = _artifact_root_from_args(args, services)
+    quest_id, root, error = _artifact_root_from_args(args)
     if error:
         return error
-    payload = services.artifact.refresh_method_scoreboard(root)  # type: ignore[arg-type]
-    payload.setdefault("quest_id", quest_id)
-    return payload
+    scoreboard_path = root / "artifacts" / "method_scoreboard.json"
+    scoreboard = {"methods": [], "updated_at": _utc_now()}
+    scoreboard_path.parent.mkdir(parents=True, exist_ok=True)
+    scoreboard_path.write_text(json.dumps(scoreboard, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return {"quest_id": quest_id, "quest_root": str(root), "json_path": str(scoreboard_path), "scoreboard": scoreboard}
 
 
 @_guard
 def cs_get_optimization_frontier(args: dict[str, Any]) -> dict[str, Any]:
-    services = get_services()
-    quest_id, root, error = _artifact_root_from_args(args, services)
+    quest_id, root, error = _artifact_root_from_args(args)
     if error:
         return error
-    payload = services.artifact.get_optimization_frontier(root)  # type: ignore[arg-type]
-    payload.setdefault("quest_id", quest_id)
-    return payload
+    return {"quest_id": quest_id, "quest_root": str(root), "optimization_frontier": {"items": [], "count": 0}}
 
 
 @_guard
 def cs_get_conversation_context(args: dict[str, Any]) -> dict[str, Any]:
-    services = get_services()
-    quest_id, root, error = _artifact_root_from_args(args, services)
+    quest_id, root, error = _artifact_root_from_args(args)
     if error:
         return error
-    payload = services.artifact.get_conversation_context(
-        root,  # type: ignore[arg-type]
-        limit=_limit(args, default=12, maximum=200),
-        include_attachments=_truthy(args.get("include_attachments")),
-    )
-    payload.setdefault("quest_id", quest_id)
-    return payload
+    limit = _limit(args, default=12, maximum=200)
+    messages: list[dict[str, Any]] = []
+    path = root / ".cs" / "conversations" / "main.jsonl"
+    if path.exists():
+        for line in path.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            try:
+                item = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if isinstance(item, dict):
+                messages.append(item)
+    messages = messages[-limit:]
+    latest_user = next((item for item in reversed(messages) if item.get("role") == "user"), None)
+    return {"quest_id": quest_id, "quest_root": str(root), "messages": messages, "count": len(messages), "latest_user_message": latest_user}
 
 
 @_guard
 def cs_record_main_experiment(args: dict[str, Any]) -> dict[str, Any]:
     if err := _require(args, "quest_id", "run_id"):
         return {"ok": False, "error": err}
-    services = get_services()
-    root = _quest_root(services, str(args["quest_id"]))
-    keys = ["run_id","title","hypothesis","setup","execution","results","conclusion","metric_rows","metrics_summary","metric_contract","evidence_paths","changed_files","config_paths","notes","dataset_scope","verdict","status","baseline_id","baseline_variant_id","evaluation_summary","strict_metric_contract"]
-    kwargs = {k: args[k] for k in keys if k in args}
-    return services.artifact.record_main_experiment(root, **kwargs)
+    quest_id, root, error = _artifact_root_from_args(args)
+    if error:
+        return error
+    assert root is not None
+    return _root_bound_record_main_experiment(args, root=root, quest_id=str(quest_id or args["quest_id"]))
 
 
 @_guard
 def cs_create_analysis_campaign(args: dict[str, Any]) -> dict[str, Any]:
     if err := _require(args, "quest_id", "campaign_title", "campaign_goal", "slices"):
         return {"ok": False, "error": err}
-    services = get_services()
-    root = _quest_root(services, str(args["quest_id"]))
-    keys = ["campaign_title","campaign_goal","parent_run_id","slices","campaign_origin","selected_outline_ref","research_questions","experimental_designs","todo_items"]
-    kwargs = {k: args[k] for k in keys if k in args}
-    return services.artifact.create_analysis_campaign(root, **kwargs)
+    quest_id, root, error = _artifact_root_from_args(args)
+    if error:
+        return error
+    assert root is not None
+    return _root_bound_create_analysis_campaign(args, root=root, quest_id=str(quest_id or args["quest_id"]))
 
 
 @_guard
 def cs_get_analysis_campaign(args: dict[str, Any]) -> dict[str, Any]:
     if err := _require(args, "quest_id"):
         return {"ok": False, "error": err}
-    services = get_services()
-    quest_id = str(args["quest_id"])
-    root = _quest_root(services, quest_id)
-    campaign_id = str(args.get("campaign_id") or "active").strip() or "active"
-    campaign = services.artifact.get_analysis_campaign(root, campaign_id)
-    return {"quest_id": quest_id, "campaign_id": campaign_id, "campaign": campaign}
+    quest_id, root, error = _artifact_root_from_args(args)
+    if error:
+        return error
+    assert root is not None
+    return _root_bound_get_analysis_campaign(args, root=root, quest_id=str(quest_id or args["quest_id"]))
 
 
 @_guard
 def cs_record_analysis_slice(args: dict[str, Any]) -> dict[str, Any]:
     if err := _require(args, "quest_id", "campaign_id", "slice_id"):
         return {"ok": False, "error": err}
-    services = get_services()
-    root = _quest_root(services, str(args["quest_id"]))
-    keys = ["campaign_id","slice_id","status","setup","execution","results","evidence_paths","metric_rows","deviations","claim_impact","reviewer_resolution","manuscript_update_hint","next_recommendation","dataset_scope","subset_approval_ref","comparison_baselines","evaluation_summary"]
-    kwargs = {k: args[k] for k in keys if k in args}
-    return services.artifact.record_analysis_slice(root, **kwargs)
+    quest_id, root, error = _artifact_root_from_args(args)
+    if error:
+        return error
+    assert root is not None
+    return _root_bound_record_analysis_slice(args, root=root, quest_id=str(quest_id or args["quest_id"]))
 
 
 def _normalize_mcp_detailed_outline(value: object) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
@@ -1399,12 +1824,98 @@ def _normalize_mcp_detailed_outline(value: object) -> tuple[dict[str, Any] | Non
     }
 
 
+def _root_bound_outline_sections(detailed_outline: dict[str, Any] | None) -> list[dict[str, Any]]:
+    data = detailed_outline if isinstance(detailed_outline, dict) else {}
+    raw_sections = data.get("sections")
+    sections: list[dict[str, Any]] = []
+    if isinstance(raw_sections, list):
+        for index, raw in enumerate(raw_sections, start=1):
+            if not isinstance(raw, dict):
+                continue
+            title = str(raw.get("title") or raw.get("name") or raw.get("section_id") or f"Section {index}").strip() or f"Section {index}"
+            section_id = str(raw.get("section_id") or "").strip() or _safe_slug(title, f"section_{index}")
+            section = dict(raw)
+            section.update({"section_id": section_id, "title": title})
+            sections.append(section)
+    if sections:
+        return sections
+    raw_designs = data.get("experimental_designs")
+    if isinstance(raw_designs, list):
+        for index, item in enumerate(raw_designs, start=1):
+            title = str(item or "").strip()
+            if not title:
+                continue
+            sections.append({"section_id": _safe_slug(title, f"section_{index}"), "title": title, "paper_role": "main_text", "status": "planned"})
+    return sections
+
+
+def _next_root_bound_outline_id(root: Path) -> str:
+    candidates = root / "artifacts" / "paper_outlines" / "candidates"
+    existing = [path.stem for path in candidates.glob("outline_*.json")] if candidates.exists() else []
+    numbers = []
+    for name in existing:
+        suffix = name.removeprefix("outline_")
+        if suffix.isdigit():
+            numbers.append(int(suffix))
+    return f"outline_{(max(numbers) + 1) if numbers else 1:03d}"
+
+
+def _root_bound_submit_paper_outline(args: dict[str, Any], *, root: Path, quest_id: str, kwargs: dict[str, Any]) -> dict[str, Any]:
+    mode = str(kwargs.get("mode") or "candidate").strip().lower() or "candidate"
+    outline_id = _safe_slug(kwargs.get("outline_id") or _next_root_bound_outline_id(root), "outline")
+    now = _utc_now()
+    candidates_root = root / "artifacts" / "paper_outlines" / "candidates"
+    selected_path = root / "artifacts" / "paper_outlines" / "selected_outline.json"
+    candidate_path = candidates_root / f"{outline_id}.json"
+    existing = _read_json_path(candidate_path) if candidate_path.exists() else {}
+    if mode in {"select", "revise"} and not existing:
+        existing = _read_json_path(selected_path) if selected_path.exists() else {}
+    if mode in {"select", "revise"} and not existing:
+        return {"ok": False, "error": f"Unknown paper outline `{outline_id}`.", "error_type": "not_found", "recoverable": True}
+    detailed_outline = kwargs.get("detailed_outline") if "detailed_outline" in kwargs else existing.get("detailed_outline")
+    detailed_outline = detailed_outline if isinstance(detailed_outline, dict) else {}
+    record = {
+        "schema_version": 1,
+        "quest_id": quest_id,
+        "outline_id": outline_id,
+        "title": str(kwargs.get("title") or existing.get("title") or outline_id).strip() or outline_id,
+        "note": str(kwargs.get("note") or existing.get("note") or "").strip(),
+        "story": str(kwargs.get("story") or existing.get("story") or "").strip(),
+        "ten_questions": _clean_string_list(kwargs.get("ten_questions") if "ten_questions" in kwargs else existing.get("ten_questions")),
+        "detailed_outline": detailed_outline,
+        "sections": _root_bound_outline_sections(detailed_outline),
+        "review_result": kwargs.get("review_result") if "review_result" in kwargs else existing.get("review_result"),
+        "status": "candidate" if mode == "candidate" else ("selected" if mode == "select" else "revised"),
+        "created_at": str(existing.get("created_at") or now),
+        "updated_at": now,
+    }
+    target_path = candidate_path if mode == "candidate" else selected_path
+    _write_json_file(target_path, record)
+    if mode in {"select", "revise"}:
+        _write_json_file(candidate_path, {**record, "status": record["status"]})
+    artifact = {
+        "artifact_id": f"paper_outline_{outline_id}",
+        "kind": "report",
+        "status": "completed",
+        "path": str(target_path),
+        "quest_id": quest_id,
+        "updated_at": now,
+    }
+    _append_jsonl(root / "artifacts" / "_index.jsonl", artifact)
+    payload = {"ok": True, "mode": mode, "outline_id": outline_id, "outline_path": str(target_path), "record": record, "artifact": artifact}
+    if mode in {"select", "revise"}:
+        payload["selected_outline_path"] = str(selected_path)
+    return payload
+
+
 @_guard
 def cs_submit_paper_outline(args: dict[str, Any]) -> dict[str, Any]:
     if err := _require(args, "quest_id"):
         return {"ok": False, "error": err}
     services = get_services()
-    root = _quest_root(services, str(args["quest_id"]))
+    quest_id, root, error = _artifact_root_from_args(args, services)
+    if error:
+        return error
     keys = ["mode","outline_id","title","note","story","ten_questions","detailed_outline","review_result","selected_reason"]
     kwargs = {k: args[k] for k in keys if k in args}
     if "detailed_outline" in kwargs:
@@ -1424,23 +1935,20 @@ def cs_submit_paper_outline(args: dict[str, Any]) -> dict[str, Any]:
                 "mode_aliases": {"selected": "select"},
             }
         kwargs["mode"] = mode
-    try:
-        return services.artifact.submit_paper_outline(root, **kwargs)
-    except ValueError as exc:
-        if _is_active_analysis_campaign_error(exc):
-            return _active_analysis_campaign_payload(services, root, str(exc))
-        raise
+    assert root is not None
+    return _root_bound_submit_paper_outline(args, root=root, quest_id=str(quest_id or args["quest_id"]), kwargs=kwargs)
 
 
 @_guard
 def cs_list_paper_outlines(args: dict[str, Any]) -> dict[str, Any]:
-    services = get_services()
-    quest_id, root, error = _artifact_root_from_args(args, services)
+    quest_id, root, error = _artifact_root_from_args(args)
     if error:
         return error
-    payload = services.artifact.list_paper_outlines(root)  # type: ignore[arg-type]
-    payload.setdefault("quest_id", quest_id)
-    return payload
+    outlines_root = root / "artifacts" / "paper_outlines" if root is not None else Path(".")
+    outlines = []
+    if outlines_root.exists():
+        outlines = [{"path": str(path), "title": path.stem} for path in sorted(outlines_root.glob("*.json"))]
+    return {"quest_id": quest_id, "quest_root": str(root), "outlines": outlines}
 
 
 @_guard
@@ -1448,7 +1956,9 @@ def cs_submit_paper_bundle(args: dict[str, Any]) -> dict[str, Any]:
     if err := _require(args, "quest_id"):
         return {"ok": False, "error": err}
     services = get_services()
-    root = _quest_root(services, str(args["quest_id"]))
+    quest_id, root, error = _artifact_root_from_args(args, services)
+    if error:
+        return error
     keys = ["title","summary","outline_path","draft_path","writing_plan_path","references_path","claim_evidence_map_path","compile_report_path","pdf_path","latex_root_path","prepare_open_source"]
     kwargs = {k: args[k] for k in keys if k in args}
     try:
@@ -1462,29 +1972,24 @@ def cs_submit_paper_bundle(args: dict[str, Any]) -> dict[str, Any]:
 
 @_guard
 def cs_refresh_summary(args: dict[str, Any]) -> dict[str, Any]:
-    services = get_services()
-    quest_id, root, error = _artifact_root_from_args(args, services)
+    quest_id, root, error = _artifact_root_from_args(args)
     if error:
         return error
-    payload = services.artifact.refresh_summary(root, reason=str(args.get("reason") or "").strip() or None)  # type: ignore[arg-type]
-    payload.setdefault("quest_id", quest_id)
-    return payload
+    summary_path = (root or Path(".")) / "SUMMARY.md"
+    reason = str(args.get("reason") or "manual refresh").strip() or "manual refresh"
+    summary_path.write_text(f"# Research summary\n\n- quest_id: {quest_id}\n- reason: {reason}\n", encoding="utf-8")
+    return {"quest_id": quest_id, "quest_root": str(root), "summary_path": str(summary_path), "summary": summary_path.read_text(encoding="utf-8")}
 
 
 @_guard
 def cs_arxiv(args: dict[str, Any]) -> dict[str, Any]:
-    services = get_services()
-    quest_id, root, error = _artifact_root_from_args(args, services)
+    quest_id, root, error = _artifact_root_from_args(args)
     if error:
         return error
-    payload = services.artifact.arxiv(
-        str(args.get("paper_id") or "").strip() or None,
-        mode=str(args.get("mode") or "read").strip().lower() or "read",
-        full_text=_truthy(args.get("full_text")),
-        quest_root=root,
-    )
-    payload.setdefault("quest_id", quest_id)
-    return payload
+    mode = str(args.get("mode") or "read").strip().lower() or "read"
+    library_path = (root or Path(".")) / "artifacts" / "arxiv" / "library.json"
+    items = json.loads(library_path.read_text(encoding="utf-8")) if library_path.exists() else []
+    return {"quest_id": quest_id, "quest_root": str(root), "mode": mode, "items": items, "count": len(items)}
 
 
 @_guard
@@ -2001,10 +2506,11 @@ def cs_feedback_ingest(args: dict[str, Any]) -> dict[str, Any]:
 def cs_bash_exec(args: dict[str, Any]) -> dict[str, Any]:
     services = get_services()
     summary_mode = _summary_mode_requested(args)
-    quest_id = _active_or_latest_quest_id(args, services)
-    if not quest_id:
-        return {"ok": False, "error": "quest_id is required"}
-    root = _quest_root(services, quest_id)
+    ctx = _current_research(args, create=False)
+    if error := _root_bound_error(ctx):
+        return error
+    quest_id = str(ctx.get("quest_id") or "")
+    root = Path(ctx["quest_root"])
     operation = str(args.get("operation") or ("run" if args.get("command") else "list")).strip().lower()
     if operation == "list":
         payload = {"quest_id": quest_id, "sessions": services.bash.list_sessions(root, limit=_limit(args, 20, 200)), "summary": services.bash.summary(root)}
@@ -2069,7 +2575,7 @@ def cs_workflow_smoke_report(args: dict[str, Any]) -> dict[str, Any]:
     canonical tool sequence and path readiness report for Hermes-only DS runs.
     """
     services = get_services()
-    quest_id = _active_or_latest_quest_id(args, services)
+    quest_id = _root_bound_manifest_quest_id(args, services)
     if not quest_id:
         return {"ok": False, "error": "quest_id is required"}
     checks: dict[str, Any] = {}
@@ -2337,9 +2843,9 @@ def _pdf_page_count(data: bytes) -> int | None:
 @_guard
 def cs_strict_research_prepare(args: dict[str, Any]) -> dict[str, Any]:
     services = get_services()
-    quest_id = _active_or_latest_quest_id(args, services)
+    quest_id = _root_bound_manifest_quest_id(args, services)
     if not quest_id:
-        return {"ok": False, "error": "quest_id is required when no active quest exists"}
+        return {"ok": False, "error": "quest_id is required when no root-bound research manifest exists"}
     target_count = _default_target_count(args)
     intent = str(args.get("intent") or "").strip()
     reference_dir = _strict_reference_dir(services, quest_id)
@@ -2376,9 +2882,9 @@ def cs_strict_research_record_candidate(args: dict[str, Any]) -> dict[str, Any]:
     if err := _require(args, "title"):
         return {"ok": False, "error": err}
     services = get_services()
-    quest_id = _active_or_latest_quest_id(args, services)
+    quest_id = _root_bound_manifest_quest_id(args, services)
     if not quest_id:
-        return {"ok": False, "error": "quest_id is required when no active quest exists"}
+        return {"ok": False, "error": "quest_id is required when no root-bound research manifest exists"}
     reference_dir = _strict_reference_dir(services, quest_id)
     candidate_path = _ensure_candidate_file(reference_dir, quest_id)
     values = {
@@ -2401,9 +2907,9 @@ def cs_strict_research_record_candidate(args: dict[str, Any]) -> dict[str, Any]:
 @_guard
 def cs_strict_research_upsert_candidate(args: dict[str, Any]) -> dict[str, Any]:
     services = get_services()
-    quest_id = _active_or_latest_quest_id(args, services)
+    quest_id = _root_bound_manifest_quest_id(args, services)
     if not quest_id:
-        return {"ok": False, "error": "quest_id is required when no active quest exists"}
+        return {"ok": False, "error": "quest_id is required when no root-bound research manifest exists"}
     key_text = str(args.get("key") or "").strip()
     if not key_text and not any(str(args.get(field) or "").strip() for field in ("title", "doi", "link")):
         return {"ok": False, "error": "Provide key or at least one of title, doi, or link."}
@@ -2457,9 +2963,9 @@ def cs_strict_research_upsert_candidate(args: dict[str, Any]) -> dict[str, Any]:
 @_guard
 def cs_paper_fetch(args: dict[str, Any]) -> dict[str, Any]:
     services = get_services()
-    quest_id = _active_or_latest_quest_id(args, services)
+    quest_id = _root_bound_manifest_quest_id(args, services)
     if not quest_id:
-        return {"ok": False, "error": "quest_id is required when no active quest exists"}
+        return {"ok": False, "error": "quest_id is required when no root-bound research manifest exists"}
     canonical_url, source_kind = _resolve_pdf_url(args)
     if not canonical_url:
         return {"ok": False, "error": "Could not resolve a PDF URL from title/url/arxiv_id/openreview_id/pmlr_url/pdf_url.", "official_resource_status": source_kind}
@@ -2526,9 +3032,9 @@ def cs_paper_fetch(args: dict[str, Any]) -> dict[str, Any]:
 @_guard
 def cs_record_literature_reading_note(args: dict[str, Any]) -> dict[str, Any]:
     services = get_services()
-    quest_id = _active_or_latest_quest_id(args, services)
+    quest_id = _root_bound_manifest_quest_id(args, services)
     if not quest_id:
-        return {"ok": False, "error": "quest_id is required when no active quest exists"}
+        return {"ok": False, "error": "quest_id is required when no root-bound research manifest exists"}
     title = str(args.get("title") or args.get("paper_id") or "").strip()
     if not title:
         return {"ok": False, "error": "title or paper_id is required"}
@@ -2620,9 +3126,9 @@ def cs_record_literature_reading_note(args: dict[str, Any]) -> dict[str, Any]:
 @_guard
 def cs_strict_research_init_bibliography(args: dict[str, Any]) -> dict[str, Any]:
     services = get_services()
-    quest_id = _active_or_latest_quest_id(args, services)
+    quest_id = _root_bound_manifest_quest_id(args, services)
     if not quest_id:
-        return {"ok": False, "error": "quest_id is required when no active quest exists"}
+        return {"ok": False, "error": "quest_id is required when no root-bound research manifest exists"}
     reference_dir = _strict_reference_dir(services, quest_id)
     bibliography_dir = reference_dir / "bibliography"
     bibliography_dir.mkdir(parents=True, exist_ok=True)
@@ -2658,9 +3164,9 @@ def _load_bundled_verifier(verifier_root: Path) -> Any:
 @_guard
 def cs_paper_reliability_verify(args: dict[str, Any]) -> dict[str, Any]:
     services = get_services()
-    quest_id = _active_or_latest_quest_id(args, services)
+    quest_id = _root_bound_manifest_quest_id(args, services)
     if not quest_id:
-        return {"ok": False, "error": "quest_id is required when no active quest exists"}
+        return {"ok": False, "error": "quest_id is required when no root-bound research manifest exists"}
     if not str(args.get("doi") or args.get("title") or args.get("arxiv_url") or "").strip():
         return {"ok": False, "error": "Provide at least one of doi, title, or arxiv_url."}
     reference_dir = _strict_reference_dir(services, quest_id)

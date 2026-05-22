@@ -49,7 +49,7 @@ def test_mcp_log_digest_and_artifact_index_match_cli_core_fields(tmp_path: Path)
     log_path = Path(started["run"]["log_path"])
     log_path.write_text("RuntimeError: failed token=" + "supersecret", encoding="utf-8")
     artifact_dir = tmp_path / "CodexScientist" / "artifacts"
-    artifact_dir.mkdir(parents=True)
+    artifact_dir.mkdir(parents=True, exist_ok=True)
     artifact = artifact_dir / "result.txt"
     artifact.write_text("large artifact body", encoding="utf-8")
 

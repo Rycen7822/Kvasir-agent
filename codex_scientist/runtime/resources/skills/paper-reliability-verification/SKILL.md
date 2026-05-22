@@ -12,8 +12,8 @@ metadata:
 skill_role: companion
 ---
 
-> Codex adapter note: this is a Codex-packaged CodexScientist support skill. Prefer public MCP `cs_*` tools visible in `tools/list`/`cs_tool_schema` for durable quest state, memory, artifacts, and recovery anchors; use admin CLI fallbacks only when explicitly following docs/ADMIN_CLI.md. Load it only when it is the relevant companion to the active stage.
-> Use `cs_paper_reliability_verify` as the primary CodexScientist tool wrapper; it stores reliability cards under quest-local `reference/reliability_cards/` and keeps `accepted_publication` evidence auditable.
+> Codex adapter note: this is a Codex-packaged CodexScientist support skill. Prefer public MCP `cs_*` tools visible in `tools/list`/`cs_tool_schema` for durable root-bound research state, memory, artifacts, and recovery anchors; use admin CLI fallbacks only when explicitly following docs/ADMIN_CLI.md. Load it only when it is the relevant companion to the active stage.
+> Use `cs_paper_reliability_verify` as the primary CodexScientist tool wrapper; it stores reliability cards under project-local `reference/reliability_cards/` and keeps `accepted_publication` evidence auditable.
 
 # Paper Reliability Verification
 

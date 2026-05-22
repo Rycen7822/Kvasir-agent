@@ -68,13 +68,25 @@ class StateStore:
         self._write(data)
         return item
 
-    def set_active_quest(self, quest_id: str, session_id: str = "local", *, active_stage: str | None = None) -> dict[str, Any]:
-        updates = {"active_quest_id": str(quest_id).strip()}
+    def set_active_quest(
+        self,
+        quest_id: str,
+        session_id: str = "local",
+        *,
+        active_stage: str | None = None,
+        project_root: str | None = None,
+    ) -> dict[str, Any]:
+        updates: dict[str, Any] = {}
+        if project_root:
+            updates["project_root"] = str(project_root)
         if active_stage:
             updates["active_stage"] = active_stage
         return self.set_session(session_id, **updates)
 
     def active_quest_id(self, session_id: str = "local") -> str | None:
+        return None
+
+    def legacy_active_quest_id(self, session_id: str = "local") -> str | None:
         item = self.session(session_id)
         value = str(item.get("active_quest_id") or "").strip()
         return value or None

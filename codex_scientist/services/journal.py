@@ -18,13 +18,10 @@ class JournalService:
     def __init__(self, layout: ProjectLayout) -> None:
         self.layout = layout
         self.events = EventStore(layout)
-        self.path = layout.state_root / "wiki" / "negative_memory.jsonl"
+        self.path = layout.state_root / "method_memory" / "negative" / "negative_memory.jsonl"
 
-    def _quest_negative_path(self, quest_id: str | None) -> Path | None:
-        if not quest_id:
-            return None
-        quest = self.layout.ensure_quest_layout(quest_id)
-        return quest.quest_root / "method_memory" / "negative" / "negative_memory.jsonl"
+    def _negative_path(self) -> Path:
+        return self.path
 
     def record_negative_result(self, *, trial_id: str, idea_id: str, failure_reason: str, lesson: str, quest_id: str | None = None, mechanism: str = "") -> dict[str, Any]:
         self.path.parent.mkdir(parents=True, exist_ok=True)
@@ -38,24 +35,17 @@ class JournalService:
             "mechanism": mechanism,
             "created_at": _utc_now(),
         }
-        quest_path = self._quest_negative_path(quest_id)
-        if quest_path is not None:
-            quest_path.parent.mkdir(parents=True, exist_ok=True)
-            with quest_path.open("a", encoding="utf-8") as handle:
-                handle.write(json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n")
-            record["quest_path"] = str(quest_path)
-        with self.path.open("a", encoding="utf-8") as handle:
+        path = self._negative_path()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("a", encoding="utf-8") as handle:
             handle.write(json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n")
+        record["negative_memory_path"] = str(path)
         self.events.append("journal.negative_result", {"trial_id": trial_id, "idea_id": idea_id})
         return record
 
     def list_negative_memory(self, quest_id: str | None = None) -> list[dict[str, Any]]:
         records: list[dict[str, Any]] = []
-        paths = []
-        quest_path = self._quest_negative_path(quest_id)
-        if quest_path is not None:
-            paths.append(quest_path)
-        paths.append(self.path)
+        paths = [self.path]
         seen: set[str] = set()
         for path in paths:
             if not path.exists():
@@ -64,6 +54,7 @@ class JournalService:
                 if not line.strip():
                     continue
                 record = json.loads(line)
+                record.setdefault("negative_memory_path", str(path))
                 key = str(record.get("record_id") or json.dumps(record, sort_keys=True))
                 if key in seen:
                     continue

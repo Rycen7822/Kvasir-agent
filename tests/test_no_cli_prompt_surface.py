@@ -35,7 +35,7 @@ def test_p4_terms_document_defines_goal_boundary_and_hidden_cli_plane():
         "MCP-only default",
         "fail closed",
         "Codex-goal-driven research loop adapter",
-        "quest root",
+        "research root",
         "method improvement gate",
     ]
     for term in required_terms:

@@ -72,8 +72,8 @@ def test_profile_stage_and_schema_stress_subset_matches_upgrade6_contract():
 
     core_names = {tool["name"] for tool in core["tools"]}
     goal_names = {tool["name"] for tool in goal["tools"]}
-    assert len(list_tool_specs()) == 11
-    assert len(core["tools"]) == 11
+    assert len(list_tool_specs()) == 10
+    assert len(core["tools"]) == 10
     assert {"cs_feedback_ingest", "cs_trajectory_search", "cs_trajectory_show"} <= goal_names
     assert core_names.isdisjoint({"cs_feedback_ingest", "cs_trajectory_search", "cs_trajectory_show"})
     assert unknown_stage["ok"] is True

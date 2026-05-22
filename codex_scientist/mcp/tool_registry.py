@@ -16,8 +16,9 @@ from codex_scientist.services.artifacts import ArtifactIndexService
 from codex_scientist.services.checkpoint import CheckpointService
 from codex_scientist.services.context_pack import ContextPackService
 from codex_scientist.services.costs import CostApprovalService
+from codex_scientist.services.legacy_migration import LegacyQuestDetector
 from codex_scientist.services.manifest import ManifestService
-from codex_scientist.services.project_state import ProjectLayout
+from codex_scientist.services.project_state import ProjectLayout, ProjectRootResolver
 from codex_scientist.services.progress_watchdog import ProgressWatchdogService
 from codex_scientist.services.queue import QueueService
 from codex_scientist.services.research_wiki import ResearchWikiService
@@ -33,6 +34,25 @@ _ALLOWED_ARTIFACT_KINDS = tuple(sorted(ARTIFACT_DIRS))
 _EXECUTOR_MCP_ENV = "CODEXSCIENTIST_ENABLE_EXECUTOR_MCP"
 _EXECUTOR_PROFILE_NAME = "executor_local"
 _EXECUTOR_TOOL_NAMES = frozenset(PROFILES[_EXECUTOR_PROFILE_NAME].tool_names)
+_PROVENANCE_QUEST_ID_DESCRIPTION = (
+    "Root-bound provenance id. Omit in normal Codex plugin use. When provided, it must match "
+    "CodexScientist/research.yaml and never changes storage root."
+)
+_LEGACY_QUEST_ID_REQUIRED_TOOLS = frozenset({"cs_set_active_quest", "cs_goal_context", "cs_goal_state", "cs_goal_next_action", "cs_goal_watchdog"})
+
+
+@dataclass(frozen=True)
+class ResearchContext:
+    project_root: Path
+    layout: ProjectLayout
+    state_root: Path
+    manifest: dict[str, Any] | None
+    quest_id: str | None
+    quest_root: Path
+    created_now: bool
+    legacy_status: str
+    legacy_quest_ids: tuple[str, ...]
+    legacy_quests: tuple[dict[str, Any], ...]
 
 
 @dataclass(frozen=True)
@@ -60,25 +80,79 @@ class ToolSpec:
 
 
 def _project_root_arg(args: dict[str, Any]) -> Path:
-    return Path(args.get("project") or args.get("project_root") or ".").expanduser().resolve()
+    return ProjectRootResolver.resolve(args)
 
 
 def _layout(args: dict[str, Any]) -> ProjectLayout:
     return ProjectLayout.from_project_root(_project_root_arg(args))
 
 
-def _simple_status(args: dict[str, Any]) -> dict[str, Any]:
-    project = _project_root_arg(args)
-    state_root = project / "CodexScientist"
+def _current_research(args: dict[str, Any], *, create: bool) -> ResearchContext:
+    layout = _layout(args)
+    manifest_service = ManifestService(layout)
+    manifest_result = manifest_service.ensure_initialized(create=create)
+    legacy = LegacyQuestDetector.inspect(layout)
+    legacy_ids = tuple(quest.quest_id for quest in legacy.quests)
+    manifest = manifest_result.get("manifest") if manifest_result.get("ok") else None
+    quest_id = None
+    created_now = bool(manifest_result.get("created")) if manifest_result.get("ok") else False
+    if isinstance(manifest, dict):
+        quest_value = manifest.get("quest")
+        quest = quest_value if isinstance(quest_value, dict) else {}
+        quest_id = str(quest.get("id") or "").strip() or None
+    return ResearchContext(
+        project_root=layout.project_root,
+        layout=layout,
+        state_root=layout.state_root,
+        manifest=manifest,
+        quest_id=quest_id,
+        quest_root=layout.state_root,
+        created_now=created_now,
+        legacy_status=legacy.status,
+        legacy_quest_ids=legacy_ids,
+        legacy_quests=tuple(quest.as_dict() for quest in legacy.quests),
+    )
+
+
+def _manifest_status_summary(manifest: dict[str, Any]) -> dict[str, Any]:
+    goal_value = manifest.get("goal")
+    project_value = manifest.get("project")
+    goal = goal_value if isinstance(goal_value, dict) else {}
+    project = project_value if isinstance(project_value, dict) else {}
     return {
+        "schema_version": manifest.get("schema_version"),
+        "layout_mode": manifest.get("layout_mode"),
+        "project": project.get("name"),
+        "goal": goal.get("title"),
+    }
+
+
+def _simple_status(args: dict[str, Any]) -> dict[str, Any]:
+    context = _current_research(args, create=False)
+    if context.manifest is not None:
+        research_state = "ready"
+    elif context.legacy_status != "none":
+        research_state = context.legacy_status
+    else:
+        research_state = "no_research_state"
+    payload: dict[str, Any] = {
         "ok": True,
         "transport": "codexscientist-mcp",
         "mcp": True,
         "tool": "cs_status",
-        "project": str(project),
-        "state_root": str(state_root),
-        "state_root_exists": state_root.exists(),
+        "project": str(context.project_root),
+        "state_root": str(context.state_root),
+        "state_root_exists": context.state_root.exists(),
+        "research_state": research_state,
+        "legacy_status": context.legacy_status,
+        "legacy_quest_ids": list(context.legacy_quest_ids),
+        "legacy_quests": list(context.legacy_quests),
     }
+    if context.manifest is not None:
+        payload["manifest"] = _manifest_status_summary(context.manifest)
+        payload["quest_id"] = context.quest_id
+        payload["quest_root"] = str(context.quest_root)
+    return payload
 
 
 def _manifest_validate(args: dict[str, Any]) -> dict[str, Any]:
@@ -229,6 +303,8 @@ def _schema_description(name: str, fallback: str) -> str:
 
 
 def _minimal_property_for_key(key: str) -> dict[str, Any]:
+    if key == "quest_id":
+        return {"type": "string", "description": _PROVENANCE_QUEST_ID_DESCRIPTION}
     if key.endswith("_id") or key in {"project", "project_root", "name", "goal", "title", "query", "baseline_path"}:
         return {"type": "string"}
     if key in {"slices", "completed", "decisions", "validation", "expected_outputs", "evidence_paths"}:
@@ -247,14 +323,20 @@ def _minimal_property_for_key(key: str) -> dict[str, Any]:
 
 
 def _schema_with_registry_contract(schema: dict[str, Any], spec: ToolSpec) -> dict[str, Any]:
-    merged = dict(schema)
+    merged: dict[str, Any] = dict(schema)
     merged.setdefault("name", spec.name)
     merged.setdefault("description", spec.description)
-    input_schema = dict(merged.get("input_schema") or merged.get("inputSchema") or {"type": "object"})
-    properties = dict(input_schema.get("properties") or {})
+    input_schema: dict[str, Any] = dict(merged.get("input_schema") or merged.get("inputSchema") or {"type": "object"})
+    properties: dict[str, Any] = dict(input_schema.get("properties") or {})
     for key in ("project", "project_root", *spec.required_context_keys):
         properties.setdefault(key, _minimal_property_for_key(key))
+    if "quest_id" in properties:
+        quest_prop = dict(properties["quest_id"])
+        quest_prop["description"] = _PROVENANCE_QUEST_ID_DESCRIPTION
+        properties["quest_id"] = quest_prop
     required = list(input_schema.get("required") or [])
+    if "quest_id" not in spec.required_context_keys:
+        required = [key for key in required if key != "quest_id"]
     for key in spec.required_context_keys:
         if key not in required:
             required.append(key)
@@ -327,13 +409,14 @@ def _tool_schema(args: dict[str, Any]) -> dict[str, Any]:
 
 
 def _spec(name: str, fallback: str, *, group: str, read_only: bool = True, idempotent: bool = True, required: tuple[str, ...] = ()) -> ToolSpec:
+    effective_required = required if name in _LEGACY_QUEST_ID_REQUIRED_TOOLS else tuple(key for key in required if key != "quest_id")
     return ToolSpec(
         name=name,
         description=_schema_description(name, fallback),
         group=group,
         read_only=read_only,
         idempotent=idempotent,
-        required_context_keys=required,
+        required_context_keys=effective_required,
     )
 
 
@@ -777,8 +860,7 @@ def _normalized_failure_payload(payload: dict[str, Any], *, tool_name: str | Non
     current["error"] = error
     if tool_name == "cs_bash_exec" and error == "workdir_outside_quest":
         layout = _layout(call_args)
-        quest_id = str(call_args.get("quest_id") or "").strip()
-        quest_root = str(layout.quest_root_for(quest_id)) if quest_id else str(layout.state_root)
+        quest_root = str(layout.state_root)
         current["error_type"] = "workdir_outside_quest"
         current["allowed_roots"] = [quest_root]
         current["retry_template"] = {
@@ -788,11 +870,11 @@ def _normalized_failure_payload(payload: dict[str, Any], *, tool_name: str | Non
             "cwd_policy": "quest",
         }
         current["suggested_next_action"] = "Retry cs_bash_exec with workdir under the quest root, or omit workdir and keep cwd_policy=quest."
-    if tool_name == "cs_confirm_baseline" and "baseline_path" in error and "quest_root" in error:
+    if tool_name == "cs_confirm_baseline" and "baseline_path" in error and ("state_root" in error or "quest_root" in error):
         current.setdefault("retry_template", {
             "name": "cs_confirm_baseline",
             "required_arguments": ["quest_id", "baseline_path"],
-            "path_constraint": "baseline_path must be under quest_root; use cs_create_local_baseline to create a canonical quest-local baseline first.",
+            "path_constraint": "baseline_path must be under state_root; use cs_create_local_baseline to create a canonical root-bound baseline first.",
         })
         current["suggested_next_action"] = "Use cs_create_local_baseline, then retry cs_confirm_baseline with the returned confirm_args."
     if tool_name in {"cs_record_main_experiment", "cs_create_analysis_campaign", "cs_record_analysis_slice", "cs_claim_gate"} and (
@@ -867,10 +949,6 @@ def _artifact_record_preflight(args: dict[str, Any]) -> dict[str, Any] | None:
 def _memory_preflight(name: str, args: dict[str, Any]) -> dict[str, Any] | None:
     if name not in _MEMORY_TOOLS:
         return None
-    spec = _SPECS_BY_NAME[name]
-    quest_id = str(args.get("quest_id") or "").strip()
-    if not quest_id:
-        return _missing_argument_payload(name, spec, ["quest_id"], args)
     scope = str(args.get("scope") or "quest").strip().lower() or "quest"
     if scope != "quest":
         return {
@@ -954,7 +1032,7 @@ def _bash_exec_preflight(args: dict[str, Any]) -> dict[str, Any] | None:
             }
     if operation == "list" and _is_missing_arg(args.get("command")):
         quest_id = str(args.get("quest_id") or "").strip()
-        if quest_id and not (_layout(args).quest_root_for(quest_id) / "quest.yaml").exists():
+        if quest_id:
             return {"ok": True, "quest_id": quest_id, "sessions": [], "summary": {"session_count": 0}}
     return None
 

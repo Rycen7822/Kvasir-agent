@@ -15,9 +15,8 @@ def _new_quest(tmp_path: Path, title: str) -> str:
     return str(payload["quest"]["quest_id"])
 
 
-def test_memory_requires_quest_id_and_never_falls_back_to_global(tmp_path: Path):
+def test_memory_read_paths_without_state_fail_closed_and_never_fall_back_to_global(tmp_path: Path):
     calls = [
-        ("cs_memory_write", {"project": str(tmp_path), "title": "global leak", "content": "must not write"}),
         ("cs_memory_search", {"project": str(tmp_path), "query": "global leak"}),
         ("cs_memory_list_recent", {"project": str(tmp_path)}),
         ("cs_memory_read", {"project": str(tmp_path), "card_id": "missing"}),
@@ -26,15 +25,38 @@ def test_memory_requires_quest_id_and_never_falls_back_to_global(tmp_path: Path)
     for tool_name, args in calls:
         payload = call_tool(tool_name, args)
         assert payload.get("ok") is False, (tool_name, payload)
-        assert payload.get("error_type") in {"missing_argument", "unsupported_scope", "not_found"}, payload
+        assert payload.get("error_type") in {"no_research_state", "unsupported_scope", "not_found"}, payload
 
     assert not (tmp_path / "CodexScientist" / "home" / "memory").exists()
     assert not (tmp_path / "CodexScientist" / "memory").exists()
 
 
-def test_quest_memory_isolated_between_quests(tmp_path: Path):
+def test_memory_write_without_quest_id_lazily_creates_root_bound_memory(tmp_path: Path):
+    written = _ok(
+        call_tool(
+            "cs_memory_write",
+            {
+                "project": str(tmp_path),
+                "title": "root-bound memory",
+                "content": "first durable write creates project-local state",
+                "kind": "decision",
+            },
+        )
+    )
+
+    state_root = tmp_path / "CodexScientist"
+    card_path = Path(str(written["card"]["path"]))
+    assert written.get("scope") == "quest"
+    assert written.get("quest_root") == str(state_root)
+    assert card_path.is_relative_to(state_root / "memory")
+    assert (state_root / "research.yaml").exists()
+    assert not (state_root / "quests").exists()
+
+
+def test_root_bound_memory_uses_single_manifest_provenance_without_identity_switching(tmp_path: Path):
     q1 = _new_quest(tmp_path, "Quest One")
     q2 = _new_quest(tmp_path, "Quest Two")
+    assert q2 == q1
 
     written = _ok(
         call_tool(
@@ -51,9 +73,13 @@ def test_quest_memory_isolated_between_quests(tmp_path: Path):
     assert written.get("quest_id") == q1
     assert written.get("scope") == "quest"
 
-    q2_search = _ok(call_tool("cs_memory_search", {"project": str(tmp_path), "quest_id": q2, "query": "unique-token-q1-only"}))
-    assert q2_search.get("quest_id") == q2
-    assert q2_search.get("matches") == []
+    same_research_search = _ok(call_tool("cs_memory_search", {"project": str(tmp_path), "quest_id": q2, "query": "unique-token-q1-only"}))
+    assert same_research_search.get("quest_id") == q1
+    assert same_research_search.get("matches")
+
+    mismatch = call_tool("cs_memory_search", {"project": str(tmp_path), "quest_id": "different-quest", "query": "unique-token-q1-only"})
+    assert mismatch.get("ok") is False, mismatch
+    assert mismatch.get("error_type") == "root_bound_quest_id_mismatch", mismatch
 
     for scope in ("global", "both"):
         payload = call_tool("cs_memory_search", {"project": str(tmp_path), "quest_id": q1, "query": "unique", "scope": scope})

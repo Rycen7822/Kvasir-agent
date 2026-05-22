@@ -130,12 +130,11 @@ def test_admin_profile_is_not_agent_facing_tools_list():
 
 
 def test_known_recoverable_failures_use_stable_error_taxonomy(tmp_path: Path):
-    missing_quest = call_tool("cs_get_analysis_campaign", {"project": str(tmp_path), "quest_id": "Q1"})
-    assert_failure_envelope(missing_quest, expected_error_type="not_found", tool_name="cs_get_analysis_campaign")
+    missing_research = call_tool("cs_get_analysis_campaign", {"project": str(tmp_path), "quest_id": "Q1"})
+    assert_failure_envelope(missing_research, expected_error_type="no_research_state", tool_name="cs_get_analysis_campaign")
 
-    quest_root = tmp_path / "CodexScientist" / "quests" / "Q1"
-    quest_root.mkdir(parents=True)
-    (quest_root / "quest.yaml").write_text("quest_id: Q1\n", encoding="utf-8")
+    created = call_tool("cs_new_quest", {"project": str(tmp_path), "quest_id": "Q1", "goal": "taxonomy"})
+    assert created["ok"] is True
 
     missing_campaign = call_tool("cs_get_analysis_campaign", {"project": str(tmp_path), "quest_id": "Q1"})
     assert_failure_envelope(missing_campaign, expected_error_type="not_found", tool_name="cs_get_analysis_campaign")
@@ -145,5 +144,6 @@ def test_known_recoverable_failures_use_stable_error_taxonomy(tmp_path: Path):
     assert retry_template.get("missing_arguments") == ["campaign_title", "campaign_goal", "slices"]
     assert retry_template.get("known_arguments") == {"quest_id": "Q1"}
 
-    missing_quest_memory = call_tool("cs_memory_search", {"project": str(tmp_path), "query": "x", "kind": "bad-kind"})
-    assert_failure_envelope(missing_quest_memory, expected_error_type="missing_argument", tool_name="cs_memory_search")
+    invalid_memory_kind = call_tool("cs_memory_search", {"project": str(tmp_path), "query": "x", "kind": "bad-kind"})
+    assert_failure_envelope(invalid_memory_kind, expected_error_type="invalid_argument", tool_name="cs_memory_search")
+    assert "allowed_memory_kinds" in invalid_memory_kind

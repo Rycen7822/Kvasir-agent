@@ -74,12 +74,11 @@ class TrialService:
     def propose(self, *, quest_id: str, idea_id: str, hypothesis: str, mechanism: str) -> dict[str, Any]:
         now = _utc_now()
         trial_id = self._next_trial_id()
-        quest = self.layout.ensure_quest_layout(quest_id)
+        safe_quest_id = str(quest_id)
         trial = {
             "trial_id": trial_id,
-            "quest_id": quest.quest_id,
-            "quest_root": str(quest.quest_root),
-            "detail_path": str(self.layout.quest_trial_path(quest.quest_id, trial_id)),
+            "quest_id": safe_quest_id,
+            "quest_root": str(self.layout.state_root),
             "parent_node_id": None,
             "idea_id": idea_id,
             "status": "proposed",

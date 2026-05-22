@@ -1,7 +1,7 @@
 ---
 name: codexscientist-quest-handoffs
 title: Research Quest Handoffs
-description: Create durable CodexScientist quest handoff documents, AGENTS.md files, researcher packages, and verified sync artifacts.
+description: Create durable CodexScientist research handoff documents, AGENTS.md files, researcher packages, and verified sync artifacts.
 version: 1.0.1
 metadata:
   hermes:
@@ -11,38 +11,38 @@ skill_role: companion
 ---
 
 > Codex adapter note: this support skill is bundled for CodexScientist. Prefer the stable curated MCP `cs_*` tools for repeated CodexScientist state/status/context workflows. Load at most one support skill alongside the active stage. Runtime state lives under `<project>/CodexScientist/`.
-> When a handoff becomes durable, record it with `cs_artifact_record` as a milestone/report and include the absolute quest path in the payload.
+> When a handoff becomes durable, record it with `cs_artifact_record` as a milestone/report and include the absolute research root path in the payload.
 
-# Research Quest Handoffs
+# Research Handoffs
 
-Use this skill when the user asks for onboarding notes, a guide for another agent, an `AGENTS.md`, a quick-start document, or a synced handoff for a research/CodexScientist quest.
+Use this skill when the user asks for onboarding notes, a guide for another agent, an `AGENTS.md`, a quick-start document, or a synced handoff for a research/CodexScientist project.
 
 ## Core rule
 
-Write the handoff into the quest filesystem. Do not leave it only in the final chat reply. Another agent should be able to start from the handoff file plus the referenced quest documents.
+Write the handoff into the research filesystem under the current project/root. Do not leave it only in the final chat reply. Another agent should be able to start from the handoff file plus the referenced research documents.
 
 ## Default output
 
-Create or update a quest-root `AGENTS.md` unless the project already has a clearer convention.
+Create or update a research-root `AGENTS.md` unless the project already has a clearer convention.
 
 Include these sections when relevant:
 
-1. quest id, title, source root, synced/root copy paths, and handoff timestamp;
-2. current quest state: status, active anchor/stage, baseline gate, pending messages/decisions, artifact and memory counts;
+1. provenance id, title, source root, synced/root copy paths, and handoff timestamp;
+2. current research state: status, active anchor/stage, baseline gate, pending messages/decisions, artifact and memory counts;
 3. one-minute research/task summary;
 4. authoritative reading order with relative paths;
 5. durable literature/resource/artifact state;
 6. main experimental or operational design that must be preserved;
-7. writing, editing, and checking rules specific to the quest;
+7. writing, editing, and checking rules specific to the research project;
 8. operational safety rules and local constraints;
 9. suggested next action paths for document work, implementation/experiments, and synced-copy work.
 
 ## CodexScientist workflow
 
-1. Read quest state with CodexScientist tools when available.
-2. Read the active user requirements and the current authoritative quest documents before summarizing.
-3. Write the handoff file under the source quest root.
-4. If a second quest copy exists, sync the intended file or quest subtree explicitly unless the latest user instruction limits the work to the current quest/root only; in that case, state the no-sync constraint in the handoff and do not touch the secondary copy.
+1. Read root-bound research state with CodexScientist tools when available.
+2. Read the active user requirements and the current authoritative research documents before summarizing.
+3. Write the handoff file under the source research root.
+4. If a second project copy exists, sync the intended file or research subtree explicitly unless the latest user instruction limits the work to the current root only; in that case, state the no-sync constraint in the handoff and do not touch the secondary copy.
 5. Record a milestone or report artifact for a meaningful handoff document.
 6. Re-sync after artifact recording if the artifact write created new files or a new quest git commit.
 7. Verify source and target before reporting completion.
@@ -56,14 +56,14 @@ For a single handoff file, verify with:
 - `wc -l source target`
 - `stat -c '%n %s bytes %y' source target`
 
-For full quest-copy verification, compare recursively by relative path and hash. Ignore `.git/` internals such as `.git/index`, which can differ after status checks even when working content is equivalent.
+For full research-copy verification, compare recursively by relative path and hash. Ignore `.git/` internals such as `.git/index`, which can differ after status checks even when working content is equivalent.
 
 ## Pitfalls
 
 - Do not overwrite target-local project configuration while syncing, such as `CodexScientist/config/codex-native.yaml`, unless the user explicitly asks.
 - Do not claim synced git heads match until after the final artifact/milestone write and any follow-up sync.
 - Do not omit exact paths; future agents need absolute path anchors and relative reading order.
-- Do not fabricate quest metrics from memory; read current state and files.
+- Do not fabricate research metrics from memory; read current state and files.
 
 ## Conservative status maintenance
 

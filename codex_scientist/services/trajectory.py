@@ -159,11 +159,7 @@ class TrajectoryStore:
         positive_only: bool = False,
         limit: int = 20,
     ) -> dict[str, Any]:
-        try:
-            quest = self.layout.quest_layout(quest_id)
-        except ValueError as exc:
-            return _error("invalid_path", str(exc), recoverable=False)
-        directory = quest.quest_root / "trajectories"
+        directory = self.layout.state_root / "trajectories"
         if not directory.exists():
             return {"ok": True, "trajectories": []}
         records: list[dict[str, Any]] = []
@@ -185,7 +181,7 @@ class TrajectoryStore:
 
     def _trajectory_path(self, *, quest_id: str, trajectory_id: str) -> Path:
         safe_trajectory_id = _safe_segment(trajectory_id, label="trajectory_id")
-        return self.layout.quest_detail_path(quest_id, Path("trajectories") / f"{safe_trajectory_id}.json")
+        return self.layout.state_root / "trajectories" / f"{safe_trajectory_id}.json"
 
     def _read(self, *, quest_id: str, trajectory_id: str) -> dict[str, Any]:
         try:

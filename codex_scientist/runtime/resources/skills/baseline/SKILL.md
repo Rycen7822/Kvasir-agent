@@ -20,8 +20,8 @@ The target is one trustworthy baseline line, not an endless reproduction diary.
 ## Tool discipline
 
 - **Do not bypass CodexScientist semantic tools for durable research state; Codex-native file/shell/process tools remain appropriate for routine operation-layer work.**
-- **Use Codex-native execution for routine shell/CLI/Python/node/git/npm/uv/environment checks. Use `cs_bash_exec` for baseline setup, reproduction, monitoring, or verification that must be durable quest evidence.**
-- **For git work inside the current quest repository or worktree, prefer `quest-local git state via backend service or Codex-controlled git action(...)` before raw shell git commands.**
+- **Use Codex-native execution for routine shell/CLI/Python/node/git/npm/uv/environment checks. Use `cs_bash_exec` for baseline setup, reproduction, monitoring, or verification that must be durable research evidence.**
+- **For git work inside the current project repository or worktree, prefer `project-local git state via backend service or Codex-controlled git action(...)` before raw shell git commands.**
 - **If a generic git smoke test is needed outside the quest repo, use `cs_bash_exec ...)` in an isolated scratch repository.**
 
 ## Non-negotiable rules
@@ -304,7 +304,7 @@ For Python baselines, standardize environment setup around `uv`.
 
 Practical rules:
 
-- prefer a quest-local or baseline-local `.venv`
+- prefer a project-local or baseline-local `.venv`
 - prefer `uv run python ...` or `uv run bash ...` over relying on shell activation state
 - if a specific interpreter is required, make it explicit with `uv venv --python 3.11` or `uv run --python 3.11 ...`
 - if CUDA, PyTorch, JAX, or custom wheels require a special index URL, keep that install under `uv pip`
@@ -482,13 +482,13 @@ Metric-contract rules:
 
 Use the registry deliberately, not as an afterthought.
 
-If the result is reusable beyond the current quest:
+If the result is reusable beyond the current research state:
 
 - publish it through `a Codex-controlled baseline publish/admin action(...)`
 - ensure the payload includes identity, provenance, trusted metrics, and any variant structure
 - set `publish_global: true` only when verification is complete and reuse is justified
 
-If the current quest should reuse an existing baseline:
+If the current research state should reuse an existing baseline:
 
 - attach it through `artifact.attach_baseline(...)`
 - preserve the selected `baseline_id`
@@ -508,7 +508,7 @@ For reusable-package expectations, read `references/publishable-baseline-package
 
 - treat the baseline workspace as a system-managed reproduction surface, not an unrelated sandbox
 - avoid creating a nested authoritative Git lifecycle inside the baseline workspace
-- use the quest branch unless isolation is genuinely needed
+- use the research branch unless isolation is genuinely needed
 - if baseline setup is risky or intrusive, prepare an isolated branch or worktree first and record why
 - do not proliferate branches without a reason
 
@@ -553,7 +553,7 @@ The baseline handoff should make these items obvious:
 - trusted metrics
 - canonical metric contract JSON path
 - verification outcome
-- reusable or quest-local only
+- reusable or project-local only
 - canonical output paths
 - main caveats
 - recommended next anchor

@@ -85,9 +85,7 @@ class QueueService:
     def _quest_refs(self, quest_id: str | None, relative_path: str | Path) -> dict[str, str]:
         if not quest_id:
             return {}
-        quest = self.layout.ensure_quest_layout(quest_id)
-        detail_path = quest.detail_path(relative_path)
-        return {"quest_id": quest.quest_id, "quest_root": str(quest.quest_root), "detail_path": str(detail_path)}
+        return {"quest_id": str(quest_id), "quest_root": str(self.layout.state_root)}
 
     def _write_job_detail(self, job: dict[str, Any]) -> None:
         detail_path = str(job.get("detail_path") or "").strip()

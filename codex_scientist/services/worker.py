@@ -79,8 +79,7 @@ class WorkerService:
         run_id = str(job.get("latest_run_id") or "unclaimed")
         safe_kind = "".join(ch if ch.isalnum() or ch in {"_", "-"} else "_" for ch in str(kind or "artifact"))[:80] or "artifact"
         safe_name = "".join(ch if ch.isalnum() or ch in {"_", "-", "."} else "_" for ch in source.name)[:120] or "artifact.bin"
-        quest = self.layout.ensure_quest_layout(quest_id)
-        destination_dir = quest.detail_path(Path("artifacts") / "execution_grounded" / run_id / "uploads")
+        destination_dir = self.layout.state_root / "artifacts" / "execution_grounded" / run_id / "uploads"
         destination_dir.mkdir(parents=True, exist_ok=True)
         destination = destination_dir / f"{safe_kind}_{safe_name}"
         shutil.copy2(source, destination)

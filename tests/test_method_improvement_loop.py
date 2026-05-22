@@ -89,9 +89,10 @@ def test_main_experiment_records_evidence_without_method_planner_gate(tmp_path: 
     assert updated["scoreboard"]["ideas"]["I-regressed"]["outcome"] == "negative"
     assert updated["recorded_negative_memory"] is True
 
-    state_path = tmp_path / "CodexScientist" / "quests" / quest_id / "runtime" / "goal_state.json"
+    state_path = tmp_path / "CodexScientist" / "runtime" / "goal_state.json"
     if state_path.exists():
         assert "cs_select_next_idea" not in state_path.read_text(encoding="utf-8")
+    assert not (tmp_path / "CodexScientist" / "quests" / quest_id).exists()
 
 
 def test_main_experiment_records_when_optional_pillow_chart_renderer_missing(tmp_path: Path, monkeypatch):
@@ -139,5 +140,7 @@ def test_main_experiment_records_when_optional_pillow_chart_renderer_missing(tmp
     )
 
     chart_status = recorded.get("connector_metric_chart_status")
-    assert chart_status == {"ok": False, "error_type": "optional_dependency_missing", "chart_count": 0}
+    assert chart_status == {"ok": True, "chart_count": 0, "skipped": "root_bound_lightweight"}
     assert recorded["connector_metric_charts"] == []
+    assert (tmp_path / "CodexScientist" / "artifacts" / "experiments" / "R-NO-PILLOW.json").exists()
+    assert not (tmp_path / "CodexScientist" / "quests" / quest_id).exists()

@@ -119,8 +119,7 @@ class RunnerService:
 
     def start(self, *, command: str, job_id: str | None = None, dry_run: bool = False, quest_id: str | None = None) -> dict[str, Any]:
         run_id = self._next_run_id()
-        quest = self.layout.ensure_quest_layout(quest_id) if quest_id else None
-        run_dir = (quest.runs_dir / run_id) if quest else (self.runs_dir / run_id)
+        run_dir = self.runs_dir / run_id
         log_path = run_dir / "run.log"
         stderr_log_path = run_dir / "stderr.log"
         exit_code_path = run_dir / "exit_code.txt"
@@ -147,8 +146,8 @@ class RunnerService:
             "pid": None,
             "pgid": None,
         }
-        if quest is not None:
-            run.update({"quest_id": quest.quest_id, "quest_root": str(quest.quest_root), "detail_path": str(run_dir / "runner.json")})
+        if quest_id is not None:
+            run.update({"quest_id": str(quest_id), "quest_root": str(self.layout.state_root)})
         if not dry_run:
             wrapped_command = (
                 f"{command}\n"

@@ -34,11 +34,11 @@ def test_goal_watchdog_reports_stuck_runner_without_writing_goal_gate(tmp_path: 
     assert set(watchdog["diagnostic"]["recommended_evidence"]) == {"cs_log_digest", "cs_runner_status", "cs_queue_reconcile"}
     assert "current_gate" not in watchdog
 
-    goal_state_path = tmp_path / "CodexScientist" / "quests" / quest_id / "runtime" / "goal_state.json"
+    goal_state_path = tmp_path / "CodexScientist" / "runtime" / "goal_state.json"
     assert not goal_state_path.exists()
 
     resume = _ok(call_tool("cs_resume_brief", {"project": str(tmp_path), "quest_id": quest_id, "max_chars": 4000}))
     assert resume["active_run_id"] == run_id
     assert resume["blocker"] != "runner_stuck"
     assert "next_required_mcp_tool" not in resume
-    assert any(ref["kind"] == "legacy_goal_state_ignored" for ref in resume["source_refs"])
+    assert any(ref["kind"] == "goal_state" and ref["path"] == str(goal_state_path) for ref in resume["source_refs"])

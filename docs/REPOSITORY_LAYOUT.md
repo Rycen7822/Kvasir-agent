@@ -23,15 +23,18 @@ Important project-local files include:
 
 - `CodexScientist/events/events.jsonl` and `CodexScientist/events/events.lock`;
 - `CodexScientist/events/corrupt/` for quarantined corrupt JSONL lines;
-- `CodexScientist/quests/<quest_id>/` for goal-scoped requirements, runtime files, checkpoints, method improvement state, progress watchdog state, runs, queue, trials, and artifacts;
-- `CodexScientist/runs/<run_id>/runner.json`, `run.log`, `stderr.log`, `heartbeat.txt`, and `exit_code.txt` for compatibility indexes;
+- `CodexScientist/research.yaml` for the root-bound manifest and provenance id;
+- `CodexScientist/memory/`, `artifacts/`, `runtime/`, `method_memory/`, `trials/`, `variants/`, and `trajectories/` for root-bound durable research state;
+- `CodexScientist/runs/<run_id>/runner.json`, `run.log`, `stderr.log`, `heartbeat.txt`, and `exit_code.txt` for project-local run ledgers;
 - `CodexScientist/queue/queue_state.json`;
 - `CodexScientist/artifacts/` and `CodexScientist/results/` indexed by `cs_artifact_index`;
 - `CodexScientist/summaries/` for context packs, long-run validation, and recovery reports.
 
+`CodexScientist/quests/<quest_id>/` is reserved for legacy migration input. New runtime writes must not create it.
+
 The plugin repository root should not contain `CodexScientist/` or `DeepScientist/`. If either directory appears here, treat it as accidental local runtime state and remove it after checking that it contains no user data.
 
-Do not commit runtime journals, queues, artifacts, or generated quest state.
+Do not commit runtime journals, queues, artifacts, or generated research state.
 
 ## Resource policy
 

@@ -22,8 +22,8 @@ This skill intentionally absorbs the strongest old CodexScientist writing discip
 
 - Follow the shared interaction contract injected by the system prompt.
 - For ordinary active work, prefer a concise progress update once work has crossed roughly 6 tool calls with a human-meaningful delta, and do not drift beyond roughly 12 tool calls or about 8 minutes without a user-visible update.
-- Codex-native execution boundary: use Codex-native file/shell/Git/test/build tools for routine inspection, local edits, non-evidence checks, and ordinary document work. Use `cs_bash_exec` for durable paper-facing builds, figure regeneration, scripted exports, or validations whose logs must remain quest-local and reviewable.
-- Prefer `cs_bash_exec` for durable document-build commands such as LaTeX compilation, figure regeneration, and scripted export steps so logs remain quest-local and reviewable.
+- Codex-native execution boundary: use Codex-native file/shell/Git/test/build tools for routine inspection, local edits, non-evidence checks, and ordinary document work. Use `cs_bash_exec` for durable paper-facing builds, figure regeneration, scripted exports, or validations whose logs must remain project-local and reviewable.
+- Prefer `cs_bash_exec` for durable document-build commands such as LaTeX compilation, figure regeneration, and scripted export steps so logs remain project-local and reviewable.
 - Keep ordinary subtask completions concise. When a paper/draft milestone is actually completed, upgrade to a richer `cs_artifact_record payload={'kind': 'milestone'}, reply_mode='threaded', ...)` report instead of another short progress update.
 - That richer writing-stage milestone report should normally cover: which draft, section, or outline milestone finished, what is now supportable, what is still missing, and the exact recommended next revision or route decision.
 - That richer milestone report is still normally non-blocking. If the next writing or return-to-experiment step is already clear, continue automatically after reporting instead of pausing by default.
@@ -154,7 +154,7 @@ For paper-facing work, use this hard order instead of drifting between surfaces:
 
 Do not draft first and promise to repair the paper contract later.
 If the current blocker set is not obvious from files, call `artifact.get_paper_contract_health(detail='full')` before deciding whether to keep writing or to return to contract repair / supplementary work.
-If the active quest status, current workspace, recent durable runs, or pending interaction state is unclear after a restart, call `artifact.get_quest_state(detail='summary')` first.
+If the active research state status, current workspace, recent durable runs, or pending interaction state is unclear after a restart, call `artifact.get_quest_state(detail='summary')` first.
 If the exact current brief/plan/status/summary wording matters for the current drafting decision, call `artifact.read_quest_documents(...)` instead of relying on prompt-injected excerpts.
 If you need earlier user/assistant continuity to interpret the current writing request, call `artifact.get_conversation_context(...)` before changing the route.
 
@@ -478,7 +478,7 @@ If these are still unstable, continue planning or route back for evidence instea
 Do not rush into polished prose before evidence assembly, figure planning, and citation verification are far enough along to keep the draft honest.
 If writing uncovers missing information, it is acceptable to return to focused literature search or artifact reading, but persist the findings immediately before resuming drafting.
 Use web search to discover missing papers or references, and use `artifact.arxiv(paper_id=..., full_text=False)` when you need to actually read an arXiv paper rather than just locate it.
-Load `paper-fetch` when writing requires arXiv/OpenReview PDF retrieval, authenticated OpenReview access, or official resource verification; keep those results in quest evidence/memory, not in `llm-wiki`, unless the user explicitly asks for clipping.
+Load `paper-fetch` when writing requires arXiv/OpenReview PDF retrieval, authenticated OpenReview access, or official resource verification; keep those results in research evidence/memory, not in `llm-wiki`, unless the user explicitly asks for clipping.
 Only set `full_text=True` when the shorter view is insufficient for the needed detail.
 Before treating related work coverage as adequate, run broad literature discovery and reading passes; for a normal paper-like deliverable, aim for roughly `30` to `50` verified references unless the scope clearly justifies fewer.
 

@@ -44,15 +44,17 @@ def test_codex_manifest_declares_mcp_only_default_and_hidden_admin_cli_boundary(
     assert "CLI fallback" not in manifest_text
 
 
-def test_csctl_exposes_complete_native_schema_set():
+def test_csctl_exposes_root_bound_public_schema_set():
     sys.path.insert(0, str(PLUGIN_ROOT))
     from codex_scientist.runtime import schemas
 
     payload = run_csctl("list-tools", "--format", "json")
     names = {item["name"] for item in payload["tools"]}
-    expected = {schema["name"] for schema in schemas.NATIVE_SCHEMAS}
+    expected = {schema["name"] for schema in schemas.PUBLIC_SCHEMAS}
+    hidden = {schema["name"] for schema in schemas.LEGACY_ONLY_SCHEMAS}
     assert payload["ok"] is True
     assert expected <= names
+    assert names.isdisjoint(hidden)
     assert payload["transport"] == "codex-native-cli"
     assert payload["mcp"] is False
 
@@ -82,7 +84,9 @@ def test_legacy_codexscientist_aliases_are_not_public_default_surface():
     assert payload["ok"] is True
     assert not any(name.startswith("codexscientist_") for name in names)
     assert not any(name.startswith("d" + "s_") for name in names)
-    assert "cs_get_quest_state" in names
+    assert "cs_get_quest_state" not in names
+    assert "cs_new_quest" not in names
+    assert "cs_set_active_quest" not in names
 
 
 def test_csctl_doctor_uses_vendored_runtime_without_external_ds(tmp_path: Path):
@@ -147,7 +151,11 @@ def test_project_local_quest_memory_artifact_lifecycle(tmp_path: Path):
     )
     assert artifact_payload["ok"] is True
 
-    assert (tmp_path / "CodexScientist" / "quests" / "codex-smoke").exists()
+    state_root = tmp_path / "CodexScientist"
+    assert (state_root / "research.yaml").exists()
+    assert (state_root / "memory" / "knowledge").exists()
+    assert (state_root / "artifacts" / "milestones").exists()
+    assert not (state_root / "quests" / "codex-smoke").exists()
     assert not (tmp_path / ".mcp.json").exists()
 
 

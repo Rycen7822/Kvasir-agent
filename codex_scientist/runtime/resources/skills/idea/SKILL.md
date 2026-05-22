@@ -750,7 +750,7 @@ Look for principles that can be translated into the current codebase, not copied
 Do not stop at one or two papers if the area is active.
 Keep going until the strongest obvious overlaps are mapped.
 
-Also compare against prior quest ideas and findings when they exist:
+Also compare against prior provenance ideas and findings when they exist:
 
 - avoid rediscovering an already rejected line without new evidence
 - explain how the current candidate differs from prior attempts
@@ -920,7 +920,7 @@ For each candidate idea, specify:
 - cheapest falsification path
 - strongest competing hypothesis
 - closest prior work and novelty / value verdict
-- whether it overlaps too much with prior quest ideas or prior failed findings
+- whether it overlaps too much with prior provenance ideas or prior failed findings
 
 Treat each serious candidate as a compact decision package, not a slogan.
 For every candidate that survives initial triage, make sure you can state:
@@ -1101,7 +1101,7 @@ Stage-start requirement:
 
 - begin every idea pass with `cs_memory_search(scope='quest', limit=5)`
 - then run at least one idea-relevant `cs_memory_search(...)` before broad new ideation or literature expansion
-- before proposing a new idea, explicitly review prior quest idea records and experiment outcomes so the new proposal builds on actual history instead of rediscovering old work
+- before proposing a new idea, explicitly review prior provenance idea records and experiment outcomes so the new proposal builds on actual history instead of rediscovering old work
 - treat prior idea lines and experiment lines as reference material, not as the active idea contract unless you intentionally select and continue that line
 
 Store reusable reasoning in memory, such as:

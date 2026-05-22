@@ -13,7 +13,7 @@ Use this skill whenever continuation is non-trivial.
 - Follow the shared interaction contract injected by the system prompt.
 - For ordinary active work, prefer a concise progress update once work has crossed roughly 6 tool calls with a human-meaningful delta, and do not drift beyond roughly 12 tool calls or about 8 minutes without a user-visible update.
 - Message templates are references only. Adapt to context and vary wording so updates feel natural and non-robotic.
-- If the runtime starts an auto-continue turn with no new user message, continue from the active requirements and durable quest state instead of replaying the previous user turn.
+- If the runtime starts an auto-continue turn with no new user message, continue from the active requirements and durable root-bound research state instead of replaying the previous user turn.
 - If `startup_contract.decision_policy = autonomous`, do not emit ordinary `cs_artifact_record payload={'kind': 'decision_request'}, ...)` calls; decide the route yourself, record the reason, and continue.
 - Use `reply_mode='blocking'` for the actual decision request only when the user must choose before safe continuation and the quest contract still allows a user-gated decision.
 - If a threaded user reply arrives, interpret it relative to the latest decision or progress interaction before assuming the task changed completely.
@@ -23,8 +23,8 @@ Use this skill whenever continuation is non-trivial.
 
 - **Do not bypass CodexScientist semantic tools for durable research state; Codex-native file/shell/process tools remain appropriate for routine operation-layer work.**
 - **If decision-making needs formal shell/CLI/Python/node/git/npm/uv/environment evidence for the quest record, gather it through `cs_bash_exec`; otherwise Codex-native checks are acceptable and the final decision should be recorded through `cs_artifact_record`.**
-- **For git state inside the current quest repository or worktree, prefer `quest-local git state via backend service or Codex-controlled git action(...)` before raw shell git commands.**
-- **Use `decision` to judge the route, not as an excuse to bypass the `cs_bash_exec ...)` / `quest-local git state via backend service or Codex-controlled git action(...)` tool contract.**
+- **For git state inside the current project repository or worktree, prefer `project-local git state via backend service or Codex-controlled git action(...)` before raw shell git commands.**
+- **Use `decision` to judge the route, not as an excuse to bypass the `cs_bash_exec ...)` / `project-local git state via backend service or Codex-controlled git action(...)` tool contract.**
 
 ## Stage purpose
 

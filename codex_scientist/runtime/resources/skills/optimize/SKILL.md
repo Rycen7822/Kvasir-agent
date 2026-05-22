@@ -18,7 +18,7 @@ It does not replace the normal quest runtime. It tells you how to use the existi
 - Ordinary candidate creation, smoke checks, and route updates should stay concise.
 - Use richer milestone updates only when a candidate is promoted, a strong run finishes, the frontier shifts materially, or a fusion/debug route becomes the new main path.
 - When the user asks for the current optimization state, answer from the frontier and durable artifacts rather than from chat memory.
-- Codex-native execution boundary: use Codex-native tools for routine file inspection, Git mechanics, dependency checks, smoke checks, quick validations, tests, and process management. Use `cs_bash_exec` for optimization runs whose logs must become CodexScientist quest evidence, especially formal evaluations, long runs, or frontier-shifting candidate evidence.
+- Codex-native execution boundary: use Codex-native tools for routine file inspection, Git mechanics, dependency checks, smoke checks, quick validations, tests, and process management. Use `cs_bash_exec` for optimization runs whose logs must become CodexScientist research evidence, especially formal evaluations, long runs, or frontier-shifting candidate evidence.
 
 ## Stage purpose
 
@@ -202,7 +202,7 @@ Do not treat chat summaries as substitutes for these durable records.
 
 Optimize uses the same long-run process discipline as `experiment`.
 
-- Use Codex-native execution for routine smoke checks and quick validations; use `cs_bash_exec` for long or formal optimization runs that need durable quest-local provenance.
+- Use Codex-native execution for routine smoke checks and quick validations; use `cs_bash_exec` for long or formal optimization runs that need durable project-local provenance.
 - Before launching a new run, inspect current managed sessions first.
 - Do not start a duplicate process for the same purpose if a valid live session already exists.
 - Use bounded smoke before long runs unless direct quick validation is already cheap and equally informative.

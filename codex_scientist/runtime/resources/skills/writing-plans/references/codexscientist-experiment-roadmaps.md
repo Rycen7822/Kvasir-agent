@@ -4,7 +4,7 @@ Use this reference when a user asks for an experiment execution plan derived fro
 
 ## Trigger
 
-- User asks for a plan under `CodexScientist/quests/<id>/experiments`.
+- User asks for a plan under a root-bound `experiments/` directory.
 - User says to read a foundational/index idea document first, then other split idea docs.
 - The output should guide later code implementation and experiment execution, not merely summarize the paper idea.
 

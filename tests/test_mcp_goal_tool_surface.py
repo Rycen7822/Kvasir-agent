@@ -8,7 +8,8 @@ from codex_scientist.profiles import DEFAULT_PROFILE_NAME, PROFILES
 
 REQUIRED_EVIDENCE_TOOLS = {
     "cs_tool_schema",
-    "cs_new_quest",
+    "cs_skill_search",
+    "cs_skill_load",
     "cs_record_user_requirement",
     "cs_create_local_baseline",
     "cs_confirm_baseline",
@@ -19,7 +20,6 @@ REQUIRED_EVIDENCE_TOOLS = {
     "cs_get_optimization_frontier",
     "cs_checkpoint",
     "cs_resume_brief",
-    "cs_manifest_init",
     "cs_manifest_validate",
 }
 
@@ -46,7 +46,7 @@ def test_mcp_context_reads_goal_environment(monkeypatch, tmp_path: Path):
 
     assert context.require_project_root() == tmp_path
     assert context.quest_id == "Q1"
-    assert context.require_quest_root() == quest_root
+    assert context.require_quest_root() == tmp_path / "CodexScientist"
     assert context.run_id == "R0001"
     assert context.active_stage == "experiment"
     assert context.conversation_id == "conv-1"

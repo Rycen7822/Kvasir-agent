@@ -22,10 +22,10 @@ python scripts/cs_mcp.py --stdio-smoke call cs_doctor '{}'
 
 ## Current MCP profiles
 
-- `core`: 11 default tools for doctor/status, quest anchoring, schema lookup, passive context/resume/checkpoint/delta.
-- `evidence`: evidence recording profile for quest-local memory, manifest, baseline, artifact, experiment, analysis, method, and claim-gate workflows.
+- `core`: default tools for doctor/status, root-bound research anchoring, schema lookup, passive context/resume/checkpoint/delta.
+- `evidence`: evidence recording profile for root-bound memory, manifest, baseline, artifact, experiment, analysis, method, and claim-gate workflows.
 - `formal_run`: evidence plus `cs_bash_exec` for formal provenance-gated commands.
-- `literature`: strict literature, paper fetch, paper reliability, bibliography, and quest-local reading notes.
+- `literature`: strict literature, paper fetch, paper reliability, bibliography, and project-local reading notes.
 - `paper_write`: literature plus outline, paper bundle, summary refresh, and review status.
 - `goal`: deprecated compatibility alias for `evidence`; prefer `evidence` for Codex-native goal work.
 - `admin`, `autonomous`, and `legacy_compat`: not registered as default MCP surfaces; use only for explicit human/admin/debug/CI/recovery compatibility.
@@ -42,7 +42,7 @@ The `stage` argument is a context label for records and prompts. It does not fil
 Important evidence/formal tools include:
 
 ```text
-cs_new_quest
+cs_status
 cs_record_user_requirement
 cs_create_local_baseline
 cs_confirm_baseline
@@ -77,7 +77,7 @@ Long-running goal work should keep recovery anchors fresh:
 1. state-changing MCP tools do not auto-inject checkpoint/manual-diagnostic gate metadata;
 2. public recovery uses `cs_status`, `cs_resume_brief`, `cs_pack_delta`, `cs_log_digest`, and `cs_artifact_index`; hidden/admin-only watchdog diagnostics stay outside the default MCP surface;
 3. `cs_checkpoint` records completed phase boundaries, decisions, validation, and artifact refs;
-4. `cs_resume_brief` returns current quest state, active run id, passive recovery anchor, source refs, and bounded text for compaction recovery.
+4. `cs_resume_brief` returns current root-bound research state, active run id, passive recovery anchor, source refs, and bounded text for compaction recovery.
 
 ## Skills and support procedures
 

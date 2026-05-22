@@ -57,7 +57,7 @@ def test_environment_register_show_validate_round_trip(tmp_path: Path):
     registered = service.register(quest_id="QENV", manifest=manifest)
     assert registered["ok"] is True
     assert registered["env_id"] == "env_toy"
-    env_path = tmp_path / "CodexScientist" / "quests" / "QENV" / "environments" / "env_toy.json"
+    env_path = tmp_path / "CodexScientist" / "environments" / "env_toy.json"
     assert env_path.exists()
 
     shown = service.show(quest_id="QENV", env_id="env_toy")
@@ -84,7 +84,7 @@ def test_environment_register_rejects_missing_env_id_without_write(tmp_path: Pat
     result = service.register(quest_id="QENV", manifest=manifest)
     assert result["ok"] is False
     assert result["error_type"] == "invalid_schema"
-    assert not (tmp_path / "CodexScientist" / "quests" / "QENV" / "environments").exists()
+    assert not (tmp_path / "CodexScientist" / "environments").exists()
 
 
 def test_environment_validate_rejects_protected_hash_mismatch(tmp_path: Path):

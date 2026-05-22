@@ -343,7 +343,7 @@ class ImplementerContextBuilder:
         return value
 
     def _load_checks(self, *, quest_id: str, variant_id: str) -> dict[str, Any]:
-        path = self.layout.quest_detail_path(quest_id, Path("variants") / variant_id / "checks.json")
+        path = self.layout.state_root / "variants" / variant_id / "checks.json"
         if not path.exists():
             return {}
         try:
@@ -354,7 +354,7 @@ class ImplementerContextBuilder:
 
     def _load_variant(self, *, quest_id: str, variant_id: str) -> dict[str, Any]:
         try:
-            path = self.layout.quest_detail_path(quest_id, Path("variants") / variant_id / "variant.json")
+            path = self.layout.state_root / "variants" / variant_id / "variant.json"
         except ValueError as exc:
             return _error("invalid_path", str(exc), recoverable=False)
         if not path.exists():

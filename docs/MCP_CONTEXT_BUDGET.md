@@ -6,7 +6,7 @@ CodexScientist context budgeting is for stable long-task recovery, not aggressiv
 
 | Scenario | Default | May expand to | Required anchors |
 | --- | ---: | ---: | --- |
-| Normal resume | 4K-8K chars | 12K chars | quest, constraints, autonomy mode, last checkpoint, validation, risks, source_refs |
+| Normal resume | 4K-8K chars | 12K chars | research state, constraints, autonomy mode, last checkpoint, validation, risks, source_refs |
 | Incident/debug/audit | 8K chars | 12K-24K chars | error class, bounded log digest, artifact refs, decisions, changed events |
 | Raw/range inspection | explicit only | explicit only | reason, path, bounded range, follow-up checkpoint |
 
@@ -24,7 +24,7 @@ Do not compress normal recovery into a few hundred characters. Use a bounded str
 
 ## Current MCP profiles
 
-The default core profile has 11 tools. Wider agent-facing profiles are explicit: `evidence`, `formal_run`, `literature`, and `paper_write`. The `goal` profile is a deprecated compatibility alias for `evidence`.
+The default core profile exposes bounded root-bound recovery tools. Wider agent-facing profiles are explicit: `evidence`, `formal_run`, `literature`, and `paper_write`. The `goal` profile is a deprecated compatibility alias for `evidence`.
 
 Important current tools include:
 
@@ -32,7 +32,6 @@ Important current tools include:
 cs_doctor
 cs_status
 cs_tool_schema
-cs_new_quest
 cs_record_user_requirement
 cs_context_pack
 cs_resume_brief

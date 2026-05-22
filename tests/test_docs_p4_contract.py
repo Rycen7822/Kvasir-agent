@@ -111,7 +111,7 @@ def test_default_docs_are_mcp_only_and_admin_cli_is_isolated():
 def test_mcp_doc_lists_current_profiles_and_goal_tools():
     text = _read("docs/MCP.md")
     for phrase in [
-        "`core`: 11 default tools",
+        "`core`: default tools",
         "`evidence`",
         "`formal_run`",
         "`literature`",

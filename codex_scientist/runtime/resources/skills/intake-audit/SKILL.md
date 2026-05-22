@@ -19,8 +19,8 @@ Use this skill when the quest already has meaningful state and the first job is 
 ## Tool discipline
 
 - **Do not bypass CodexScientist semantic tools for durable research state; Codex-native file/shell/process tools remain appropriate for routine operation-layer work.**
-- **Use Codex-native execution for routine shell/CLI/Python/node/git/npm/uv/repo-audit checks. Use `cs_bash_exec` only when the audit command itself must become CodexScientist quest evidence.**
-- **For git inspection or maintenance inside the current quest repository or worktree, prefer `quest-local git state via backend service or Codex-controlled git action(...)` before raw shell git commands.**
+- **Use Codex-native execution for routine shell/CLI/Python/node/git/npm/uv/repo-audit checks. Use `cs_bash_exec` only when the audit command itself must become CodexScientist research evidence.**
+- **For git inspection or maintenance inside the current project repository or worktree, prefer `project-local git state via backend service or Codex-controlled git action(...)` before raw shell git commands.**
 - **Use shell execution only when durable quest files, artifacts, and memory are insufficient; do not bypass durable state just because shell feels faster.**
 
 ## Purpose
@@ -50,7 +50,7 @@ They are common research entry states.
 ## Use when
 
 - `startup_contract.launch_mode = custom` and the profile implies existing work
-- the quest root already contains meaningful baseline, experiment, analysis, or paper assets
+- the research root already contains meaningful baseline, experiment, analysis, or paper assets
 - the user says:
   - “baseline 已经有了”
   - “不要重新复现”
@@ -76,7 +76,7 @@ They are common research entry states.
 
 ## Typical intake states
 
-Classify the current quest into one or more of these buckets:
+Classify the current research state into one or more of these buckets:
 
 - `baseline_ready`
 - `baseline_partial`
@@ -148,7 +148,7 @@ Stage-start requirement:
 
 The point is to reuse prior route knowledge before re-auditing the same state from scratch.
 
-### 3. Inventory the quest state
+### 3. Inventory the research state
 
 Create or refresh a durable audit note using `references/state-audit-template.md`.
 

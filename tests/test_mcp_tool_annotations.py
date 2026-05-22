@@ -29,7 +29,7 @@ def test_mcp_annotations_mark_state_writing_tools_as_not_read_only():
     ]:
         assert specs[name]["readOnlyHint"] is False
 
-    for name in ["cs_status", "cs_get_quest_state", "cs_artifact_index", "cs_log_digest"]:
+    for name in ["cs_status", "cs_artifact_index", "cs_log_digest"]:
         assert specs[name]["readOnlyHint"] is True
 
 

@@ -120,9 +120,8 @@ class VariantService:
                 return _error("baseline_commit_required", "git baseline requires an explicit immutable 40-character baseline.commit", recoverable=True)
 
         variant_id = f"var_{uuid4().hex[:16]}"
-        quest = self.layout.ensure_quest_layout(safe_quest_id)
-        variant_dir = quest.detail_path(Path("variants") / variant_id)
-        workspace = quest.detail_path(Path("runtime") / "worktrees" / variant_id)
+        variant_dir = self.layout.state_root / "variants" / variant_id
+        workspace = self.layout.state_root / "runtime" / "worktrees" / variant_id
         variant_path = variant_dir / "variant.json"
         patch_path = variant_dir / "patch.diff"
         workspace_created = False
@@ -428,7 +427,7 @@ class VariantService:
 
     def _variant_path(self, *, quest_id: str, variant_id: str) -> Path:
         safe_variant_id = _safe_segment(variant_id, label="variant_id")
-        return self.layout.quest_detail_path(quest_id, Path("variants") / safe_variant_id / "variant.json")
+        return self.layout.state_root / "variants" / safe_variant_id / "variant.json"
 
     def _read_variant(self, *, quest_id: str, variant_id: str) -> dict[str, Any]:
         try:

@@ -40,15 +40,15 @@ Use this skill for the main evidence-producing runs of the quest.
 - If the runtime starts an auto-continue turn with no new user message, continue from the current run state, logs, artifacts, and active requirements instead of replaying the previous user turn.
 - Progress message templates are references only. Adapt to the actual context and vary wording so messages feel human, respectful, and non-robotic.
 - If a threaded user reply arrives, interpret it relative to the latest experiment progress update before assuming the task changed completely.
-- Codex-native execution boundary: use Codex-native tools for routine file inspection, Git mechanics, environment checks, non-evidence tests, and code edits. Use `cs_bash_exec` for formal experiment commands, real runs, baseline/reproduction/ablation evidence, or paper-facing validations whose logs must become CodexScientist quest evidence.
-- Prefer `cs_bash_exec` for experiment commands so each run gets a durable session id, quest-local log folder, and later `read/list/kill` control.
+- Codex-native execution boundary: use Codex-native tools for routine file inspection, Git mechanics, environment checks, non-evidence tests, and code edits. Use `cs_bash_exec` for formal experiment commands, real runs, baseline/reproduction/ablation evidence, or paper-facing validations whose logs must become CodexScientist research evidence.
+- Prefer `cs_bash_exec` for experiment commands so each run gets a durable session id, project-local log folder, and later `read/list/kill` control.
 - For meaningful long-running runs, include the estimated next reply time or next check-in window whenever it is defensible.
 
 ## Tool discipline
 
 - **Do not bypass CodexScientist semantic tools for durable research state; Codex-native file/shell/process tools remain appropriate for routine operation-layer work.**
-- **Use Codex-native execution for routine shell/CLI/Python/node/git/npm/uv/environment checks and non-evidence tests. Use `cs_bash_exec` for formal experiment runs, baseline/reproduction/ablation evidence, and paper-facing validations that require quest-local provenance.**
-- **For git work inside the current quest repository or worktree, prefer `quest-local git state via backend service or Codex-controlled git action(...)` before raw shell git commands.**
+- **Use Codex-native execution for routine shell/CLI/Python/node/git/npm/uv/environment checks and non-evidence tests. Use `cs_bash_exec` for formal experiment runs, baseline/reproduction/ablation evidence, and paper-facing validations that require project-local provenance.**
+- **For git work inside the current project repository or worktree, prefer `project-local git state via backend service or Codex-controlled git action(...)` before raw shell git commands.**
 - **If a scratch repository or isolated test environment is needed, create and drive it through `cs_bash_exec ...)`, not native shell tools.**
 
 ## Stage purpose
@@ -101,7 +101,7 @@ Treat this as the short run-order summary. The detailed run contract, execution 
 - Implement the claimed mechanism, not a convenient shortcut that changes the theory.
 - Keep the baseline reference read-only.
 - Avoid asking the user to fix the environment unless there is no credible agent-side path left.
-- Do not record a durable main experiment from an idea branch, quest root branch, or paper branch as if that were the final result node; every durable main experiment should land on its own `run/*` branch.
+- Do not record a durable main experiment from an idea branch, research root branch, or paper branch as if that were the final result node; every durable main experiment should land on its own `run/*` branch.
 - After each `cs_artifact_record_main_experiment(...)`, route from the measured result:
   - if paper mode is enabled, decide whether to strengthen evidence, analyze, or write
   - if paper mode is disabled, prefer iterate / revise-idea / branch over default writing
@@ -159,7 +159,7 @@ Before substantial implementation work or a real main run, create a quest-visibl
 
 ## Working-boundary rules
 
-Only modify the active quest workspace for this experiment line.
+Only modify the active project workspace for this experiment line.
 
 - treat the accepted baseline workspace as read-only
 - do not derive branch or worktree assumptions from guesswork
@@ -304,7 +304,7 @@ Before editing or executing:
 - confirm the selected idea claim and code-level plan
 - look up prior incidents or repeated failure patterns when available
 - confirm output directories and naming
-- confirm that the intended run still matches the current quest decision
+- confirm that the intended run still matches the current research state decision
 
 If a repeated failure pattern already exists, apply the mitigation first and record that choice.
 

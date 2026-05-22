@@ -12,7 +12,7 @@ metadata:
 skill_role: companion
 ---
 
-> Codex adapter note: this is a Codex-packaged CodexScientist support skill. Prefer public MCP `cs_*` tools visible in `tools/list`/`cs_tool_schema` for durable quest state, memory, artifacts, and recovery anchors; use admin CLI fallbacks only when explicitly following docs/ADMIN_CLI.md. Load it only when it is the relevant companion to the active stage.
+> Codex adapter note: this is a Codex-packaged CodexScientist support skill. Prefer public MCP `cs_*` tools visible in `tools/list`/`cs_tool_schema` for durable root-bound research state, memory, artifacts, and recovery anchors; use admin CLI fallbacks only when explicitly following docs/ADMIN_CLI.md. Load it only when it is the relevant companion to the active stage.
 
 # Writing Implementation Plans
 
@@ -207,9 +207,9 @@ git commit -m "docs: add implementation plan for [feature]"
 
 ### CodexScientist experiment roadmap variant
 
-When the plan is for a CodexScientist quest's experiment execution rather than a normal software feature (see `references/codexscientist-experiment-roadmaps.md` for the session-tested checklist):
+When the plan is for a CodexScientist project's experiment execution rather than a normal software feature (see `references/codexscientist-experiment-roadmaps.md` for the session-tested checklist):
 
-1. Load the relevant CodexScientist stage skill and follow the Codex-native operation boundary: use Codex-native tools for routine shell/Git/Python checks, and use `cs_bash_exec` only for formal evidence commands that need quest-local provenance. Use `cs_artifact_record` / `cs_memory_write` for durable outputs.
+1. Load the relevant CodexScientist stage skill and follow the Codex-native operation boundary: use Codex-native tools for routine shell/Git/Python checks, and use `cs_bash_exec` only for formal evidence commands that need project-local provenance. Use `cs_artifact_record` / `cs_memory_write` for durable outputs.
 2. Read the user's requested source order exactly. For split research ideas, read the top-level `idea/*foundational_report.md` / index first, then active docs such as `paper_main.md`, `experiment_protocol.md`, `implementation_spec.md`, appendix/theory, related work, risk register, and download/resource manifest.
 3. Save the roadmap under the quest's requested experiment directory, commonly `experiments/EXPERIMENT_EXECUTION_PLAN.md`, not only in chat.
 4. Structure it as an ordered execution pipeline: preflight/baseline/resource gate, engineering scaffold, data split manifest, candidate/floorplan enumeration, trajectory extraction, chart/model-specific fitting, score implementation, sanity checks, main benchmark, statistics/robustness, retrofit/recoverability, appendix experiments, and paper-facing packaging.
@@ -231,7 +231,7 @@ Key rules:
 
 ### CodexScientist formal experiment command handoff variant
 
-When the user asks for a formal command document so they can run experiments step-by-step, write it as a quest-local file under the requested experiment directory (for example `experiments/正式实验命令.md`) instead of only answering in chat. See `references/codexscientist-formal-experiment-command-handoffs.md` for the session-tested checklist and pitfalls.
+When the user asks for a formal command document so they can run experiments step-by-step, write it as a project-local file under the requested experiment directory (for example `experiments/正式实验命令.md`) instead of only answering in chat. See `references/codexscientist-formal-experiment-command-handoffs.md` for the session-tested checklist and pitfalls.
 
 Key rules:
 

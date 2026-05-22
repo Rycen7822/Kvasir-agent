@@ -60,8 +60,7 @@ class EnvironmentService:
         if schema["ok"] is False:
             return schema
         safe_env_id = _safe_segment(str(manifest["env_id"]), label="env_id")
-        quest = self.layout.ensure_quest_layout(quest_id)
-        path = quest.detail_path(Path("environments") / f"{safe_env_id}.json")
+        path = self._environment_path(quest_id=quest_id, env_id=safe_env_id)
         record = dict(manifest)
         record["schema_version"] = _SCHEMA_VERSION
         record["quest_id"] = _safe_segment(quest_id, label="quest_id")
@@ -127,7 +126,7 @@ class EnvironmentService:
 
     def _environment_path(self, *, quest_id: str, env_id: str) -> Path:
         safe_env_id = _safe_segment(env_id, label="env_id")
-        return self.layout.quest_detail_path(quest_id, Path("environments") / f"{safe_env_id}.json")
+        return self.layout.state_root / "environments" / f"{safe_env_id}.json"
 
     def _read_environment(self, *, quest_id: str, env_id: str) -> dict[str, Any]:
         try:

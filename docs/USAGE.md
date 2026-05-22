@@ -12,11 +12,11 @@ python scripts/cs_mcp.py --stdio-smoke tools/list
 python scripts/cs_mcp.py --stdio-smoke call cs_doctor '{}'
 ```
 
-The default core profile exposes 11 curated `cs_*` tools for status, quest anchoring, passive context/recovery anchors, checkpointing, and schema lookup. Wider agent-facing profiles are explicit:
+The default core profile exposes curated `cs_*` tools for status, root-bound research anchoring, passive context/recovery anchors, checkpointing, and schema lookup. Wider agent-facing profiles are explicit:
 
-- `evidence`: 33 tools for quest-local evidence, memory, manifest, baseline, artifact, experiment, analysis, and method ledgers.
+- `evidence`: tools for root-bound evidence, memory, manifest, baseline, artifact, experiment, analysis, and method ledgers.
 - `formal_run`: 34 tools; `evidence` plus formal `cs_bash_exec` provenance-gated execution.
-- `literature`: 23 tools for strict literature and quest-local paper resources.
+- `literature`: tools for strict literature and project-local paper resources.
 - `paper_write`: 27 tools for literature plus paper outline/bundle/summary/review work.
 
 The goal profile is deprecated; use `evidence` unless you are explicitly testing legacy compatibility. The stage is a label for context and records; it is not used to filter `tools/list` output.
@@ -33,7 +33,7 @@ Runtime state lives under:
 
 For MCP calls, pass `project` as the preferred project root argument. `project_root` is accepted as a compatibility alias. Both should resolve to the same runtime path.
 
-This tree stores quests, quest-local memory, artifacts, logs, queue/runner state, config, cache, passive checkpoints, recovery anchors, summaries, and manual watchdog diagnostic records (manual progress watchdog diagnostics; no default watchdog state writes).
+This tree stores the root-bound research manifest, memory, artifacts, logs, queue/runner state, config, cache, passive checkpoints, recovery anchors, summaries, and manual watchdog diagnostic records. `CodexScientist/quests/` is only a legacy migration input.
 
 ## Codex-native operation boundary
 
@@ -45,10 +45,10 @@ Codex-native operation layer:
 
 CodexScientist semantic/provenance layer:
 
-- quest lifecycle and mode state;
-- durable user requirements, quest-local memory, artifacts, milestones, decisions, main experiment records, analysis slices, baseline gates, paper bundles, strict-research ledgers, and claim gate decisions;
+- root-bound research state and provenance metadata;
+- durable user requirements, project-local memory, artifacts, milestones, decisions, main experiment records, analysis slices, baseline gates, paper bundles, strict-research ledgers, and claim gate decisions;
 - manual watchdog diagnostic snapshots, passive checkpoint/resume anchors, method scoreboard/frontier, novelty scoring, duplicate block, related-work gate, and evidence gate state;
-- formal experiment, baseline, analysis-slice, or paper-facing commands whose logs must become quest-local evidence.
+- formal experiment, baseline, analysis-slice, or paper-facing commands whose logs must become project-local evidence.
 
 Practical rule: Codex does the mechanical action; CodexScientist records the research meaning.
 
@@ -58,7 +58,7 @@ Practical rule: Codex does the mechanical action; CodexScientist records the res
 
 Recommended flow after Codex has entered goal context:
 
-1. `cs_new_quest` and `cs_record_user_requirement` anchor the task.
+1. Call `cs_status`; the first durable write such as `cs_record_user_requirement` lazily creates `<project>/CodexScientist/research.yaml` when needed.
 2. Choose an explicit MCP profile for the current evidence surface, usually `evidence`, `formal_run`, `literature`, or `paper_write`.
 3. Use baseline, idea, experiment, analysis, literature, or paper tools to record research evidence and gates.
 4. Use `cs_status`, `cs_resume_brief`, and `cs_pack_delta` for public MCP recovery during long-running work.

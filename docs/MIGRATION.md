@@ -10,14 +10,17 @@ Run from the target project root:
 python scripts/csctl.py migrate legacy-quests --format json
 ```
 
-The `migrate legacy quests` command scans `CodexScientist/quests/*` for legacy `quest.yaml` or `quest.json` metadata, creates `CodexScientist/research.yaml` when no upgraded manifest exists, and writes `CodexScientist/migrations/migration_report.json`.
+The `migrate legacy quests` command scans `CodexScientist/quests/*` for legacy `quest.yaml` or `quest.json` metadata. A single legacy quest can be imported into root-bound `CodexScientist/research.yaml`; multiple legacy quests return an explicit migration block instead of selecting a latest or active quest.
 
 Migration is conservative:
 
 - source quest directories are preserved;
-- existing notes and artifacts are not deleted;
-- the migration report records `source_preserved=true`;
+- existing root-bound notes and artifacts are not overwritten;
+- conflicts are written to `CodexScientist/migrations/migration_conflict_report.json` for operator review;
+- successful imports write `CodexScientist/migrations/migration_report.json` with `source_preserved=true` and any `quest_id_mapping`;
 - follow-up validation should run `scripts/csctl.py manifest validate --format json`.
+
+After migration, new runtime writes continue to target `<project>/CodexScientist/` directly. `CodexScientist/quests/` remains a legacy input namespace only.
 
 ## Long-run follow-up
 

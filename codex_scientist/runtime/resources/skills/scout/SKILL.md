@@ -19,9 +19,9 @@ Use this skill when the quest does not yet have a stable research frame.
 ## Tool discipline
 
 - **Do not bypass CodexScientist semantic tools for durable research state; Codex-native file/shell/process tools remain appropriate for routine operation-layer work.**
-- **Use Codex-native execution for routine shell/CLI/Python/node/git/npm/uv/repo-inspection checks. Use `cs_bash_exec` only when the inspection command itself must become CodexScientist quest evidence.**
-- **For git inspection inside the current quest repository or worktree, prefer `quest-local git state via backend service or Codex-controlled git action(...)` before raw shell git commands.**
-- **If scouting only needs durable quest context, prefer `artifact.read_quest_documents(...)`, `artifact.get_quest_state(...)`, and `memory.*` instead of shelling out.**
+- **Use Codex-native execution for routine shell/CLI/Python/node/git/npm/uv/repo-inspection checks. Use `cs_bash_exec` only when the inspection command itself must become CodexScientist research evidence.**
+- **For git inspection inside the current project repository or worktree, prefer `project-local git state via backend service or Codex-controlled git action(...)` before raw shell git commands.**
+- **If scouting only needs durable research context, prefer `artifact.read_quest_documents(...)`, `artifact.get_quest_state(...)`, and `memory.*` instead of shelling out.**
 
 ## Stage purpose
 
@@ -82,7 +82,7 @@ If one of these layers is still missing, say so explicitly.
 
 ## Preconditions and gate
 
-Before spending time scouting, first verify whether the current quest already contains enough framing in:
+Before spending time scouting, first verify whether the current research state already contains enough framing in:
 
 - `brief.md`
 - `plan.md`
@@ -124,7 +124,7 @@ The scout stage should usually leave behind:
 
 - an updated `brief.md`
 - an updated `plan.md`
-- optional `status.md` refresh if the quest state changed
+- optional `status.md` refresh if the research state changed
 - a literature scouting report when external search was needed
 - `memory` cards for key references or framing notes
 - a report or decision artifact that points to the next anchor

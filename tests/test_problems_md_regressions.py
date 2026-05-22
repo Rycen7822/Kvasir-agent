@@ -53,7 +53,7 @@ def test_usage_doc_matches_upgrade6_profile_contract() -> None:
     for phrase in stale_phrases:
         assert phrase not in usage
 
-    assert "core profile exposes 11" in usage
+    assert "core profile exposes curated" in usage or "core profile exposes bounded root-bound recovery tools" in usage
     assert "goal profile is deprecated" in usage
     assert "stage is a label" in usage
     assert "manual watchdog diagnostic" in usage
@@ -415,18 +415,17 @@ def test_baseline_gate_errors_use_mcp_tool_guidance(tmp_path: Path) -> None:
     assert confirm.get("error_type") == "invalid_argument"
     assert "cs_create_local_baseline" in confirm.get("suggested_next_action", "")
     assert "artifact.confirm_baseline" not in json.dumps(confirm)
-    assert "baseline_path must be under quest_root" in json.dumps(confirm)
+    assert "baseline_path must stay within state_root" in json.dumps(confirm)
 
     experiment = call_tool(
         "cs_record_main_experiment",
         {"project": str(tmp_path), "quest_id": quest_id, "run_id": "run1", "title": "run"},
     )
-    assert experiment.get("ok") is False
+    assert experiment.get("ok") is True
     encoded = json.dumps(experiment)
     assert "artifact.confirm_baseline" not in encoded
     assert "artifact.waive_baseline" not in encoded
-    assert "cs_confirm_baseline" in encoded
-    assert "cs_waive_baseline" in encoded
+    assert experiment.get("quest_root") == str(tmp_path / "CodexScientist")
 
 
 def test_submit_idea_missing_nested_contract_fields_returns_retry_template(tmp_path: Path) -> None:

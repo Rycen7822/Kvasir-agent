@@ -4,8 +4,6 @@ import json
 from pathlib import Path
 from typing import Any
 
-from codex_scientist.runtime.vendor.codexscientist.shared import read_yaml
-
 from .checkpoint import CheckpointService
 from .event_store import EventStore
 from .manifest import ManifestService
@@ -33,19 +31,7 @@ class ResumeService:
         }
 
     def _goal_from_quest(self, quest_id: str | None) -> dict[str, Any]:
-        if not quest_id:
-            return {"title": "", "success_criteria": [], "non_goals": []}
-        quest_root = self.layout.quest_root_for(quest_id)
-        quest_yaml = read_yaml(quest_root / "quest.yaml", default={})
-        quest_yaml = quest_yaml if isinstance(quest_yaml, dict) else {}
-        title = str(quest_yaml.get("title") or "").strip()
-        success_criteria = quest_yaml.get("success_criteria")
-        non_goals = quest_yaml.get("non_goals")
-        success_criteria_list = success_criteria if isinstance(success_criteria, list) else []
-        non_goals_list = non_goals if isinstance(non_goals, list) else []
-        if not title:
-            title = self._goal_title_from_brief(quest_root / "brief.md")
-        return {"title": title, "success_criteria": list(success_criteria_list), "non_goals": list(non_goals_list)}
+        return {"title": "", "success_criteria": [], "non_goals": []}
 
     @staticmethod
     def _goal_title_from_brief(path: Path) -> str:
@@ -146,7 +132,7 @@ class ResumeService:
                 {"path": str(self.layout.state_root), "kind": "state_root"},
                 {"path": str(self.checkpoints.latest_path), "kind": "latest_checkpoint"},
                 {"path": str(self.layout.event_log_path), "kind": "event_log"},
-                *([{"path": str(self.layout.quest_root_for(quest_id) / "runtime" / "goal_state.json"), "kind": "legacy_goal_state_ignored"}] if quest_id else []),
+                {"path": str(self.layout.state_root / "runtime" / "goal_state.json"), "kind": "goal_state"},
             ],
             "warnings": warnings,
         }

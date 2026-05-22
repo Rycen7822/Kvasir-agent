@@ -38,7 +38,7 @@ def test_feedback_ingest_local_metrics_updates_trajectory(tmp_path: Path):
     assert result["ok"] is True
     assert result["feedback"]["status"] == "parsed"
     assert result["feedback"]["primary_metric"]["value"] == 0.8
-    bundle_path = tmp_path / "CodexScientist" / "quests" / "QFEED" / "artifacts" / "execution_grounded" / "run_good" / "feedback_bundle.json"
+    bundle_path = tmp_path / "CodexScientist" / "artifacts" / "execution_grounded" / "run_good" / "feedback_bundle.json"
     assert bundle_path.exists()
 
     trajectory = TrajectoryStore(layout).show(quest_id="QFEED", trajectory_id=trajectory_id)["trajectory"]

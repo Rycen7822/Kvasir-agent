@@ -48,13 +48,16 @@ _TRIAL_ID_RE = re.compile(r"^T\d{4}$")
 def mcp_environment(args: dict[str, Any]) -> Iterator[CodexScientistMcpContext]:
     context = CodexScientistMcpContext.from_env(args)
     previous = {key: os.environ.get(key) for key in _ENV_KEYS}
-    os.environ["CODEXSCIENTIST_PROJECT_ROOT"] = str(context.require_project_root())
-    if context.home:
-        os.environ["CS_HOME"] = str(context.home)
-    if context.quest_id:
-        os.environ["CS_QUEST_ID"] = context.quest_id
-    if context.quest_root:
-        os.environ["CS_QUEST_ROOT"] = str(context.quest_root)
+    project_root = context.require_project_root()
+    research_root = context.require_research_root()
+    identity = ManifestService(context.resolve_project_layout()).quest_identity(create=False)
+    os.environ["CODEXSCIENTIST_PROJECT_ROOT"] = str(project_root)
+    os.environ["CS_HOME"] = str(research_root)
+    os.environ["CS_QUEST_ROOT"] = str(research_root)
+    if identity.get("ok"):
+        os.environ["CS_QUEST_ID"] = str(identity["quest_id"])
+    else:
+        os.environ.pop("CS_QUEST_ID", None)
     if context.run_id:
         os.environ["CS_RUN_ID"] = context.run_id
     if context.active_stage:

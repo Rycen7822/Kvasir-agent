@@ -24,9 +24,9 @@ When MCP is unavailable or a tool is missing, the default agent-facing response 
 
 `/goal` is Codex-native. CodexScientist does not implement slash commands. After Codex has entered goal context, CodexScientist provides MCP tools, bounded prompt/skill routing, state files, progress watchdog, checkpoint, and resume contracts for research progress.
 
-## quest root
+## research root
 
-A quest root is the project-local directory that stores a single long-running research quest under `<project>/CodexScientist/quests/<quest_id>/`.
+The research root is the project-local directory `<project>/CodexScientist/`. It stores the single root-bound research state for the current project. Legacy `CodexScientist/quests/<quest_id>/` directories are migration inputs only, not new-write targets.
 
 ## method improvement gate
 

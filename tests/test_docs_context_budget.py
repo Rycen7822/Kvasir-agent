@@ -9,7 +9,6 @@ EXPECTED_TOOLS = {
     "cs_doctor",
     "cs_status",
     "cs_tool_schema",
-    "cs_new_quest",
     "cs_record_user_requirement",
     "cs_context_pack",
     "cs_resume_brief",
@@ -50,7 +49,7 @@ def test_docs_list_current_p4_profiles_and_no_all_tools_mcp():
     for tool in EXPECTED_TOOLS:
         assert tool in docs
     assert "all-tools/full-runtime MCP" in docs
-    assert "default core profile has 11 tools" in docs
+    assert "default core profile exposes bounded root-bound recovery tools" in docs or "default core profile exposes curated" in docs
     assert "evidence" in docs and "formal_run" in docs and "literature" in docs and "paper_write" in docs
     assert "stage` argument is a context label" in docs or "`stage` is a label" in docs
     for stale in ["core profile: 14 tools", "goal profile: 47 tools", "active stage subset"]:

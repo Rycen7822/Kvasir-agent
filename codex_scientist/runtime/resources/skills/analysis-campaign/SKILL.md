@@ -29,8 +29,8 @@ Do not invent a separate experiment system for those cases.
 
 - Follow the shared interaction contract injected by the system prompt.
 - For ordinary active work, prefer a concise progress update once work has crossed roughly 6 tool calls with a human-meaningful delta, and do not drift beyond roughly 12 tool calls or about 8 minutes without a user-visible update.
-- Codex-native execution boundary: use Codex-native file/shell/Git/test/build tools for routine inspection, setup checks, and non-evidence smoke tests. Use `cs_bash_exec` for formal campaign slice commands or validations whose logs must become CodexScientist quest evidence.
-- Prefer `cs_bash_exec` for campaign slice commands so each run has a durable session id, quest-local log folder, and later `read/list/kill` control.
+- Codex-native execution boundary: use Codex-native file/shell/Git/test/build tools for routine inspection, setup checks, and non-evidence smoke tests. Use `cs_bash_exec` for formal campaign slice commands or validations whose logs must become CodexScientist research evidence.
+- Prefer `cs_bash_exec` for campaign slice commands so each run has a durable session id, project-local log folder, and later `read/list/kill` control.
 - Keep ordinary subtask completions concise. When an analysis campaign or a stage-significant campaign checkpoint is complete, upgrade to a richer `cs_artifact_record payload={'kind': 'milestone'}, reply_mode='threaded', ...)` report.
 - That richer campaign milestone report should normally cover: which slices completed, the main takeaway, whether the claim got stronger or weaker, and the exact recommended next route.
 - That richer milestone report is still normally non-blocking. If the post-campaign route is already clear, continue automatically after reporting instead of waiting for explicit acknowledgment.
@@ -123,7 +123,7 @@ Before launching a campaign, confirm:
 - the comparison target
 - the metric or observable of interest
 - the list of specific analysis questions
-- the current quest / user-provided assets that each planned slice will actually use
+- the current research state / user-provided assets that each planned slice will actually use
 - whether each slice is executable with the current assets, tooling, and available credentials
 - for paper-facing campaigns, the current paper experiment matrix frontier and which rows are actually feasible now
 - if durable state exposes `active_baseline_metric_contract_json`, read that JSON file before defining slice success criteria or comparison tables
@@ -134,7 +134,7 @@ Treat quest files, attached user assets, checkpoints, configs, extracted texts, 
 Do not design slices around hypothetical resources that the current system cannot actually access or run.
 If a slice cannot be executed with the current system, redesign it around available assets or explicitly report that the task cannot currently be completed.
 If infeasibility appears mid-run, attempt bounded recovery first; if still blocked, record the slice with a non-success status and explain why.
-If ids, active refs, or current quest state are unclear after restart, call `artifact.get_quest_state(detail='summary')` and `cs_artifact_record evidence path resolution(...)` before launching or recording slices.
+If ids, active refs, or current research state are unclear after restart, call `artifact.get_quest_state(detail='summary')` and `cs_artifact_record evidence path resolution(...)` before launching or recording slices.
 If the exact quest brief / plan / status wording matters for campaign scope, call `artifact.read_quest_documents(...)`.
 If earlier user instructions materially affect campaign scope or ordering, call `artifact.get_conversation_context(...)` before changing the slice set.
 
@@ -213,7 +213,7 @@ Before launching any slice, record the campaign start through artifacts:
    - `parent_run_id` or `parent_idea_id`
    - why the campaign is needed now
 2. write a charter `report` with the planned slice list
-3. update `plan.md` if the campaign materially changes the quest path
+3. update `plan.md` if the campaign materially changes the research root path
 
 Do not start a multi-slice campaign from chat-only intent.
 Do not start it from chat-only intent plus vague notes either: write `PLAN.md` and `CHECKLIST.md` first, using `references/campaign-plan-template.md` and `references/campaign-checklist-template.md` as the default structures.
@@ -377,7 +377,7 @@ Create the campaign with `artifact.create_analysis_campaign(...)` before startin
 Even one extra experiment should still be represented as a one-slice campaign so Git and Canvas show a real child node.
 Branch that campaign from the current workspace/result node rather than mutating the completed parent node in place.
 That tool should receive the full slice list, and each returned slice worktree becomes the required execution location for that slice.
-Only create the campaign after you have verified that the listed slices are actually executable with the current quest assets and runtime.
+Only create the campaign after you have verified that the listed slices are actually executable with the current research state assets and runtime.
 When the campaign is writing-facing, the same call should also carry `selected_outline_ref`, `research_questions`, `experimental_designs`, and `todo_items`.
 If ids or refs are unclear, recover them first with `cs_artifact_record evidence path resolution(...)`, `artifact.get_analysis_campaign(...)`, or `artifact.list_paper_outlines(...)` instead of guessing.
 Treat `campaign_id` as system-owned, and treat `slice_id` / `todo_id` as agent-authored semantic ids.

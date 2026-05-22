@@ -4,7 +4,7 @@ from codex_scientist.runtime import schemas
 
 
 def _props(schema_name: str) -> dict:
-    schema = next(item for item in schemas.PUBLIC_SCHEMAS if item["name"] == schema_name)
+    schema = next(item for item in schemas.ALL_SCHEMAS if item["name"] == schema_name)
     return schema["input_schema"]["properties"]
 
 

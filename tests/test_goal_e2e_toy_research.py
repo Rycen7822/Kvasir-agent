@@ -74,7 +74,7 @@ def run_toy_goal_research(project: Path) -> dict:
     campaign_id = campaign.get("campaign_id") or campaign.get("campaign", {}).get("campaign_id") or "active"
     _ok(call_tool("cs_record_analysis_slice", {"project": str(project), "quest_id": quest_id, "campaign_id": campaign_id, "slice_id": "toy-slice-1", "status": "completed", "setup": "Toy analysis setup", "execution": "Review structured metric row", "results": "Evidence supports only a toy claim."}))
 
-    evidence = project / "CodexScientist" / "quests" / quest_id / "artifacts" / "metrics" / "toy_metrics.json"
+    evidence = project / "CodexScientist" / "artifacts" / "metrics" / "toy_metrics.json"
     evidence.parent.mkdir(parents=True, exist_ok=True)
     evidence.write_text(json.dumps({"primary": 0.62, "baseline": 0.50}) + "\n", encoding="utf-8")
     claim = _ok(call_tool("cs_claim_gate", {"project": str(project), "quest_id": quest_id, "claim_id": "toy-claim", "claim_text": "The toy normalization improves the deterministic toy score.", "baseline_id": "toy_baseline", "metric_contract": "primary", "evidence_paths": [str(evidence)], "analysis_slice_ids": ["toy-slice-1"], "seed_count": 3}))
@@ -112,11 +112,11 @@ def test_goal_e2e_toy_research_runs_complete_mcp_only_flow(tmp_path: Path):
     assert "goal_loop_state" not in result["resume"]
     assert result["evidence"].exists()
 
-    quest_root = tmp_path / "CodexScientist" / "quests" / quest_id
-    assert quest_root.exists()
-    assert (quest_root / "method_memory" / "scoreboard" / "scoreboard.json").exists()
-    assert (quest_root / "artifacts" / "decisions" / "claim_gate_toy-claim.json").exists()
-    assert not (quest_root / "runtime" / "goal_state.json").exists()
+    state_root = tmp_path / "CodexScientist"
+    assert state_root.exists()
+    assert (state_root / "method_memory" / "scoreboard" / "scoreboard.json").exists()
+    assert (state_root / "artifacts" / "decisions" / "claim_gate_toy-claim.json").exists()
+    assert not (state_root / "runtime" / "goal_state.json").exists()
 
     repo_text = "\n".join(path.read_text(encoding="utf-8", errors="replace") for path in tmp_path.rglob("*.json") if path.is_file())
     for forbidden in FORBIDDEN:

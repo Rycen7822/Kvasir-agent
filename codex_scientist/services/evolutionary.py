@@ -252,7 +252,7 @@ class EvolutionarySearchService:
         return {"ok": True, "decision": "explicit_approval"}
 
     def _round_plan_path(self, *, quest_id: str, round_id: str) -> Path:
-        return self.layout.quest_detail_path(quest_id, Path("runtime") / "execution_grounded" / "evolutionary_rounds" / f"{_safe_segment(round_id, label='round_id')}.json")
+        return self.layout.state_root / "runtime" / "execution_grounded" / "evolutionary_rounds" / f"{_safe_segment(round_id, label='round_id')}.json"
 
     def _select_exploit_parents(self, *, records: list[dict[str, Any]], baseline_value: Any, direction: str) -> tuple[list[dict[str, Any]], list[str]]:
         selected: list[dict[str, Any]] = []

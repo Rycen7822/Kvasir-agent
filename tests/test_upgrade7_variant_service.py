@@ -97,11 +97,11 @@ def test_variant_create_uses_quest_worktree_for_git_baseline(tmp_path: Path):
     assert result["variant_id"].startswith("var_")
     workspace = Path(result["workspace_path"])
     assert workspace.is_dir()
-    assert workspace.is_relative_to(tmp_path / "CodexScientist" / "quests" / "QVAR" / "runtime" / "worktrees")
+    assert workspace.is_relative_to(tmp_path / "CodexScientist" / "runtime" / "worktrees")
     assert (workspace / "train.py").read_text(encoding="utf-8") == "VALUE = 1\n"
     assert _run(["git", "rev-parse", "HEAD"], workspace).stdout.strip() == manifest["baseline"]["commit"]
 
-    variant_path = tmp_path / "CodexScientist" / "quests" / "QVAR" / "variants" / result["variant_id"] / "variant.json"
+    variant_path = tmp_path / "CodexScientist" / "variants" / result["variant_id"] / "variant.json"
     record = json.loads(variant_path.read_text(encoding="utf-8"))
     required_fields = {
         "schema_version",
@@ -131,7 +131,7 @@ def test_variant_create_uses_quest_worktree_for_git_baseline(tmp_path: Path):
     assert record["package_path"] is None
     assert record["strategy"] == "worktree"
 
-    trajectory = json.loads((tmp_path / "CodexScientist" / "quests" / "QVAR" / "trajectories" / f"{trajectory_id}.json").read_text(encoding="utf-8"))
+    trajectory = json.loads((tmp_path / "CodexScientist" / "trajectories" / f"{trajectory_id}.json").read_text(encoding="utf-8"))
     assert trajectory["variant"]["variant_id"] == result["variant_id"]
     assert trajectory["variant"]["workspace_path"] == result["workspace_path"]
     assert any(event.get("event_type") == "variant.created" for event in EventStore(layout).read_events())
@@ -172,7 +172,7 @@ def test_variant_create_blocks_invalid_environment_before_workspace_write(tmp_pa
 
     assert result["ok"] is False
     assert result["error_type"] == "protected_hash_mismatch"
-    worktree_root = tmp_path / "CodexScientist" / "quests" / "QVAR" / "runtime" / "worktrees"
+    worktree_root = tmp_path / "CodexScientist" / "runtime" / "worktrees"
     assert list(worktree_root.iterdir()) == []
 
 
@@ -193,7 +193,7 @@ def test_variant_create_fails_closed_when_git_baseline_commit_missing_or_symboli
 
     assert result["ok"] is False
     assert result["error_type"] == "baseline_commit_required"
-    assert list((tmp_path / "CodexScientist" / "quests" / "QVAR" / "variants").iterdir()) == []
+    assert list((tmp_path / "CodexScientist" / "variants").iterdir()) == []
 
     symbolic = json.loads(json.dumps(manifest))
     symbolic["env_id"] = "env_symbolic"
@@ -284,13 +284,13 @@ def test_variant_apply_patch_records_changed_paths_and_exports_diff(tmp_path: Pa
     assert applied["ok"] is True
     assert applied["changed_paths"] == ["train.py"]
     assert len(applied["patch_sha256"]) == 64
-    variant_record = json.loads((tmp_path / "CodexScientist" / "quests" / "QVAR" / "variants" / variant_id / "variant.json").read_text(encoding="utf-8"))
+    variant_record = json.loads((tmp_path / "CodexScientist" / "variants" / variant_id / "variant.json").read_text(encoding="utf-8"))
     assert variant_record["status"] == "patched"
     assert variant_record["patch_sha256"] == applied["patch_sha256"]
     assert variant_record["changed_paths"] == ["train.py"]
     assert variant_record["protected_hashes_ok"] is True
     assert variant_record["mutable_allowlist_ok"] is True
-    trajectory = json.loads((tmp_path / "CodexScientist" / "quests" / "QVAR" / "trajectories" / f"{trajectory_id}.json").read_text(encoding="utf-8"))
+    trajectory = json.loads((tmp_path / "CodexScientist" / "trajectories" / f"{trajectory_id}.json").read_text(encoding="utf-8"))
     assert trajectory["patch"]["status"] == "applied"
 
     exported = VariantService(layout).export_patch(quest_id="QVAR", variant_id=variant_id)
@@ -312,7 +312,7 @@ def test_variant_apply_patch_blocks_protected_evaluator(tmp_path: Path):
     assert result["ok"] is False
     assert result["error_type"] == "readonly_or_eval_changed"
     assert "evaluate.py" in result["blocked_paths"]
-    workspace = tmp_path / "CodexScientist" / "quests" / "QVAR" / "runtime" / "worktrees" / variant_id
+    workspace = tmp_path / "CodexScientist" / "runtime" / "worktrees" / variant_id
     assert (workspace / "evaluate.py").read_text(encoding="utf-8") == "print('eval')\n"
 
 
@@ -327,7 +327,7 @@ def test_variant_apply_patch_bad_hunk_returns_patch_fail(tmp_path: Path):
 
     assert result["ok"] is False
     assert result["error_type"] == "patch_fail"
-    trajectory = json.loads((tmp_path / "CodexScientist" / "quests" / "QVAR" / "trajectories" / f"{trajectory_id}.json").read_text(encoding="utf-8"))
+    trajectory = json.loads((tmp_path / "CodexScientist" / "trajectories" / f"{trajectory_id}.json").read_text(encoding="utf-8"))
     assert trajectory["patch"]["status"] == "failed"
 
 
@@ -438,7 +438,7 @@ def test_variant_export_patch_blocks_protected_workspace_drift(tmp_path: Path):
     from codex_scientist.services.variant import VariantService
 
     layout, _trajectory_id, variant_id = _created_variant(tmp_path)
-    workspace = tmp_path / "CodexScientist" / "quests" / "QVAR" / "runtime" / "worktrees" / variant_id
+    workspace = tmp_path / "CodexScientist" / "runtime" / "worktrees" / variant_id
     (workspace / "evaluate.py").write_text("print('drift')\n", encoding="utf-8")
 
     result = VariantService(layout).export_patch(quest_id="QVAR", variant_id=variant_id)
@@ -476,13 +476,13 @@ def test_variant_check_success_and_pack_excludes_git_cache_and_secrets(tmp_path:
     assert checked["ok"] is True
     assert checked["smoke_status"] == "passed"
     assert checked["exit_code"] == 0
-    checks_path = tmp_path / "CodexScientist" / "quests" / "QVAR" / "variants" / variant_id / "checks.json"
+    checks_path = tmp_path / "CodexScientist" / "variants" / variant_id / "checks.json"
     checks = json.loads(checks_path.read_text(encoding="utf-8"))
     assert checks["smoke_status"] == "passed"
     assert checks["commands"][0]["exit_code"] == 0
     assert len(checks["commands"][0]["sha256"]) == 64
 
-    workspace = tmp_path / "CodexScientist" / "quests" / "QVAR" / "runtime" / "worktrees" / variant_id
+    workspace = tmp_path / "CodexScientist" / "runtime" / "worktrees" / variant_id
     (workspace / "secret.key").write_text("token=secret\n", encoding="utf-8")
     (workspace / "__pycache__").mkdir(exist_ok=True)
     (workspace / "__pycache__" / "x.pyc").write_bytes(b"cache")
@@ -513,7 +513,7 @@ def test_variant_pack_blocks_protected_workspace_drift(tmp_path: Path):
     layout, _trajectory_id, variant_id = _created_variant(tmp_path)
     checked = VariantService(layout).check(quest_id="QVAR", variant_id=variant_id)
     assert checked["ok"] is True
-    workspace = tmp_path / "CodexScientist" / "quests" / "QVAR" / "runtime" / "worktrees" / variant_id
+    workspace = tmp_path / "CodexScientist" / "runtime" / "worktrees" / variant_id
     (workspace / "evaluate.py").write_text("print('packed drift')\n", encoding="utf-8")
 
     result = VariantService(layout).pack(quest_id="QVAR", variant_id=variant_id)
@@ -548,7 +548,7 @@ def test_variant_check_missing_command_returns_structured_smoke_failure(tmp_path
 
     assert result["ok"] is False
     assert result["error_type"] == "smoke_fail"
-    checks_path = tmp_path / "CodexScientist" / "quests" / "QVAR" / "variants" / created["variant_id"] / "checks.json"
+    checks_path = tmp_path / "CodexScientist" / "variants" / created["variant_id"] / "checks.json"
     checks = json.loads(checks_path.read_text(encoding="utf-8"))
     assert checks["smoke_status"] == "failed"
     assert checks["commands"][0]["exit_code"] == 127
@@ -558,7 +558,7 @@ def test_variant_check_classifies_indentation_error_as_syntax_fail(tmp_path: Pat
     from codex_scientist.services.variant import VariantService
 
     layout, _trajectory_id, variant_id = _created_variant(tmp_path)
-    workspace = tmp_path / "CodexScientist" / "quests" / "QVAR" / "runtime" / "worktrees" / variant_id
+    workspace = tmp_path / "CodexScientist" / "runtime" / "worktrees" / variant_id
     (workspace / "train.py").write_text("def broken():\n  x = 1\n    y = 2\n", encoding="utf-8")
 
     result = VariantService(layout).check(quest_id="QVAR", variant_id=variant_id)
@@ -574,7 +574,7 @@ def test_variant_pack_excludes_common_cache_and_secret_paths(tmp_path: Path):
 
     layout, _trajectory_id, variant_id = _created_variant(tmp_path)
     assert VariantService(layout).check(quest_id="QVAR", variant_id=variant_id)["ok"] is True
-    workspace = tmp_path / "CodexScientist" / "quests" / "QVAR" / "runtime" / "worktrees" / variant_id
+    workspace = tmp_path / "CodexScientist" / "runtime" / "worktrees" / variant_id
     for rel in [".cache/tool.bin", "cache/local.txt", "secrets/config.txt", "id_rsa", "password.txt"]:
         target = workspace / rel
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -596,7 +596,7 @@ def test_variant_pack_blocks_workspace_drift_after_check(tmp_path: Path):
     _write_patch(patch_path)
     assert VariantService(layout).apply_patch(quest_id="QVAR", variant_id=variant_id, patch_path=str(patch_path))["ok"] is True
     assert VariantService(layout).check(quest_id="QVAR", variant_id=variant_id)["ok"] is True
-    workspace = tmp_path / "CodexScientist" / "quests" / "QVAR" / "runtime" / "worktrees" / variant_id
+    workspace = tmp_path / "CodexScientist" / "runtime" / "worktrees" / variant_id
     (workspace / "train.py").write_text("print('unrecorded drift')\n", encoding="utf-8")
 
     result = VariantService(layout).pack(quest_id="QVAR", variant_id=variant_id)
@@ -610,7 +610,7 @@ def test_variant_pack_blocks_unrecorded_new_file_after_check(tmp_path: Path):
 
     layout, _trajectory_id, variant_id = _created_variant(tmp_path)
     assert VariantService(layout).check(quest_id="QVAR", variant_id=variant_id)["ok"] is True
-    workspace = tmp_path / "CodexScientist" / "quests" / "QVAR" / "runtime" / "worktrees" / variant_id
+    workspace = tmp_path / "CodexScientist" / "runtime" / "worktrees" / variant_id
     (workspace / "unrecorded_extra.py").write_text("print('extra')\n", encoding="utf-8")
 
     result = VariantService(layout).pack(quest_id="QVAR", variant_id=variant_id)
@@ -625,7 +625,7 @@ def test_variant_pack_blocks_staged_tracked_drift_after_check(tmp_path: Path):
 
     layout, _trajectory_id, variant_id = _created_variant(tmp_path)
     assert VariantService(layout).check(quest_id="QVAR", variant_id=variant_id)["ok"] is True
-    workspace = tmp_path / "CodexScientist" / "quests" / "QVAR" / "runtime" / "worktrees" / variant_id
+    workspace = tmp_path / "CodexScientist" / "runtime" / "worktrees" / variant_id
     (workspace / "train.py").write_text("print('staged drift')\n", encoding="utf-8")
     _run(["git", "add", "train.py"], workspace)
 
@@ -640,7 +640,7 @@ def test_variant_pack_blocks_staged_new_file_after_check(tmp_path: Path):
 
     layout, _trajectory_id, variant_id = _created_variant(tmp_path)
     assert VariantService(layout).check(quest_id="QVAR", variant_id=variant_id)["ok"] is True
-    workspace = tmp_path / "CodexScientist" / "quests" / "QVAR" / "runtime" / "worktrees" / variant_id
+    workspace = tmp_path / "CodexScientist" / "runtime" / "worktrees" / variant_id
     (workspace / "staged_extra.py").write_text("print('extra')\n", encoding="utf-8")
     _run(["git", "add", "staged_extra.py"], workspace)
 
@@ -692,6 +692,6 @@ def test_variant_check_failure_updates_trajectory_failure(tmp_path: Path):
 
     assert result["ok"] is False
     assert result["error_type"] == "import_fail"
-    trajectory = json.loads((tmp_path / "CodexScientist" / "quests" / "QVAR" / "trajectories" / f"{trajectory_id}.json").read_text(encoding="utf-8"))
+    trajectory = json.loads((tmp_path / "CodexScientist" / "trajectories" / f"{trajectory_id}.json").read_text(encoding="utf-8"))
     assert trajectory["result"]["status"] == "failed"
     assert trajectory["failure"]["class"] == "import_fail"
