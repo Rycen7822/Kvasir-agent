@@ -2,7 +2,7 @@
 name: writing-plans
 description: Write CodexScientist-aware implementation, experiment-roadmap, code-only, and formal-command plans with TDD and durable quest outputs.
 version: 1.1.0
-author: Hermes Agent (adapted from obra/superpowers)
+author: CodexScientist Codex adapter (adapted from obra/superpowers)
 license: MIT
 metadata:
   hermes:
@@ -12,7 +12,7 @@ metadata:
 skill_role: companion
 ---
 
-> Codex adapter note: this is a Codex-packaged CodexScientist support skill adapted from the user-local Hermes skill library. Use `scripts/csctl.py call <cs_tool_name> --json ... --format json` for durable quest state, memory, artifacts, and quest-local shell execution. Load it only when it is the relevant companion to the active stage.
+> Codex adapter note: this is a Codex-packaged CodexScientist support skill. Prefer public MCP `cs_*` tools visible in `tools/list`/`cs_tool_schema` for durable quest state, memory, artifacts, and recovery anchors; use admin CLI fallbacks only when explicitly following docs/ADMIN_CLI.md. Load it only when it is the relevant companion to the active stage.
 
 # Writing Implementation Plans
 

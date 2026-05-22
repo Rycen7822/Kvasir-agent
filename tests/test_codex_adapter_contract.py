@@ -64,8 +64,11 @@ def test_csctl_public_tools_are_canonical_cs_surface():
     assert payload["transport"] == "codex-native-cli"
     assert payload["mcp"] is False
     assert "cs_events" in names
+    assert "cs_environment_validate" in names
+    assert "cs_trajectory_show" in names
+    assert "cs_feedback_ingest" in names
     assert not any(name.startswith("codexscientist_") for name in names)
-    assert payload["count"] == 48
+    assert payload["count"] == len(names)
 
     schema_payload = run_csctl("schema", "--format", "json")
     schema_names = {schema["name"] for schema in schema_payload["schemas"]}
@@ -185,7 +188,8 @@ def test_bilingual_readmes_document_current_install_flow():
         "curated canonical `cs_*`",
         "legacy `codexscientist_*`",
         "历史 `codexscientist_*`",
-        "cs_events",
+        "cs_pack_delta",
+        "compact `cs_get_quest_state`",
         "scripts/install.sh",
         "scripts/init_project.sh",
         "marketplace.json",

@@ -70,9 +70,12 @@ def test_profile_stage_and_schema_stress_subset_matches_upgrade6_contract():
     unknown_stage = tools_list_payload({"profile": "goal", "stage": "unknown-stage"})
     admin = tools_list_payload({"profile": "admin"})
 
+    core_names = {tool["name"] for tool in core["tools"]}
+    goal_names = {tool["name"] for tool in goal["tools"]}
     assert len(list_tool_specs()) == 11
     assert len(core["tools"]) == 11
-    assert len(goal["tools"]) == 33
+    assert {"cs_feedback_ingest", "cs_trajectory_search", "cs_trajectory_show"} <= goal_names
+    assert core_names.isdisjoint({"cs_feedback_ingest", "cs_trajectory_search", "cs_trajectory_show"})
     assert unknown_stage["ok"] is True
     assert unknown_stage["stage_label"] == "unknown-stage"
     assert {tool["name"] for tool in unknown_stage["tools"]} == {tool["name"] for tool in goal["tools"]}

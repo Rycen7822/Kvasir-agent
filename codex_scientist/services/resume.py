@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 from typing import Any
+
+from codex_scientist.runtime.vendor.codexscientist.shared import read_yaml
 
 from .checkpoint import CheckpointService
 from .event_store import EventStore
@@ -22,11 +25,49 @@ class ResumeService:
     @staticmethod
     def _goal_from_manifest(manifest: dict[str, Any]) -> dict[str, Any]:
         goal = manifest.get("goal") if isinstance(manifest.get("goal"), dict) else {}
+        goal = goal if isinstance(goal, dict) else {}
         return {
             "title": str(goal.get("title") or ""),
             "success_criteria": list(goal.get("success_criteria") or []),
             "non_goals": list(goal.get("non_goals") or []),
         }
+
+    def _goal_from_quest(self, quest_id: str | None) -> dict[str, Any]:
+        if not quest_id:
+            return {"title": "", "success_criteria": [], "non_goals": []}
+        quest_root = self.layout.quest_root_for(quest_id)
+        quest_yaml = read_yaml(quest_root / "quest.yaml", default={})
+        quest_yaml = quest_yaml if isinstance(quest_yaml, dict) else {}
+        title = str(quest_yaml.get("title") or "").strip()
+        success_criteria = quest_yaml.get("success_criteria")
+        non_goals = quest_yaml.get("non_goals")
+        success_criteria_list = success_criteria if isinstance(success_criteria, list) else []
+        non_goals_list = non_goals if isinstance(non_goals, list) else []
+        if not title:
+            title = self._goal_title_from_brief(quest_root / "brief.md")
+        return {"title": title, "success_criteria": list(success_criteria_list), "non_goals": list(non_goals_list)}
+
+    @staticmethod
+    def _goal_title_from_brief(path: Path) -> str:
+        if not path.exists():
+            return ""
+        lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+        in_goal = False
+        for line in lines:
+            text = line.strip()
+            if text.lower() == "## goal":
+                in_goal = True
+                continue
+            if in_goal:
+                if text.startswith("## "):
+                    break
+                if text:
+                    return text.lstrip("- ").strip()
+        for line in lines:
+            text = line.strip().lstrip("#").strip()
+            if text and text.lower() not in {"quest brief", "goal", "initial notes"}:
+                return text
+        return ""
 
     @staticmethod
     def _autonomy_mode(manifest: dict[str, Any]) -> str:
@@ -61,6 +102,8 @@ class ResumeService:
         runs = RunnerService(self.layout).list_runs()
         events = self.events.read_events()[-max(0, int(include_recent_events)):]
         goal = self._goal_from_manifest(manifest)
+        if not goal.get("title") and quest_id:
+            goal = self._goal_from_quest(quest_id)
         warnings: list[str] = []
         blocked_reason = None
         if not goal.get("title"):

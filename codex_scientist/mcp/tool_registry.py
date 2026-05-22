@@ -1,6 +1,7 @@
 """Curated MCP tool registry for CodexScientist."""
 from __future__ import annotations
 
+import os
 import re
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -9,7 +10,8 @@ from typing import Any, Callable
 from codex_scientist.mcp import goal_context, research_tools
 from codex_scientist.mcp.envelope import apply_budget_envelope
 from codex_scientist.mcp.skill_index import load_skill, search_skills
-from codex_scientist.profiles import DEFAULT_PROFILE_NAME, get_profile, get_profile_tool_names
+from codex_scientist.profiles import DEFAULT_PROFILE_NAME, PROFILES, get_profile, get_profile_tool_names
+from codex_scientist.runtime.vendor.codexscientist.artifact.schemas import ARTIFACT_DIRS
 from codex_scientist.services.artifacts import ArtifactIndexService
 from codex_scientist.services.checkpoint import CheckpointService
 from codex_scientist.services.context_pack import ContextPackService
@@ -27,6 +29,10 @@ from codex_scientist.services.trial import TrialService
 
 _TRIAL_ID_RE = re.compile(r"^T\d{4}$")
 _RUN_ID_RE = re.compile(r"^R\d{4}$")
+_ALLOWED_ARTIFACT_KINDS = tuple(sorted(ARTIFACT_DIRS))
+_EXECUTOR_MCP_ENV = "CODEXSCIENTIST_ENABLE_EXECUTOR_MCP"
+_EXECUTOR_PROFILE_NAME = "executor_local"
+_EXECUTOR_TOOL_NAMES = frozenset(PROFILES[_EXECUTOR_PROFILE_NAME].tool_names)
 
 
 @dataclass(frozen=True)
@@ -122,7 +128,8 @@ def _log_digest(args: dict[str, Any]) -> dict[str, Any]:
 
 
 def _artifact_index(args: dict[str, Any]) -> dict[str, Any]:
-    return ArtifactIndexService(_layout(args)).index(max_items=max(1, min(int(args.get("max_items") or 50), 500)))
+    quest_id = str(args.get("quest_id") or "").strip() or None
+    return ArtifactIndexService(_layout(args)).index(max_items=max(1, min(int(args.get("max_items") or 50), 500)), quest_id=quest_id)
 
 
 def _context_pack(args: dict[str, Any]) -> dict[str, Any]:
@@ -260,12 +267,48 @@ def _schema_with_registry_contract(schema: dict[str, Any], spec: ToolSpec) -> di
 
 
 def _minimal_schema_from_spec(spec: ToolSpec) -> dict[str, Any]:
+    extra_properties: dict[str, Any] = {}
+    if spec.name == "cs_resume_brief":
+        extra_properties.update({
+            "quest_id": _minimal_property_for_key("quest_id"),
+            "max_chars": {"type": "integer", "default": 8000},
+            "include_recent_events": {"type": "integer", "default": 5},
+            "include_risks": {"type": "boolean", "default": True},
+        })
+    elif spec.name == "cs_pack_delta":
+        extra_properties.update({
+            "since_event_seq": {"type": "integer", "description": "Return events after this event sequence."},
+            "since_checkpoint_id": {"type": "string", "description": "Return events after the checkpoint's event sequence."},
+            "max_chars": {"type": "integer", "default": 6000},
+        })
+    elif spec.name == "cs_checkpoint":
+        extra_properties.update({
+            "quest_id": _minimal_property_for_key("quest_id"),
+            "phase": {"type": "string", "description": "Compact label for the current research/recovery phase."},
+            "completed": {"type": "array", "items": {"type": "string"}, "description": "Short completed-work bullets to preserve across compaction."},
+            "decisions": {"type": "array", "items": {"type": "string"}, "description": "Durable decisions that future sessions should not rediscover."},
+            "validation": {"type": "array", "items": {"type": "string"}, "description": "Tests, commands, or checks that were run."},
+            "next_action": {"type": "string", "description": "Concrete next step for the next Codex session."},
+            "artifact_refs": {"type": "array", "items": {}, "description": "Paths or structured refs for artifacts needed after resume."},
+            "risk_flags": {"type": "array", "items": {"type": "string"}, "description": "Known risks/blockers that should survive context compaction."},
+            "idempotency_key": {"type": "string", "description": "Optional stable key for retry-safe checkpoint writes."},
+        })
+    elif spec.name == "cs_context_pack":
+        extra_properties.update({
+            "quest_id": _minimal_property_for_key("quest_id"),
+            "max_chars": {"type": "integer", "default": 12000},
+        })
+    elif spec.name == "cs_artifact_index":
+        extra_properties.update({
+            "quest_id": _minimal_property_for_key("quest_id"),
+            "max_items": {"type": "integer", "default": 50},
+        })
     return _schema_with_registry_contract(
         {
             "name": spec.name,
             "description": spec.description,
             "mcp_registry_only": True,
-            "input_schema": {"type": "object", "properties": {}, "required": [], "additionalProperties": True},
+            "input_schema": {"type": "object", "properties": extra_properties, "required": [], "additionalProperties": True},
         },
         spec,
     )
@@ -357,6 +400,27 @@ for _native_name in [
     "cs_refresh_summary",
     "cs_paper_fetch",
     "cs_arxiv",
+    "cs_environment_register",
+    "cs_environment_validate",
+    "cs_environment_show",
+    "cs_feedback_ingest",
+    "cs_trajectory_record",
+    "cs_trajectory_search",
+    "cs_trajectory_show",
+    "cs_evolutionary_plan_round",
+    "cs_variant_create",
+    "cs_variant_apply_patch",
+    "cs_variant_check",
+    "cs_variant_pack",
+    "cs_scheduler_submit",
+    "cs_scheduler_status",
+    "cs_worker_claim",
+    "cs_worker_heartbeat",
+    "cs_worker_collect",
+    "cs_worker_upload_artifact",
+    "cs_evolutionary_round_submit",
+    "cs_implementer_patch_check",
+    "cs_implementer_repair_patch",
     "cs_strict_research_prepare",
     "cs_strict_research_record_candidate",
     "cs_strict_research_upsert_candidate",
@@ -415,6 +479,27 @@ _SPECS: list[ToolSpec] = [
     _spec("cs_refresh_summary", "Refresh SUMMARY.md from recent state.", group="paper", read_only=False, idempotent=False, required=("quest_id",)),
     _spec("cs_paper_fetch", "Fetch official paper PDF into the quest library.", group="paper", read_only=False, idempotent=False, required=("quest_id",)),
     _spec("cs_arxiv", "Read or list the quest-local arXiv library.", group="literature", required=("quest_id",)),
+    _spec("cs_environment_register", "Register an execution-grounded environment manifest.", group="execution_planning", read_only=False, idempotent=False, required=("quest_id", "manifest")),
+    _spec("cs_environment_validate", "Validate an execution-grounded environment manifest.", group="execution_planning", required=("quest_id", "env_id")),
+    _spec("cs_environment_show", "Read an execution-grounded environment manifest.", group="execution_planning", required=("quest_id", "env_id")),
+    _spec("cs_feedback_ingest", "Ingest local execution feedback metrics/logs into a trajectory.", group="execution_feedback", read_only=False, idempotent=False, required=("quest_id", "env_id", "trajectory_id", "run_id", "source_kind")),
+    _spec("cs_trajectory_record", "Create or update an execution-grounded trajectory record.", group="trajectory", read_only=False, idempotent=False, required=("quest_id",)),
+    _spec("cs_trajectory_search", "Search execution-grounded trajectories.", group="trajectory", required=("quest_id",)),
+    _spec("cs_trajectory_show", "Read one execution-grounded trajectory.", group="trajectory", required=("quest_id", "trajectory_id")),
+    _spec("cs_evolutionary_plan_round", "Create a deterministic plan-only evolutionary round; never submits jobs or creates variants.", group="execution_planning", read_only=False, idempotent=True, required=("quest_id", "env_id")),
+    _spec("cs_variant_create", "Create an isolated execution variant worktree behind executor approval gates.", group="executor", read_only=False, idempotent=False, required=("quest_id", "env_id", "trajectory_id", "idea_id")),
+    _spec("cs_variant_apply_patch", "Apply a patch inside an isolated variant workspace behind executor approval gates.", group="executor", read_only=False, idempotent=False, required=("quest_id", "variant_id", "patch_path")),
+    _spec("cs_variant_check", "Run smoke checks for a variant behind executor approval gates.", group="executor", read_only=False, idempotent=False, required=("quest_id", "variant_id")),
+    _spec("cs_variant_pack", "Create a deterministic variant package behind executor approval gates.", group="executor", read_only=False, idempotent=False, required=("quest_id", "variant_id")),
+    _spec("cs_scheduler_submit", "Submit one executor-local scheduler job for a packed variant.", group="executor", read_only=False, idempotent=False, required=("quest_id", "env_id", "trajectory_id", "variant_id", "package_path", "command")),
+    _spec("cs_scheduler_status", "Read executor-local scheduler queue status.", group="executor", required=()),
+    _spec("cs_worker_claim", "Claim and start one executor-local scheduler job.", group="executor", read_only=False, idempotent=False, required=("worker_id",)),
+    _spec("cs_worker_heartbeat", "Record a heartbeat for an executor-local worker run.", group="executor", read_only=False, idempotent=True, required=("run_id",)),
+    _spec("cs_worker_collect", "Collect one executor-local worker job and ingest metrics/log feedback.", group="executor", read_only=False, idempotent=False, required=("job_id",)),
+    _spec("cs_worker_upload_artifact", "Copy one local worker artifact into the quest execution-grounded artifact area.", group="executor", read_only=False, idempotent=False, required=("job_id", "artifact_path")),
+    _spec("cs_evolutionary_round_submit", "Submit scheduler jobs for an existing approved EvolutionaryRoundPlan; never creates variants.", group="executor", read_only=False, idempotent=False, required=("quest_id", "env_id", "round_id", "submissions")),
+    _spec("cs_implementer_patch_check", "Dry-run an implementer patch against a variant behind executor approval gates.", group="executor", read_only=False, idempotent=False, required=("quest_id", "variant_id", "patch_path")),
+    _spec("cs_implementer_repair_patch", "Return gated patch-repair guidance for an implementer failure.", group="executor", read_only=False, idempotent=False, required=("quest_id", "variant_id")),
     _spec("cs_strict_research_prepare", "Initialize strict literature research mode for a quest.", group="literature", read_only=False, idempotent=False, required=("quest_id",)),
     _spec("cs_strict_research_record_candidate", "Append a strict-research candidate paper row.", group="literature", read_only=False, idempotent=False, required=("quest_id", "title")),
     _spec("cs_strict_research_upsert_candidate", "Upsert a strict-research candidate paper row.", group="literature", read_only=False, idempotent=False, required=("quest_id",)),
@@ -458,6 +543,24 @@ _STRICT_REQUIRED_ARG_TOOLS = frozenset(
         "cs_trial_evaluate",
         "cs_trial_decide",
         "cs_create_analysis_campaign",
+        "cs_environment_register",
+        "cs_environment_validate",
+        "cs_environment_show",
+        "cs_feedback_ingest",
+        "cs_trajectory_record",
+        "cs_trajectory_search",
+        "cs_trajectory_show",
+        "cs_evolutionary_plan_round",
+        "cs_variant_create",
+        "cs_variant_apply_patch",
+        "cs_variant_check",
+        "cs_variant_pack",
+        "cs_scheduler_submit",
+        "cs_scheduler_status",
+        "cs_worker_claim",
+        "cs_worker_collect",
+        "cs_implementer_patch_check",
+        "cs_implementer_repair_patch",
     }
 )
 
@@ -518,14 +621,123 @@ def _error_payload(error_type: str, error: str, recoverable: bool, tool_name: st
     return payload
 
 
+def _truthy(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    return str(value or "").strip().lower() in {"1", "true", "yes", "y", "on"}
+
+
+def _executor_manifest_mcp_enabled(environment: dict[str, Any]) -> bool:
+    raw_executor = environment.get("executor")
+    executor = raw_executor if isinstance(raw_executor, dict) else {}
+    return _truthy(environment.get("executor_mcp_enabled")) or _truthy(executor.get("mcp_enabled"))
+
+
+def _executor_mcp_gate_error(args: dict[str, Any], *, tool_name: str) -> dict[str, Any] | None:
+    if not _truthy(os.environ.get(_EXECUTOR_MCP_ENV)):
+        return _error_payload(
+            "executor_mcp_disabled",
+            f"Executor MCP profile requires {_EXECUTOR_MCP_ENV}=1.",
+            True,
+            tool_name,
+            required_env=_EXECUTOR_MCP_ENV,
+        )
+    missing = [key for key in ("quest_id", "env_id") if _is_missing_arg(args.get(key))]
+    if missing:
+        return _error_payload(
+            "executor_mcp_manifest_required",
+            "Executor MCP profile requires quest_id/env_id so the environment manifest can authorize executor exposure.",
+            True,
+            tool_name,
+            missing_context_keys=missing,
+        )
+    from codex_scientist.services.environment import EnvironmentService
+
+    shown = EnvironmentService(_layout(args)).show(quest_id=str(args["quest_id"]), env_id=str(args["env_id"]))
+    if shown.get("ok") is not True:
+        payload = _normalized_failure_payload(dict(shown), tool_name=tool_name, args=args)
+        payload.setdefault("error_type", "executor_mcp_manifest_required")
+        return payload
+    raw_environment = shown.get("environment")
+    environment = raw_environment if isinstance(raw_environment, dict) else {}
+    if not _executor_manifest_mcp_enabled(environment):
+        return _error_payload(
+            "executor_mcp_manifest_required",
+            "Executor MCP profile requires environment manifest flag executor.mcp_enabled=true.",
+            True,
+            tool_name,
+            required_manifest_flag="executor.mcp_enabled",
+        )
+    return None
+
+
 def _analysis_campaign_retry_template(args: dict[str, Any]) -> dict[str, Any]:
     required = ["quest_id", "campaign_title", "campaign_goal", "slices"]
+    writing_keys = ["selected_outline_ref", "research_questions", "experimental_designs", "todo_items"]
+    raw_slices_value = args.get("slices")
+    raw_slices = raw_slices_value if isinstance(raw_slices_value, list) else []
+    first_slice = next((item for item in raw_slices if isinstance(item, dict)), {})
+    slice_id = str(first_slice.get("slice_id") or "S1").strip() or "S1"
+    todo_template = {
+        "slice_id": slice_id,
+        "section_id": "paper-section-id",
+        "item_id": f"{slice_id}-evidence",
+        "paper_role": "evidence",
+        "claim_links": ["claim-id"],
+    }
     return {
         "name": "cs_create_analysis_campaign",
         "required_arguments": required,
         "missing_arguments": [key for key in required if _is_missing_arg(args.get(key))],
-        "known_arguments": _known_args(args, required),
+        "known_arguments": _known_args(args, [*required, *writing_keys]),
+        "writing_facing_required_arguments": writing_keys,
+        "writing_facing_rule": "If selected_outline_ref, research_questions, experimental_designs, or todo_items is present, provide all four and one outline-bound todo item per slice.",
+        "todo_item_template": todo_template,
+        "minimal_writing_example": {
+            "selected_outline_ref": str(args.get("selected_outline_ref") or "outline-001"),
+            "research_questions": args.get("research_questions") or ["What evidence gap does this slice close?"],
+            "experimental_designs": args.get("experimental_designs") or ["Run the full planned analysis for this slice; do not simplify the protocol."],
+            "todo_items": args.get("todo_items") or [todo_template],
+        },
     }
+
+
+def _analysis_campaign_preflight(args: dict[str, Any]) -> dict[str, Any] | None:
+    writing_keys = ("selected_outline_ref", "research_questions", "experimental_designs", "todo_items")
+    writing_facing = any(not _is_missing_arg(args.get(key)) for key in writing_keys)
+    if not writing_facing:
+        return None
+    missing = [key for key in writing_keys if _is_missing_arg(args.get(key))]
+    todo_items_value = args.get("todo_items")
+    slices_value = args.get("slices")
+    todo_items = todo_items_value if isinstance(todo_items_value, list) else []
+    slices = slices_value if isinstance(slices_value, list) else []
+    slice_ids = [str(item.get("slice_id") or "").strip() for item in slices if isinstance(item, dict) and str(item.get("slice_id") or "").strip()]
+    todo_by_slice = {
+        str(item.get("slice_id") or "").strip(): item
+        for item in todo_items
+        if isinstance(item, dict) and str(item.get("slice_id") or "").strip()
+    }
+    for slice_id in slice_ids:
+        item = todo_by_slice.get(slice_id)
+        if item is None:
+            if "todo_items" not in missing:
+                missing.append("todo_items")
+            continue
+        for field in ("section_id", "item_id", "paper_role", "claim_links"):
+            if _is_missing_arg(item.get(field)):
+                missing.append(f"todo_items[{slice_id}].{field}")
+    if missing:
+        return _error_payload(
+            "missing_argument",
+            "Writing-facing analysis campaigns require selected_outline_ref, research_questions, experimental_designs, todo_items, and outline-bound todo fields before slices can be launched.",
+            True,
+            "cs_create_analysis_campaign",
+            missing_context_keys=missing,
+            retry_template=_analysis_campaign_retry_template(args),
+            suggested_next_action="Retry cs_create_analysis_campaign with the missing writing-facing fields; omit all writing-facing fields only for evidence-only campaigns.",
+        )
+    return None
 
 
 def _value_error_type(message: str) -> str:
@@ -563,6 +775,19 @@ def _normalized_failure_payload(payload: dict[str, Any], *, tool_name: str | Non
     current["error_type"] = error_type
     current["recoverable"] = recoverable
     current["error"] = error
+    if tool_name == "cs_bash_exec" and error == "workdir_outside_quest":
+        layout = _layout(call_args)
+        quest_id = str(call_args.get("quest_id") or "").strip()
+        quest_root = str(layout.quest_root_for(quest_id)) if quest_id else str(layout.state_root)
+        current["error_type"] = "workdir_outside_quest"
+        current["allowed_roots"] = [quest_root]
+        current["retry_template"] = {
+            "name": "cs_bash_exec",
+            "required_arguments": ["quest_id", "operation", "command", "command_class", "provenance_reason", "experiment_or_artifact_id", "cwd_policy"],
+            "workdir": quest_root,
+            "cwd_policy": "quest",
+        }
+        current["suggested_next_action"] = "Retry cs_bash_exec with workdir under the quest root, or omit workdir and keep cwd_policy=quest."
     if tool_name == "cs_confirm_baseline" and "baseline_path" in error and "quest_root" in error:
         current.setdefault("retry_template", {
             "name": "cs_confirm_baseline",
@@ -615,6 +840,28 @@ def _validate_required_args(name: str, args: dict[str, Any], spec: ToolSpec) -> 
 
 
 _MEMORY_TOOLS = frozenset({"cs_memory_search", "cs_memory_read", "cs_memory_list_recent", "cs_memory_write"})
+
+
+def _artifact_record_preflight(args: dict[str, Any]) -> dict[str, Any] | None:
+    raw_payload = args.get("payload")
+    payload = dict(raw_payload) if isinstance(raw_payload, dict) else {}
+    top_kind = str(args.get("kind") or "").strip()
+    requested_kind = str(payload.get("kind") or top_kind or "report").strip() or "report"
+    if requested_kind in _ALLOWED_ARTIFACT_KINDS:
+        return None
+    summary = str(args.get("summary") or payload.get("summary") or "").strip()
+    retry_payload = {"kind": "report", "report_type": requested_kind}
+    if summary:
+        retry_payload["summary"] = summary
+    return _error_payload(
+        "invalid_argument",
+        f"Unknown artifact kind: {requested_kind}. Use one of allowed_kinds, or store semantic subtypes as kind=report with payload.report_type.",
+        True,
+        "cs_artifact_record",
+        allowed_kinds=list(_ALLOWED_ARTIFACT_KINDS),
+        retry_template={"name": "cs_artifact_record", "kind": "report", "payload": retry_payload},
+        suggested_next_action="Retry cs_artifact_record with a canonical kind. For dataset_inspection or metric_report use kind=report and set payload.report_type to the semantic subtype.",
+    )
 
 
 def _memory_preflight(name: str, args: dict[str, Any]) -> dict[str, Any] | None:
@@ -718,6 +965,39 @@ def list_tool_specs(profile: str | None = None, stage: str | None = None) -> lis
     return [spec for name in names if (spec := _SPECS_BY_NAME.get(name)) is not None]
 
 
+def public_mcp_tool_names(args: dict[str, Any] | None = None) -> set[str]:
+    names: set[str] = set()
+    for profile in PROFILES.values():
+        if profile.registers_mcp:
+            names.update(profile.tool_names)
+    payload_args = dict(args or {})
+    if _executor_mcp_gate_error(payload_args, tool_name="tools/list") is None:
+        names.update(_EXECUTOR_TOOL_NAMES)
+    return names
+
+
+def is_tool_registered_for_mcp(name: str, args: dict[str, Any] | None = None) -> bool:
+    return name in public_mcp_tool_names(args)
+
+
+def mcp_tool_not_registered_payload(name: str) -> dict[str, Any]:
+    if name not in _SPECS_BY_NAME:
+        return _finalize_tool_payload(_error_payload("unknown_tool", f"Unknown MCP tool: {name}", True, name), tool_name=name, args={})
+    return _finalize_tool_payload(
+        _error_payload(
+            "tool_not_registered_for_mcp",
+            f"Tool is not registered for the default Codex MCP public surface: {name}",
+            True,
+            name,
+            registered_profiles=[profile.name for profile in PROFILES.values() if profile.registers_mcp and name in profile.tool_names],
+            suggested_next_action="Call tools/list and choose one of the registered public CodexScientist MCP tools; hidden admin/autonomous tools are not callable over default MCP.",
+            retry_template={"name": "tools/list", "profiles": [profile.name for profile in PROFILES.values() if profile.registers_mcp]},
+        ),
+        tool_name=name,
+        args={},
+    )
+
+
 def tools_list_payload(args: dict[str, Any] | None = None) -> dict[str, Any]:
     payload_args = dict(args or {})
     requested_profile = str(payload_args.get("profile") or DEFAULT_PROFILE_NAME).strip() or DEFAULT_PROFILE_NAME
@@ -736,20 +1016,25 @@ def tools_list_payload(args: dict[str, Any] | None = None) -> dict[str, Any]:
     if stage_label:
         warnings.append("stage_label_not_used_for_tool_filtering")
     if not profile_obj.registers_mcp:
-        return _finalize_tool_payload(
-            _error_payload(
-                "profile_not_registered_for_mcp",
-                f"Profile is not registered for default MCP: {requested_profile}",
-                True,
-                "tools/list",
-                profile=requested_profile,
-                stage_label=stage_label,
-                warnings=warnings,
-                suggested_next_action="Use an agent-facing profile such as core, evidence, formal_run, literature, or paper_write.",
-            ),
-            tool_name="tools/list",
-            args=payload_args,
-        )
+        if profile_obj.name == _EXECUTOR_PROFILE_NAME and any(not _is_missing_arg(payload_args.get(key)) for key in ("project", "project_root", "quest_id", "env_id")):
+            executor_gate_error = _executor_mcp_gate_error(payload_args, tool_name="tools/list")
+            if executor_gate_error is not None:
+                return _finalize_tool_payload(executor_gate_error, tool_name="tools/list", args=payload_args)
+        else:
+            return _finalize_tool_payload(
+                _error_payload(
+                    "profile_not_registered_for_mcp",
+                    f"Profile is not registered for default MCP: {requested_profile}",
+                    True,
+                    "tools/list",
+                    profile=requested_profile,
+                    stage_label=stage_label,
+                    warnings=warnings,
+                    suggested_next_action="Use an agent-facing profile such as core, evidence, formal_run, literature, or paper_write.",
+                ),
+                tool_name="tools/list",
+                args=payload_args,
+            )
     specs = list_tool_specs(requested_profile)
     return apply_budget_envelope(
         {
@@ -799,6 +1084,20 @@ def call_tool(name: str, args: dict[str, Any] | None = None) -> dict[str, Any]:
         bash_preflight = _bash_exec_preflight(call_args)
         if bash_preflight is not None:
             return _finalize_tool_payload(bash_preflight, tool_name=name, args=call_args)
+    if name == "cs_create_analysis_campaign":
+        analysis_preflight = _analysis_campaign_preflight(call_args)
+        if analysis_preflight is not None:
+            return _finalize_tool_payload(analysis_preflight, tool_name=name, args=call_args)
+    if name == "cs_artifact_record":
+        artifact_preflight = _artifact_record_preflight(call_args)
+        if artifact_preflight is not None:
+            return _finalize_tool_payload(artifact_preflight, tool_name=name, args=call_args)
+    executor_gate_authorized = False
+    if name in _EXECUTOR_TOOL_NAMES:
+        executor_preflight = _executor_mcp_gate_error(call_args, tool_name=name)
+        if executor_preflight is not None:
+            return _finalize_tool_payload(executor_preflight, tool_name=name, args=call_args)
+        executor_gate_authorized = True
     memory_preflight = _memory_preflight(name, call_args)
     if memory_preflight is not None:
         return _finalize_tool_payload(memory_preflight, tool_name=name, args=call_args)
@@ -806,6 +1105,9 @@ def call_tool(name: str, args: dict[str, Any] | None = None) -> dict[str, Any]:
     required_error = _validate_required_args(name, call_args, spec)
     if required_error is not None:
         return _finalize_tool_payload(required_error, tool_name=name, args=call_args)
+    executor_gate_token = None
+    if executor_gate_authorized:
+        executor_gate_token = research_tools.native_tools._MCP_EXECUTOR_GATE_GRANTED.set(True)  # noqa: SLF001 - internal MCP-to-runtime gate context
     try:
         payload = handler(call_args)
     except FileNotFoundError as exc:
@@ -814,4 +1116,7 @@ def call_tool(name: str, args: dict[str, Any] | None = None) -> dict[str, Any]:
         return _finalize_tool_payload(_error_payload(_value_error_type(str(exc)), str(exc), True, name), tool_name=name, args=call_args)
     except Exception as exc:
         return _finalize_tool_payload(_error_payload("internal_error", f"MCP tool failed: {exc}", True, name), tool_name=name, args=call_args)
+    finally:
+        if executor_gate_token is not None:
+            research_tools.native_tools._MCP_EXECUTOR_GATE_GRANTED.reset(executor_gate_token)  # noqa: SLF001 - internal MCP-to-runtime gate context
     return _finalize_tool_payload(payload, tool_name=name, args=call_args)

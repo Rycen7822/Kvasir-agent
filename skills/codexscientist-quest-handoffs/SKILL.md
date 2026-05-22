@@ -60,7 +60,7 @@ For full quest-copy verification, compare recursively by relative path and hash.
 
 ## Pitfalls
 
-- Do not overwrite target-local project configuration while syncing, such as `CodexScientist/config/hermes-native.yaml`, unless the user explicitly asks.
+- Do not overwrite target-local project configuration while syncing, such as `CodexScientist/config/codex-native.yaml`, unless the user explicitly asks.
 - Do not claim synced git heads match until after the final artifact/milestone write and any follow-up sync.
 - Do not omit exact paths; future agents need absolute path anchors and relative reading order.
 - Do not fabricate quest metrics from memory; read current state and files.

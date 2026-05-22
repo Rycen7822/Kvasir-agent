@@ -14,8 +14,8 @@ python scripts/cs_mcp.py --stdio-smoke call cs_doctor '{}'
 
 The default core profile exposes 11 curated `cs_*` tools for status, quest anchoring, passive context/recovery anchors, checkpointing, and schema lookup. Wider agent-facing profiles are explicit:
 
-- `evidence`: 31 tools for quest-local evidence, memory, manifest, baseline, artifact, experiment, analysis, and method ledgers.
-- `formal_run`: 32 tools; `evidence` plus formal `cs_bash_exec` provenance-gated execution.
+- `evidence`: 33 tools for quest-local evidence, memory, manifest, baseline, artifact, experiment, analysis, and method ledgers.
+- `formal_run`: 34 tools; `evidence` plus formal `cs_bash_exec` provenance-gated execution.
 - `literature`: 23 tools for strict literature and quest-local paper resources.
 - `paper_write`: 27 tools for literature plus paper outline/bundle/summary/review work.
 
@@ -61,7 +61,7 @@ Recommended flow after Codex has entered goal context:
 1. `cs_new_quest` and `cs_record_user_requirement` anchor the task.
 2. Choose an explicit MCP profile for the current evidence surface, usually `evidence`, `formal_run`, `literature`, or `paper_write`.
 3. Use baseline, idea, experiment, analysis, literature, or paper tools to record research evidence and gates.
-4. Use `cs_goal_watchdog` only as a manual watchdog diagnostic during long-running work.
+4. Use `cs_status`, `cs_resume_brief`, and `cs_pack_delta` for public MCP recovery during long-running work.
 5. Use `cs_checkpoint` at phase boundaries.
 6. Use `cs_resume_brief` and `cs_pack_delta` after context compaction or interruption.
 

@@ -19,7 +19,7 @@ Do not compress normal recovery into a few hundred characters. Use a bounded str
 3. If a prior checkpoint exists and many events changed, call `cs_pack_delta` from that event sequence or checkpoint id.
 4. Inspect long logs through `cs_log_digest` before any bounded raw tail.
 5. Inspect artifacts through `cs_artifact_index` before opening artifact files.
-6. Use `cs_goal_watchdog` only as a manual diagnostic for runner/heartbeat/stuck-state questions.
+6. Use public recovery payloads from `cs_status`, `cs_resume_brief`, and `cs_pack_delta` for runner/heartbeat/stuck-state questions; hidden/admin-only watchdog diagnostics stay outside the default MCP surface.
 7. Finish each phase with `cs_checkpoint` so the next turn can recover without chat history.
 
 ## Current MCP profiles

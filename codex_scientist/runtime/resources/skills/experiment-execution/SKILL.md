@@ -2,7 +2,7 @@
 name: experiment-execution
 description: Execute CodexScientist quest experiment command documents with durable cs_* logging, manifest validation, and cautious baseline-gate handling.
 version: 1.0.10
-author: Hermes Agent
+author: CodexScientist Codex adapter
 license: MIT
 metadata:
   hermes:
@@ -11,7 +11,7 @@ metadata:
 skill_role: companion
 ---
 
-> Codex adapter note: this is a Codex-packaged CodexScientist support skill adapted from the user-local Hermes skill library. Use `scripts/csctl.py call <cs_tool_name> --json ... --format json` for durable quest state, memory, artifacts, and quest-local shell execution. Load it only when it is the relevant companion to the active stage.
+> Codex adapter note: this is a Codex-packaged CodexScientist support skill. Prefer public MCP `cs_*` tools visible in `tools/list`/`cs_tool_schema` for durable quest state, memory, artifacts, and recovery anchors; use admin CLI fallbacks only when explicitly following docs/ADMIN_CLI.md. Load it only when it is the relevant companion to the active stage.
 
 # CodexScientist Experiment Execution
 
@@ -21,7 +21,7 @@ This is a class-level companion for CodexScientist experiment execution. If the 
 
 ## Core rules
 
-- Use Codex/CodexScientist native `cs_*` tools through `scripts/csctl.py` for durable quest state and bash execution; do not call an external legacy CLI.
+- Use public MCP `cs_*` tools visible in `tools/list`/`cs_tool_schema` for durable quest state and bash execution; do not call an external legacy CLI.
 - Run shell commands through `cs_bash_exec` so session ids, logs, and artifacts remain auditable.
 - This skill's support note `references/early-manifest-validation.md` captures the session-derived validation checklist for early resource/split/floorplan manifests.
 - This skill's support note `references/baseline-gate-vs-comparators.md` captures the baseline-gate waiver pattern for studies with internal comparators but no formal CodexScientist baseline artifact.

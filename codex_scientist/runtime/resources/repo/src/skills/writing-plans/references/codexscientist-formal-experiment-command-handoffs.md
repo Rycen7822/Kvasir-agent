@@ -13,7 +13,7 @@ Use this reference when a user asks for a step-by-step command document they wil
 1. Header with quest root, experiments root, timestamp, and purpose.
 2. "执行前必读" section:
    - Document is not evidence that commands have been run.
-   - If commands are run by Hermes/CodexScientist, they must go through `cs_bash_exec`.
+   - If commands are run as CodexScientist quest evidence, they must go through public MCP `cs_bash_exec`.
    - Resources are read-only; outputs live under `experiments/`.
    - Protocol split/candidate-set boundaries.
    - Any known CLI caveat, especially `planned_not_executed` stubs.

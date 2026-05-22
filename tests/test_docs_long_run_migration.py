@@ -18,7 +18,6 @@ def test_long_run_and_migration_docs_are_p4_native_and_do_not_overclaim_wall_clo
         "wall-clock soak",
         "do not claim stable ten-day wall-clock operation",
         "migrate legacy quests",
-        "cs_goal_watchdog",
         "progress watchdog",
         "cs_checkpoint",
     ]:

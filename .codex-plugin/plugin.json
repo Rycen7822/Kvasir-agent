@@ -3,14 +3,14 @@
   "version": "0.1.0",
   "description": "CodexScientist Codex plugin with MCP-only default research semantics for project-local research state. Codex-native tools handle routine file, shell, Git, test, build, and process work.",
   "author": {
-    "name": "CodexScientist Hermes adaptation"
+    "name": "CodexScientist Codex MCP"
   },
   "skills": "./skills",
   "interface": {
     "displayName": "CodexScientist Codex MCP",
     "shortDescription": "MCP-only default for CodexScientist research state.",
     "longDescription": "A self-contained Codex CLI plugin exposing project-local research state through scripts/cs_mcp.py as the MCP-only default research control plane. Ordinary file editing/search, shell, Git, tests, builds, and process management remain Codex-native responsibilities. `/goal` is Codex-native; CodexScientist does not implement slash commands.",
-    "developerName": "CodexScientist Hermes adaptation",
+    "developerName": "CodexScientist Codex MCP",
     "category": "Productivity",
     "capabilities": [
       "Read",

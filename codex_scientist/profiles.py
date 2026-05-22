@@ -11,6 +11,7 @@ class ToolProfile:
     name: str
     tool_names: tuple[str, ...]
     registers_mcp: bool = True
+    mcp_gate: str | None = None
     deprecated: bool = False
     replacement: str | None = None
 
@@ -38,6 +39,34 @@ QUEST_MEMORY_TOOLS = (
     "cs_memory_write",
 )
 
+PHASE1_TOOLS = (
+    "cs_environment_register",
+    "cs_environment_validate",
+    "cs_environment_show",
+    "cs_feedback_ingest",
+    "cs_trajectory_record",
+    "cs_trajectory_search",
+    "cs_trajectory_show",
+)
+PHASE1_EVIDENCE_TOOLS = ("cs_feedback_ingest", "cs_trajectory_search", "cs_trajectory_show")
+PHASE3_PLANNING_TOOLS = ("cs_evolutionary_plan_round",)
+
+EXECUTOR_LOCAL_TOOLS = (
+    "cs_variant_create",
+    "cs_variant_apply_patch",
+    "cs_variant_check",
+    "cs_variant_pack",
+    "cs_implementer_patch_check",
+    "cs_implementer_repair_patch",
+    "cs_scheduler_submit",
+    "cs_scheduler_status",
+    "cs_worker_claim",
+    "cs_worker_heartbeat",
+    "cs_worker_collect",
+    "cs_worker_upload_artifact",
+    "cs_evolutionary_round_submit",
+)
+
 EVIDENCE_ADDITIONS = (
     *QUEST_MEMORY_TOOLS,
     "cs_manifest_init",
@@ -48,6 +77,7 @@ EVIDENCE_ADDITIONS = (
     "cs_artifact_record",
     "cs_artifact_index",
     "cs_log_digest",
+    *PHASE1_EVIDENCE_TOOLS,
     "cs_record_main_experiment",
     "cs_create_analysis_campaign",
     "cs_get_analysis_campaign",
@@ -60,6 +90,7 @@ EVIDENCE_ADDITIONS = (
     "cs_update_method_scoreboard",
 )
 EVIDENCE_TOOLS = tuple(dict.fromkeys((*CORE_TOOLS, *EVIDENCE_ADDITIONS)))
+EXECUTION_PLANNING_TOOLS = tuple(dict.fromkeys((*CORE_TOOLS, *PHASE1_TOOLS, *PHASE3_PLANNING_TOOLS)))
 
 FORMAL_RUN_TOOLS = tuple(dict.fromkeys((*EVIDENCE_TOOLS, "cs_bash_exec")))
 
@@ -154,11 +185,13 @@ STAGE_ALIASES = LEGACY_STAGE_ALIASES
 PROFILES: Mapping[str, ToolProfile] = {
     "core": ToolProfile(name="core", tool_names=CORE_TOOLS),
     "evidence": ToolProfile(name="evidence", tool_names=EVIDENCE_TOOLS),
+    "execution_planning": ToolProfile(name="execution_planning", tool_names=EXECUTION_PLANNING_TOOLS),
     "formal_run": ToolProfile(name="formal_run", tool_names=FORMAL_RUN_TOOLS),
     "literature": ToolProfile(name="literature", tool_names=LITERATURE_TOOLS),
     "paper_write": ToolProfile(name="paper_write", tool_names=PAPER_WRITE_TOOLS),
     "goal": ToolProfile(name="goal", tool_names=EVIDENCE_TOOLS, deprecated=True, replacement="evidence"),
     "autonomous": ToolProfile(name="autonomous", tool_names=AUTONOMOUS_TOOLS, registers_mcp=False),
+    "executor_local": ToolProfile(name="executor_local", tool_names=EXECUTOR_LOCAL_TOOLS, registers_mcp=False, mcp_gate="executor_local"),
     "admin": ToolProfile(name="admin", tool_names=ADMIN_TOOLS, registers_mcp=False),
     "legacy_compat": ToolProfile(name="legacy_compat", tool_names=LEGACY_COMPAT_TOOLS, registers_mcp=False),
 }

@@ -30,6 +30,13 @@ python scripts/cs_mcp.py --stdio-smoke call cs_doctor '{}'
 - `goal`: deprecated compatibility alias for `evidence`; prefer `evidence` for Codex-native goal work.
 - `admin`, `autonomous`, and `legacy_compat`: not registered as default MCP surfaces; use only for explicit human/admin/debug/CI/recovery compatibility.
 
+Planned execution-grounded profiles are fail-closed until their services and tests exist:
+
+- `execution_planning`: plan-only profile for environment summaries, feedback ingestion, trajectory lookup, and `cs_evolutionary_round_plan`; it records or proposes research state but does not run jobs or apply patches.
+- `executor_local`: local executor profile for gated variant and run tools such as `cs_variant_create`; it is not registered by default and remains blocked unless `CODEXSCIENTIST_ENABLE_EXECUTOR_MCP=1`, manifest authorization, budget, and environment validation all pass.
+
+The default profile must not expose executor tools. Missing execution-grounded tools fail closed; do not replace them with hidden admin/debug commands.
+
 The `stage` argument is a context label for records and prompts. It does not filter `tools/list` output.
 
 Important evidence/formal tools include:
@@ -68,7 +75,7 @@ Evidence-poor or duplicate candidates fail closed with structured evidence gaps 
 Long-running goal work should keep recovery anchors fresh:
 
 1. state-changing MCP tools do not auto-inject checkpoint/manual-diagnostic gate metadata;
-2. `cs_goal_watchdog` reports running jobs, stale heartbeat state, and stuck runners as a manual diagnostic;
+2. public recovery uses `cs_status`, `cs_resume_brief`, `cs_pack_delta`, `cs_log_digest`, and `cs_artifact_index`; hidden/admin-only watchdog diagnostics stay outside the default MCP surface;
 3. `cs_checkpoint` records completed phase boundaries, decisions, validation, and artifact refs;
 4. `cs_resume_brief` returns current quest state, active run id, passive recovery anchor, source refs, and bounded text for compaction recovery.
 

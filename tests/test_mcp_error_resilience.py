@@ -70,7 +70,7 @@ def test_stdio_tool_error_content_and_structured_content_are_redacted():
         "jsonrpc": "2.0",
         "id": 1,
         "method": "tools/call",
-        "params": {"name": "cs_queue_status", "arguments": {"limit": secret}},
+        "params": {"name": "cs_tool_schema", "arguments": {"name": "cs_missing_" + secret}},
     }
     completed = subprocess.run(
         [PYTHON, str(PLUGIN_ROOT / "scripts" / "cs_mcp.py")],

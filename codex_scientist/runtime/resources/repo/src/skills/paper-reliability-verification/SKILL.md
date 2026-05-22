@@ -2,7 +2,7 @@
 name: paper-reliability-verification
 description: Verify paper reliability through the bundled CodexScientist verifier workflow before using papers as evidence.
 version: 1.1.2
-author: Hermes Agent
+author: CodexScientist Codex adapter
 license: MIT
 metadata:
   hermes:
@@ -12,7 +12,7 @@ metadata:
 skill_role: companion
 ---
 
-> Codex adapter note: this is a Codex-packaged CodexScientist support skill adapted from the user-local Hermes skill library. Use `scripts/csctl.py call <cs_tool_name> --json ... --format json` for durable quest state, memory, artifacts, and quest-local shell execution. Load it only when it is the relevant companion to the active stage.
+> Codex adapter note: this is a Codex-packaged CodexScientist support skill. Prefer public MCP `cs_*` tools visible in `tools/list`/`cs_tool_schema` for durable quest state, memory, artifacts, and recovery anchors; use admin CLI fallbacks only when explicitly following docs/ADMIN_CLI.md. Load it only when it is the relevant companion to the active stage.
 > Use `cs_paper_reliability_verify` as the primary CodexScientist tool wrapper; it stores reliability cards under quest-local `reference/reliability_cards/` and keeps `accepted_publication` evidence auditable.
 
 # Paper Reliability Verification

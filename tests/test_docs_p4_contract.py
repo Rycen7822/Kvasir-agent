@@ -96,7 +96,7 @@ def test_default_docs_are_mcp_only_and_admin_cli_is_isolated():
     )
     assert "MCP-only default" in default_docs
     assert "`/goal` is Codex-native" in default_docs
-    assert "cs_goal_watchdog" in default_docs
+    assert "cs_goal_watchdog" not in default_docs
     assert "progress watchdog" in default_docs
     assert "claim gate" in default_docs
     for forbidden in FORBIDDEN_DEFAULT_PHRASES:
@@ -117,7 +117,7 @@ def test_mcp_doc_lists_current_profiles_and_goal_tools():
         "`literature`",
         "`paper_write`",
         "`stage` argument is a context label",
-        "cs_goal_watchdog",
+        "cs_log_digest",
         "cs_update_method_scoreboard",
         "cs_claim_gate",
         "cs_create_analysis_campaign",
@@ -132,8 +132,7 @@ def test_mcp_doc_lists_current_profiles_and_goal_tools():
 def test_long_run_doc_spells_out_watchdog_checkpoint_resume_contract():
     text = _read("docs/LONG_RUN.md")
     for phrase in [
-        "manual watchdog diagnostics",
-        "cs_goal_watchdog",
+        "admin-only watchdog diagnostics",
         "without writing goal gates",
         "cs_checkpoint",
         "cs_resume_brief",

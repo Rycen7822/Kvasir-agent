@@ -20,8 +20,12 @@ QUEST_DIRS: tuple[str, ...] = (
     "artifacts/progress",
     "artifacts/reports",
     "artifacts/runs",
+    "artifacts/execution_grounded",
     "baselines/imported",
     "baselines/local",
+    "environments",
+    "trajectories",
+    "variants",
     "experiments/main",
     "experiments/analysis",
     "experiments/trials",
@@ -36,6 +40,8 @@ QUEST_DIRS: tuple[str, ...] = (
     "runtime/checkpoints",
     "runtime/runs",
     "runtime/queue",
+    "runtime/execution_grounded",
+    "runtime/execution_grounded/evolutionary_rounds",
     "tmp",
 )
 

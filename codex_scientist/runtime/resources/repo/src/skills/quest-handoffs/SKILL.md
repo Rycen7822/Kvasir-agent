@@ -10,7 +10,7 @@ metadata:
 skill_role: companion
 ---
 
-> Codex adapter note: this is a Codex-packaged CodexScientist support skill adapted from the user-local Hermes skill library. Use `scripts/csctl.py call <cs_tool_name> --json ... --format json` for durable quest state, memory, artifacts, and quest-local shell execution. Load it only when it is the relevant companion to the active stage.
+> Codex adapter note: this is a Codex-packaged CodexScientist support skill. Prefer public MCP `cs_*` tools visible in `tools/list`/`cs_tool_schema` for durable quest state, memory, artifacts, and recovery anchors; use admin CLI fallbacks only when explicitly following docs/ADMIN_CLI.md. Load it only when it is the relevant companion to the active stage.
 > When a handoff becomes durable, record it with `cs_artifact_record` as a milestone/report and include the absolute quest path in the payload.
 
 # Research Quest Handoffs
@@ -60,7 +60,7 @@ For full quest-copy verification, compare recursively by relative path and hash.
 
 ## Pitfalls
 
-- Do not overwrite target-local project configuration while syncing, such as `CodexScientist/config/hermes-native.yaml`, unless the user explicitly asks.
+- Do not overwrite target-local project configuration while syncing, such as `CodexScientist/config/codex-native.yaml`, unless the user explicitly asks.
 - Do not claim synced git heads match until after the final artifact/milestone write and any follow-up sync.
 - Do not omit exact paths; future agents need absolute path anchors and relative reading order.
 - Do not fabricate quest metrics from memory; read current state and files.

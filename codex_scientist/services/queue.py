@@ -11,7 +11,7 @@ from .runner import RunnerService
 
 TERMINAL_STATUSES = {"completed", "failed_metric", "failed_artifact", "failed_readonly", "failed_timeout", "failed_other", "failed_oom", "failed_transient", "cancelled", "stuck"}
 RETRYABLE_STATUSES = {"failed_oom", "failed_transient"}
-ATTEMPTABLE_STATUSES = {"pending", "reconcile_required", "failed_oom", "failed_transient", "failed_other", "stuck", "cancelled"}
+ATTEMPTABLE_STATUSES = {"pending", "leased", "reconcile_required", "failed_oom", "failed_transient", "failed_other", "stuck", "cancelled"}
 
 
 def _utc_now() -> str:
@@ -146,11 +146,16 @@ class QueueService:
         self.events.append("queue.job_updated", event_payload)
         return {"ok": True, "job": self._decorate(job)}
 
-    def lease_next(self, *, worker_id: str, ttl_seconds: int) -> dict[str, Any]:
+    def lease_next(self, *, worker_id: str, ttl_seconds: int, quest_id: str | None = None, env_id: str | None = None) -> dict[str, Any]:
         state = self._read_snapshot()
         now = datetime.now(UTC)
         for job_id, job in sorted(state.get("jobs", {}).items()):
             if job.get("status") != "pending":
+                continue
+            resource = job.get("resource") if isinstance(job.get("resource"), dict) else {}
+            if quest_id is not None and str(resource.get("quest_id") or job.get("quest_id") or "") != str(quest_id):
+                continue
+            if env_id is not None and str(resource.get("env_id") or "") != str(env_id):
                 continue
             job["status"] = "leased"
             job["worker_id"] = worker_id

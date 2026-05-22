@@ -1,241 +1,80 @@
-# Codex-Scientist simulation problems
+# Codex-Scientist user-path problem log
 
-更新时间：2026-05-13 23:17 CST+0800
+更新时间：2026-05-14 11:44 CST+0800
 仓库：`/home/xu/project/autoscientist/Codex-Scientist`
-用途：记录升级 6 后，用真实 Codex / MCP 用户路径模拟插件时发现的问题、修复状态、证据与验证命令。
 
-## 0. 历史已修复摘要
-
-上一轮全功能模拟发现的 8 类问题已修复并提交（commit `8fe60898346a33adf45ab97882fe73ce2b2d0b14`）：
-
-- `docs/USAGE.md` 旧 profile / tool surface 描述已更新。
-- MCP `project` / `project_root` alias 已统一，避免运行态误写仓库 cwd。
-- `cs_tool_schema` 已为 registry-only tools 提供 minimal schema fallback。
-- `cs_paper_reliability_verify` 已支持 bounded dry-run / network=false，并对 URL-only 默认外部 IO fail-fast。
-- `cs_submit_paper_outline` 已规范化 `detailed_outline` list 输入并返回结构化错误。
-- baseline gate 错误提示已改为 MCP 工具名 guidance。
-- `cs_submit_idea` 缺 nested novelty contract 时已返回 retry template。
-- native CLI 已提供轻量 `cs_status` 边界提示。
-
-历史验证：定向回归 13 passed；全量 pytest 242 passed；P4 acceptance passed；已 push 到 `origin/main`。
-
-## 1. 本轮模拟方法
-
-2026-05-13 22:10 -> 22:32，按用户要求重新从更接近真实用户的 Codex 视角模拟插件使用：
-
-1. 先压缩本文档，避免把已修复历史问题当成当前 blockers。
-2. 使用干净上下文 subagent / 临时 workspace 测试 Codex 正常使用路径，而不只直接 import Python handler。
-3. 对非通过项分类为产品问题、文档问题、预期 fail-closed、探针错误或设计约束。
-4. 模拟后检查仓库不应产生 `CodexScientist/` 运行态副作用。
-
-本轮 subagent findings 原始记录：
-
-- `/tmp/codex_scientist_subagent_install_codex_findings.md`
-- `/tmp/codex_scientist_subagent_mcp_workflow_findings.md`
-- `/tmp/codex_scientist_subagent_docs_findings.md`
-
-## 2. 本轮基线与主路径结果
-
-基线命令：
-
-```bash
-python -m pytest tests/test_problems_md_regressions.py tests/test_docs_long_run_migration.py tests/test_mcp_stress_regression.py -q
-python scripts/p4_acceptance.py
-python scripts/cs_mcp.py --stdio-smoke tools/list
-```
-
-基线结论：
-
-- MCP server 入口可用：initialize/tools-list/cs_doctor 均 ok。
-- 小型 quest 主路径可用：quest、requirement、baseline、idea、experiment、analysis、memory、checkpoint/resume/delta、bounded paper reliability dry-run 均通过。
-- 预期 fail-closed 正常：global memory、缺 provenance 的 bash run、证据不足 claim gate 均被拒绝。
-- 未发现仓库根目录生成 `CodexScientist/` 或 `.codex/CODEXSCIENTIST_CODEX.md` 运行态污染。
-
-## 3. 本轮发现问题与修复状态
-
-### P1-1. 安装后没有把 MCP server 接入 Codex CLI
-
-状态：已修复。
-
-修复：
-
-- `scripts/install.sh` 现在在安装后写入 `[mcp_servers.codexscientist-codex]`，指向安装副本的 `scripts/cs_mcp.py`。
-- 安装输出提示 `codex mcp list && codex mcp get codexscientist-codex` 验证链路。
-- `docs/INSTALL.md` / README / README.zh-CN 已把 MCP 注册列为安装结果，并提供等价手动命令：
-  `codex mcp add codexscientist-codex -- python ~/.codex/plugins/codexscientist-codex/scripts/cs_mcp.py`。
-
-回归：`tests/test_codex_user_path_fixbacks.py::test_installer_registers_codex_mcp_server_and_keeps_install_tree_clean`。
-
-### P1-2. `scripts/init_project.sh` 生成 no-MCP/native-only 项目提示
-
-状态：已修复。
-
-修复：
-
-- `scripts/init_project.sh` 生成 `CodexScientist Codex MCP Project Note`。
-- 删除默认 `No MCP transport is used`、`Native control script` 和 `scripts/csctl.py doctor` 提示。
-- 项目 note 改为 MCP-first smoke：initialize、tools/list、call cs_doctor。
-
-回归：`tests/test_codex_user_path_fixbacks.py::test_init_project_writes_mcp_first_project_note`。
-
-### P1-3. README / README.zh-CN / docs/MCP.md 残留旧 profile、stage subset、旧工具入口
-
-状态：已修复。
-
-修复：
-
-- README / README.zh-CN / docs/MCP.md / docs/ARCHITECTURE.md / docs/MCP_CONTEXT_BUDGET.md / docs/INSTALL.md / docs/USAGE.md 已统一到升级 6 表述。
-- 默认 core profile 现在记录为 11 tools。
-- 显式 profile 记录为 `evidence`、`formal_run`、`literature`、`paper_write`。
-- `stage` 记录为 context/record label，不再描述为工具列表过滤器。
-- 默认用户入口不再推荐 `cs_goal_context`。
-
-当前真实 profile 盘点：`core=11`、`evidence=33`、`formal_run=34`、`literature=23`、`paper_write=27`；`goal` 是 deprecated compatibility alias for `evidence`。
-
-回归：
-
-- `tests/test_codex_user_path_fixbacks.py::test_user_entry_docs_have_current_upgrade6_profile_contract`
-- `tests/test_docs_context_budget.py`
-- `tests/test_docs_p4_contract.py`
-
-### P1-4. 打包 skill 名称超出 Codex 限制，导致 paper reliability skill 未加载
-
-状态：已修复。
-
-修复：
-
-- `skills/codexscientist-paper-reliability-verification/SKILL.md` frontmatter name 改为 `cs-paper-reliability`。
-- namespaced skill name `codexscientist-codex:cs-paper-reliability` 低于 Codex 64 字符限制。
-
-回归：`tests/test_codex_user_path_fixbacks.py::test_packaged_skill_names_fit_codex_namespace_limit`。
-
-### P1-5. 插件 `defaultPrompt` 太长，Codex 返回为 null
-
-状态：已修复。
-
-修复：
-
-- `.codex-plugin/plugin.json` 的 `interface.defaultPrompt` 改为 3 条短 prompt，每条不超过 128 字符。
-- 内容保留 MCP-only default、`/goal` Codex-native、routine work Codex-native / `cs_bash_exec` formal provenance only 的核心边界。
-
-回归：`tests/test_codex_user_path_fixbacks.py::test_manifest_default_prompts_fit_codex_plugin_limits`。
-
-### P1-6. `skills/codexscientist-codex/SKILL.md` 默认流程推荐 hidden skill tools
-
-状态：已修复。
-
-修复：
-
-- 主 router skill 删除默认 `cs_skill_search` / `cs_skill_load` 指引。
-- 默认流程改为 visible MCP surface：tools/list -> `cs_status`/`cs_doctor` -> `cs_new_quest` / `cs_record_user_requirement` -> 选择显式 profile -> profile 内工具。
-- 支持 skill 改由 Codex plugin skill mechanism 加载，而不是默认 MCP profile tools。
-
-回归：`tests/test_codex_user_path_fixbacks.py::test_router_skill_default_flow_uses_visible_profile_tools_not_hidden_skill_helpers`。
-
-### P2-1. `evidence` / `formal_run` profile 暴露 analysis slice 但不暴露 campaign create/read
-
-状态：已修复。
-
-修复：
-
-- `codex_scientist/profiles.py` 将 `cs_create_analysis_campaign` 和 `cs_get_analysis_campaign` 加入 evidence additions。
-- `formal_run` 继承 evidence，因此同样可见。
-
-回归：`tests/test_codex_user_path_fixbacks.py::test_analysis_campaign_creator_is_visible_when_slice_recorder_is_visible`。
-
-### P2-2. `cs_bash_exec` schema 未暴露 formal provenance gate 的实际字段
-
-状态：已修复。
-
-修复：
-
-- `codex_scientist/runtime/schemas.py` 的 `CS_BASH_EXEC` schema 增加 `command_class`、`provenance_reason`、`experiment_or_artifact_id`、`cwd_policy`、`expected_outputs`、`evidence_paths`。
-- schema description 明确 `operation=run` 是 formal provenance tool，不是 general shell。
-
-回归：`tests/test_codex_user_path_fixbacks.py::test_bash_exec_schema_exposes_formal_run_provenance_fields`。
-
-### P2-3. 插件安装/发现状态对普通 CLI 用户不透明
-
-状态：已缓解，仍受 Codex CLI 上游能力限制。
-
-修复/说明：
-
-- 文档现在明确推荐 `codex mcp list` / `codex mcp get codexscientist-codex` 作为可用验证链路。
-- installer 输出这些验证命令。
-- 当前 Codex CLI 仍缺公开 `plugin list/status` 命令；这属于上游 CLI 限制，本文档不再声称普通 CLI 能直接查看 plugin installed 状态。
-
-### P3-1. `--stdio-smoke tools/list` 不能传 profile 参数
-
-状态：已修复。
-
-修复：
-
-- `scripts/cs_mcp.py --stdio-smoke tools/list '{"profile":"evidence"}'` 现在会把 JSON 参数传给 `tools/list`。
-
-回归：`tests/test_codex_user_path_fixbacks.py::test_stdio_smoke_tools_list_accepts_profile_json_argument`。
-
-### P3-2. Installer 运行 doctor 后安装目录含 `__pycache__`
-
-状态：已修复。
-
-修复：
-
-- installer 运行 doctor 时设置 `PYTHONDONTWRITEBYTECODE=1`。
-- 非源码原地安装时，doctor 后清理安装副本内 `__pycache__` 和 `*.pyc`。
-
-回归：`tests/test_codex_user_path_fixbacks.py::test_installer_registers_codex_mcp_server_and_keeps_install_tree_clean`。
-
-## 4. 本轮新增/更新回归
-
-新增主回归：
-
-```bash
-python -m pytest tests/test_codex_user_path_fixbacks.py -q
-```
-
-覆盖：installer MCP 注册、init_project MCP note、用户入口文档合同、plugin defaultPrompt 长度、skill namespace 长度、router skill 可见工具路径、analysis campaign profile 可见性、bash provenance schema、profile-aware stdio smoke。
-
-同步更新旧合同测试：
-
-- `tests/test_codex_adapter_contract.py`
-- `tests/test_docs_context_budget.py`
-- `tests/test_docs_p4_contract.py`
-- `tests/test_mcp_stress_regression.py`
-
-## 5. 验证记录
-
-已通过的定向验证：
-
-```bash
-python -m pytest tests/test_codex_user_path_fixbacks.py -q
-python -m pytest tests/test_codex_user_path_fixbacks.py tests/test_codex_adapter_contract.py tests/test_docs_context_budget.py tests/test_docs_p4_contract.py tests/test_mcp_goal_tool_surface.py tests/test_no_cli_prompt_surface.py tests/test_docs_long_run_migration.py tests/test_mcp_stress_regression.py -q
-git diff --check
-python -m pytest -q
-python scripts/p4_acceptance.py
-```
-
-当前结果：
-
-- `tests/test_codex_user_path_fixbacks.py`：9 passed。
-- 合并定向旧/新合同：58 passed（含 problems regression / docs / profile / stress / router surface 相关测试）。
-- 全量 pytest：251 passed。
-- P4 acceptance：47 targeted tests passed；MCP tools/list / initialize smoke passed；agent-facing CLI violations 0；`P4 acceptance passed`。
-- `git diff --check`：无输出。
-
-干净 HOME 安装/MCP smoke：
-
-- 在临时 `HOME` / `CODEX_HOME` / `AGENTS_HOME` 下运行 `bash scripts/install.sh`。
-- 安装副本写入 `[plugins."codexscientist-codex@local-personal"]` 和 `[mcp_servers.codexscientist-codex]`。
-- 安装副本 `scripts/cs_mcp.py --stdio-smoke initialize` 通过。
-- 安装副本 `scripts/cs_mcp.py --stdio-smoke tools/list '{"profile":"evidence"}'` 通过，返回 33 tools，包含 `cs_create_analysis_campaign` 和 `cs_record_analysis_slice`。
-- 安装副本无 `__pycache__` / `*.pyc`。
-- `codex mcp list` 能看到 `codexscientist-codex` server，status enabled。
-
-补充模拟：
-
-- `/tmp/codex_scientist_codex_simulation_final.py` 退出码 0，未污染仓库根目录；`stale_usage_phrase_count=0`。
-- 该旧脚本仍报告 4 个 `contract_fail`，原因是脚本自身仍用非法 `baseline_path`、缺 baseline gate 后继续期待 experiment/analysis 成功、以及缺 `novelty_contract.mechanism`；这些与当前产品合同一致，不作为本轮新问题。
-
-## 6. 当前结论
-
-本轮 problems.md 记录的真实产品/文档/可发现性问题已完成修复并有回归覆盖。核心变化是把普通 Codex 用户入口从“插件安装但 MCP 未接入 / init_project 回到 native-only / docs 仍讲旧 profile”收敛为“installer 直接注册 MCP server、项目 note MCP-first、README/docs/skills/profile/schema/smoke 与升级 6 当前合同一致”。
+用途：保留真实/近真实 Codex + MCP 用户路径模拟后仍有价值的结论、边界决策和验收证据；详细流水账保留在 `/tmp` findings，不在本文重复展开。
+
+## 维护原则
+
+- 先分类再修改：代码 contract、文档/schema、installer、skill、设计说明分开处理。
+- 不为修文档而把 hidden/admin/autonomous tools 加回 public MCP profile。
+- public MCP surface 以 `core/evidence/formal_run/literature/paper_write` 为准；`goal` 是 deprecated evidence-style profile，不作为新增默认面。
+- skill 只有在用户操作流程或提示模板错误时才改；Cycle 5 的 skill 项仅限安装副本会暴露的 Codex-facing 文本和默认路径，不改研究逻辑。
+- 大型 JSON、transcript 和长命令输出放 `/tmp`，本文只保留摘要、路径和最终验收。
+
+## 证据来源
+
+历史 findings：`/tmp/codex_scientist_user_simulation_20260514.md`、`/tmp/codex_scientist_user_sim_A_install_docs_20260514.md`、`/tmp/codex_scientist_user_sim_B_research_workflow_20260514.md`、`/tmp/codex_scientist_user_sim_C_schema_failclosed_20260514.md`、`/tmp/codex_scientist_problems_fix_classification_20260514.md`、`/tmp/codex_scientist_final_integration_review_20260514.md`。
+
+Cycle findings：
+- Cycle 1：`/tmp/cs_cycle1_A_install_discovery_20260514.md`、`/tmp/cs_cycle1_B_research_workflow_20260514.md`、`/tmp/cs_cycle1_C_longrun_recovery_20260514.md`、`/tmp/cs_cycle1_D_surface_schema_docs_20260514.md`
+- Cycle 2：`/tmp/cs_cycle2_A_install_discovery_20260514.md`、`/tmp/cs_cycle2_B_research_workflow_20260514.md`、`/tmp/cs_cycle2_C_longrun_recovery_20260514.md`、`/tmp/cs_cycle2_D_surface_schema_docs_20260514.md`
+- Cycle 3：`/tmp/cs_cycle3_A_install_discovery_20260514.md`、`/tmp/cs_cycle3_B_research_workflow_20260514.md`、`/tmp/cs_cycle3_C_longrun_recovery_20260514.md`、`/tmp/cs_cycle3_D_surface_schema_docs_20260514.md`
+- Cycle 4：`/tmp/cs_cycle4_A_install_discovery_20260514.md`、`/tmp/cs_cycle4_B_research_workflow_20260514.md`、`/tmp/cs_cycle4_C_longrun_recovery_20260514.md`、`/tmp/cs_cycle4_D_surface_schema_docs_20260514.md`
+- Cycle 5：`/tmp/cs_cycle5_A_install_discovery_20260514.md`、`/tmp/cs_cycle5_B_research_workflow_20260514.md`、`/tmp/cs_cycle5_C_longrun_recovery_20260514.md`、`/tmp/cs_cycle5_D_surface_schema_docs_20260514.md`
+
+当前 public contract（主会话复核）：`core=11`、`evidence=33`、`formal_run=34`、`literature=23`、`paper_write=27`、deprecated `goal=33`。
+
+## 已关闭项
+
+| ID | 分类 | 状态 | 处理结论 / 回归 |
+| --- | --- | --- | --- |
+| P1 `cs_resume_brief` 误报 `blocked_missing_goal` | 代码 | 已修复 | fallback 到 `quest.yaml` title / `brief.md` Goal；回归 `test_resume_brief_uses_mcp_first_quest_goal_without_missing_goal_blocker`。 |
+| P2 JSON-RPC `tools/call` 绕过 public profile | 代码/安全边界 | 已修复 | `tools/call` 和 `cs_tool_schema` 对非 public MCP tools fail-closed；回归 `test_jsonrpc_tools_call_enforces_public_mcp_profile_boundary`。 |
+| P3 `cs_artifact_index` 与 compact state artifact scope 不一致 | 代码/语义 | 已修复 | 支持 `quest_id` scope；回归 `test_artifact_index_can_scope_to_quest_artifacts_seen_by_compact_state`。 |
+| D1 README/docs 推荐 hidden 或不存在 tools | 文档 | 已修复 | 默认 docs 改用 public method/recovery tools；hidden selection/watchdog 保持 hidden/admin-only。 |
+| D2 profile 数量和 Codex-neutral wording 过期 | 文档/schema | 已修复 | profile 数量更新；public metadata/schema 去除 Hermes wording。 |
+| I1/I2 `cs_bash_exec` / recovery schema 不够可发现 | schema | 已修复 | formal provenance conditional required 和常用 optional fields 已补。 |
+| I4 `workdir_outside_quest` 错误太 terse | 错误质量 | 已修复 | 返回 `allowed_roots` 和 `retry_template`。 |
+| I5/I6 installer Python command / non-default `CODEX_HOME` path | installer | 已修复 | 写检测到的 interpreter；非默认 `CODEX_HOME` 用绝对安装路径。 |
+| I7 `/tmp` Codex helper warning | 环境噪声 | 无需修复 | `/tmp` helper warning 不影响 MCP discovery/smoke。 |
+| C2-B1 `cs_claim_gate` 可用不存在的 `analysis_slice_ids` 通过 | 代码/安全门 | 已修复 | 验证每个 analysis slice 在 `.cs/analysis_campaigns/*.json` 中存在且状态为 `completed/accepted`；缺失/未完成时 fail-closed；回归 `test_claim_gate_blocks_unknown_analysis_slice_id`。 |
+| C2-I1 安装后普通 Python MCP 启动生成 installed plugin bytecode | installer/launcher hygiene | 已修复 | installer 写入 Codex MCP config `args = ["-B", ...]`，安装后 smoke 仍不生成 `__pycache__/*.pyc`；回归 `test_installer_registers_codex_mcp_server_and_keeps_install_tree_clean`。 |
+| C2-I2 `cs_artifact_record` schema generic 但 kind 枚举有限 | schema/错误质量 | 已修复 | schema 暴露 canonical enum；unknown kind 返回 `invalid_argument`、`allowed_kinds`、`retry_template`；回归 `test_public_tool_metadata_and_schemas_are_codex_discoverable`。 |
+| C2-I3 writing-facing `cs_create_analysis_campaign` 分步失败 | schema/preflight | 已修复 | preflight 一次性报告写作字段和 todo paper contract 字段，并返回最小 retry template；回归 `test_analysis_campaign_preflight_reports_all_missing_writing_contract_fields`。 |
+| C2-I4 `cs_pack_delta` 缺 checkpoint artifact/risk detail | recovery payload | 已修复 | `checkpoint.created` event 携带 `artifact_refs/risk_flags`，pack delta 输出 `changed_artifacts/changed_risks`；回归 `test_pack_delta_surfaces_checkpoint_artifacts_and_risks`。 |
+| C2-M1 `cs_claim_gate` blocked 响应偏泛 | 错误质量 | 已修复 | blocked 响应补 claim-gate 专用 retry template 与 suggested_next_action。 |
+| C3-H1/C3-I1 recovery schema 不可操作 | schema/恢复工具发现性 | 已修复 | `cs_checkpoint` 暴露 phase/completed/decisions/validation/next_action/artifact_refs/risk_flags/idempotency_key；`cs_context_pack` 暴露 quest_id/max_chars；回归 `test_public_tool_metadata_and_schemas_are_codex_discoverable`。 |
+| C3-I2 installer stdout smoke 和手动 docs 缺 `-B` | installer/docs hygiene | 已修复 | installer stdout smoke 与 README/README.zh-CN/docs/INSTALL manual `codex mcp add` 均带 `-B`；回归 `test_installer_registers_codex_mcp_server_and_keeps_install_tree_clean`、`test_user_entry_docs_have_current_upgrade6_profile_contract`。 |
+| C3-I3 public skills 默认 wording 暗示 hidden queue/trial/wiki family | skill wording | 已修复 | 顶层 public skills 改成“only when visible in selected profile”并列 public families；回归 `test_public_skills_do_not_advertise_hidden_tool_families_by_default`。 |
+| C3-I4/C4-M1 packaged skill 用户可见 Hermes/.hermes/csctl wording | packaged skill wording / Codex-facing hygiene | 已修复 | broad scan 忽略内部 `metadata/hermes` YAML 键，禁止用户可见正文 `Hermes`、`.hermes`、`scripts/csctl.py`/`csctl.py`；先修 runtime resources，再修顶层 `skills/**` legacy references。 |
+| C5-H1 安装副本会携带顶层 `skills/*/references/legacy-playbook.md` 旧 CLI/Hermes 文本 | packaged install skill references | 已修复 | 顶层 legacy-playbook 全部改为 public MCP `cs_*`/`tools/list`/`cs_tool_schema` wording；移除 `author: Hermes Agent`、`scripts/csctl.py`/`csctl.py`、`.hermes`；回归 `test_public_plugin_metadata_and_packaged_support_skills_are_codex_neutral`。 |
+| C5-H2 runtime/top-level verifier config/script user-local `.hermes` path | packaged resource defaults | 已修复 | `sources.yaml` 改 `$CODEX_HOME/secrets/openreview.env`；`verifier.py` 改 `OPENREVIEW_ENV_FILE`/`CODEX_OPENREVIEW_ENV_FILE`/`$CODEX_HOME/secrets/openreview.env` fallback；同步顶层和 runtime resource。 |
+| C5-L1 `docs/INSTALL.md` 默认安装文档直接说 “Use hidden admin/debug CLI” | docs wording | 已修复 | 默认安装页改为 “Advanced admin/debug CLI commands are documented separately”，普通 Codex 用户继续 public MCP path；回归 `test_user_entry_docs_have_current_upgrade6_profile_contract`。 |
+| C5-L2 顶层 public skills 仍有普通概念词 `wiki` / `trial(s)` | skill wording | 已修复 | 这些词虽非 hidden tool name，但会增加 Codex agent 对隐藏 family/运行态概念的误读风险；已将 `full wiki` 改为 `full background notes`，`trial changes` 改为 `experiment/run changes`，`running trials` 改为 `running experiments`；严格回归改为 word-boundary 扫描，顶层 `skills/*/SKILL.md` offenders=0。 |
+
+## 已接受/暂不修项
+
+| ID | 分类 | 结论 |
+| --- | --- | --- |
+| C2-M2 `context_pack` 无 manifest 时 project/goal 显示 unknown/unset | recovery payload | 暂不修；`cs_resume_brief` 已是恢复主路径并能从 quest metadata/brief 兜底。 |
+| C2-M3 `--stdio-smoke call` helper 可绕过 public MCP 注册边界 | developer helper | 暂不修；普通 Codex JSON-RPC `tools/call` 已 fail-closed。若后续把 helper 定义为 public-equivalent，再加同样 guard。 |
+| C2-D1 `cs_log_digest` 与 `cs_bash_exec` 日志体系不同 | docs/guidance | 暂不修；public recovery 可用 `cs_bash_exec read/status/wait`、`cs_artifact_index`、`cs_resume_brief`。 |
+
+## 最近验收基线
+
+- Cycle5 targeted RED→GREEN：`python -m pytest tests/test_codex_user_path_fixbacks.py::test_user_entry_docs_have_current_upgrade6_profile_contract tests/test_codex_user_path_fixbacks.py::test_public_plugin_metadata_and_packaged_support_skills_are_codex_neutral -q` → 先 fail，修复后 2 passed。
+- Cycle5 packaged broad scan：`skills/`、`codex_scientist/runtime/resources/skills`、`codex_scientist/runtime/resources/repo/src/skills` 的 `.md/.txt/.yaml/.yml/.py/.json/.toml` 文本，忽略内部 `metadata/hermes` YAML 键后，`Hermes`、`.hermes`、`scripts/csctl.py`、`csctl.py` offenders → 0。
+- Cycle5 related tests：`python -m pytest tests/test_codex_user_path_fixbacks.py tests/test_skill_prompt_contract.py tests/test_problems_md_regressions.py -q` → 30 passed。
+- Cycle5 full suite：`python -m pytest -q` → 263 passed。
+- Cycle5 P4 acceptance：`python scripts/p4_acceptance.py` → P4 acceptance passed，targeted pytest 48 passed；MCP `tools/list`、`initialize`、no CLI surface scan 通过。
+- Cycle5 hygiene：`git diff --check && test ! -d CodexScientist && test ! -d .codex` → `cycle5_diff_pollution_check=PASS`；subagents 后复核 → `post_cycle5_subagents_hygiene=PASS` / `final_cycle5_hygiene=PASS`。
+- Cycle5 subagents：A clean install/discovery/hygiene PASS；B bounded research workflow PASS；C long-run recovery/compaction PASS；D public/hidden surface + schema/docs/packaged-source PASS for all blocking checks；后续已修复当时唯一 `FAIL LOW` 的普通概念词 `wiki` / `trial(s)`，严格回归 now covers word-boundary scan。
+- Public skill wording tightening：`python -m pytest tests/test_skill_prompt_contract.py::test_public_skills_do_not_advertise_hidden_tool_families_by_default -q` → RED 后 GREEN；`top_level_public_skill_wiki_trial_offenders=0`；`python -m pytest tests/test_skill_prompt_contract.py tests/test_codex_user_path_fixbacks.py -q` → 13 passed；`python -m pytest -q` → 263 passed；`python scripts/p4_acceptance.py` → P4 acceptance passed；`final_wording_hygiene=PASS`。
+
+## 当前判断
+
+Cycle 5 已完成步骤 1→2→3→4。当前没有已知 BLOCKER/IMPORTANT；安装、public MCP discovery、JSON-RPC fail-closed、claim gate、artifact/analysis schema、checkpoint/resume/pack-delta recovery、docs `-B`、packaged source hygiene、全量测试、P4 acceptance、干净上下文用户模拟均已通过。顶层 public skills 的 `wiki` / `trial(s)` 普通概念词已按用户确认修复，不再作为非阻塞残留项。
+
+结论：可以让用户通过 Codex 使用 Codex Scientist 做长程稳定自动化研究。

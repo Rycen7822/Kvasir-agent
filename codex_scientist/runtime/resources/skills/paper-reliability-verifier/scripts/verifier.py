@@ -389,9 +389,17 @@ def load_env_file(path: Path):
         os.environ.setdefault(k.strip(), v.strip().strip('"\''))
 
 
+def default_openreview_secret_path() -> Path:
+    explicit = os.getenv("OPENREVIEW_ENV_FILE") or os.getenv("CODEX_OPENREVIEW_ENV_FILE")
+    if explicit:
+        return Path(explicit)
+    codex_home = Path(os.getenv("CODEX_HOME") or (Path.home() / ".codex"))
+    return codex_home / "secrets" / "openreview.env"
+
+
 def openreview_client(api_version="v2"):
     try:
-        load_env_file(Path("/home/xu/.hermes/secrets/openreview.env"))
+        load_env_file(default_openreview_secret_path())
         import openreview  # type: ignore
         cls = openreview.api.OpenReviewClient if api_version == "v2" else openreview.Client
         baseurl = "https://api2.openreview.net" if api_version == "v2" else "https://api.openreview.net"

@@ -16,8 +16,8 @@ A crash/resume smoke should demonstrate that a stuck or interrupted run can be r
 
 1. create or load a quest;
 2. start a runner or simulate a runner heartbeat gap;
-3. call `cs_goal_watchdog` as a manual diagnostic;
-4. confirm the diagnostic reports stale runs without writing a `runner_stuck` goal gate;
+3. inspect public recovery state through `cs_status` and `cs_resume_brief`;
+4. run hidden/admin-only watchdog diagnostics only in explicit admin/CI validation, without writing a `runner_stuck` goal gate;
 5. call `cs_resume_brief` and verify `active_run_id`, passive `recovery_anchor`, and `source_refs` are present;
 6. call `cs_checkpoint` after the bounded recovery action is complete.
 
@@ -39,11 +39,11 @@ Long-run recovery state is project-local under `CodexScientist/` and must never 
 Use the bounded MCP-first recovery path before reading raw files:
 
 1. `cs_status` verifies the target project and state root.
-2. `cs_goal_watchdog` reports runner state, heartbeat age, and stuck-run diagnostics without writing goal gates.
-3. `cs_resume_brief` reconstructs the current task in a normal 4K-8K recovery budget.
-4. `cs_pack_delta` fetches post-checkpoint events when the latest brief is not enough.
-5. `cs_log_digest` summarizes long logs and classifies common failures before any raw log read.
-6. `cs_artifact_index` lists artifact path, type, size, and hash before opening full artifact content.
+2. `cs_resume_brief` reports current quest state, active run id, passive recovery anchor, and source refs.
+3. `cs_pack_delta` fetches post-checkpoint events when the latest brief is not enough.
+4. `cs_log_digest` summarizes long logs and classifies common failures before any raw log read.
+5. `cs_artifact_index` lists artifact path, type, size, and hash before opening full artifact content.
+6. Hidden/admin-only watchdog diagnostics may be used in explicit admin/CI validation for runner heartbeat and stuck-state questions, without writing goal gates.
 7. `cs_checkpoint` records completed stage boundaries and factual validation state.
 
 State-changing MCP tools do not auto-inject checkpoint gates. Recovery payloads should remain passive and may return:

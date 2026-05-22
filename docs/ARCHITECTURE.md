@@ -61,6 +61,12 @@ CodexScientist semantic/provenance layer:
 
 Codex does the mechanical action; CodexScientist records the research meaning.
 
+## Execution-grounded extension boundary
+
+Execution-grounded research is an explicit extension of the semantic/provenance layer, not a replacement for Codex-native mechanical work. The default `copilot` mode does not automatically invent, implement, schedule, or execute ideas. It may record environments, feedback, trajectories, and plans only when the user request or project state makes that research meaning explicit.
+
+Automatic idea search, variant implementation, experiment scheduling, or executor-backed execution requires an explicit user request or manifest. Until that gate exists, execution-grounded services must stay local, auditable, and plan-first: `ResearchEnvironment` describes trusted evaluation contracts, feedback ingestion records bounded evidence, trajectory storage records lineage and outcomes, and evolutionary planning proposes next candidates without submitting them.
+
 ## MCP boundary
 
 The MCP boundary uses explicit profiles:

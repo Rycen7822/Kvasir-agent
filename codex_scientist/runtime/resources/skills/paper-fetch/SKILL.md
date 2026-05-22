@@ -143,7 +143,7 @@ Record distinctions:
 Use credentials only from the local secret file:
 
 ```text
-~/.hermes/secrets/openreview.env
+$CODEX_HOME/secrets/openreview.env
 ```
 
 Expected keys:
@@ -244,7 +244,7 @@ Unpaywall requires a contact email. Never hard-code a user's email in this skill
 Read the email only from the local secret file:
 
 ```text
-~/.hermes/secrets/research.env
+$CODEX_HOME/secrets/research.env
 ```
 
 Expected key:
@@ -253,23 +253,25 @@ Expected key:
 UNPAYWALL_EMAIL=<user email>
 ```
 
-If `UNPAYWALL_EMAIL` is missing, stop and ask the user to provide an email, then tell them to add it to `~/.hermes/secrets/research.env` under the `UNPAYWALL_EMAIL` key. Do not guess, invent, or reuse unrelated credentials.
+If `UNPAYWALL_EMAIL` is missing, stop and ask the user to provide an email, then tell them to add it to `$CODEX_HOME/secrets/research.env` under the `UNPAYWALL_EMAIL` key. Do not guess, invent, or reuse unrelated credentials.
 
 Safe Python pattern:
 
 ```python
+import os
 from pathlib import Path
 
 def read_unpaywall_email() -> str:
-    path = Path.home() / ".hermes" / "secrets" / "research.env"
+    codex_home = Path(os.environ.get("CODEX_HOME", Path.home() / ".codex"))
+    path = codex_home / "secrets" / "research.env"
     if not path.exists():
-        raise RuntimeError("Missing ~/.hermes/secrets/research.env; ask user to add UNPAYWALL_EMAIL=<email>.")
+        raise RuntimeError("Missing $CODEX_HOME/secrets/research.env; ask user to add UNPAYWALL_EMAIL=<email>.")
     for line in path.read_text(encoding="utf-8").splitlines():
         if line.startswith("UNPAYWALL_EMAIL="):
             value = line.split("=", 1)[1].strip()
             if value:
                 return value
-    raise RuntimeError("Missing UNPAYWALL_EMAIL in ~/.hermes/secrets/research.env; ask user to add it.")
+    raise RuntimeError("Missing UNPAYWALL_EMAIL in $CODEX_HOME/secrets/research.env; ask user to add it.")
 ```
 
 Do not print the email in final replies unless the user explicitly asks to inspect their own local secret configuration. When reporting, say only that the email was read from the local secret file.
@@ -277,7 +279,7 @@ Do not print the email in final replies unless the user explicitly asks to inspe
 ### Query recipe
 
 ```bash
-# Export UNPAYWALL_EMAIL from ~/.hermes/secrets/research.env in a wrapper script or Python subprocess env.
+# Export UNPAYWALL_EMAIL from $CODEX_HOME/secrets/research.env in a wrapper script or Python subprocess env.
 # Do not commit or echo the concrete value.
 curl -s "https://api.unpaywall.org/v2/<doi>?email=$UNPAYWALL_EMAIL" \
   | jq '{
@@ -294,7 +296,7 @@ curl -s "https://api.unpaywall.org/v2/<doi>?email=$UNPAYWALL_EMAIL" \
 
 ### Preferred order
 
-1. Query Unpaywall by DOI with the email read from `~/.hermes/secrets/research.env`.
+1. Query Unpaywall by DOI with the email read from `$CODEX_HOME/secrets/research.env`.
 2. Check `is_oa`, `oa_status`, `best_oa_location.url_for_pdf`, `best_oa_location.url`, `host_type`, and `version`.
 3. Prefer `url_for_pdf` when present; otherwise inspect `url`/landing page only if it is a legal open repository or publisher page.
 4. Download with `curl -L --http1.1 --fail --retry 3`.

@@ -22,7 +22,7 @@ Style first:
 - For important long-running phases, include a rough ETA or next check-in window when it is honestly knowable.
 
 Work in short cycles: understand the request, make a brief plan, execute the smallest useful unit, record important context durably, then report what changed and wait.
-Use memory for durable recall, artifact for quest state and git-aware research operations, and cs_bash_exec for terminal execution.
+Use memory for durable recall, artifact for quest state and git-aware research operations, and `cs_bash_exec` only for formal experiment, benchmark, reproduction, or evidence-producing commands that must become quest-local provenance.
 Prefer `quest-local git state via backend service or Codex-controlled git action(...)` when a coherent implementation unit materially changed files and should become one durable git node.
 
 Copilot SOP for ordinary user turns:
@@ -35,17 +35,18 @@ Copilot SOP for ordinary user turns:
    - command / environment / debugging task
    - experiment or long-running execution
 2. choose the narrowest correct tool path before acting:
-   - use `quest-local git state via backend service or Codex-controlled git action(...)` first for git state, commit, diff, branch, checkout, log, and show operations inside the current quest repository or worktree
-   - use `cs_bash_exec ...)` for any shell, CLI, Python, bash, node, git CLI, or environment command execution
+   - use Codex-native file/search/edit/shell/Git/test/build/process capabilities for routine mechanical work
+   - use `quest-local git state via backend service or Codex-controlled git action(...)` first when a git operation should become durable quest-local research provenance
+   - use `cs_bash_exec ...)` only when the command itself is a formal experiment, benchmark, reproduction, or evidence-producing run that must become quest-local provenance
    - use `artifact.read_quest_documents(...)`, `artifact.get_quest_state(...)`, or `memory.*` when you need durable quest context instead of shelling out
 3. execute the smallest useful unit, persist only the important result, then answer plainly
 
 Hard copilot tool rules:
 
-- **Do not use native `shell_command` or Codex `command_execution`.**
-- **All shell, CLI, Python, bash, node, git, package, environment, and terminal-like operations must go through `cs_bash_exec ...)`.**
-- **Even if the runner or model surface exposes `shell_command`, ignore it and reformulate the action as `cs_bash_exec ...)`.**
-- **Treat any attempt to use native `shell_command` / `command_execution` as a policy violation and immediately switch back to `cs_bash_exec ...)`.**
+- Use Codex-native file/search/edit/shell/Git/test/build/process capabilities for routine mechanical work.
+- Use `cs_bash_exec ...)` only when the command itself is a formal experiment, benchmark, reproduction, or evidence-producing run that must become quest-local provenance.
+- Do not use `cs_bash_exec ...)` as a general shell replacement.
+- If a command is formal evidence, include `command_class`, `provenance_reason`, `experiment_or_artifact_id`, `cwd_policy`, and `expected_outputs or evidence_paths`.
 - Do not default into `decision`-style route analysis for an ordinary direct task just because the request is open-ended or exploratory.
 - Use `decision` only when the user is explicitly asking for a route / go-no-go judgment, or when cost, scope, branch choice, or scientific direction would materially change.
 - If the user asks to test git itself rather than mutate the current quest repo, prefer an isolated scratch repo through `cs_bash_exec ...)`; if the task is about the current quest repo, prefer `quest-local git state via backend service or Codex-controlled git action(...)`.

@@ -126,6 +126,8 @@ class CheckpointService:
                 "checkpoint_id": checkpoint_id,
                 "phase": checkpoint["phase"],
                 "next_action": checkpoint["next_action"],
+                "artifact_refs": checkpoint["artifact_refs"],
+                "risk_flags": checkpoint["risk_flags"],
                 "content_hash": content_hash,
             },
             idempotency_key=event_idempotency_key,

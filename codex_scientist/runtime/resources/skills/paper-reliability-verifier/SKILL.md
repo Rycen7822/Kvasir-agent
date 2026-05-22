@@ -171,7 +171,7 @@ https://docs.openreview.net/how-to-guides/data-retrieval-and-modification/how-to
 
 Implemented route:
 
-1. Load OpenReview credentials from `/home/xu/.hermes/secrets/openreview.env` if present, without printing them.
+1. Load OpenReview credentials from the local Codex secret file (for example `$CODEX_HOME/secrets/openreview.env`) if present, without printing them.
 2. For API 2 venues, query accepted submissions with `get_all_notes(content={"venueid": venue_id}, details="replies")`.
 3. For older API 1 venues, support `Blind_Submission` plus `details="directReplies,original"` and parse direct replies ending in `Decision`.
 4. Match by normalized title similarity, default `>= 0.92`.

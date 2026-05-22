@@ -1,6 +1,6 @@
 # Legacy playbook
 
-Do not execute old API names directly. This file preserves the pre-upgrade long playbook for audit and migration only. When using it, translate any historical tool or state API names to the current `scripts/csctl.py` command surface and obey the default copilot autonomy gate.
+Do not execute old API names directly. This file preserves the pre-upgrade long playbook for audit and migration only. When using it, translate any historical tool or state API names to the current public MCP `cs_*` tool surface and obey the default copilot autonomy gate.
 
 ---
 
@@ -11,7 +11,7 @@ version: 0.1.0
 last_updated: 2026-04-30
 ---
 
-> Codex adapter note: this stage skill is bundled for CodexScientist. Prefer the stable curated MCP tools for repeated CodexScientist state/status/context workflows; use `scripts/csctl.py call <cs_tool_name> --json ... --format json` as CLI fallback. Load this support skill only when its stage is relevant. Runtime state lives under `<project>/CodexScientist/`.
+> Codex adapter note: this stage skill is bundled for CodexScientist. Prefer public MCP `cs_*` tools visible in `tools/list`/`cs_tool_schema` for repeated CodexScientist state/status/context workflows. Load this support skill only when its stage is relevant. Runtime state lives under `<project>/CodexScientist/`.
 
 # Paper Reliability Verifier Skill
 
@@ -179,7 +179,7 @@ https://docs.openreview.net/how-to-guides/data-retrieval-and-modification/how-to
 
 Implemented route:
 
-1. Load OpenReview credentials from `/home/xu/.hermes/secrets/openreview.env` if present, without printing them.
+1. Load OpenReview credentials from the local Codex secret file (for example `$CODEX_HOME/secrets/openreview.env`) if present, without printing them.
 2. For API 2 venues, query accepted submissions with `get_all_notes(content={"venueid": venue_id}, details="replies")`.
 3. For older API 1 venues, support `Blind_Submission` plus `details="directReplies,original"` and parse direct replies ending in `Decision`.
 4. Match by normalized title similarity, default `>= 0.92`.

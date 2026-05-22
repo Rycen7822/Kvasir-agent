@@ -55,9 +55,9 @@ The design and implementation also reference or draw inspiration from:
 | Control plane | MCP-only default through `scripts/cs_mcp.py`; admin terminal commands are isolated in `docs/ADMIN_CLI.md`. |
 | Public tool surface | Curated canonical `cs_*` tools; legacy `codexscientist_*` names are hidden compatibility aliases only. |
 | MCP profiles | Default core profile exposes 11 tools. Wider explicit profiles are `evidence`, `formal_run`, `literature`, and `paper_write`; `stage` is a label, not a tool-list filter. |
-| Long-run recovery | `cs_status`, `cs_resume_brief`, `cs_pack_delta`, and `cs_checkpoint` provide passive recovery anchors; `cs_goal_watchdog` is manual diagnostics only. |
-| Method improvement | `cs_update_method_scoreboard`, `cs_select_next_idea`, and `cs_claim_gate` close the experiment -> novelty -> evidence loop when explicitly used. |
-| Research state | Project-local quests, memory, artifacts, baselines, experiments, paper bundles, analysis campaigns, and event reads. |
+| Long-run recovery | `cs_status`, `cs_resume_brief`, `cs_pack_delta`, and `cs_checkpoint` provide passive recovery anchors; watchdog-style diagnostics remain hidden/admin-only in the default Codex MCP surface. |
+| Method improvement | Public tools such as `cs_update_method_scoreboard`, `cs_get_optimization_frontier`, and `cs_claim_gate` close the experiment -> novelty -> evidence loop; autonomous idea selection remains hidden from default MCP. |
+| Research state | Project-local quests, memory, artifacts, baselines, experiments, paper bundles, analysis campaigns, and bounded event/delta summaries. |
 | Codex skills | `codexscientist-codex` plus adapted support skills for experiments, handoffs, writing plans, paper reliability, and review. |
 
 ## Quick Start
@@ -79,7 +79,7 @@ bash scripts/install.sh
 The installer copies the plugin, enables `[plugins."codexscientist-codex@local-personal"]`, and registers the MCP server in Codex config. If you need to register manually, use the same stdio entrypoint:
 
 ```bash
-codex mcp add codexscientist-codex -- python ~/.codex/plugins/codexscientist-codex/scripts/cs_mcp.py
+codex mcp add codexscientist-codex -- python -B ~/.codex/plugins/codexscientist-codex/scripts/cs_mcp.py
 ```
 
 Initialize a research project with the project helper:
@@ -98,7 +98,7 @@ When commands run from a research project root, CodexScientist state is stored i
 <project>/CodexScientist/
 ```
 
-This keeps quests, artifacts, memory, bash provenance, manual diagnostic records, checkpoints, analysis slices, claim decisions, and paper bundles with the research project rather than in global Codex or Hermes state.
+This keeps quests, artifacts, memory, bash provenance, manual diagnostic records, checkpoints, analysis slices, claim decisions, and paper bundles with the research project rather than in global Codex state.
 
 ## Install Details
 
@@ -115,17 +115,17 @@ For normal Codex use, leave `CODEX_HOME` and `AGENTS_HOME` unset. They are honor
 
 See [docs/INSTALL.md](docs/INSTALL.md), [docs/USAGE.md](docs/USAGE.md), [docs/MCP.md](docs/MCP.md), and [docs/REPOSITORY_LAYOUT.md](docs/REPOSITORY_LAYOUT.md) for install, usage, MCP, and repository organization details.
 
-## Original Hermes MCP Equivalence
+## Original CodexScientist MCP Equivalence
 
 This adapter preserves business-workflow effects rather than MCP protocol shape:
 
-| Original CodexScientist/Hermes surface | Codex-native equivalent |
+| Original CodexScientist surface | Codex-native equivalent |
 | --- | --- |
 | `memory.write/read/search/list_recent` | `cs_memory_write`, `cs_memory_read`, `cs_memory_search`, `cs_memory_list_recent` |
-| `artifact.record` and quest artifact flows | `cs_artifact_record` plus specialized `cs_*` artifact tools |
-| event reads | `cs_events` |
+| `artifact.record` and quest artifact flows | `cs_artifact_record` plus specialized public `cs_*` artifact tools such as `cs_artifact_index` |
+| event reads | `cs_status`, `cs_pack_delta`, and compact `cs_get_quest_state` summaries |
 | `bash_exec` | `cs_bash_exec`, retaining quest-local execution state and logs when formal provenance is required |
-| artifact convenience/introspection helpers | Matching `cs_*` wrappers such as `cs_get_global_status`, `cs_get_method_scoreboard`, `cs_refresh_summary`, and `cs_arxiv` |
+| artifact convenience/introspection helpers | Public `cs_*` wrappers such as `cs_status`, `cs_get_method_scoreboard`, `cs_refresh_summary`, and `cs_arxiv` |
 
 ## What It Deliberately Does Not Provide
 

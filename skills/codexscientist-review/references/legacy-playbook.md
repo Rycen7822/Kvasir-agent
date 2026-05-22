@@ -1,6 +1,6 @@
 # Legacy playbook
 
-Do not execute old API names directly. This file preserves the pre-upgrade long playbook for audit and migration only. When using it, translate any historical tool or state API names to the current `scripts/csctl.py` command surface and obey the default copilot autonomy gate.
+Do not execute old API names directly. This file preserves the pre-upgrade long playbook for audit and migration only. When using it, translate any historical tool or state API names to the current public MCP `cs_*` tool surface and obey the default copilot autonomy gate.
 
 ---
 
@@ -20,7 +20,7 @@ metadata:
 skill_role: companion
 ---
 
-> Codex adapter note: this support skill is bundled for CodexScientist. Prefer the stable curated MCP tools for repeated CodexScientist state/status/context workflows; use `scripts/csctl.py call <cs_tool_name> --json ... --format json` as CLI fallback. Load at most one support skill alongside the active stage. Runtime state lives under `<project>/CodexScientist/`.
+> Codex adapter note: this support skill is bundled for CodexScientist. Prefer public MCP `cs_*` tools visible in `tools/list`/`cs_tool_schema` for repeated CodexScientist state/status/context workflows. Load at most one support skill alongside the active stage. Runtime state lives under `<project>/CodexScientist/`.
 > Core review outputs include `paper/review/review.md`, `paper/review/revision_log.md`, and a concrete claim downgrade / follow-up route when needed.
 
 # Review
@@ -38,7 +38,7 @@ It is also not the same as `rebuttal`.
 
 - Treat `quest` as the current task, manuscript workspace, or review target.
 - Treat `startup_contract.*` as optional user-provided constraints or manuscript-edit preferences; ignore them when absent.
-- Replace legacy shell-wrapper calls with `cs_bash_exec` through `scripts/csctl.py` for quest-logged shell; ordinary Codex file tools for direct file IO.
+- Replace legacy shell-wrapper calls with public MCP `cs_bash_exec` for quest-logged shell; ordinary Codex file tools for direct file IO.
 - Replace legacy milestone or artifact-interaction hooks with ordinary user-visible progress updates in the assistant response.
 - Replace legacy memory helper calls with `session_search(...)`, `cs_memory_write`, and durable local review files as appropriate.
 - Route names such as `intake-audit`, `scout`, `analysis-campaign`, `baseline`, `write`, `decision`, `finalize`, and `rebuttal` are workflow labels. If those exact skills are unavailable, use the closest available Codex skills/tools to accomplish the same purpose.
@@ -48,7 +48,7 @@ It is also not the same as `rebuttal`.
 - Follow the shared interaction contract injected by the system prompt.
 - For ordinary active work, prefer a concise progress update once work has crossed roughly 6 tool calls with a human-meaningful delta, and do not drift beyond roughly 12 tool calls or about 8 minutes without a user-visible update.
 - When the review report, revision plan, or follow-up experiment TODO list becomes durable, send a richer user-visible progress update that says what the main risks are, what should be fixed next, and whether the next route is writing, experiment, or claim downgrade.
-- Codex-native execution boundary: use Codex-native file/shell/Git/test/build tools for routine document builds, scripted checks, Git inspection, and file inspection. Use `cs_bash_exec` through `scripts/csctl.py` only when the command itself must become quest evidence; ordinary Codex file tools are preferred for direct file IO.
+- Codex-native execution boundary: use Codex-native file/shell/Git/test/build tools for routine document builds, scripted checks, Git inspection, and file inspection. Use public MCP `cs_bash_exec` only when the command itself must become quest evidence; ordinary Codex file tools are preferred for direct file IO.
 
 ## Purpose
 

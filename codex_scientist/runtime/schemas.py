@@ -25,12 +25,18 @@ MEMORY_KIND_VALUES = [
 MEMORY_KIND_FIELD = {
     "type": "string",
     "enum": MEMORY_KIND_VALUES,
-    "description": "CodexScientist memory kind. Canonical kinds are papers, ideas, decisions, episodes, knowledge, templates. Singular and semantic aliases such as constraint/context/observation/hypothesis/result/plan are accepted and normalized by the Hermes wrapper.",
+    "description": "CodexScientist memory kind. Canonical kinds are papers, ideas, decisions, episodes, knowledge, templates. Singular and semantic aliases such as constraint/context/observation/hypothesis/result/plan are accepted and normalized by the MCP wrapper.",
 }
 PAPER_OUTLINE_MODE_FIELD = {
     "type": "string",
     "enum": ["candidate", "select", "revise", "selected"],
     "description": "Paper outline operation. Use candidate, then select, or revise. selected is accepted as a friendly alias for select.",
+}
+ARTIFACT_KIND_VALUES = ["baseline", "idea", "decision", "progress", "answer", "milestone", "run", "report", "approval", "graph"]
+ARTIFACT_KIND_FIELD = {
+    "type": "string",
+    "enum": ARTIFACT_KIND_VALUES,
+    "description": "Canonical artifact kind. For semantic subtypes such as dataset_inspection or metric_report use kind=report and put the subtype in payload.report_type.",
 }
 
 S = {
@@ -47,16 +53,34 @@ S = {
     "body": {"type": "string"},
     "path": {"type": "string"},
     "payload": {"type": "object"},
+    "manifest": {"type": "object"},
+    "env_id": {"type": "string"},
+    "trajectory_id": {"type": "string"},
+    "variant_id": {"type": "string"},
+    "idea_id": {"type": "string"},
+    "run_id": {"type": "string"},
+    "source_kind": {"type": "string"},
+    "idea": {"type": "object"},
     "command": {"type": "string"},
+    "epoch": {"type": "integer", "default": 0},
+    "batch_size": {"type": "integer", "default": 4},
+    "job_id": {"type": "string"},
+    "worker_id": {"type": "string"},
+    "backend": {"type": "string", "default": "local"},
+    "round_id": {"type": "string"},
+    "submissions": {"type": "array", "items": {"type": "object"}},
+    "approval": {"type": "object"},
+    "expected_outputs": {"type": "array", "items": {"type": "string"}},
+    "max_attempts": {"type": "integer", "default": 1},
 }
 
 CS_DOCTOR = _schema("cs_doctor", "Run native CodexScientist plugin diagnostics without invoking external cs.")
 CS_LIST_QUESTS = _schema("cs_list_quests", "List CodexScientist quests from the native runtime home.", {"limit": S["limit"]})
 CS_GET_QUEST_STATE = _schema("cs_get_quest_state", "Read compact or full state for a CodexScientist quest.", {"quest_id": S["quest_id"], "full": {"type": "boolean", "default": False}})
-CS_SET_ACTIVE_QUEST = _schema("cs_set_active_quest", "Set the active quest for the current Hermes session.", {"quest_id": S["quest_id"], "session_id": {"type": "string"}, "stage": S["stage"]}, ["quest_id"])
+CS_SET_ACTIVE_QUEST = _schema("cs_set_active_quest", "Set the active quest for this CodexScientist MCP session.", {"quest_id": S["quest_id"], "session_id": {"type": "string"}, "stage": S["stage"]}, ["quest_id"])
 CS_NEW_QUEST = _schema(
     "cs_new_quest",
-    "Create a new CodexScientist quest natively. This tool is agent-managed: default to copilot unless the Hermes agent explicitly chooses autonomous and supplies the final-goal contract.",
+    "Create a new CodexScientist quest natively. This tool is Codex-agent managed: default to copilot unless the agent explicitly chooses autonomous and supplies the final-goal contract.",
     {
         "goal": S["goal"],
         "quest_id": S["quest_id"],
@@ -69,7 +93,7 @@ CS_NEW_QUEST = _schema(
         "final_goal": {"type": "string", "enum": ["paper", "quality_result", "idea_optimization", "literature_scout", "baseline_reproduction", "analysis_report", "open_ended"], "description": "Agent-defined terminal objective, separate from workspace_mode."},
         "delivery_mode": {"type": "string", "description": "Short agent-defined delivery label such as idea_quality, literature_map, quality_result, or paper_bundle."},
         "completion_criteria": {"type": "array", "items": {"type": "string"}, "description": "Concrete criteria the agent will use to decide that the autonomous task is sufficiently complete."},
-        "mode_rationale": {"type": "string", "description": "Short explanation of why Hermes selected the mode and final-goal contract."},
+        "mode_rationale": {"type": "string", "description": "Short explanation of why the agent selected the mode and final-goal contract."},
         "startup_contract": {"type": "object", "description": "Optional advanced contract fields; explicit values override generated defaults."},
     },
     ["goal"],
@@ -86,7 +110,7 @@ CS_UPDATE_QUEST_MODE = _schema(
         "final_goal": {"type": "string", "enum": ["paper", "quality_result", "idea_optimization", "literature_scout", "baseline_reproduction", "analysis_report", "open_ended"], "description": "Terminal objective for the next phase, separate from workspace_mode."},
         "delivery_mode": {"type": "string", "description": "Delivery label for the next phase, such as experiment_execution, quality_result, analysis_report, or paper_bundle."},
         "completion_criteria": {"type": "array", "items": {"type": "string"}, "description": "Concrete criteria for determining the autonomous phase is complete."},
-        "mode_rationale": {"type": "string", "description": "Required when switching to autonomous; short explanation of why Hermes should own progress in the same quest."},
+        "mode_rationale": {"type": "string", "description": "Required when switching to autonomous; short explanation of why the agent should own progress in the same quest."},
         "startup_contract": {"type": "object", "description": "Optional advanced contract fields to merge into the existing quest startup contract."},
     },
     ["quest_id", "workspace_mode"],
@@ -99,7 +123,7 @@ CS_MEMORY_SEARCH = _schema("cs_memory_search", "Search CodexScientist global/que
 CS_MEMORY_READ = _schema("cs_memory_read", "Read a CodexScientist memory card by id or path.", {"card_id": {"type": "string"}, "path": S["path"], "quest_id": S["quest_id"], "scope": S["scope"]})
 CS_MEMORY_LIST_RECENT = _schema("cs_memory_list_recent", "List the most recently updated CodexScientist memory cards, matching the original memory.list_recent MCP capability through Codex-native transport.", {"quest_id": S["quest_id"], "scope": S["scope"], "kind": MEMORY_KIND_FIELD, "limit": S["limit"]})
 CS_MEMORY_WRITE = _schema("cs_memory_write", "Write a CodexScientist memory card. Semantic kind aliases such as constraint/context/observation/hypothesis/result/plan are normalized to knowledge with tags/metadata.", {"title": S["title"], "content": S["content"], "body": S["body"], "markdown": {"type": "string"}, "quest_id": S["quest_id"], "scope": S["scope"], "kind": MEMORY_KIND_FIELD, "tags": {"type": "array", "items": {"type": "string"}}, "metadata": {"type": "object"}}, ["title"])
-CS_ARTIFACT_RECORD = _schema("cs_artifact_record", "Record a generic CodexScientist artifact in a quest.", {"quest_id": S["quest_id"], "payload": S["payload"], "kind": S["kind"], "summary": {"type": "string"}, "status": {"type": "string"}, "checkpoint": {"type": "boolean"}}, ["quest_id"])
+CS_ARTIFACT_RECORD = _schema("cs_artifact_record", "Record a canonical CodexScientist artifact in a quest. Use kind=report plus payload.report_type for semantic subtypes such as dataset_inspection.", {"quest_id": S["quest_id"], "payload": S["payload"], "kind": ARTIFACT_KIND_FIELD, "summary": {"type": "string"}, "status": {"type": "string"}, "checkpoint": {"type": "boolean"}}, ["quest_id"])
 CS_CONFIRM_BASELINE = _schema("cs_confirm_baseline", "Confirm a baseline gate using native artifact service.", {"quest_id": S["quest_id"], "baseline_path": S["path"], "baseline_id": {"type": "string"}, "variant_id": {"type": "string"}, "summary": {"type": "string"}, "comment": {}, "metric_contract": {"type": "object"}}, ["quest_id", "baseline_path"])
 CS_WAIVE_BASELINE = _schema("cs_waive_baseline", "Explicitly waive the baseline gate.", {"quest_id": S["quest_id"], "reason": {"type": "string"}, "comment": {}}, ["quest_id", "reason"])
 CS_ATTACH_BASELINE = _schema("cs_attach_baseline", "Attach a registered/imported baseline to the quest workspace.", {"quest_id": S["quest_id"], "baseline_id": {"type": "string"}, "variant_id": {"type": "string"}}, ["quest_id", "baseline_id"])
@@ -117,7 +141,21 @@ CS_SELECT_NEXT_IDEA = _schema("cs_select_next_idea", "Select the next non-duplic
 CS_CLAIM_GATE = _schema("cs_claim_gate", "Block paper-facing claims until baseline, metric, evidence, analysis, and seed checks pass.", {"quest_id": S["quest_id"], "claim_id": {"type": "string"}, "claim_text": {"type": "string"}, "baseline_id": {"type": "string"}, "metric_contract": {"type": "string"}, "evidence_paths": {"type": "array"}, "analysis_slice_ids": {"type": "array"}, "seed_count": {"type": "integer"}}, ["quest_id", "claim_id"])
 CS_GET_CONVERSATION_CONTEXT = _schema("cs_get_conversation_context", "Read a recent window of quest conversation history, matching original artifact.get_conversation_context.", {"quest_id": S["quest_id"], "limit": S["limit"], "include_attachments": {"type": "boolean", "default": False}})
 CS_RECORD_MAIN_EXPERIMENT = _schema("cs_record_main_experiment", "Record a main experiment run.", {"quest_id": S["quest_id"], "run_id": {"type": "string"}, "title": S["title"], "hypothesis": {"type": "string"}, "setup": {"type": "string"}, "execution": {"type": "string"}, "results": {"type": "string"}, "conclusion": {"type": "string"}, "metric_rows": {"type": "array"}, "metrics_summary": {"type": "object"}, "evidence_paths": {"type": "array"}, "verdict": {"type": "string"}}, ["quest_id", "run_id"])
-CS_CREATE_ANALYSIS_CAMPAIGN = _schema("cs_create_analysis_campaign", "Create an analysis campaign.", {"quest_id": S["quest_id"], "campaign_title": S["title"], "campaign_goal": {"type": "string"}, "slices": {"type": "array"}}, ["quest_id", "campaign_title", "campaign_goal", "slices"])
+CS_CREATE_ANALYSIS_CAMPAIGN = _schema(
+    "cs_create_analysis_campaign",
+    "Create an evidence analysis campaign. Writing-facing optional fields such as research_questions, experimental_designs, or todo_items require selected_outline_ref.",
+    {
+        "quest_id": S["quest_id"],
+        "campaign_title": S["title"],
+        "campaign_goal": {"type": "string"},
+        "slices": {"type": "array"},
+        "selected_outline_ref": {"type": "string", "description": "Required when supplying writing-facing fields such as research_questions, experimental_designs, or todo_items."},
+        "research_questions": {"type": "array", "items": {"type": "string"}, "description": "Writing-facing field; include selected_outline_ref."},
+        "experimental_designs": {"type": "array", "items": {"type": "string"}, "description": "Writing-facing field; include selected_outline_ref and describe the exact analysis/experiment design for each slice."},
+        "todo_items": {"type": "array", "items": {"type": "object", "required": ["slice_id", "section_id", "item_id", "paper_role", "claim_links"], "properties": {"slice_id": {"type": "string"}, "section_id": {"type": "string"}, "item_id": {"type": "string"}, "paper_role": {"type": "string"}, "claim_links": {"type": "array", "items": {"type": "string"}}}}, "description": "Writing-facing field; include one outline-bound todo per slice with section_id, item_id, paper_role, and claim_links."},
+    },
+    ["quest_id", "campaign_title", "campaign_goal", "slices"],
+)
 CS_GET_ANALYSIS_CAMPAIGN = _schema("cs_get_analysis_campaign", "Read the active or specified analysis campaign, including pending slice diagnostics.", {"quest_id": S["quest_id"], "campaign_id": {"type": "string", "default": "active", "description": "Use active or omit to inspect the current active campaign."}}, ["quest_id"])
 CS_RECORD_ANALYSIS_SLICE = _schema("cs_record_analysis_slice", "Record an analysis slice result.", {"quest_id": S["quest_id"], "campaign_id": {"type": "string"}, "slice_id": {"type": "string"}, "status": {"type": "string"}, "setup": {"type": "string"}, "execution": {"type": "string"}, "results": {"type": "string"}}, ["quest_id", "campaign_id", "slice_id"])
 CS_SUBMIT_PAPER_OUTLINE = _schema("cs_submit_paper_outline", "Submit/select/revise a paper outline. selected is accepted as an alias for select.", {"quest_id": S["quest_id"], "mode": PAPER_OUTLINE_MODE_FIELD, "outline_id": {"type": "string"}, "title": S["title"], "note": {"type": "string"}, "story": {"type": "string"}, "ten_questions": {"type": "array"}, "detailed_outline": {"type": ["object", "array"], "description": "Object with sections/experimental_designs, a list of section title strings, or a list of section objects."}}, ["quest_id"])
@@ -125,6 +163,119 @@ CS_LIST_PAPER_OUTLINES = _schema("cs_list_paper_outlines", "List candidate/revis
 CS_SUBMIT_PAPER_BUNDLE = _schema("cs_submit_paper_bundle", "Submit a paper bundle manifest.", {"quest_id": S["quest_id"], "title": S["title"], "summary": {"type": "string"}, "outline_path": S["path"], "draft_path": S["path"], "writing_plan_path": S["path"], "references_path": S["path"], "claim_evidence_map_path": S["path"], "compile_report_path": S["path"], "pdf_path": S["path"], "latex_root_path": S["path"], "prepare_open_source": {"type": "boolean"}}, ["quest_id"])
 CS_REFRESH_SUMMARY = _schema("cs_refresh_summary", "Refresh SUMMARY.md from recent artifact state, matching original artifact.refresh_summary.", {"quest_id": S["quest_id"], "reason": {"type": "string"}})
 CS_ARXIV = _schema("cs_arxiv", "Interact with the quest-local arXiv library, matching original artifact.arxiv through Codex-native transport.", {"quest_id": S["quest_id"], "paper_id": {"type": "string"}, "mode": {"type": "string", "enum": ["read", "list"], "default": "read"}, "full_text": {"type": "boolean", "default": False}})
+CS_ENVIRONMENT_REGISTER = _schema("cs_environment_register", "Register an execution-grounded research environment manifest without running experiments.", {"quest_id": S["quest_id"], "manifest": S["manifest"]}, ["quest_id", "manifest"])
+CS_ENVIRONMENT_VALIDATE = _schema("cs_environment_validate", "Validate a registered execution-grounded environment manifest, protected hashes, and metric parser.", {"quest_id": S["quest_id"], "env_id": S["env_id"]}, ["quest_id", "env_id"])
+CS_ENVIRONMENT_SHOW = _schema("cs_environment_show", "Read a bounded registered execution-grounded environment manifest.", {"quest_id": S["quest_id"], "env_id": S["env_id"]}, ["quest_id", "env_id"])
+CS_FEEDBACK_INGEST = _schema(
+    "cs_feedback_ingest",
+    "Ingest local execution feedback metrics/logs into an existing trajectory after validating the environment; does not run experiments.",
+    {
+        "quest_id": S["quest_id"],
+        "env_id": S["env_id"],
+        "trajectory_id": S["trajectory_id"],
+        "run_id": S["run_id"],
+        "source_kind": S["source_kind"],
+        "metrics_path": S["path"],
+        "log_paths": {"type": "array", "items": {"type": "string"}},
+        "trusted_primary_metric": {"type": "boolean", "default": False},
+    },
+    ["quest_id", "env_id", "trajectory_id", "run_id", "source_kind"],
+)
+CS_TRAJECTORY_RECORD = _schema(
+    "cs_trajectory_record",
+    "Create or update an execution-grounded trajectory record; records state only and never creates variants or jobs.",
+    {
+        "quest_id": S["quest_id"],
+        "env_id": S["env_id"],
+        "trajectory_id": S["trajectory_id"],
+        "operation": {"type": "string", "enum": ["create", "update_patch", "update_variant", "update_job", "update_result"], "default": "create"},
+        "idea": S["idea"],
+        "strategy": {"type": "string", "default": "manual"},
+        "parents": {"type": "array", "items": {"type": "string"}},
+        "patch": {"type": "object"},
+        "variant": {"type": "object"},
+        "job": {"type": "object"},
+        "result": {"type": "object"},
+        "failure": {"type": "object"},
+    },
+    ["quest_id"],
+)
+CS_TRAJECTORY_SEARCH = _schema("cs_trajectory_search", "Search execution-grounded trajectories with optional env/status/positive filters.", {"quest_id": S["quest_id"], "env_id": S["env_id"], "status": {"type": "string"}, "positive_only": {"type": "boolean", "default": False}, "limit": S["limit"]}, ["quest_id"])
+CS_TRAJECTORY_SHOW = _schema("cs_trajectory_show", "Read one execution-grounded trajectory with bounded/redacted path output.", {"quest_id": S["quest_id"], "trajectory_id": S["trajectory_id"]}, ["quest_id", "trajectory_id"])
+CS_EVOLUTIONARY_PLAN_ROUND = _schema(
+    "cs_evolutionary_plan_round",
+    "Create a deterministic, plan-only evolutionary round from evaluated trajectories; writes a round-plan artifact but never submits jobs or creates variants.",
+    {"quest_id": S["quest_id"], "env_id": S["env_id"], "epoch": S["epoch"], "batch_size": S["batch_size"]},
+    ["quest_id", "env_id"],
+)
+_EXECUTOR_GATE_FIELDS = {
+    "approved": {"type": "boolean", "default": False, "description": "Required unless an explicit local-only zero-cost gate is satisfied."},
+    "local_only": {"type": "boolean", "default": False, "description": "Allow only zero-GPU/zero-cost local toy execution after environment validation."},
+    "executor_gate": {"type": "string", "enum": ["local_only"], "description": "Explicit local-only executor gate token."},
+}
+CS_VARIANT_CREATE = _schema(
+    "cs_variant_create",
+    "Create an isolated execution variant worktree after executor approval or local-only gate.",
+    {"quest_id": S["quest_id"], "env_id": S["env_id"], "trajectory_id": S["trajectory_id"], "idea_id": S["idea_id"], **_EXECUTOR_GATE_FIELDS},
+    ["quest_id", "env_id", "trajectory_id", "idea_id"],
+)
+CS_VARIANT_APPLY_PATCH = _schema(
+    "cs_variant_apply_patch",
+    "Apply a patch inside an isolated variant workspace after executor approval or local-only gate.",
+    {"quest_id": S["quest_id"], "variant_id": S["variant_id"], "patch_path": S["path"], **_EXECUTOR_GATE_FIELDS},
+    ["quest_id", "variant_id", "patch_path"],
+)
+CS_VARIANT_CHECK = _schema(
+    "cs_variant_check",
+    "Run environment smoke checks for one isolated variant after executor approval or local-only gate.",
+    {"quest_id": S["quest_id"], "variant_id": S["variant_id"], **_EXECUTOR_GATE_FIELDS},
+    ["quest_id", "variant_id"],
+)
+CS_VARIANT_PACK = _schema(
+    "cs_variant_pack",
+    "Create a deterministic package for one checked variant after executor approval or local-only gate.",
+    {"quest_id": S["quest_id"], "variant_id": S["variant_id"], **_EXECUTOR_GATE_FIELDS},
+    ["quest_id", "variant_id"],
+)
+CS_SCHEDULER_SUBMIT = _schema(
+    "cs_scheduler_submit",
+    "Submit a deterministic local execution job for a packed variant through executor-local SchedulerService.",
+    {
+        "quest_id": S["quest_id"],
+        "env_id": S["env_id"],
+        "trajectory_id": S["trajectory_id"],
+        "variant_id": S["variant_id"],
+        "package_path": S["path"],
+        "backend": S["backend"],
+        "command": S["command"],
+        "expected_outputs": S["expected_outputs"],
+        "max_attempts": S["max_attempts"],
+    },
+    ["quest_id", "env_id", "trajectory_id", "variant_id", "package_path", "command"],
+)
+CS_SCHEDULER_STATUS = _schema("cs_scheduler_status", "Read executor-local scheduler queue status.", {"quest_id": S["quest_id"], "env_id": S["env_id"]})
+CS_WORKER_CLAIM = _schema("cs_worker_claim", "Claim and start one pending executor-local scheduler job.", {"quest_id": S["quest_id"], "env_id": S["env_id"], "worker_id": S["worker_id"], "ttl_seconds": {"type": "integer", "default": 3600}, "dry_run": {"type": "boolean", "default": False}}, ["worker_id"])
+CS_WORKER_HEARTBEAT = _schema("cs_worker_heartbeat", "Record a heartbeat for an executor-local worker run.", {"quest_id": S["quest_id"], "env_id": S["env_id"], "run_id": S["run_id"]}, ["run_id"])
+CS_WORKER_COLLECT = _schema("cs_worker_collect", "Collect one executor-local worker job and ingest metrics/log feedback.", {"quest_id": S["quest_id"], "env_id": S["env_id"], "job_id": S["job_id"], "trusted_primary_metric": {"type": "boolean", "default": False}}, ["job_id"])
+CS_WORKER_UPLOAD_ARTIFACT = _schema("cs_worker_upload_artifact", "Copy one local worker artifact into the quest execution-grounded artifact area.", {"quest_id": S["quest_id"], "env_id": S["env_id"], "job_id": S["job_id"], "artifact_path": S["path"], "kind": S["kind"]}, ["job_id", "artifact_path"])
+CS_EVOLUTIONARY_ROUND_SUBMIT = _schema(
+    "cs_evolutionary_round_submit",
+    "Submit scheduler jobs for an existing EvolutionaryRoundPlan; never creates variants and requires explicit approval when the plan requires it.",
+    {"quest_id": S["quest_id"], "env_id": S["env_id"], "round_id": S["round_id"], "approval": S["approval"], "submissions": S["submissions"], "backend": S["backend"]},
+    ["quest_id", "env_id", "round_id", "submissions"],
+)
+CS_IMPLEMENTER_PATCH_CHECK = _schema(
+    "cs_implementer_patch_check",
+    "Check an implementer patch against a variant gate without running full training.",
+    {"quest_id": S["quest_id"], "variant_id": S["variant_id"], "patch_path": S["path"], **_EXECUTOR_GATE_FIELDS},
+    ["quest_id", "variant_id", "patch_path"],
+)
+CS_IMPLEMENTER_REPAIR_PATCH = _schema(
+    "cs_implementer_repair_patch",
+    "Return fail-closed repair guidance for a failed implementer patch; execution remains gated.",
+    {"quest_id": S["quest_id"], "variant_id": S["variant_id"], "patch_path": S["path"], "failure": {"type": "object"}, **_EXECUTOR_GATE_FIELDS},
+    ["quest_id", "variant_id"],
+)
 CS_BASH_EXEC = _schema(
     "cs_bash_exec",
     "Run/list/read/wait/stop quest-local bash sessions. For operation=run this is a formal provenance tool, not a general shell: provide command, command_class, provenance_reason, experiment_or_artifact_id, cwd_policy, and expected_outputs or evidence_paths.",
@@ -149,7 +300,16 @@ CS_BASH_EXEC = _schema(
         "response_mode": {"type": "string", "enum": ["full", "summary", "compact"]},
     },
 )
-CS_WORKFLOW_SMOKE_REPORT = _schema("cs_workflow_smoke_report", "Return a lightweight Hermes-only CodexScientist full-workflow checklist and path readiness report without running training.", {"quest_id": S["quest_id"], "dataset_path": S["path"], "paper_path": S["path"], "report_dir": S["path"]})
+CS_BASH_EXEC["input_schema"]["allOf"] = [
+    {
+        "if": {"properties": {"operation": {"const": "run"}}, "required": ["operation"]},
+        "then": {
+            "required": ["quest_id", "command", "command_class", "provenance_reason", "experiment_or_artifact_id", "cwd_policy"],
+            "anyOf": [{"required": ["expected_outputs"]}, {"required": ["evidence_paths"]}],
+        },
+    }
+]
+CS_WORKFLOW_SMOKE_REPORT = _schema("cs_workflow_smoke_report", "Return a lightweight CodexScientist full-workflow checklist and path readiness report without running training.", {"quest_id": S["quest_id"], "dataset_path": S["path"], "paper_path": S["path"], "report_dir": S["path"]})
 CS_STRICT_RESEARCH_PREPARE = _schema("cs_strict_research_prepare", "Initialize strict literature research mode in the active quest: create reference/candidate_references.md and return conservative screening workflow guidance.", {"quest_id": S["quest_id"], "intent": {"type": "string"}, "target_count": {"type": "integer"}, "complexity": {"type": "string", "enum": ["small", "medium", "large", "survey"]}})
 CS_STRICT_RESEARCH_RECORD_CANDIDATE = _schema("cs_strict_research_record_candidate", "Append a candidate paper to reference/candidate_references.md during broad scouting before deep reading.", {"quest_id": S["quest_id"], "title": S["title"], "doi": {"type": "string"}, "link": {"type": "string"}, "source": {"type": "string"}, "authors": {"type": "string"}, "year": {"type": "string"}, "note": {"type": "string"}, "status": {"type": "string"}}, ["title"])
 CS_STRICT_RESEARCH_UPSERT_CANDIDATE = _schema("cs_strict_research_upsert_candidate", "Upsert or update a strict-research candidate row in reference/candidate_references.md by title, DOI, or link.", {"quest_id": S["quest_id"], "key": {"type": "string", "description": "Existing title/DOI/link to match. Omit when title/doi/link should be used directly."}, "key_field": {"type": "string", "enum": ["title", "doi", "link"]}, "title": S["title"], "doi": {"type": "string"}, "link": {"type": "string"}, "source": {"type": "string"}, "authors": {"type": "string"}, "year": {"type": "string"}, "note": {"type": "string"}, "status": {"type": "string"}, "evidence_card": {"type": "string"}, "reliability_card": {"type": "string"}, "retain_reject_reason": {"type": "string"}, "reason": {"type": "string"}})
@@ -189,6 +349,11 @@ NATIVE_SCHEMAS = [
     CS_RECORD_MAIN_EXPERIMENT,
     CS_CREATE_ANALYSIS_CAMPAIGN, CS_GET_ANALYSIS_CAMPAIGN, CS_RECORD_ANALYSIS_SLICE, CS_SUBMIT_PAPER_OUTLINE,
     CS_LIST_PAPER_OUTLINES, CS_SUBMIT_PAPER_BUNDLE, CS_REFRESH_SUMMARY, CS_ARXIV,
+    CS_ENVIRONMENT_REGISTER, CS_ENVIRONMENT_VALIDATE, CS_ENVIRONMENT_SHOW, CS_FEEDBACK_INGEST,
+    CS_TRAJECTORY_RECORD, CS_TRAJECTORY_SEARCH, CS_TRAJECTORY_SHOW, CS_EVOLUTIONARY_PLAN_ROUND,
+    CS_VARIANT_CREATE, CS_VARIANT_APPLY_PATCH, CS_VARIANT_CHECK, CS_VARIANT_PACK,
+    CS_SCHEDULER_SUBMIT, CS_SCHEDULER_STATUS, CS_WORKER_CLAIM, CS_WORKER_HEARTBEAT, CS_WORKER_COLLECT, CS_WORKER_UPLOAD_ARTIFACT, CS_EVOLUTIONARY_ROUND_SUBMIT,
+    CS_IMPLEMENTER_PATCH_CHECK, CS_IMPLEMENTER_REPAIR_PATCH,
     CS_BASH_EXEC, CS_WORKFLOW_SMOKE_REPORT,
     CS_STRICT_RESEARCH_PREPARE, CS_STRICT_RESEARCH_RECORD_CANDIDATE, CS_STRICT_RESEARCH_UPSERT_CANDIDATE,
     CS_PAPER_FETCH, CS_RECORD_LITERATURE_READING_NOTE, CS_STRICT_RESEARCH_INIT_BIBLIOGRAPHY, CS_PAPER_RELIABILITY_VERIFY,

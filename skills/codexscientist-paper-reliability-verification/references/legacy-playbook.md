@@ -1,6 +1,6 @@
 # Legacy playbook
 
-Do not execute old API names directly. This file preserves the pre-upgrade long playbook for audit and migration only. When using it, translate any historical tool or state API names to the current `scripts/csctl.py` command surface and obey the default copilot autonomy gate.
+Do not execute old API names directly. This file preserves the pre-upgrade long playbook for audit and migration only. When using it, translate any historical tool or state API names to the current public MCP `cs_*` tool surface and obey the default copilot autonomy gate.
 
 ---
 
@@ -8,7 +8,7 @@ Do not execute old API names directly. This file preserves the pre-upgrade long 
 name: codexscientist-paper-reliability-verification
 description: Verify paper reliability through the bundled CodexScientist verifier workflow before using papers as evidence.
 version: 1.1.2
-author: Hermes Agent
+author: CodexScientist Codex adapter
 license: MIT
 metadata:
   hermes:
@@ -18,7 +18,7 @@ metadata:
 skill_role: companion
 ---
 
-> Codex adapter note: this support skill is bundled for CodexScientist. Prefer the stable curated MCP tools for repeated CodexScientist state/status/context workflows; use `scripts/csctl.py call <cs_tool_name> --json ... --format json` as CLI fallback. Load at most one support skill alongside the active stage. Runtime state lives under `<project>/CodexScientist/`.
+> Codex adapter note: this support skill is bundled for CodexScientist. Prefer public MCP `cs_*` tools visible in `tools/list`/`cs_tool_schema` for repeated CodexScientist state/status/context workflows. Load at most one support skill alongside the active stage. Runtime state lives under `<project>/CodexScientist/`.
 > Use `cs_paper_reliability_verify` as the primary CodexScientist tool wrapper; it stores reliability cards under quest-local `reference/reliability_cards/` and keeps `accepted_publication` evidence auditable.
 
 # Paper Reliability Verification

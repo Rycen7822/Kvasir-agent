@@ -42,7 +42,7 @@ openreview:
   env:
     username: OPENREVIEW_USERNAME
     password: OPENREVIEW_PASSWORD
-    secret_file: /home/xu/.hermes/secrets/openreview.env
+    secret_file: $CODEX_HOME/secrets/openreview.env
     venue_ids: OPENREVIEW_VENUE_IDS
   fields:
     publication_hit: [title, venueid, venue_label, decision_notes, openreview_id, forum, number, url, accepted, presentation_type]

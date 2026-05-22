@@ -11,8 +11,10 @@ import json
 import os
 import re
 import shutil
+import subprocess
 import sys
 import uuid
+from contextvars import ContextVar
 from datetime import datetime, timezone
 from functools import wraps
 from pathlib import Path
@@ -49,6 +51,38 @@ def _guard(fn: Callable[[dict[str, Any]], dict[str, Any]]):
 def _require(args: dict[str, Any], *names: str) -> str | None:
     missing = [name for name in names if not str(args.get(name) or "").strip()]
     return f"Missing required value(s): {', '.join(missing)}" if missing else None
+
+
+def _missing_argument(names: list[str]) -> dict[str, Any]:
+    return {
+        "ok": False,
+        "error": f"Missing required value(s): {', '.join(names)}",
+        "error_type": "missing_argument",
+        "recoverable": True,
+        "missing_context_keys": names,
+    }
+
+
+def _required_payload(args: dict[str, Any], *names: str) -> dict[str, Any] | None:
+    missing = [name for name in names if not str(args.get(name) or "").strip()]
+    return _missing_argument(missing) if missing else None
+
+
+def _project_root_arg(args: dict[str, Any]) -> Path:
+    return Path(args.get("project") or args.get("project_root") or os.environ.get("CODEXSCIENTIST_PROJECT_ROOT") or ".").expanduser().resolve()
+
+
+def _project_layout(args: dict[str, Any]):
+    from codex_scientist.services.project_state import ProjectLayout
+
+    return ProjectLayout.from_project_root(_project_root_arg(args))
+
+
+def _phase1_result(payload: dict[str, Any]) -> dict[str, Any]:
+    if payload.get("ok", True) is False:
+        payload.setdefault("error_type", "invalid_argument")
+        payload.setdefault("recoverable", True)
+    return payload
 
 
 def _limit(args: dict[str, Any], default: int = 20, maximum: int = 200) -> int:
@@ -1451,6 +1485,516 @@ def cs_arxiv(args: dict[str, Any]) -> dict[str, Any]:
     )
     payload.setdefault("quest_id", quest_id)
     return payload
+
+
+@_guard
+def cs_environment_register(args: dict[str, Any]) -> dict[str, Any]:
+    if missing := _required_payload(args, "quest_id"):
+        return missing
+    manifest = args.get("manifest")
+    if not isinstance(manifest, dict):
+        return {"ok": False, "error": "manifest must be an object", "error_type": "invalid_schema", "recoverable": True}
+    from codex_scientist.services.environment import EnvironmentService
+
+    return _phase1_result(EnvironmentService(_project_layout(args)).register(quest_id=str(args["quest_id"]), manifest=manifest))
+
+
+@_guard
+def cs_environment_validate(args: dict[str, Any]) -> dict[str, Any]:
+    if missing := _required_payload(args, "quest_id", "env_id"):
+        return missing
+    from codex_scientist.services.environment import EnvironmentService
+
+    return _phase1_result(EnvironmentService(_project_layout(args)).validate(quest_id=str(args["quest_id"]), env_id=str(args["env_id"])))
+
+
+@_guard
+def cs_environment_show(args: dict[str, Any]) -> dict[str, Any]:
+    if missing := _required_payload(args, "quest_id", "env_id"):
+        return missing
+    from codex_scientist.services.environment import EnvironmentService
+
+    return _phase1_result(EnvironmentService(_project_layout(args)).show(quest_id=str(args["quest_id"]), env_id=str(args["env_id"])))
+
+
+@_guard
+def cs_trajectory_record(args: dict[str, Any]) -> dict[str, Any]:
+    if missing := _required_payload(args, "quest_id"):
+        return missing
+    from codex_scientist.services.trajectory import TrajectoryStore
+
+    store = TrajectoryStore(_project_layout(args))
+    operation = str(args.get("operation") or "create").strip().lower() or "create"
+    quest_id = str(args["quest_id"])
+    if operation == "create":
+        if missing := _required_payload(args, "env_id"):
+            return missing
+        idea = args.get("idea")
+        if not isinstance(idea, dict):
+            return {"ok": False, "error": "idea must be an object", "error_type": "invalid_schema", "recoverable": True}
+        parents = [str(item) for item in (args.get("parents") or [])] if isinstance(args.get("parents"), list) else []
+        return _phase1_result(store.create(quest_id=quest_id, env_id=str(args["env_id"]), idea=idea, strategy=str(args.get("strategy") or "manual"), parents=parents))
+    if missing := _required_payload(args, "trajectory_id"):
+        return missing
+    trajectory_id = str(args["trajectory_id"])
+    if operation == "update_patch":
+        return _phase1_result(store.update_patch(quest_id=quest_id, trajectory_id=trajectory_id, patch=dict(args.get("patch") or {})))
+    if operation == "update_variant":
+        return _phase1_result(store.update_variant(quest_id=quest_id, trajectory_id=trajectory_id, variant=dict(args.get("variant") or {})))
+    if operation == "update_job":
+        return _phase1_result(store.update_job(quest_id=quest_id, trajectory_id=trajectory_id, job=dict(args.get("job") or {})))
+    if operation == "update_result":
+        result = args.get("result")
+        if not isinstance(result, dict):
+            return {"ok": False, "error": "result must be an object", "error_type": "invalid_schema", "recoverable": True}
+        failure = args.get("failure") if isinstance(args.get("failure"), dict) else None
+        return _phase1_result(store.update_result(quest_id=quest_id, trajectory_id=trajectory_id, result=result, failure=failure))
+    return {"ok": False, "error": f"Unknown cs_trajectory_record operation: {operation}", "error_type": "invalid_operation", "recoverable": True}
+
+
+@_guard
+def cs_trajectory_search(args: dict[str, Any]) -> dict[str, Any]:
+    if missing := _required_payload(args, "quest_id"):
+        return missing
+    from codex_scientist.services.trajectory import TrajectoryStore
+
+    return _phase1_result(
+        TrajectoryStore(_project_layout(args)).search(
+            quest_id=str(args["quest_id"]),
+            env_id=str(args.get("env_id") or "").strip() or None,
+            status=str(args.get("status") or "").strip() or None,
+            positive_only=_truthy(args.get("positive_only")),
+            limit=_limit(args, default=20, maximum=100),
+        )
+    )
+
+
+@_guard
+def cs_trajectory_show(args: dict[str, Any]) -> dict[str, Any]:
+    if missing := _required_payload(args, "quest_id", "trajectory_id"):
+        return missing
+    from codex_scientist.services.trajectory import TrajectoryStore
+
+    return _phase1_result(TrajectoryStore(_project_layout(args)).show(quest_id=str(args["quest_id"]), trajectory_id=str(args["trajectory_id"])))
+
+
+@_guard
+def cs_evolutionary_plan_round(args: dict[str, Any]) -> dict[str, Any]:
+    if missing := _required_payload(args, "quest_id", "env_id"):
+        return missing
+    from codex_scientist.services.evolutionary import EvolutionarySearchService
+
+    return _phase1_result(
+        EvolutionarySearchService(_project_layout(args)).plan_round(
+            quest_id=str(args["quest_id"]),
+            env_id=str(args["env_id"]),
+            epoch=int(args.get("epoch") or 0),
+            batch_size=int(args.get("batch_size") or 4),
+        )
+    )
+
+
+def _executor_gate_block(tool_name: str, *, reason: str = "approval_or_local_only_required", **extra: Any) -> dict[str, Any]:
+    return {
+        "ok": False,
+        "error": "Executor tool requires approved=true or an explicit local-only zero-cost gate.",
+        "error_type": "executor_gate_required",
+        "recoverable": True,
+        "tool": tool_name,
+        "reason": reason,
+        "required_approval": "approved=true",
+        "local_only_gate": {"local_only": True, "requires": ["valid_environment", "zero_gpu", "zero_cost", "restricted_or_off_network"]},
+        **extra,
+    }
+
+
+def _executor_float(value: Any) -> float:
+    try:
+        return float(value or 0)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _executor_local_gate(args: dict[str, Any], *, tool_name: str) -> dict[str, Any]:
+    if missing := _required_payload(args, "quest_id", "env_id"):
+        missing.update({"error_type": "executor_gate_required", "tool": tool_name, "required_approval": "approved=true"})
+        return missing
+    from codex_scientist.services.environment import EnvironmentService
+
+    env_service = EnvironmentService(_project_layout(args))
+    validated = env_service.validate(quest_id=str(args["quest_id"]), env_id=str(args["env_id"]))
+    if validated.get("ok") is not True:
+        payload = _phase1_result(validated)
+        payload.setdefault("tool", tool_name)
+        payload.setdefault("executor_gate", "local_only")
+        return payload
+    shown = env_service.show(quest_id=str(args["quest_id"]), env_id=str(args["env_id"]))
+    if shown.get("ok") is not True:
+        payload = _phase1_result(shown)
+        payload.setdefault("tool", tool_name)
+        payload.setdefault("executor_gate", "local_only")
+        return payload
+    raw_environment = shown.get("environment")
+    environment = raw_environment if isinstance(raw_environment, dict) else {}
+    raw_resources = environment.get("resources")
+    raw_budget = environment.get("budget")
+    raw_security = environment.get("security")
+    resources = raw_resources if isinstance(raw_resources, dict) else {}
+    budget = raw_budget if isinstance(raw_budget, dict) else {}
+    security = raw_security if isinstance(raw_security, dict) else {}
+    gpu_values = [resources.get("gpu_count"), resources.get("gpu"), resources.get("gpus"), resources.get("gpu_hours")]
+    budget_values = [budget.get("max_gpu_hours"), budget.get("gpu_hours"), budget.get("max_usd"), budget.get("usd_estimate")]
+    if any(_executor_float(value) > 0 for value in gpu_values):
+        return {"ok": False, "error": "Local-only executor gate requires zero GPU resources.", "error_type": "executor_local_gate_failed", "recoverable": True, "tool": tool_name, "reason": "gpu_not_zero"}
+    if any(_executor_float(value) > 0 for value in budget_values):
+        return {"ok": False, "error": "Local-only executor gate requires zero cost budget.", "error_type": "executor_local_gate_failed", "recoverable": True, "tool": tool_name, "reason": "cost_not_zero"}
+    network = str(security.get("network_policy") or security.get("network") or "restricted").strip().lower()
+    if network not in {"", "off", "none", "restricted", "local_only", "disabled"}:
+        return {"ok": False, "error": "Local-only executor gate requires restricted/off network policy.", "error_type": "executor_local_gate_failed", "recoverable": True, "tool": tool_name, "reason": "network_not_local"}
+    return {"ok": True, "decision": "local_only_allowed", "approved": False, "local_only": True, "env_id": str(args["env_id"])}
+
+
+def _executor_bound_local_only_args(args: dict[str, Any], *, tool_name: str) -> dict[str, Any]:
+    if not str(args.get("variant_id") or "").strip():
+        return dict(args)
+    if missing := _required_payload(args, "quest_id", "variant_id"):
+        missing.update({"error_type": "executor_gate_required", "tool": tool_name, "required_approval": "approved=true"})
+        return missing
+    from codex_scientist.services.variant import VariantService
+
+    loaded = VariantService(_project_layout(args))._read_variant(quest_id=str(args["quest_id"]), variant_id=str(args["variant_id"]))  # noqa: SLF001 - gate must bind variant env
+    if loaded.get("ok") is not True:
+        payload = _phase1_result(loaded)
+        payload.setdefault("tool", tool_name)
+        return payload
+    raw_variant = loaded.get("variant")
+    variant = raw_variant if isinstance(raw_variant, dict) else {}
+    variant_env_id = str(variant.get("env_id") or "").strip()
+    provided_env_id = str(args.get("env_id") or "").strip()
+    if provided_env_id and provided_env_id != variant_env_id:
+        return {
+            "ok": False,
+            "error": "Executor local-only gate env_id must match the variant's recorded environment.",
+            "error_type": "executor_gate_env_mismatch",
+            "recoverable": True,
+            "tool": tool_name,
+            "variant_id": str(args["variant_id"]),
+            "variant_env_id": variant_env_id,
+            "provided_env_id": provided_env_id,
+        }
+    bound_args = dict(args)
+    bound_args["env_id"] = variant_env_id
+    return bound_args
+
+
+def _executor_gate(args: dict[str, Any], *, tool_name: str) -> dict[str, Any]:
+    if _truthy(args.get("approved")):
+        return {"ok": True, "decision": "approved", "approved": True, "local_only": False}
+    explicit_local_only = _truthy(args.get("local_only")) or str(args.get("executor_gate") or "").strip().lower() in {"local", "local_only"}
+    if explicit_local_only:
+        bound_args = _executor_bound_local_only_args(args, tool_name=tool_name)
+        if bound_args.get("ok") is False:
+            return bound_args
+        return _executor_local_gate(bound_args, tool_name=tool_name)
+    return _executor_gate_block(tool_name)
+
+
+def _with_executor_gate(payload: dict[str, Any], gate: dict[str, Any]) -> dict[str, Any]:
+    if payload.get("ok") is True:
+        payload = dict(payload)
+        payload["executor_gate"] = {key: value for key, value in gate.items() if key in {"decision", "approved", "local_only", "env_id"}}
+    return _phase1_result(payload)
+
+
+_MCP_EXECUTOR_GATE_GRANTED: ContextVar[bool] = ContextVar("codexscientist_mcp_executor_gate_granted", default=False)
+
+
+def _runtime_executor_gate(args: dict[str, Any], *, tool_name: str) -> dict[str, Any]:
+    if _MCP_EXECUTOR_GATE_GRANTED.get():
+        return {"ok": True, "decision": "mcp_executor_gate", "approved": False, "local_only": False}
+    return _executor_gate(args, tool_name=tool_name)
+
+
+@_guard
+def cs_variant_create(args: dict[str, Any]) -> dict[str, Any]:
+    if missing := _required_payload(args, "quest_id", "env_id", "trajectory_id", "idea_id"):
+        return missing
+    gate = _executor_gate(args, tool_name="cs_variant_create")
+    if gate.get("ok") is not True:
+        return gate
+    from codex_scientist.services.variant import VariantService
+
+    result = VariantService(_project_layout(args)).create(
+        quest_id=str(args["quest_id"]),
+        env_id=str(args["env_id"]),
+        trajectory_id=str(args["trajectory_id"]),
+        idea_id=str(args["idea_id"]),
+    )
+    return _with_executor_gate(result, gate)
+
+
+@_guard
+def cs_variant_apply_patch(args: dict[str, Any]) -> dict[str, Any]:
+    if missing := _required_payload(args, "quest_id", "variant_id", "patch_path"):
+        return missing
+    gate = _executor_gate(args, tool_name="cs_variant_apply_patch")
+    if gate.get("ok") is not True:
+        return gate
+    from codex_scientist.services.variant import VariantService
+
+    result = VariantService(_project_layout(args)).apply_patch(quest_id=str(args["quest_id"]), variant_id=str(args["variant_id"]), patch_path=str(args["patch_path"]))
+    return _with_executor_gate(result, gate)
+
+
+@_guard
+def cs_variant_check(args: dict[str, Any]) -> dict[str, Any]:
+    if missing := _required_payload(args, "quest_id", "variant_id"):
+        return missing
+    gate = _executor_gate(args, tool_name="cs_variant_check")
+    if gate.get("ok") is not True:
+        return gate
+    from codex_scientist.services.variant import VariantService
+
+    result = VariantService(_project_layout(args)).check(quest_id=str(args["quest_id"]), variant_id=str(args["variant_id"]))
+    return _with_executor_gate(result, gate)
+
+
+@_guard
+def cs_variant_pack(args: dict[str, Any]) -> dict[str, Any]:
+    if missing := _required_payload(args, "quest_id", "variant_id"):
+        return missing
+    gate = _executor_gate(args, tool_name="cs_variant_pack")
+    if gate.get("ok") is not True:
+        return gate
+    from codex_scientist.services.variant import VariantService
+
+    result = VariantService(_project_layout(args)).pack(quest_id=str(args["quest_id"]), variant_id=str(args["variant_id"]))
+    return _with_executor_gate(result, gate)
+
+
+@_guard
+def cs_scheduler_submit(args: dict[str, Any]) -> dict[str, Any]:
+    if missing := _required_payload(args, "quest_id", "env_id", "trajectory_id", "variant_id", "package_path", "command"):
+        return missing
+    gate = _runtime_executor_gate(args, tool_name="cs_scheduler_submit")
+    if gate.get("ok") is not True:
+        return gate
+    from codex_scientist.services.scheduler import SchedulerService
+
+    result = SchedulerService(_project_layout(args)).submit(
+        quest_id=str(args["quest_id"]),
+        env_id=str(args["env_id"]),
+        trajectory_id=str(args["trajectory_id"]),
+        variant_id=str(args["variant_id"]),
+        package_path=str(args["package_path"]),
+        backend=str(args.get("backend") or "local"),
+        command=str(args["command"]),
+        expected_outputs=[str(item) for item in (args.get("expected_outputs") or [])],
+        max_attempts=int(args.get("max_attempts") or 1),
+    )
+    return _phase1_result(result)
+
+
+@_guard
+def cs_scheduler_status(args: dict[str, Any]) -> dict[str, Any]:
+    gate = _runtime_executor_gate(args, tool_name="cs_scheduler_status")
+    if gate.get("ok") is not True:
+        return gate
+    from codex_scientist.services.scheduler import SchedulerService
+
+    return _phase1_result(SchedulerService(_project_layout(args)).status())
+
+
+@_guard
+def cs_worker_claim(args: dict[str, Any]) -> dict[str, Any]:
+    if missing := _required_payload(args, "worker_id"):
+        return missing
+    gate = _runtime_executor_gate(args, tool_name="cs_worker_claim")
+    if gate.get("ok") is not True:
+        return gate
+    from codex_scientist.services.worker import WorkerService
+
+    return _phase1_result(
+        WorkerService(_project_layout(args)).claim(
+            worker_id=str(args["worker_id"]),
+            ttl_seconds=int(args.get("ttl_seconds") or 3600),
+            dry_run=_truthy(args.get("dry_run")),
+            quest_id=str(args.get("quest_id")) if args.get("quest_id") is not None else None,
+            env_id=str(args.get("env_id")) if args.get("env_id") is not None else None,
+        )
+    )
+
+
+@_guard
+def cs_worker_heartbeat(args: dict[str, Any]) -> dict[str, Any]:
+    if missing := _required_payload(args, "run_id"):
+        return missing
+    gate = _runtime_executor_gate(args, tool_name="cs_worker_heartbeat")
+    if gate.get("ok") is not True:
+        return gate
+    from codex_scientist.services.worker import WorkerService
+
+    return _phase1_result(
+        WorkerService(_project_layout(args)).heartbeat(
+            run_id=str(args["run_id"]),
+            quest_id=str(args.get("quest_id")) if args.get("quest_id") is not None else None,
+            env_id=str(args.get("env_id")) if args.get("env_id") is not None else None,
+        )
+    )
+
+
+@_guard
+def cs_worker_upload_artifact(args: dict[str, Any]) -> dict[str, Any]:
+    if missing := _required_payload(args, "job_id", "artifact_path"):
+        return missing
+    gate = _runtime_executor_gate(args, tool_name="cs_worker_upload_artifact")
+    if gate.get("ok") is not True:
+        return gate
+    from codex_scientist.services.worker import WorkerService
+
+    return _phase1_result(
+        WorkerService(_project_layout(args)).upload_artifact(
+            job_id=str(args["job_id"]),
+            artifact_path=str(args["artifact_path"]),
+            kind=str(args.get("kind") or "artifact"),
+            quest_id=str(args.get("quest_id")) if args.get("quest_id") is not None else None,
+            env_id=str(args.get("env_id")) if args.get("env_id") is not None else None,
+        )
+    )
+
+
+@_guard
+def cs_worker_collect(args: dict[str, Any]) -> dict[str, Any]:
+    if missing := _required_payload(args, "job_id"):
+        return missing
+    gate = _runtime_executor_gate(args, tool_name="cs_worker_collect")
+    if gate.get("ok") is not True:
+        return gate
+    from codex_scientist.services.worker import WorkerService
+
+    return _phase1_result(
+        WorkerService(_project_layout(args)).collect(
+            job_id=str(args["job_id"]),
+            trusted_primary_metric=_truthy(args.get("trusted_primary_metric")),
+            quest_id=str(args.get("quest_id")) if args.get("quest_id") is not None else None,
+            env_id=str(args.get("env_id")) if args.get("env_id") is not None else None,
+        )
+    )
+
+
+@_guard
+def cs_evolutionary_round_submit(args: dict[str, Any]) -> dict[str, Any]:
+    if missing := _required_payload(args, "quest_id", "env_id", "round_id", "submissions"):
+        return missing
+    gate = _runtime_executor_gate(args, tool_name="cs_evolutionary_round_submit")
+    if gate.get("ok") is not True:
+        return gate
+    from codex_scientist.services.evolutionary import EvolutionarySearchService
+
+    raw_submissions = args.get("submissions")
+    submissions = raw_submissions if isinstance(raw_submissions, list) else []
+    raw_approval = args.get("approval")
+    approval = raw_approval if isinstance(raw_approval, dict) else None
+    return _phase1_result(
+        EvolutionarySearchService(_project_layout(args)).submit_round(
+            quest_id=str(args["quest_id"]),
+            env_id=str(args["env_id"]),
+            round_id=str(args["round_id"]),
+            submissions=submissions,
+            approval=approval,
+            backend=str(args.get("backend") or "local"),
+        )
+    )
+
+
+@_guard
+def cs_implementer_patch_check(args: dict[str, Any]) -> dict[str, Any]:
+    if missing := _required_payload(args, "quest_id", "variant_id", "patch_path"):
+        return missing
+    gate = _executor_gate(args, tool_name="cs_implementer_patch_check")
+    if gate.get("ok") is not True:
+        return gate
+    from codex_scientist.services.variant import VariantService
+
+    service = VariantService(_project_layout(args))
+    loaded = service._read_variant(quest_id=str(args["quest_id"]), variant_id=str(args["variant_id"]))  # noqa: SLF001 - adapter-level dry-run check
+    if loaded.get("ok") is not True:
+        return _phase1_result(loaded)
+    patch_path = Path(str(args["patch_path"])).expanduser().resolve()
+    if not patch_path.is_file():
+        return {"ok": False, "error": f"Patch path does not exist: {patch_path}", "error_type": "invalid_path", "recoverable": True}
+    from codex_scientist.services.environment import EnvironmentService
+
+    env_payload = EnvironmentService(_project_layout(args)).show(quest_id=str(args["quest_id"]), env_id=str(loaded["variant"].get("env_id") or args.get("env_id") or ""))
+    if env_payload.get("ok") is not True:
+        return _phase1_result(env_payload)
+    raw_environment = env_payload.get("environment")
+    environment = raw_environment if isinstance(raw_environment, dict) else {}
+    planned_paths = service._changed_paths_from_patch(patch_path)  # noqa: SLF001 - adapter-level dry-run guard
+    guard = service._readonly_guard(environment=environment, changed_paths=planned_paths)  # noqa: SLF001 - must mirror apply guard
+    if guard.get("ok") is not True:
+        return {
+            "ok": False,
+            "variant_id": str(args["variant_id"]),
+            "patch_path": str(patch_path),
+            "error": "Patch touches readonly, evaluator, dataset, or non-mutable paths",
+            "error_type": "readonly_or_eval_changed",
+            "recoverable": True,
+            "blocked_paths": guard.get("blocked_paths", []),
+        }
+    workspace = Path(str(loaded["variant"].get("workspace_path") or "")).expanduser().resolve()
+    completed = subprocess.run(["git", "apply", "--check", str(patch_path)], cwd=workspace, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False, timeout=30)
+    payload = {
+        "ok": completed.returncode == 0,
+        "variant_id": str(args["variant_id"]),
+        "patch_path": str(patch_path),
+        "patch_sha256": hashlib.sha256(patch_path.read_bytes()).hexdigest(),
+        "exit_code": completed.returncode,
+        "stdout_tail": completed.stdout[-4000:],
+        "stderr_tail": completed.stderr[-4000:],
+    }
+    if completed.returncode != 0:
+        payload.update({"error": "git apply --check failed", "error_type": "patch_fail", "recoverable": True})
+    return _with_executor_gate(payload, gate)
+
+
+@_guard
+def cs_implementer_repair_patch(args: dict[str, Any]) -> dict[str, Any]:
+    if missing := _required_payload(args, "quest_id", "variant_id"):
+        return missing
+    gate = _executor_gate(args, tool_name="cs_implementer_repair_patch")
+    if gate.get("ok") is not True:
+        return gate
+    return _with_executor_gate(
+        {
+            "ok": True,
+            "variant_id": str(args["variant_id"]),
+            "repair_status": "context_required",
+            "suggested_next_action": "Build an execution-grounded repair context before asking an implementer to rewrite the patch.",
+            "failure": args.get("failure") if isinstance(args.get("failure"), dict) else None,
+        },
+        gate,
+    )
+
+
+@_guard
+def cs_feedback_ingest(args: dict[str, Any]) -> dict[str, Any]:
+    if missing := _required_payload(args, "quest_id", "env_id", "trajectory_id", "run_id", "source_kind"):
+        return missing
+    from codex_scientist.services.feedback_ingest import FeedbackIngestService
+
+    return _phase1_result(
+        FeedbackIngestService(_project_layout(args)).ingest(
+            quest_id=str(args["quest_id"]),
+            env_id=str(args["env_id"]),
+            trajectory_id=str(args["trajectory_id"]),
+            run_id=str(args["run_id"]),
+            source_kind=str(args["source_kind"]),
+            metrics_path=str(args.get("metrics_path") or "").strip() or None,
+            log_paths=_clean_string_list(args.get("log_paths")),
+            trusted_primary_metric=_truthy(args.get("trusted_primary_metric")),
+        )
+    )
 
 
 @_guard

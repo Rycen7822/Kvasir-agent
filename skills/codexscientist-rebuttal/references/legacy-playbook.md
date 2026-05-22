@@ -1,6 +1,6 @@
 # Legacy playbook
 
-Do not execute old API names directly. This file preserves the pre-upgrade long playbook for audit and migration only. When using it, translate any historical tool or state API names to the current `scripts/csctl.py` command surface and obey the default copilot autonomy gate.
+Do not execute old API names directly. This file preserves the pre-upgrade long playbook for audit and migration only. When using it, translate any historical tool or state API names to the current public MCP `cs_*` tool surface and obey the default copilot autonomy gate.
 
 ---
 
@@ -10,7 +10,7 @@ description: Use when a quest already has a paper, draft, or review package and 
 skill_role: companion
 ---
 
-> Codex adapter note: this stage skill is bundled for CodexScientist. Prefer the stable curated MCP tools for repeated CodexScientist state/status/context workflows; use `scripts/csctl.py call <cs_tool_name> --json ... --format json` as CLI fallback. Load this support skill only when its stage is relevant. Runtime state lives under `<project>/CodexScientist/`.
+> Codex adapter note: this stage skill is bundled for CodexScientist. Prefer public MCP `cs_*` tools visible in `tools/list`/`cs_tool_schema` for repeated CodexScientist state/status/context workflows. Load this support skill only when its stage is relevant. Runtime state lives under `<project>/CodexScientist/`.
 
 # Rebuttal
 

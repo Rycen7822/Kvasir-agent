@@ -26,7 +26,7 @@ For normal Codex use, leave `CODEX_HOME` and `AGENTS_HOME` unset so the standard
 The installer writes the MCP server entry automatically. To register the same entry manually, point Codex at the stdio launcher:
 
 ```bash
-codex mcp add codexscientist-codex -- python /path/to/CodexScientist-codex/scripts/cs_mcp.py
+codex mcp add codexscientist-codex -- python -B /path/to/CodexScientist-codex/scripts/cs_mcp.py
 ```
 
 A typical config entry should use stdio transport and should not contain secrets. The server reads only local project files and exposes curated `cs_*` tools.
@@ -40,9 +40,9 @@ python scripts/cs_mcp.py --stdio-smoke tools/list '{"profile":"evidence"}'
 python scripts/cs_mcp.py --stdio-smoke call cs_doctor '{}'
 ```
 
-## Hidden admin/debug CLI
+## Advanced admin/debug CLI
 
-Use hidden admin/debug CLI for CI, debugging, migration, recovery, and MCP-unavailable environments. See `docs/ADMIN_CLI.md` for human/admin/debug/CI/recovery commands.
+Advanced admin/debug CLI commands are documented separately for CI, debugging, migration, recovery, and MCP-unavailable environments. Normal Codex users should stay on the public MCP path above; see `docs/ADMIN_CLI.md` only for human/admin/debug/CI/recovery commands.
 
 Runtime state will live in:
 

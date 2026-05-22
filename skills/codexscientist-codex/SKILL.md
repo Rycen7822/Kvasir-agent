@@ -25,7 +25,13 @@ The default mode is `copilot`.
 
 In copilot mode, CodexScientist records, checks, organizes, retrieves, and summarizes research state. It may check novelty or duplicate risk for a user-provided or document-provided idea, but it must not own the research direction.
 
-`autonomous_idea_improvement` is disabled by default. Enable it only when the user explicitly asks for automatic idea/novelty improvement, or when a project manifest or handoff explicitly requires autonomous idea improvement. Otherwise, do not invent or improve ideas automatically; output candidate plans for user review instead of creating new running trials.
+`autonomous_idea_improvement` is disabled by default. Enable it only when the user explicitly asks for automatic idea/novelty improvement, or when a project manifest or handoff explicitly requires autonomous idea improvement. Otherwise, do not invent or improve ideas automatically; output candidate plans for user review instead of creating new running experiments.
+
+## execution-grounded gate
+
+execution-grounded work is opt-in. automatic idea search, variant implementation, run scheduling, and executor-backed operations require an explicit user request or manifest. In normal copilot use, record evidence and produce plans; do not submit experiments or create new executor-backed runs from this router.
+
+Use `execution_planning` only for plan-first environment, feedback, trajectory, and evolutionary planning tools after they exist. Use `executor_local` only when the user or manifest explicitly authorizes local executor work and the tool reports that the gate is open. The default path stays MCP-visible, fail-closed, and non-executor.
 
 ## Operation boundary
 

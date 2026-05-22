@@ -68,7 +68,7 @@ Then decisions are direct replies whose invitation ends in `Decision`.
 The local verifier loads credentials, if present, from:
 
 ```text
-/home/xu/.hermes/secrets/openreview.env
+$CODEX_HOME/secrets/openreview.env
 ```
 
 Expected variables:

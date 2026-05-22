@@ -41,6 +41,33 @@ class MethodImprovementService:
         safe = "".join(ch if ch.isalnum() or ch in "-_" else "_" for ch in str(claim_id or "claim")) or "claim"
         return self._quest(quest_id).quest_root / "artifacts" / "decisions" / f"claim_gate_{safe}.json"
 
+    def _analysis_slice_statuses(self, quest_id: str) -> dict[str, dict[str, Any]]:
+        quest_root = self._quest(quest_id).quest_root
+        campaigns_root = quest_root / ".cs" / "analysis_campaigns"
+        statuses: dict[str, dict[str, Any]] = {}
+        if not campaigns_root.exists():
+            return statuses
+        for path in sorted(campaigns_root.glob("*.json")):
+            try:
+                payload = json.loads(path.read_text(encoding="utf-8"))
+            except json.JSONDecodeError:
+                continue
+            if not isinstance(payload, dict):
+                continue
+            campaign_id = str(payload.get("campaign_id") or path.stem).strip() or path.stem
+            for item in payload.get("slices") or []:
+                if not isinstance(item, dict):
+                    continue
+                slice_id = str(item.get("slice_id") or "").strip()
+                if not slice_id:
+                    continue
+                statuses[slice_id] = {
+                    "campaign_id": campaign_id,
+                    "status": str(item.get("status") or "").strip().lower(),
+                    "manifest_path": str(path),
+                }
+        return statuses
+
     @staticmethod
     def _read_json(path: Path, default: dict[str, Any]) -> dict[str, Any]:
         if not path.exists():
@@ -211,8 +238,18 @@ class MethodImprovementService:
                 resolved_paths.append(str(path))
         if not resolved_paths:
             blockers.append("evidence_path_missing")
-        if not [item for item in analysis_slice_ids or [] if str(item).strip()]:
+        slice_ids = [str(item).strip() for item in analysis_slice_ids or [] if str(item).strip()]
+        if not slice_ids:
             blockers.append("analysis_slice_missing")
+        else:
+            slice_statuses = self._analysis_slice_statuses(quest_id)
+            for slice_id in slice_ids:
+                status = slice_statuses.get(slice_id)
+                if status is None:
+                    blockers.append(f"analysis_slice_not_found:{slice_id}")
+                    continue
+                if status.get("status") not in {"completed", "accepted"}:
+                    blockers.append(f"analysis_slice_not_completed:{slice_id}")
         if int(seed_count or 0) < 2:
             blockers.append("insufficient_seed_count")
         gate = {
@@ -224,7 +261,7 @@ class MethodImprovementService:
             "baseline_id": baseline_id,
             "metric_contract": metric_contract,
             "evidence_paths": resolved_paths,
-            "analysis_slice_ids": list(analysis_slice_ids or []),
+            "analysis_slice_ids": slice_ids,
             "seed_count": int(seed_count or 0),
             "updated_at": _utc_now(),
         }
@@ -232,5 +269,21 @@ class MethodImprovementService:
         self._write_json(path, gate)
         payload = {"ok": not blockers, "claim_gate": gate, "claim_gate_path": str(path)}
         if blockers:
-            payload.update({"error": "Claim gate blocked by missing evidence", "error_type": "claim_gate_blocked", "recoverable": True, "blocking_reasons": blockers})
+            payload.update({
+                "error": "Claim gate blocked by missing or incomplete evidence",
+                "error_type": "claim_gate_blocked",
+                "recoverable": True,
+                "blocking_reasons": blockers,
+                "retry_template": {
+                    "name": "cs_claim_gate",
+                    "required_before_retry": [
+                        "confirmed baseline_id or explicit waiver",
+                        "metric_contract",
+                        "existing evidence_paths",
+                        "completed analysis_slice_ids from cs_record_analysis_slice",
+                        "seed_count >= 2",
+                    ],
+                },
+                "suggested_next_action": "Complete and record the referenced analysis slices, verify evidence paths exist, then retry cs_claim_gate.",
+            })
         return payload

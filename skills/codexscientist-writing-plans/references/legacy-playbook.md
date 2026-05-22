@@ -1,6 +1,6 @@
 # Legacy playbook
 
-Do not execute old API names directly. This file preserves the pre-upgrade long playbook for audit and migration only. When using it, translate any historical tool or state API names to the current `scripts/csctl.py` command surface and obey the default copilot autonomy gate.
+Do not execute old API names directly. This file preserves the pre-upgrade long playbook for audit and migration only. When using it, translate any historical tool or state API names to the current public MCP `cs_*` tool surface and obey the default copilot autonomy gate.
 
 ---
 
@@ -8,7 +8,7 @@ Do not execute old API names directly. This file preserves the pre-upgrade long 
 name: codexscientist-writing-plans
 description: Write CodexScientist-aware implementation, experiment-roadmap, code-only, and formal-command plans with TDD and durable quest outputs.
 version: 1.1.0
-author: Hermes Agent (adapted from obra/superpowers)
+author: CodexScientist Codex adapter (adapted from obra/superpowers)
 license: MIT
 metadata:
   hermes:
@@ -18,7 +18,7 @@ metadata:
 skill_role: companion
 ---
 
-> Codex adapter note: this support skill is bundled for CodexScientist. Prefer the stable curated MCP tools for repeated CodexScientist state/status/context workflows; use `scripts/csctl.py call <cs_tool_name> --json ... --format json` as CLI fallback. Load at most one support skill alongside the active stage. Runtime state lives under `<project>/CodexScientist/`.
+> Codex adapter note: this support skill is bundled for CodexScientist. Prefer public MCP `cs_*` tools visible in `tools/list`/`cs_tool_schema` for repeated CodexScientist state/status/context workflows. Load at most one support skill alongside the active stage. Runtime state lives under `<project>/CodexScientist/`.
 
 # Writing Implementation Plans
 

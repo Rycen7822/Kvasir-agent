@@ -9,9 +9,11 @@ INSTALL_DIR="${CODEX_HOME}/plugins/${PLUGIN_NAME}"
 AGENTS_HOME="${AGENTS_HOME:-${HOME}/.agents}"
 MARKETPLACE_FILE="${AGENTS_HOME}/plugins/marketplace.json"
 CONFIG_FILE="${CODEX_HOME}/config.toml"
+PYTHON_BIN="${PYTHON_BIN:-$(command -v python3 || command -v python || true)}"
 
 log() { printf '[CodexScientist-codex] %s\n' "$*"; }
 fail() { printf '[CodexScientist-codex] ERROR: %s\n' "$*" >&2; exit 1; }
+[ -n "${PYTHON_BIN}" ] || fail "python3 or python is required for CodexScientist MCP registration."
 
 [ -f "${SOURCE_ROOT}/.codex-plugin/plugin.json" ] || fail "Run install.sh from a complete CodexScientist-codex source tree."
 if grep -R "mcp""Servers" -n "${SOURCE_ROOT}/.codex-plugin" >/dev/null 2>&1; then
@@ -43,13 +45,21 @@ fi
 [ ! -f "${INSTALL_DIR}/.mcp.json" ] || fail "Installed plugin unexpectedly contains .mcp.json"
 
 mkdir -p "$(dirname -- "${MARKETPLACE_FILE}")"
-python3 - "${MARKETPLACE_FILE}" <<'PY'
+"${PYTHON_BIN}" - "${MARKETPLACE_FILE}" "${INSTALL_DIR}" "${CODEX_HOME}" "${HOME}" <<'PY'
 from pathlib import Path
 import json, sys
 path = Path(sys.argv[1])
+install_dir = Path(sys.argv[2]).resolve()
+codex_home = Path(sys.argv[3]).expanduser().resolve()
+home = Path(sys.argv[4]).expanduser().resolve()
+def source_path() -> str:
+    default_codex_home = home / ".codex"
+    if codex_home == default_codex_home:
+        return "./.codex/plugins/codexscientist-codex"
+    return str(install_dir)
 entry = {
     "name": "codexscientist-codex",
-    "source": {"source": "local", "path": "./.codex/plugins/codexscientist-codex"},
+    "source": {"source": "local", "path": source_path()},
     "policy": {"installation": "AVAILABLE", "authentication": "ON_INSTALL"},
     "category": "Productivity",
 }
@@ -69,7 +79,7 @@ path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding=
 PY
 
 mkdir -p "$(dirname -- "${CONFIG_FILE}")"
-python3 - "${CONFIG_FILE}" <<'PY'
+"${PYTHON_BIN}" - "${CONFIG_FILE}" <<'PY'
 from pathlib import Path
 import re, sys
 path = Path(sys.argv[1])
@@ -110,17 +120,18 @@ if not found:
 path.write_text(''.join(out), encoding='utf-8')
 PY
 
-python3 - "${CONFIG_FILE}" "${INSTALL_DIR}/scripts/cs_mcp.py" <<'PY'
+"${PYTHON_BIN}" - "${CONFIG_FILE}" "${INSTALL_DIR}/scripts/cs_mcp.py" "${PYTHON_BIN}" <<'PY'
 from pathlib import Path
 import json
 import sys
 
 path = Path(sys.argv[1])
 mcp_entry = Path(sys.argv[2])
+python_bin = sys.argv[3]
 section = '[mcp_servers.codexscientist-codex]'
 body = [
-    'command = "python"\n',
-    f'args = [{json.dumps(str(mcp_entry))}]\n',
+    f'command = {json.dumps(python_bin)}\n',
+    f'args = ["-B", {json.dumps(str(mcp_entry))}]\n',
 ]
 text = path.read_text(encoding='utf-8') if path.exists() else ''
 lines = text.splitlines(keepends=True)
@@ -149,7 +160,7 @@ if not found:
 path.write_text(''.join(out), encoding='utf-8')
 PY
 
-PYTHONDONTWRITEBYTECODE=1 python3 "${INSTALL_DIR}/scripts/doctor.py" >/dev/null
+PYTHONDONTWRITEBYTECODE=1 "${PYTHON_BIN}" "${INSTALL_DIR}/scripts/doctor.py" >/dev/null
 if [ "${SOURCE_ROOT}" != "${INSTALL_DIR}" ]; then
   find "${INSTALL_DIR}" -type d \( -name '.git' -o -name '.pytest_cache' -o -name '__pycache__' \) -prune -exec rm -rf {} +
   find "${INSTALL_DIR}" -type f -name '*.pyc' -delete
@@ -159,4 +170,4 @@ log "Registered marketplace: ${MARKETPLACE_FILE}"
 log "Enabled [plugins.\"codexscientist-codex@local-personal\"] in ${CONFIG_FILE}"
 log "Registered MCP server [mcp_servers.codexscientist-codex] in ${CONFIG_FILE}"
 log "Verify with: codex mcp list && codex mcp get codexscientist-codex"
-log "Smoke test: python ${INSTALL_DIR}/scripts/cs_mcp.py --stdio-smoke call cs_doctor '{}'"
+log "Smoke test: ${PYTHON_BIN} -B ${INSTALL_DIR}/scripts/cs_mcp.py --stdio-smoke call cs_doctor '{}'"

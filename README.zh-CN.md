@@ -55,9 +55,9 @@ CodexScientist-codex 是基于 DeepScientist 二次开发、给 Codex CLI 使用
 | 控制面 | 默认通过 `scripts/cs_mcp.py` 走 MCP-only default；管理员终端命令隔离在 `docs/ADMIN_CLI.md`。 |
 | 公开工具面 | curated canonical `cs_*` 工具；历史 `codexscientist_*` 名称只作为隐藏兼容别名保留。 |
 | MCP profile | 默认 core profile 暴露 11 个工具；更宽的显式 profile 是 `evidence`、`formal_run`、`literature` 和 `paper_write`；`stage` 是 label，不过滤工具列表。 |
-| 长程恢复 | `cs_status`、`cs_resume_brief`、`cs_pack_delta` 和 `cs_checkpoint` 提供被动恢复锚点；`cs_goal_watchdog` 只作为手动诊断工具。 |
-| 方法改进 | `cs_update_method_scoreboard`、`cs_select_next_idea` 和 `cs_claim_gate` 在明确使用时闭合 experiment -> novelty -> evidence loop。 |
-| 研究状态 | 项目本地 quest、memory、artifact、baseline、experiment、paper bundle、analysis campaign 和 event 读取。 |
+| 长程恢复 | `cs_status`、`cs_resume_brief`、`cs_pack_delta` 和 `cs_checkpoint` 提供被动恢复锚点；watchdog 风格诊断在默认 Codex MCP 面中保持 hidden/admin-only。 |
+| 方法改进 | `cs_update_method_scoreboard`、`cs_get_optimization_frontier` 和 `cs_claim_gate` 等 public 工具闭合 experiment -> novelty -> evidence loop；自动 idea selection 不暴露在默认 MCP 面。 |
+| 研究状态 | 项目本地 quest、memory、artifact、baseline、experiment、paper bundle、analysis campaign 和有界 event/delta 摘要。 |
 | Codex skills | `codexscientist-codex` 以及 experiment、handoff、writing plan、paper reliability、review 等 adapted support skills。 |
 
 ## 快速开始
@@ -79,7 +79,7 @@ bash scripts/install.sh
 安装脚本会复制插件、启用 `[plugins."codexscientist-codex@local-personal"]`，并在 Codex config 中注册 MCP server。若需要手动注册，使用同一个 stdio 入口：
 
 ```bash
-codex mcp add codexscientist-codex -- python ~/.codex/plugins/codexscientist-codex/scripts/cs_mcp.py
+codex mcp add codexscientist-codex -- python -B ~/.codex/plugins/codexscientist-codex/scripts/cs_mcp.py
 ```
 
 安装后在研究项目根目录初始化提示文件：
@@ -98,7 +98,7 @@ bash ~/.codex/plugins/codexscientist-codex/scripts/init_project.sh /path/to/proj
 <project>/CodexScientist/
 ```
 
-这会把 quests、artifacts、memory、bash provenance、manual diagnostic records、checkpoints、analysis slices、claim decisions 和 paper bundles 留在研究项目里，而不是散落到全局 Codex 或 Hermes 状态中。
+这会把 quests、artifacts、memory、bash provenance、manual diagnostic records、checkpoints、analysis slices、claim decisions 和 paper bundles 留在研究项目里，而不是散落到全局 Codex 状态中。
 
 ## 安装细节
 
@@ -115,17 +115,17 @@ bash ~/.codex/plugins/codexscientist-codex/scripts/init_project.sh /path/to/proj
 
 更多细节见 [docs/INSTALL.md](docs/INSTALL.md)、[docs/USAGE.md](docs/USAGE.md)、[docs/MCP.md](docs/MCP.md) 和 [docs/REPOSITORY_LAYOUT.md](docs/REPOSITORY_LAYOUT.md)。
 
-## 原 Hermes MCP 等价关系
+## 原 CodexScientist MCP 等价关系
 
 本适配器保留业务效果，而不是复制协议形态：
 
-| 原 CodexScientist/Hermes surface | Codex-native equivalent |
+| 原 CodexScientist surface | Codex-native equivalent |
 | --- | --- |
 | `memory.write/read/search/list_recent` | `cs_memory_write`, `cs_memory_read`, `cs_memory_search`, `cs_memory_list_recent` |
-| `artifact.record` 和 quest artifact flows | `cs_artifact_record` 以及专用 `cs_*` artifact tools |
-| event reads | `cs_events` |
+| `artifact.record` 和 quest artifact flows | `cs_artifact_record` 以及 `cs_artifact_index` 等 public artifact tools |
+| event reads | `cs_status`、`cs_pack_delta` 和 compact `cs_get_quest_state` summaries |
 | `bash_exec` | `cs_bash_exec`，在需要 formal provenance 时保留 quest-local execution state 和 logs |
-| artifact convenience/introspection helpers | `cs_get_global_status`, `cs_get_method_scoreboard`, `cs_refresh_summary`, `cs_arxiv` 等 `cs_*` wrappers |
+| artifact convenience/introspection helpers | `cs_status`、`cs_get_method_scoreboard`、`cs_refresh_summary`、`cs_arxiv` 等 public `cs_*` wrappers |
 
 ## 不提供的内容
 

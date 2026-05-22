@@ -48,13 +48,27 @@ def test_installer_registers_codex_mcp_server_and_keeps_install_tree_clean(tmp_p
     config = (codex_home / "config.toml").read_text(encoding="utf-8")
     assert '[plugins."codexscientist-codex@local-personal"]' in config
     assert "[mcp_servers.codexscientist-codex]" in config
-    assert 'command = "python"' in config
+    assert 'command = "python"' not in config
+    assert ('command = "python3"' in config) or ('command = "' in config and "python" in config)
+    assert 'args = ["-B",' in config
     assert "scripts/cs_mcp.py" in config
+    marketplace = json.loads((agents_home / "plugins" / "marketplace.json").read_text(encoding="utf-8"))
+    plugin_entry = next(item for item in marketplace["plugins"] if item["name"] == PLUGIN_NAMESPACE)
+    assert plugin_entry["source"]["path"] == "./.codex/plugins/codexscientist-codex"
     assert "codex mcp list" in proc.stdout
     assert "csctl.py doctor" not in proc.stdout
+    smoke_line = next(line for line in proc.stdout.splitlines() if "Smoke test:" in line)
+    assert " -B " in smoke_line
 
     installed = codex_home / "plugins" / PLUGIN_NAMESPACE
     assert installed.exists()
+    assert not list(installed.rglob("__pycache__"))
+    assert not list(installed.rglob("*.pyc"))
+
+    smoke_env = env.copy()
+    smoke_env.pop("PYTHONDONTWRITEBYTECODE", None)
+    smoke = _run([PYTHON, "-B", str(installed / "scripts" / "cs_mcp.py"), "--stdio-smoke", "call", "cs_doctor", "{}"], cwd=tmp_path, env=smoke_env)
+    assert smoke.returncode == 0, smoke.stdout + smoke.stderr
     assert not list(installed.rglob("__pycache__"))
     assert not list(installed.rglob("*.pyc"))
 
@@ -95,6 +109,7 @@ def test_user_entry_docs_have_current_upgrade6_profile_contract() -> None:
         "Native control script",
         "csctl.py doctor",
         "MCP registration snippet",
+        "Use hidden admin/debug CLI",
     ]
     for phrase in forbidden:
         assert phrase not in combined
@@ -103,6 +118,35 @@ def test_user_entry_docs_have_current_upgrade6_profile_contract() -> None:
     assert "evidence" in combined and "formal_run" in combined
     assert "stage is a label" in combined or "stage label" in combined
     assert "codex mcp add codexscientist-codex" in combined
+    manual_lines = [line.strip() for line in combined.splitlines() if line.strip().startswith("codex mcp add codexscientist-codex")]
+    assert manual_lines
+    for line in manual_lines:
+        assert "-- python -B " in line or "-- python3 -B " in line, line
+
+
+def test_public_plugin_metadata_and_packaged_support_skills_are_codex_neutral() -> None:
+    manifest = json.loads((ROOT / ".codex-plugin" / "plugin.json").read_text(encoding="utf-8"))
+    encoded_manifest = json.dumps(manifest, ensure_ascii=False)
+    assert "Hermes" not in encoded_manifest
+    assert "hermes" not in encoded_manifest.lower()
+
+    packaged_roots = [
+        ROOT / "skills",
+        ROOT / "codex_scientist" / "runtime" / "resources" / "skills",
+        ROOT / "codex_scientist" / "runtime" / "resources" / "repo" / "src" / "skills",
+    ]
+    text_suffixes = {".md", ".txt", ".yaml", ".yml", ".py", ".json", ".toml"}
+    offenders: list[str] = []
+    for root in packaged_roots:
+        for path in sorted(p for p in root.rglob("*") if p.is_file() and p.suffix in text_suffixes):
+            text = path.read_text(encoding="utf-8")
+            for line_no, line in enumerate(text.splitlines(), start=1):
+                stripped = line.strip()
+                if stripped in {"metadata:", "hermes:"}:
+                    continue
+                if any(token in line for token in ("Hermes", ".hermes", "scripts/csctl.py", "csctl.py")):
+                    offenders.append(f"{path.relative_to(ROOT)}:{line_no}: {stripped}")
+    assert offenders == []
 
 
 def test_manifest_default_prompts_fit_codex_plugin_limits() -> None:
