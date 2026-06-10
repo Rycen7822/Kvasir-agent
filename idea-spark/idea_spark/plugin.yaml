@@ -1,7 +1,7 @@
 name: idea-spark
 kind: standalone
 version: 0.1.0
-description: Typed artifact swarm debate room for Hermes delegate_task child AIAgents.
+description: Typed artifact swarm debate room for Hermes delegate_task child AIAgents, with a bundled usage skill.
 provides_tools:
   - idea_spark_room_create
   - idea_spark_room_join

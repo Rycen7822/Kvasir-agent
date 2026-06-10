@@ -8,6 +8,7 @@ from test_schema_contract import EXPECTED_TOOL_NAMES
 class FakeContext:
     def __init__(self):
         self.tools = []
+        self.skills = []
 
     def register_tool(self, name, toolset, schema, handler, **kwargs):
         self.tools.append(
@@ -19,6 +20,9 @@ class FakeContext:
                 "kwargs": kwargs,
             }
         )
+
+    def register_skill(self, name, path, description=""):
+        self.skills.append({"name": name, "path": Path(path), "description": description})
 
 
 def _manifest_tools():
@@ -60,6 +64,22 @@ def test_register_declares_all_manifest_tools_with_idea_spark_toolset():
     assert all(tool["toolset"] == "idea_spark" for tool in ctx.tools)
     assert all(callable(tool["handler"]) for tool in ctx.tools)
     assert all(tool["schema"]["name"] == tool["name"] for tool in ctx.tools)
+    assert all(tool["schema"]["parameters"].get("properties") for tool in ctx.tools)
+    assert "idea-spark-usage" in ctx.tools[0]["schema"]["description"]
+
+
+def test_register_declares_bundled_usage_skill():
+    import idea_spark
+
+    ctx = FakeContext()
+    idea_spark.register(ctx)
+
+    assert len(ctx.skills) == 1
+    skill = ctx.skills[0]
+    assert skill["name"] == "idea-spark-usage"
+    assert skill["path"].name == "SKILL.md"
+    assert skill["path"].exists()
+    assert "delegate_task" in skill["description"]
 
 
 def test_register_matches_manifest_tool_names():

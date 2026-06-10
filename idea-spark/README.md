@@ -76,6 +76,14 @@ hermes plugins enable idea-spark
 
 After enabling, start a fresh Hermes process or session reset before expecting the new toolset to appear. Existing sessions do not gain newly enabled tools mid-context.
 
+The plugin also registers a bundled usage skill. In a fresh session, load it explicitly when you need the protocol:
+
+```python
+skill_view(name="idea-spark:idea-spark-usage")
+```
+
+Plugin-bundled skills are qualified-only and may not appear in the flat skills list.
+
 ## Quick smoke test
 
 In a fresh session with the plugin enabled, call this flow:

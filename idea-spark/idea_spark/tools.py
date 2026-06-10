@@ -735,11 +735,109 @@ def idea_spark_need_create(args: dict, **kwargs) -> str:
     return with_retry(run)
 
 
+_TOOL_DESCRIPTIONS = {
+    "idea_spark_room_create": "Create an Idea-Spark shared-ledger review room. Set metadata.expected_agents when round barriers should wait for named child agents. For protocol guidance, load skill idea-spark:idea-spark-usage.",
+    "idea_spark_room_join": "Register a delegate_task child agent in an Idea-Spark room. Children should call this first before reading or writing room state.",
+    "idea_spark_room_status": "Return room status, ledger counts, and expected agents that have not joined yet.",
+    "idea_spark_message_post": "Post a concise round/phase narrative update, optionally linked to artifact IDs. Use artifacts for durable claims rather than only free text.",
+    "idea_spark_message_read": "Read room messages, optionally filtered by round_id, phase, or agent_id.",
+    "idea_spark_round_wait": "Wait for expected agents to post in a round/phase. Always use a finite timeout_s and continue with partial state on timeout.",
+    "idea_spark_artifact_create": "Create a typed durable review artifact such as ResearchGoal, IdeaCard, AtomicClaim, NoveltyObjection, ExperimentPlan, ScoreCard, GateDecision, or OpenNeed.",
+    "idea_spark_artifact_read": "Read artifacts in a room, optionally by artifact_id, type, or status, including linked provenance.",
+    "idea_spark_artifact_link": "Link two artifacts with a typed provenance relation such as supports, critiques, rebuts, supersedes, requires, or cites.",
+    "idea_spark_artifact_status_update": "Update an artifact lifecycle status: proposed, accepted, rejected, superseded, retracted, or stale.",
+    "idea_spark_gate_record": "Record an explicit gate decision over input artifacts. Final conclusions require this tool, not chat consensus alone.",
+    "idea_spark_need_create": "Create an open evidence/review need when information is missing or unresolved risk remains.",
+    "idea_spark_room_export": "Export the deterministic Markdown report for an Idea-Spark room from ledger state.",
+}
+
+_TOOL_PROPERTIES = {
+    "room_id": {"type": "string", "description": "Idea-Spark room id."},
+    "agent_id": {"type": "string", "description": "Stable child/parent agent id."},
+    "role": {"type": "string", "description": "Role name, e.g. PriorArtBreaker or Gatekeeper."},
+    "round_id": {"type": "string", "description": "Round identifier such as r1."},
+    "phase": {"type": "string", "description": "Protocol phase such as review, rebuttal, or gate."},
+    "artifact_id": {"type": "string", "description": "Artifact id."},
+    "artifact_ids": {"type": "array", "items": {"type": "string"}, "description": "Artifact ids linked to this message."},
+    "metadata": {"type": "object", "description": "Optional structured metadata.", "additionalProperties": True},
+}
+
+_SCHEMA_FIELDS = {
+    "idea_spark_room_create": ["room_id", "title", "topic", "created_by", "protocol", "status", "metadata"],
+    "idea_spark_room_join": ["room_id", "agent_id", "role", "display_name", "metadata"],
+    "idea_spark_room_status": ["room_id"],
+    "idea_spark_message_post": ["room_id", "round_id", "phase", "agent_id", "role", "content", "artifact_ids"],
+    "idea_spark_message_read": ["room_id", "round_id", "phase", "agent_id", "limit"],
+    "idea_spark_round_wait": ["room_id", "round_id", "phase", "timeout_s"],
+    "idea_spark_artifact_create": ["room_id", "type", "title", "content", "created_by", "status", "metadata"],
+    "idea_spark_artifact_read": ["room_id", "artifact_id", "type", "status", "limit"],
+    "idea_spark_artifact_link": ["room_id", "source_artifact_id", "target_artifact_id", "relation", "created_by", "metadata"],
+    "idea_spark_artifact_status_update": ["room_id", "artifact_id", "status", "updated_by", "rationale"],
+    "idea_spark_gate_record": ["room_id", "gate_type", "decision", "input_artifact_ids", "rationale", "decided_by", "score", "metadata"],
+    "idea_spark_need_create": ["room_id", "target_artifact_type", "query", "rationale", "pressure_score", "claimed_by_agent", "created_by", "metadata"],
+    "idea_spark_room_export": ["room_id", "format"],
+}
+
+_REQUIRED_FIELDS = {
+    "idea_spark_room_create": ["title", "topic"],
+    "idea_spark_room_join": ["room_id", "agent_id"],
+    "idea_spark_room_status": ["room_id"],
+    "idea_spark_message_post": ["room_id", "agent_id", "content"],
+    "idea_spark_message_read": ["room_id"],
+    "idea_spark_round_wait": ["room_id", "round_id", "phase"],
+    "idea_spark_artifact_create": ["room_id", "type", "title", "content", "created_by"],
+    "idea_spark_artifact_read": ["room_id"],
+    "idea_spark_artifact_link": ["room_id", "source_artifact_id", "target_artifact_id", "relation", "created_by"],
+    "idea_spark_artifact_status_update": ["room_id", "artifact_id", "status", "updated_by"],
+    "idea_spark_gate_record": ["room_id", "gate_type", "decision", "input_artifact_ids", "rationale", "decided_by"],
+    "idea_spark_need_create": ["room_id", "target_artifact_type", "query", "rationale"],
+    "idea_spark_room_export": ["room_id"],
+}
+
+_FIELD_OVERRIDES = {
+    "title": {"type": "string"},
+    "topic": {"type": "string"},
+    "created_by": {"type": "string"},
+    "protocol": {"type": "string"},
+    "status": {"type": "string"},
+    "display_name": {"type": "string"},
+    "content": {"type": "string"},
+    "limit": {"type": "integer", "minimum": 1, "maximum": 200},
+    "timeout_s": {"type": "number", "minimum": 0},
+    "type": {"type": "string", "enum": sorted(ARTIFACT_TYPES)},
+    "source_artifact_id": {"type": "string"},
+    "target_artifact_id": {"type": "string"},
+    "relation": {"type": "string", "enum": sorted(RELATIONS)},
+    "updated_by": {"type": "string"},
+    "rationale": {"type": "string"},
+    "gate_type": {"type": "string"},
+    "decision": {"type": "string", "enum": sorted(GATE_DECISIONS)},
+    "input_artifact_ids": {"type": "array", "items": {"type": "string"}},
+    "decided_by": {"type": "string"},
+    "score": {"type": "object", "additionalProperties": True},
+    "target_artifact_type": {"type": "string", "enum": sorted(ARTIFACT_TYPES)},
+    "query": {"type": "string"},
+    "pressure_score": {"type": "number"},
+    "claimed_by_agent": {"type": "string"},
+    "format": {"type": "string", "enum": ["markdown"]},
+}
+
+
+def _property_schema(field: str) -> dict:
+    return dict(_TOOL_PROPERTIES.get(field, _FIELD_OVERRIDES.get(field, {"type": "string"})))
+
+
 def schema_for(name: str) -> dict:
+    fields = _SCHEMA_FIELDS.get(name, [])
     return {
         "name": name,
-        "description": f"Idea-Spark tool: {name}",
-        "parameters": {"type": "object", "properties": {}, "additionalProperties": True},
+        "description": _TOOL_DESCRIPTIONS.get(name, f"Idea-Spark tool: {name}"),
+        "parameters": {
+            "type": "object",
+            "properties": {field: _property_schema(field) for field in fields},
+            "required": _REQUIRED_FIELDS.get(name, []),
+            "additionalProperties": True,
+        },
     }
 
 
