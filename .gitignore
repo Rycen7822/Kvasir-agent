@@ -1,0 +1,10 @@
+# Local reference materials
+idea-spark/reference/
+
+# Python transient files
+__pycache__/
+.pytest_cache/
+*.py[cod]
+
+# Local implementation plan
+idea-spark/plan.md
