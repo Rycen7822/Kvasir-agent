@@ -4,7 +4,7 @@ Use this prompt when a parent Hermes agent coordinates child reviewers through I
 
 ## Child protocol hard rule block
 
-Every child agent must call `idea_spark_room_join` before any substantive work. After joining, the child may call `idea_spark_artifact_read`, `idea_spark_artifact_create`, `idea_spark_artifact_link`, `idea_spark_message_post`, `idea_spark_round_wait`, `idea_spark_artifact_status_update`, `idea_spark_need_create`, and `idea_spark_gate_record`.
+Every child agent must call `idea_spark_room_join` before any substantive work. After joining, the child may call `idea_spark_artifact_read`, `idea_spark_artifact_create`, `idea_spark_artifact_link`, `idea_spark_message_post`, `idea_spark_round_wait`, `idea_spark_artifact_status_update`, `idea_spark_need_create`, `idea_spark_need_update`, and `idea_spark_gate_record`.
 
 Child rules:
 
@@ -15,9 +15,20 @@ Child rules:
 5. Post concise narrative progress with `idea_spark_message_post`; include artifact IDs instead of long transcripts.
 6. Wait only with bounded `idea_spark_round_wait`; if timeout returns missing agents, continue with partial state and record the gap.
 7. Revise, reject, supersede, or retract only through `idea_spark_artifact_status_update` or `idea_spark_gate_record`.
-8. Use `idea_spark_need_create` when stronger prior-art evidence, benchmark detail, or reviewer-risk evidence is required.
-9. Gatekeeper and MetaReviewer must use `idea_spark_gate_record` before final synthesis. Final conclusions require gate-backed ledger evidence; no consensus without GateDecision.
+8. Use `idea_spark_need_create` when stronger prior-art evidence, benchmark detail, or reviewer-risk evidence is required; use `idea_spark_need_update` when the need is claimed, resolved, reopened, marked stale, or cancelled.
+9. Gatekeeper and MetaReviewer must use `idea_spark_gate_record` before final synthesis. Final conclusions require gate-backed ledger evidence; no consensus without GateDecision; message-only gate is not final.
 10. Parent exports the final report with `idea_spark_room_export`.
+
+## Discussion-until-gate phase order
+
+Use `max_rounds=4`. The parent/orchestrator continues until `idea_spark_room_status` returns `has_terminal_gate=true`.
+
+1. `Seed / Framing`: parent records the starting goal, idea, and evaluation rubric.
+2. `Novelty Attack`: prior-art reviewers create `PriorArtEvidence` and `NoveltyObjection` artifacts.
+3. `Weakness / Feasibility Attack`: feasibility and reviewer-risk roles create `FeasibilityObjection`, `ReviewerRisk`, `BenchmarkRequirement`, `StressTest`, and `ExperimentPlan` artifacts.
+4. `Author Rebuttal / Improvement Draft`: response roles create `Rebuttal`, `RevisionPlan`, and `RegimeTransition` artifacts linked to objections.
+5. `Re-review / Cross-examination`: reviewers re-read rebuttals, resolve or reopen OpenNeed records, and create remaining risks.
+6. `Gate`: Gatekeeper must call `idea_spark_gate_record`; message-only gate is not final.
 
 ## Parent setup
 

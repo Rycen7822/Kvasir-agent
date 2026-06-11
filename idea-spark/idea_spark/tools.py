@@ -9,6 +9,8 @@ from .export import render_markdown
 from .schemas import ARTIFACT_STATUSES, ARTIFACT_TYPES, GATE_DECISIONS, PROTOCOL, RELATIONS, TOOL_NAMES
 from .store import IdeaSparkStore, canonical_json, content_hash, with_retry
 
+NEED_STATUSES = {"open", "claimed", "resolved", "stale", "cancelled"}
+
 
 def _json(payload: dict) -> str:
     return json.dumps(payload, ensure_ascii=False)
@@ -64,6 +66,55 @@ def _expected_agents(room: dict) -> list[str]:
     metadata = _loads(room.get("metadata_json", "{}"), {})
     agents = metadata.get("expected_agents", [])
     return [str(agent) for agent in agents]
+
+
+def _joined_agents(conn: sqlite3.Connection, room_id: str) -> list[str]:
+    rows = conn.execute("select agent_id from participants where room_id = ? order by agent_id", (room_id,)).fetchall()
+    return [row["agent_id"] for row in rows]
+
+
+def _room_counts(conn: sqlite3.Connection, room_id: str) -> dict[str, int]:
+    counts = {}
+    for name in ["participants", "messages", "artifacts", "gates", "open_needs"]:
+        counts[name] = conn.execute(f"select count(*) as n from {name} where room_id = ?", (room_id,)).fetchone()["n"]
+    return counts
+
+
+def _gate_dict(row: sqlite3.Row) -> dict[str, Any]:
+    gate = dict(row)
+    gate["input_artifact_ids"] = _loads(gate.pop("input_artifact_ids_json"), [])
+    gate["score"] = _loads(gate.pop("score_json"), {})
+    gate["metadata"] = _loads(gate.pop("metadata_json"), {})
+    return gate
+
+
+def _latest_gate(conn: sqlite3.Connection, room_id: str) -> dict[str, Any] | None:
+    row = conn.execute(
+        "select * from gates where room_id = ? order by created_at desc, gate_id desc limit 1",
+        (room_id,),
+    ).fetchone()
+    return _gate_dict(row) if row else None
+
+
+def _open_need_summary(conn: sqlite3.Connection, room_id: str) -> dict[str, int]:
+    summary = {"open": 0, "claimed": 0, "resolved": 0, "stale": 0, "cancelled": 0}
+    rows = conn.execute("select status, count(*) as n from open_needs where room_id = ? group by status", (room_id,)).fetchall()
+    for row in rows:
+        summary[str(row["status"])] = row["n"]
+    return summary
+
+
+def _room_cursors(conn: sqlite3.Connection, room_id: str) -> dict[str, Any]:
+    last_message = conn.execute("select max(message_id) as value from messages where room_id = ?", (room_id,)).fetchone()["value"]
+    last_artifact = conn.execute("select max(updated_at) as value from artifacts where room_id = ?", (room_id,)).fetchone()["value"]
+    last_gate = conn.execute("select max(created_at) as value from gates where room_id = ?", (room_id,)).fetchone()["value"]
+    last_need = conn.execute("select max(updated_at) as value from open_needs where room_id = ?", (room_id,)).fetchone()["value"]
+    return {
+        "last_message_id": last_message,
+        "last_artifact_updated_at": last_artifact,
+        "last_gate_created_at": last_gate,
+        "last_need_updated_at": last_need,
+    }
 
 
 def _arrived_agents(conn: sqlite3.Connection, room_id: str, round_id: str, phase: str) -> list[str]:
@@ -195,9 +246,15 @@ def idea_spark_message_read(args: dict, **kwargs) -> str:
     missing = _require(args, "room_id")
     if missing:
         return err(f"missing required field: {missing}")
+    order = str(args.get("order", "asc")).lower()
+    if order not in {"asc", "desc"}:
+        return err("order must be asc or desc", order=args.get("order"))
     limit = min(int(args.get("limit", 100)), 200)
     clauses = ["room_id = ?"]
     params: list[Any] = [args["room_id"]]
+    if args.get("after_message_id") is not None:
+        clauses.append("message_id > ?")
+        params.append(int(args["after_message_id"]))
     for field in ("round_id", "phase", "agent_id"):
         if args.get(field) is not None:
             clauses.append(f"{field} = ?")
@@ -210,10 +267,12 @@ def idea_spark_message_read(args: dict, **kwargs) -> str:
             if not _room(conn, args["room_id"]):
                 return err("unknown room_id", room_id=args["room_id"])
             rows = conn.execute(
-                f"select * from messages where {' and '.join(clauses)} order by message_id limit ?",
+                f"select * from messages where {' and '.join(clauses)} order by message_id {order} limit ?",
                 params,
             ).fetchall()
-        return ok({"room_id": args["room_id"], "messages": [_message_dict(row) for row in rows]})
+        messages = [_message_dict(row) for row in rows]
+        last_message_id = max((message["message_id"] for message in messages), default=None)
+        return ok({"room_id": args["room_id"], "messages": messages, "next_cursor": {"last_message_id": last_message_id}})
 
     return with_retry(run)
 
@@ -229,16 +288,27 @@ def idea_spark_room_status(args: dict, **kwargs) -> str:
             room = _room(conn, args["room_id"])
             if not room:
                 return err("unknown room_id", room_id=args["room_id"])
-            counts = {}
-            for name in ["participants", "messages", "artifacts", "gates", "open_needs"]:
-                counts[name] = conn.execute(f"select count(*) as n from {name} where room_id = ?", (args["room_id"],)).fetchone()["n"]
-            joined = [
-                row["agent_id"]
-                for row in conn.execute("select agent_id from participants where room_id = ?", (args["room_id"],)).fetchall()
-            ]
+            counts = _room_counts(conn, args["room_id"])
+            joined = _joined_agents(conn, args["room_id"])
+            latest_gate = _latest_gate(conn, args["room_id"])
+            open_need_summary = _open_need_summary(conn, args["room_id"])
+            cursors = _room_cursors(conn, args["room_id"])
         expected = _expected_agents(room)
         missing_agents = [agent for agent in expected if agent not in set(joined)]
-        return ok({"room_id": args["room_id"], "status": room["status"], "counts": counts, "missing_expected_agents": missing_agents})
+        return ok(
+            {
+                "room_id": args["room_id"],
+                "status": room["status"],
+                "counts": counts,
+                "expected_agents": expected,
+                "joined_agents": joined,
+                "missing_expected_agents": missing_agents,
+                "latest_gate": latest_gate,
+                "has_terminal_gate": room["status"] == "gated",
+                "open_need_summary": open_need_summary,
+                "cursors": cursors,
+            }
+        )
 
     return with_retry(run)
 
@@ -247,6 +317,11 @@ def idea_spark_round_wait(args: dict, **kwargs) -> str:
     missing = _require(args, "room_id", "round_id", "phase")
     if missing:
         return err(f"missing required field: {missing}")
+    expected_override = None
+    if "expected_agents" in args:
+        if not isinstance(args["expected_agents"], list):
+            return err("expected_agents must be a list")
+        expected_override = [str(agent) for agent in args["expected_agents"]]
     timeout_s = float(args.get("timeout_s", 120))
     deadline = time.monotonic() + timeout_s
     store = _store()
@@ -256,7 +331,7 @@ def idea_spark_round_wait(args: dict, **kwargs) -> str:
             room = _room(conn, args["room_id"])
             if not room:
                 return err("unknown room_id", room_id=args["room_id"])
-            expected = _expected_agents(room)
+            expected = expected_override if expected_override is not None else _expected_agents(room)
             arrived_raw = _arrived_agents(conn, args["room_id"], args["round_id"], args["phase"])
         arrived = _ordered_subset(expected, arrived_raw)
         missing_agents = [agent for agent in expected if agent not in set(arrived_raw)]
@@ -294,24 +369,18 @@ def _all_artifacts(conn: sqlite3.Connection, room_id: str) -> list[dict[str, Any
 
 def _all_gates(conn: sqlite3.Connection, room_id: str) -> list[dict[str, Any]]:
     rows = conn.execute("select * from gates where room_id = ? order by created_at, gate_id", (room_id,)).fetchall()
-    gates = []
-    for row in rows:
-        gate = dict(row)
-        gate["input_artifact_ids"] = _loads(gate.pop("input_artifact_ids_json"), [])
-        gate["score"] = _loads(gate.pop("score_json"), {})
-        gate["metadata"] = _loads(gate.pop("metadata_json"), {})
-        gates.append(gate)
-    return gates
+    return [_gate_dict(row) for row in rows]
 
 
 def _all_open_needs(conn: sqlite3.Connection, room_id: str) -> list[dict[str, Any]]:
     rows = conn.execute("select * from open_needs where room_id = ? order by pressure_score desc, created_at", (room_id,)).fetchall()
-    needs = []
-    for row in rows:
-        need = dict(row)
-        need["metadata"] = _loads(need.pop("metadata_json"), {})
-        needs.append(need)
-    return needs
+    return [_need_dict(row) for row in rows]
+
+
+def _need_dict(row: sqlite3.Row) -> dict[str, Any]:
+    need = dict(row)
+    need["metadata"] = _loads(need.pop("metadata_json"), {})
+    return need
 
 
 def idea_spark_room_export(args: dict, **kwargs) -> str:
@@ -549,6 +618,10 @@ def idea_spark_artifact_read(args: dict, **kwargs) -> str:
     missing = _require(args, "room_id")
     if missing:
         return err(f"missing required field: {missing}")
+    order = str(args.get("order", "asc")).lower()
+    if order not in {"asc", "desc"}:
+        return err("order must be asc or desc", order=args.get("order"))
+    limit = min(int(args.get("limit", 200)), 200)
     relation_depth = int(args.get("relation_depth", 0))
     clauses = ["room_id = ?"]
     params: list[Any] = [args["room_id"]]
@@ -557,10 +630,18 @@ def idea_spark_artifact_read(args: dict, **kwargs) -> str:
         placeholders = ",".join("?" for _ in artifact_ids)
         clauses.append(f"artifact_id in ({placeholders})")
         params.extend(artifact_ids)
+    if args.get("created_after") is not None:
+        clauses.append("created_at > ?")
+        params.append(args["created_after"])
+    if args.get("updated_after") is not None:
+        clauses.append("updated_at > ?")
+        params.append(args["updated_after"])
+    sort_column = "updated_at" if args.get("updated_after") is not None else "created_at"
     for arg_name, column in [("artifact_type", "artifact_type"), ("status", "status"), ("producer_agent", "producer_agent")]:
         if args.get(arg_name):
             clauses.append(f"{column} = ?")
             params.append(args[arg_name])
+    params.append(limit)
 
     def run() -> str:
         store = _store()
@@ -568,11 +649,18 @@ def idea_spark_artifact_read(args: dict, **kwargs) -> str:
             if not _room(conn, args["room_id"]):
                 return err("unknown room_id", room_id=args["room_id"])
             rows = conn.execute(
-                f"select * from artifacts where {' and '.join(clauses)} order by created_at, artifact_id",
+                f"select * from artifacts where {' and '.join(clauses)} order by {sort_column} {order}, artifact_id {order} limit ?",
                 params,
             ).fetchall()
             artifacts = [_artifact_dict(conn, row, relation_depth) for row in rows]
-        return ok({"room_id": args["room_id"], "artifacts": artifacts})
+        last_updated_at = max((artifact["updated_at"] for artifact in artifacts), default=None)
+        return ok(
+            {
+                "room_id": args["room_id"],
+                "artifacts": artifacts,
+                "next_cursor": {"last_artifact_updated_at": last_updated_at},
+            }
+        )
 
     return with_retry(run)
 
@@ -658,11 +746,16 @@ def idea_spark_gate_record(args: dict, **kwargs) -> str:
             "decision": args["decision"],
             "score": args.get("score") or {},
             "rationale": args["rationale"],
+            "metadata": args.get("metadata") or {},
         }
+        room_status = "gated" if args.get("close_room") else None
         store = _store()
         with store.connect() as conn:
-            if not _room(conn, args["room_id"]):
+            room = _room(conn, args["room_id"])
+            if not room:
                 return err("unknown room_id", room_id=args["room_id"])
+            if room_status is None:
+                room_status = room["status"]
             bad_ref = _validate_artifact_refs(conn, args["room_id"], input_artifact_ids)
             if bad_ref:
                 return err("unknown input artifact", artifact_id=bad_ref)
@@ -698,6 +791,8 @@ def idea_spark_gate_record(args: dict, **kwargs) -> str:
                 metadata={"gate_id": gate_id},
                 artifact_id=gate_artifact_id,
             )
+            if args.get("close_room"):
+                conn.execute("update rooms set status = ? where room_id = ?", ("gated", args["room_id"]))
             for update in status_updates:
                 conn.execute(
                     "update artifacts set status = ?, updated_at = ? where artifact_id = ?",
@@ -711,7 +806,14 @@ def idea_spark_gate_record(args: dict, **kwargs) -> str:
                     target_artifact_id=update["artifact_id"],
                     created_by=args.get("created_by"),
                 )
-        return ok({"gate_id": gate_id, "gate_artifact_id": gate_artifact_id, "decision": args["decision"]})
+        return ok(
+            {
+                "gate_id": gate_id,
+                "gate_artifact_id": gate_artifact_id,
+                "decision": args["decision"],
+                "room_status": room_status,
+            }
+        )
 
     return with_retry(run)
 
@@ -762,6 +864,63 @@ def idea_spark_need_create(args: dict, **kwargs) -> str:
     return with_retry(run)
 
 
+def idea_spark_need_update(args: dict, **kwargs) -> str:
+    missing = _require(args, "room_id", "need_id", "status", "updated_by")
+    if missing:
+        return err(f"missing required field: {missing}")
+    if args["status"] not in NEED_STATUSES:
+        return err("invalid need status", status=args["status"])
+    resolution_artifact_ids = args.get("resolution_artifact_ids") or []
+    if not isinstance(resolution_artifact_ids, list):
+        return err("resolution_artifact_ids must be a list")
+
+    def run() -> str:
+        store = _store()
+        with store.connect() as conn:
+            if not _room(conn, args["room_id"]):
+                return err("unknown room_id", room_id=args["room_id"])
+            row = conn.execute(
+                "select * from open_needs where room_id = ? and need_id = ?",
+                (args["room_id"], args["need_id"]),
+            ).fetchone()
+            if not row:
+                return err("unknown need_id", need_id=args["need_id"])
+            bad_ref = _validate_artifact_refs(conn, args["room_id"], resolution_artifact_ids)
+            if bad_ref:
+                return err("unknown resolution artifact", artifact_id=bad_ref)
+            current = _need_dict(row)
+            metadata = {**current["metadata"], **(args.get("metadata") or {})}
+            if resolution_artifact_ids:
+                metadata["resolution_artifact_ids"] = resolution_artifact_ids
+            if "resolution_rationale" in args:
+                metadata["resolution_rationale"] = args["resolution_rationale"]
+            metadata["updated_by"] = args["updated_by"]
+            if args["status"] == "claimed":
+                claimed_by_agent = args.get("claimed_by_agent") or args["updated_by"]
+            elif args["status"] == "open" and "claimed_by_agent" not in args:
+                claimed_by_agent = None
+            else:
+                claimed_by_agent = args.get("claimed_by_agent", current.get("claimed_by_agent"))
+            conn.execute(
+                """
+                update open_needs
+                set status = ?, claimed_by_agent = ?, updated_at = ?, metadata_json = ?
+                where room_id = ? and need_id = ?
+                """,
+                (
+                    args["status"],
+                    claimed_by_agent,
+                    _now(),
+                    canonical_json(metadata),
+                    args["room_id"],
+                    args["need_id"],
+                ),
+            )
+        return ok({"room_id": args["room_id"], "need_id": args["need_id"], "status": args["status"]})
+
+    return with_retry(run)
+
+
 _TOOL_DESCRIPTIONS = {
     "idea_spark_room_create": "Create an Idea-Spark shared-ledger review room. Set metadata.expected_agents when round barriers should wait for named child agents. For protocol guidance, load skill idea-spark:idea-spark-usage.",
     "idea_spark_room_join": "Register a delegate_task child agent in an Idea-Spark room. Children should call this first before reading or writing room state.",
@@ -775,6 +934,7 @@ _TOOL_DESCRIPTIONS = {
     "idea_spark_artifact_status_update": "Update an artifact lifecycle status: proposed, accepted, rejected, superseded, retracted, or stale.",
     "idea_spark_gate_record": "Record an explicit gate decision over input artifacts. Final conclusions require this tool, not chat consensus alone.",
     "idea_spark_need_create": "Create an open evidence/review need when information is missing or unresolved risk remains.",
+    "idea_spark_need_update": "Update an OpenNeed lifecycle status and attach resolution artifacts or claim metadata.",
     "idea_spark_room_export": "Export the deterministic Markdown report for an Idea-Spark room from ledger state.",
 }
 
@@ -785,7 +945,9 @@ _TOOL_PROPERTIES = {
     "round_id": {"type": "string", "description": "Round identifier such as r1."},
     "phase": {"type": "string", "description": "Protocol phase such as review, rebuttal, or gate."},
     "artifact_id": {"type": "string", "description": "Artifact id."},
+    "need_id": {"type": "string", "description": "OpenNeed id."},
     "artifact_ids": {"type": "array", "items": {"type": "string"}, "description": "Artifact ids linked to this message."},
+    "expected_agents": {"type": "array", "items": {"type": "string"}, "description": "Expected agent ids for this barrier."},
     "metadata": {"type": "object", "description": "Optional structured metadata.", "additionalProperties": True},
 }
 
@@ -794,14 +956,24 @@ _SCHEMA_FIELDS = {
     "idea_spark_room_join": ["room_id", "agent_id", "role", "display_name", "metadata"],
     "idea_spark_room_status": ["room_id"],
     "idea_spark_message_post": ["room_id", "round_id", "phase", "agent_id", "role", "content", "artifact_ids"],
-    "idea_spark_message_read": ["room_id", "round_id", "phase", "agent_id", "limit"],
-    "idea_spark_round_wait": ["room_id", "round_id", "phase", "timeout_s"],
+    "idea_spark_message_read": ["room_id", "round_id", "phase", "agent_id", "after_message_id", "order", "limit"],
+    "idea_spark_round_wait": ["room_id", "round_id", "phase", "expected_agents", "timeout_s"],
     "idea_spark_artifact_create": ["room_id", "type", "title", "content", "created_by", "status", "metadata"],
-    "idea_spark_artifact_read": ["room_id", "artifact_id", "type", "status", "limit"],
+    "idea_spark_artifact_read": ["room_id", "artifact_id", "type", "status", "created_after", "updated_after", "order", "limit"],
     "idea_spark_artifact_link": ["room_id", "source_artifact_id", "target_artifact_id", "relation", "created_by", "metadata"],
     "idea_spark_artifact_status_update": ["room_id", "artifact_id", "status", "updated_by", "rationale"],
-    "idea_spark_gate_record": ["room_id", "gate_type", "decision", "input_artifact_ids", "rationale", "decided_by", "score", "metadata"],
+    "idea_spark_gate_record": ["room_id", "gate_type", "decision", "input_artifact_ids", "rationale", "decided_by", "score", "metadata", "close_room"],
     "idea_spark_need_create": ["room_id", "target_artifact_type", "query", "rationale", "pressure_score", "claimed_by_agent", "created_by", "metadata"],
+    "idea_spark_need_update": [
+        "room_id",
+        "need_id",
+        "status",
+        "claimed_by_agent",
+        "resolution_artifact_ids",
+        "resolution_rationale",
+        "updated_by",
+        "metadata",
+    ],
     "idea_spark_room_export": ["room_id", "format"],
 }
 
@@ -818,6 +990,7 @@ _REQUIRED_FIELDS = {
     "idea_spark_artifact_status_update": ["room_id", "artifact_id", "status", "updated_by"],
     "idea_spark_gate_record": ["room_id", "gate_type", "decision", "input_artifact_ids", "rationale", "decided_by"],
     "idea_spark_need_create": ["room_id", "target_artifact_type", "query", "rationale"],
+    "idea_spark_need_update": ["room_id", "need_id", "status", "updated_by"],
     "idea_spark_room_export": ["room_id"],
 }
 
@@ -830,6 +1003,10 @@ _FIELD_OVERRIDES = {
     "display_name": {"type": "string"},
     "content": {"type": "string"},
     "limit": {"type": "integer", "minimum": 1, "maximum": 200},
+    "after_message_id": {"type": "integer", "minimum": 0},
+    "created_after": {"type": "string"},
+    "updated_after": {"type": "string"},
+    "order": {"type": "string", "enum": ["asc", "desc"]},
     "timeout_s": {"type": "number", "minimum": 0},
     "type": {"type": "string", "enum": sorted(ARTIFACT_TYPES)},
     "source_artifact_id": {"type": "string"},
@@ -840,8 +1017,11 @@ _FIELD_OVERRIDES = {
     "gate_type": {"type": "string"},
     "decision": {"type": "string", "enum": sorted(GATE_DECISIONS)},
     "input_artifact_ids": {"type": "array", "items": {"type": "string"}},
+    "resolution_artifact_ids": {"type": "array", "items": {"type": "string"}},
+    "resolution_rationale": {"type": "string"},
     "decided_by": {"type": "string"},
     "score": {"type": "object", "additionalProperties": True},
+    "close_room": {"type": "boolean"},
     "target_artifact_type": {"type": "string", "enum": sorted(ARTIFACT_TYPES)},
     "query": {"type": "string"},
     "pressure_score": {"type": "number"},

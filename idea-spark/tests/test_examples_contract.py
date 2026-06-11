@@ -15,6 +15,7 @@ CANONICAL_TOOL_NAMES = {
     "idea_spark_artifact_status_update",
     "idea_spark_gate_record",
     "idea_spark_need_create",
+    "idea_spark_need_update",
     "idea_spark_room_export",
 }
 
@@ -134,9 +135,86 @@ def test_readme_sections_are_complete_and_ordered():
     assert positions == sorted(positions)
 
 
-def test_delegate_task_template_is_valid_and_mentions_idea_spark_toolset():
+def test_delegate_task_template_is_valid_and_mentions_idea_spark_toolsets():
     data = json.loads(read_text("examples/delegate_task_template.json"))
 
-    assert data["toolsets"] == ["idea_spark"]
+    assert data["toolsets"] == ["idea_spark", "skills"]
     assert "room_id" in data["context"]
     assert "idea_spark_room_join" in data["goal"]
+    assert "skill_view" in data["goal"]
+    assert "idea-spark:idea-spark-usage" in data["goal"]
+
+
+def test_bundled_skill_requires_skills_toolset_for_subagents():
+    skill = read_text("idea_spark/resources/skills/idea-spark-usage/SKILL.md")
+
+    assert 'toolsets=["idea_spark", "skills"' in skill
+    assert 'skill_view(name="idea-spark:idea-spark-usage")' in skill
+    assert "Do not call `skill_manage`" in skill
+
+
+def test_bundled_skill_documents_discussion_until_gate_controller_contract():
+    skill = read_text("idea_spark/resources/skills/idea-spark-usage/SKILL.md")
+
+    required = [
+        "discussion-until-gate",
+        "Seed / Framing",
+        "Novelty Attack",
+        "Weakness / Feasibility Attack",
+        "Author Rebuttal / Improvement Draft",
+        "Re-review / Cross-examination",
+        "Gate",
+        "has_terminal_gate",
+        "Gatekeeper must call idea_spark_gate_record",
+        "message-only gate is not final",
+        'toolsets=["idea_spark", "skills"]',
+        "Do not call `skill_manage`",
+    ]
+    for text in required:
+        assert text in skill
+
+
+def test_readme_and_prompt_document_discussion_until_gate_without_scheduler_claims():
+    readme = read_text("README.md")
+    prompt = read_text("examples/ml_idea_review_prompt.md")
+    combined = f"{readme}\n{prompt}".lower()
+
+    assert 'toolsets=["idea_spark", "skills"]' in readme
+    assert "local management dashboard" in readme
+    assert "room_delete_enabled" in readme
+    assert "purely read-only" not in readme.lower()
+    for phase in [
+        "Seed / Framing",
+        "Novelty Attack",
+        "Weakness / Feasibility Attack",
+        "Author Rebuttal / Improvement Draft",
+        "Re-review / Cross-examination",
+        "Gate",
+    ]:
+        assert phase in prompt
+    assert "message-only gate is not final" in prompt
+    for forbidden in ["plugin-internal agent launcher", "auto-spawn on message_post", "persistent child polling"]:
+        assert forbidden not in combined
+
+
+def test_discussion_until_gate_template_is_valid_and_bounded():
+    data = json.loads(read_text("examples/discussion_until_gate_template.json"))
+    combined = f"{data['goal']}\n{data['context']}"
+
+    assert data["role"] == "orchestrator"
+    assert data["toolsets"] == ["idea_spark", "skills"]
+    assert "max_rounds=4" in combined
+    for phase in [
+        "Seed / Framing",
+        "Novelty Attack",
+        "Weakness / Feasibility Attack",
+        "Author Rebuttal / Improvement Draft",
+        "Re-review / Cross-examination",
+        "Gate",
+    ]:
+        assert phase in combined
+    assert "stop only after has_terminal_gate=true" in combined
+    assert "Gatekeeper must call idea_spark_gate_record" in combined
+    assert "do not call skill_manage" in combined.lower()
+    assert "<ROOM_ID>" in combined
+    assert "<IDEA_SUMMARY>" in combined

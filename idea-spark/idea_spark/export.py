@@ -62,6 +62,29 @@ def _render_need_lines(open_needs: list[dict[str, Any]]) -> list[str]:
     ]
 
 
+def _titles(artifacts: list[dict[str, Any]]) -> str:
+    if not artifacts:
+        return _empty()
+    return "; ".join(artifact.get("title") or artifact["artifact_id"] for artifact in artifacts)
+
+
+def _render_discussion_trajectory(artifacts: list[dict[str, Any]], gates: list[dict[str, Any]], open_needs: list[dict[str, Any]]) -> list[str]:
+    latest_gate = gates[-1] if gates else None
+    unresolved = [need for need in open_needs if need.get("status") in {"open", "claimed"}]
+    resolved = [need for need in open_needs if need.get("status") == "resolved"]
+    lines = ["### Discussion trajectory"]
+    lines.append(f"- Novelty attack: {_titles(_artifacts_of(artifacts, 'NoveltyObjection', 'PriorArtEvidence'))}")
+    lines.append(f"- Rebuttal: {_titles(_artifacts_of(artifacts, 'Rebuttal'))}")
+    lines.append(f"- Improvement plan: {_titles(_artifacts_of(artifacts, 'RevisionPlan', 'ExperimentPlan'))}")
+    lines.append(f"- Score cards: {_titles(_artifacts_of(artifacts, 'ScoreCard', 'MetaReview'))}")
+    if latest_gate:
+        lines.append(f"- Latest gate: decision={latest_gate['decision']} rationale={latest_gate['rationale']}")
+    else:
+        lines.append("- Latest gate: No gate-backed verdict recorded.")
+    lines.append(f"- Unresolved needs: {len(unresolved)}; resolved needs: {len(resolved)}")
+    return lines
+
+
 def render_markdown(
     room: dict[str, Any],
     messages: list[dict[str, Any]],
@@ -85,7 +108,8 @@ def render_markdown(
         "Idea card": _render_artifact_lines(_artifacts_of(artifacts, "IdeaCard")),
         "Claim-level novelty table": _render_artifact_lines(_artifacts_of(artifacts, "AtomicClaim", "PriorArtEvidence", "NoveltyObjection")),
         "Accepted / rejected / gate / claim summary": _render_gate_lines(gates)
-        + _render_artifact_lines(_artifacts_of(artifacts, "AtomicClaim", "GateDecision")),
+        + _render_artifact_lines(_artifacts_of(artifacts, "AtomicClaim", "GateDecision"))
+        + _render_discussion_trajectory(artifacts, gates, open_needs),
         "Feasibility and experiment plan": _render_artifact_lines(
             _artifacts_of(artifacts, "FeasibilityObjection", "ExperimentPlan", "BenchmarkRequirement", "StressTest")
         ),

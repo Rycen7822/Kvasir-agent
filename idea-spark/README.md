@@ -10,7 +10,7 @@ The runtime model is shared-ledger coordination. A parent creates a room, seeds 
 
 ## What it is not
 
-Idea-Spark is not a chat transcript summarizer. It is not a scheduler, ranking engine, vector database, or autonomous web/file/terminal executor. Same-turn child discussion is SQLite shared-ledger coordination, not P2P socket chat. The optional realtime dashboard is a local read-only viewer over that ledger; it is started explicitly from the CLI and is not launched by Hermes tool handlers.
+Idea-Spark is not a chat transcript summarizer. It is not a scheduler, ranking engine, vector database, or autonomous web/file/terminal executor. Same-turn child discussion is SQLite shared-ledger coordination, not P2P socket chat. The optional realtime dashboard is a local management viewer over that ledger; it is started explicitly from the CLI and is not launched by Hermes tool handlers.
 
 ## Tool list
 
@@ -26,6 +26,7 @@ Idea-Spark is not a chat transcript summarizer. It is not a scheduler, ranking e
 - `idea_spark_artifact_status_update`
 - `idea_spark_gate_record`
 - `idea_spark_need_create`
+- `idea_spark_need_update`
 - `idea_spark_room_export`
 
 Only these public tool names are supported.
@@ -98,7 +99,7 @@ The export must return Markdown with the fixed report sections.
 
 ## Realtime browser dashboard
 
-Start the local read-only dashboard from this source tree:
+Start the local management dashboard from this source tree:
 
 ```bash
 cd /home/xu/project/autosci-delphi/idea-spark
@@ -117,13 +118,13 @@ A room-specific URL is:
 http://127.0.0.1:8765/room/<room_id>
 ```
 
-The dashboard reads the same SQLite ledger as the Hermes tools. It shows rooms, joined subagents, missing expected agents, messages, artifacts, gate records, and open needs. Room pages use `EventSource` / SSE for near-real-time updates and fall back to browser polling if SSE is unavailable. The top-right `EN` / `中文` switch changes the dashboard UI language in-place and stores the preference in browser local storage; room titles and agent-authored content are left unchanged.
+The dashboard reads the same SQLite ledger as the Hermes tools. It shows rooms, joined subagents, missing expected agents, messages, artifacts, gate records, and open needs. Room pages use `EventSource` / SSE for near-real-time updates and fall back to browser polling if SSE is unavailable. The top-right `EN` / `中文` switch changes the dashboard UI language in-place and stores the preference in browser local storage; room titles and agent-authored content are left unchanged. Local room deletion is available only through the explicit room management path guarded by `room_delete_enabled` and a `confirm=<room_id>` query.
 
 Dashboard safety boundary:
 
 - Localhost bind by default: `127.0.0.1`.
-- Read-only SQLite access; the server does not write ledger rows.
-- GET/HEAD/OPTIONS only; mutation methods return 405.
+- The dashboard does not edit messages, artifacts, gates, open needs, or participant rows directly.
+- GET/HEAD/OPTIONS are available for monitoring; DELETE is limited to `/api/rooms/<room_id>?confirm=<room_id>` for local room cleanup.
 - No npm build, external web service, authentication layer, or remote hosting is included in this MVP.
 
 Use `IDEA_SPARK_DB=/absolute/path/to/idea_spark.sqlite3` or `--db /absolute/path/to/idea_spark.sqlite3` when monitoring a non-default ledger.
@@ -132,11 +133,12 @@ Use `IDEA_SPARK_DB=/absolute/path/to/idea_spark.sqlite3` or `--db /absolute/path
 
 1. Create the room with `idea_spark_room_create`.
 2. Seed `ResearchGoal`, `IdeaCard`, and `EvaluationRubric` artifacts with `idea_spark_artifact_create`.
-3. Launch child roles with the `idea_spark` toolset: PriorArtBreaker, FeasibilityBreaker, SkepticalAC, AuthorAdvocate, ExperimentPlanner, Gatekeeper, SchemaSurgeon, and MetaReviewer.
-4. Use `idea_spark_room_status` and `idea_spark_message_read` to monitor progress.
-5. Use `idea_spark_round_wait` only with a finite timeout.
-6. Require `idea_spark_gate_record` before treating any conclusion as final.
-7. Use `idea_spark_room_export` to produce the final Markdown report.
+3. Launch child roles with `toolsets=["idea_spark", "skills"]` by default: PriorArtBreaker, FeasibilityBreaker, SkepticalAC, AuthorAdvocate, ExperimentPlanner, Gatekeeper, SchemaSurgeon, and MetaReviewer. Add external toolsets only for roles that need outside evidence.
+4. Run a bounded `discussion-until-gate` loop with `max_rounds=4` and this phase order: `Seed / Framing`, `Novelty Attack`, `Weakness / Feasibility Attack`, `Author Rebuttal / Improvement Draft`, `Re-review / Cross-examination`, `Gate`.
+5. After each phase, use `idea_spark_room_status` and `idea_spark_message_read` to monitor progress and continue while `has_terminal_gate=false`.
+6. Require `idea_spark_gate_record` before treating any conclusion as final; message-only gate is not final.
+7. On the terminal decision, call `idea_spark_gate_record` with `close_room=true`.
+8. Use `idea_spark_room_export` to produce the final Markdown report.
 
 Strict barriers require `expected_agents <= delegation.max_concurrent_children`; otherwise use timeout-only soft barriers.
 
@@ -148,9 +150,9 @@ Strict barriers require `expected_agents <= delegation.max_concurrent_children`;
 4. Link provenance with `idea_spark_artifact_link`.
 5. Post concise narrative updates with `idea_spark_message_post` and include artifact IDs.
 6. Update lifecycle status explicitly with `idea_spark_artifact_status_update`.
-7. Use `idea_spark_need_create` for missing evidence or unresolved reviewer risk.
+7. Use `idea_spark_need_create` for missing evidence or unresolved reviewer risk; use `idea_spark_need_update` to claim, resolve, reopen, stale, or cancel those needs.
 8. Use `idea_spark_round_wait` with a finite timeout, then continue with partial state if peers are missing.
-9. Use `idea_spark_gate_record` for final gate decisions; no consensus without GateDecision.
+9. Use `idea_spark_gate_record` for final gate decisions; no consensus without GateDecision and message-only gate is not final.
 
 ## Failure modes
 

@@ -15,6 +15,7 @@ TOOL_NAMES = [
     "idea_spark_artifact_status_update",
     "idea_spark_gate_record",
     "idea_spark_need_create",
+    "idea_spark_need_update",
     "idea_spark_room_export",
 ]
 

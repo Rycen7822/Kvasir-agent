@@ -1,5 +1,7 @@
 # Local reference materials
 idea-spark/reference/
+idea-spark/local-test/
+idea-spark/tmp/
 
 # Python transient files
 __pycache__/

@@ -2,10 +2,12 @@ import json
 
 from idea_spark.tools import (
     idea_spark_artifact_create,
+    idea_spark_artifact_link,
     idea_spark_artifact_status_update,
     idea_spark_gate_record,
     idea_spark_message_post,
     idea_spark_need_create,
+    idea_spark_need_update,
     idea_spark_room_create,
     idea_spark_room_export,
 )
@@ -159,3 +161,82 @@ def test_export_contains_open_needs_and_transcript_appendix(temp_idea_spark_db):
     assert "nearest prior work for optimizer stability" in exported["markdown"]
     assert "Reviewer risk requires evidence." in exported["markdown"]
     assert "Need stronger prior-art evidence." in exported["markdown"]
+
+
+def test_export_includes_discussion_trajectory_unresolved_needs_and_latest_gate(temp_idea_spark_db):
+    room_id = make_room("trajectory export")
+    idea = create_artifact(room_id, "IdeaCard", {"idea": "adaptive controller"}, "Adaptive controller idea")
+    objection = create_artifact(room_id, "NoveltyObjection", {"attack": "closest baseline is similar"}, "Novelty attack")
+    rebuttal = create_artifact(room_id, "Rebuttal", {"answer": "uses a different feedback signal"}, "Author rebuttal")
+    revision = create_artifact(room_id, "RevisionPlan", {"change": "narrow claim and add ablation"}, "Improvement plan")
+    experiment = create_artifact(room_id, "ExperimentPlan", {"plan": "run fixed-candidate ablation"}, "Ablation plan")
+    scorecard = create_artifact(room_id, "ScoreCard", {"score": 0.62}, "Gate scorecard")
+    for source, target, relation in [
+        (objection, idea, "critiques"),
+        (rebuttal, objection, "rebuts"),
+        (revision, rebuttal, "supports"),
+        (experiment, revision, "requires"),
+        (scorecard, experiment, "supports"),
+    ]:
+        linked = call(
+            idea_spark_artifact_link,
+            {
+                "room_id": room_id,
+                "source_artifact_id": source["artifact_id"],
+                "target_artifact_id": target["artifact_id"],
+                "relation": relation,
+            },
+        )
+        assert linked["success"] is True
+    unresolved = call(
+        idea_spark_need_create,
+        {
+            "room_id": room_id,
+            "target_artifact_type": "PriorArtEvidence",
+            "query": "unresolved official baseline evidence",
+            "rationale": "Need remains open for final review.",
+            "pressure_score": 0.8,
+        },
+    )
+    assert unresolved["success"] is True
+    resolved = call(
+        idea_spark_need_create,
+        {
+            "room_id": room_id,
+            "target_artifact_type": "BenchmarkRequirement",
+            "query": "resolved benchmark protocol",
+            "rationale": "Benchmark plan is now documented.",
+            "pressure_score": 0.3,
+        },
+    )
+    assert resolved["success"] is True
+    updated = call(
+        idea_spark_need_update,
+        {"room_id": room_id, "need_id": resolved["need_id"], "status": "resolved", "updated_by": "planner"},
+    )
+    assert updated["success"] is True
+    gate = call(
+        idea_spark_gate_record,
+        {
+            "room_id": room_id,
+            "gate_type": "overall",
+            "decision": "needs_more_evidence",
+            "input_artifact_ids": [scorecard["artifact_id"]],
+            "rationale": "Latest gate requires stronger baseline evidence.",
+            "decided_by": "gatekeeper",
+            "metadata": {"round_id": "r4", "phase": "Gate", "max_rounds": 4},
+        },
+    )
+    assert gate["success"] is True
+
+    markdown = export_markdown(room_id)["markdown"]
+
+    assert "Discussion trajectory" in markdown
+    assert "Novelty attack" in markdown
+    assert "Improvement plan" in markdown
+    assert "Latest gate" in markdown
+    assert "unresolved official baseline evidence" in markdown
+    assert "status=open" in markdown
+    assert "resolved benchmark protocol" in markdown
+    assert "status=resolved" in markdown
+    assert "Latest gate requires stronger baseline evidence." in markdown
