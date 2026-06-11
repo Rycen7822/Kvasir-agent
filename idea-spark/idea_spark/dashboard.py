@@ -325,9 +325,14 @@ def _page_shell(room_id: str | None) -> str:
       padding: 18px 24px;
     }}
     .wrap {{ max-width: 1440px; margin: 0 auto; padding: 24px; }}
+    .topbar {{ display: flex; justify-content: space-between; align-items: center; gap: 16px; }}
     .brand {{ display: flex; gap: 14px; align-items: baseline; flex-wrap: wrap; }}
     h1 {{ margin: 0; font-size: clamp(28px, 4vw, 54px); letter-spacing: -.06em; }}
     .badge {{ border: 1px solid var(--line); border-radius: 4px; padding: 6px 10px; color: var(--muted); font-family: var(--mono); font-size: 12px; }}
+    .language-switch {{ display: flex; gap: 4px; align-items: center; border: 1px solid var(--line); border-radius: 6px; padding: 3px; background: rgba(255,255,255,.03); }}
+    .lang-button {{ border: 1px solid transparent; border-radius: 4px; padding: 6px 9px; background: transparent; color: var(--muted); font-family: var(--mono); font-size: 12px; cursor: pointer; }}
+    .lang-button.active {{ background: var(--accent); border-color: var(--accent); color: #111; }}
+    .lang-button:focus-visible {{ outline: 1px solid var(--accent); outline-offset: 2px; }}
     .grid {{ display: grid; grid-template-columns: 330px minmax(0, 1fr); gap: 18px; align-items: start; }}
     .panel {{ background: rgba(17, 17, 17, .88); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 20px 80px rgba(0,0,0,.35); overflow: hidden; }}
     .panel h2 {{ margin: 0; padding: 16px 18px; border-bottom: 1px solid var(--line); font-size: 14px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }}
@@ -363,20 +368,26 @@ def _page_shell(room_id: str | None) -> str:
 </head>
 <body>
   <header>
-    <div class="brand">
-      <h1>Idea-Spark Live Room</h1>
-      <span id="connection" class="badge">connecting</span>
-      <span class="badge">read-only · localhost</span>
+    <div class="topbar">
+      <div class="brand">
+        <h1 data-i18n="appTitle">Idea-Spark Live Room</h1>
+        <span id="connection" class="badge">connecting</span>
+        <span class="badge" data-i18n="readonlyLocal">read-only · localhost</span>
+      </div>
+      <div id="language-switch" class="language-switch" role="group" aria-label="Language">
+        <button type="button" class="lang-button" data-lang-option="en" aria-pressed="false">EN</button>
+        <button type="button" class="lang-button" data-lang-option="zh" aria-pressed="false">中文</button>
+      </div>
     </div>
   </header>
   <main class="wrap">
     <div class="grid">
       <aside class="panel">
-        <h2>Rooms</h2>
+        <h2 data-i18n="roomsHeading">Rooms</h2>
         <div class="panel-body rooms" id="rooms"></div>
       </aside>
       <section class="panel">
-        <h2 id="room-heading">Live monitor</h2>
+        <h2 id="room-heading" data-i18n="liveMonitor">Live monitor</h2>
         <div class="panel-body">
           <div id="summary"></div>
           <div class="status-line" id="status-line"></div>
@@ -389,7 +400,115 @@ def _page_shell(room_id: str | None) -> str:
   </main>
 <script>
 const ROOM_ID = {room_json};
+const LANGUAGE_KEY = 'ideaSparkDashboardLanguage';
+const TRANSLATIONS = {{
+  en: {{
+    appTitle: 'Idea-Spark Live Room',
+    readonlyLocal: 'read-only · localhost',
+    roomsHeading: 'Rooms',
+    liveMonitor: 'Live monitor',
+    languageAria: 'Language',
+    switchTo: 'Switch to',
+    connecting: 'connecting',
+    liveViaSSE: 'live via SSE',
+    polling: 'polling',
+    sseReconnecting: 'SSE reconnecting',
+    selectRoom: 'select a room',
+    roomsFailed: 'rooms failed',
+    noRooms: 'No Idea-Spark rooms found yet.',
+    noSnapshot: 'No snapshot',
+    noAgents: 'No child agents have joined this room.',
+    noTimeline: 'No messages or artifacts yet.',
+    roomPrefix: 'room',
+    updatedPrefix: 'updated',
+    missingPrefix: 'missing',
+    allAgentsJoined: 'all expected agents joined',
+    agentFallback: 'agent',
+    stats: {{
+      artifacts: 'Artifacts',
+      gates: 'Gates',
+      messages: 'Messages',
+      open_needs: 'Open needs',
+      participants: 'Participants',
+    }},
+    eventKinds: {{
+      artifact: 'artifact',
+      message: 'message',
+      gate: 'gate',
+      open_need: 'open need',
+    }},
+    status: {{
+      open: 'open',
+      closed: 'closed',
+      archived: 'archived',
+    }},
+  }},
+  zh: {{
+    appTitle: 'Idea-Spark 实时房间',
+    readonlyLocal: '只读 · 本地',
+    roomsHeading: '房间',
+    liveMonitor: '实时监控',
+    languageAria: '语言',
+    switchTo: '切换到',
+    connecting: '连接中',
+    liveViaSSE: 'SSE 实时连接',
+    polling: '轮询中',
+    sseReconnecting: 'SSE 重连中',
+    selectRoom: '请选择房间',
+    roomsFailed: '房间加载失败',
+    noRooms: '还没有 Idea-Spark 房间。',
+    noSnapshot: '暂无快照',
+    noAgents: '暂无子代理加入这个房间。',
+    noTimeline: '暂无消息或产物。',
+    roomPrefix: '房间',
+    updatedPrefix: '更新于',
+    missingPrefix: '未加入',
+    allAgentsJoined: '全部预期代理已加入',
+    agentFallback: '代理',
+    stats: {{
+      artifacts: '产物',
+      gates: '门禁',
+      messages: '消息',
+      open_needs: '开放需求',
+      participants: '参与者',
+    }},
+    eventKinds: {{
+      artifact: '产物',
+      message: '消息',
+      gate: '门禁',
+      open_need: '开放需求',
+    }},
+    status: {{
+      open: '开放',
+      closed: '关闭',
+      archived: '归档',
+    }},
+  }},
+}};
 const $ = (id) => document.getElementById(id);
+function readStoredLanguage() {{
+  try {{
+    const stored = window.localStorage.getItem(LANGUAGE_KEY);
+    if (stored && Object.prototype.hasOwnProperty.call(TRANSLATIONS, stored)) return stored;
+  }} catch (err) {{}}
+  const nav = (navigator.language || '').toLowerCase();
+  return nav.startsWith('zh') ? 'zh' : 'en';
+}}
+let currentLanguage = readStoredLanguage();
+let lastSnapshot = null;
+let connectionState = {{key: 'connecting', cls: ''}};
+function lookup(path, table) {{
+  return path.split('.').reduce((acc, part) => (
+    acc && Object.prototype.hasOwnProperty.call(acc, part) ? acc[part] : undefined
+  ), table);
+}}
+function t(path, fallback) {{
+  const value = lookup(path, TRANSLATIONS[currentLanguage] || TRANSLATIONS.en);
+  if (value !== undefined) return value;
+  const english = lookup(path, TRANSLATIONS.en);
+  if (english !== undefined) return english;
+  return fallback !== undefined ? fallback : path;
+}}
 function node(tag, className, text) {{
   const el = document.createElement(tag);
   if (className) el.className = className;
@@ -401,70 +520,106 @@ function asText(value) {{
   if (typeof value === 'string') return value;
   return JSON.stringify(value, null, 2);
 }}
-function setConnection(text, cls) {{
-  const el = $('connection');
-  el.textContent = text;
-  el.className = 'badge ' + (cls || '');
+function applyStaticTranslations() {{
+  document.documentElement.lang = currentLanguage === 'zh' ? 'zh-CN' : 'en';
+  document.querySelectorAll('[data-i18n]').forEach((el) => {{
+    el.textContent = t(el.dataset.i18n);
+  }});
+  const switcher = $('language-switch');
+  if (switcher) switcher.setAttribute('aria-label', t('languageAria'));
+  document.querySelectorAll('[data-lang-option]').forEach((button) => {{
+    const active = button.dataset.langOption === currentLanguage;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-pressed', active ? 'true' : 'false');
+    button.title = t('switchTo') + ' ' + button.textContent;
+  }});
 }}
+function renderConnection() {{
+  const el = $('connection');
+  el.textContent = t(connectionState.key);
+  el.className = 'badge ' + (connectionState.cls || '');
+}}
+function setConnection(key, cls) {{
+  connectionState = {{key: key, cls: cls || ''}};
+  renderConnection();
+}}
+function setLanguage(lang) {{
+  if (!Object.prototype.hasOwnProperty.call(TRANSLATIONS, lang)) return;
+  currentLanguage = lang;
+  try {{ window.localStorage.setItem(LANGUAGE_KEY, lang); }} catch (err) {{}}
+  applyStaticTranslations();
+  renderConnection();
+  if (lastSnapshot) renderSnapshot(lastSnapshot);
+  else document.title = t('appTitle');
+  loadRooms().catch(() => setConnection('roomsFailed', ''));
+}}
+function setupLanguageSwitch() {{
+  document.querySelectorAll('[data-lang-option]').forEach((button) => {{
+    button.addEventListener('click', () => setLanguage(button.dataset.langOption));
+  }});
+}}
+function statusText(status) {{ return t('status.' + status, status); }}
+function eventKindText(kind) {{ return t('eventKinds.' + kind, kind); }}
 async function loadRooms() {{
   const res = await fetch('/api/rooms', {{cache: 'no-store'}});
   const data = await res.json();
   const box = $('rooms');
   box.replaceChildren();
   if (!data.rooms || data.rooms.length === 0) {{
-    box.appendChild(node('div', 'empty', 'No Idea-Spark rooms found yet.'));
+    box.appendChild(node('div', 'empty', t('noRooms')));
     return;
   }}
   for (const room of data.rooms) {{
     const a = node('a');
     a.href = '/room/' + encodeURIComponent(room.room_id);
     const title = node('div', 'room-title', room.title || room.room_id);
-    const meta = node('div', 'small', `${{room.room_id}} · messages ${{room.counts.messages}} · artifacts ${{room.counts.artifacts}}`);
+    const meta = node('div', 'small', room.room_id + ' · ' + t('stats.messages') + ' ' + room.counts.messages + ' · ' + t('stats.artifacts') + ' ' + room.counts.artifacts);
     a.append(title, meta);
     box.appendChild(a);
   }}
 }}
 function renderSnapshot(data) {{
+  lastSnapshot = data;
   if (!data.success) {{
-    $('summary').replaceChildren(node('div', 'empty', data.error || 'No snapshot'));
+    $('summary').replaceChildren(node('div', 'empty', data.error || t('noSnapshot')));
     return;
   }}
-  document.title = `${{data.room.title || data.room.room_id}} · Idea-Spark Live Room`;
+  document.title = (data.room.title || data.room.room_id) + ' · ' + t('appTitle');
   $('room-heading').textContent = data.room.title || data.room.room_id;
   const stats = node('div', 'stats');
   for (const [label, value] of Object.entries(data.counts)) {{
     const card = node('div', 'stat');
-    card.append(node('strong', null, String(value)), node('span', null, label));
+    card.append(node('strong', null, String(value)), node('span', null, t('stats.' + label, label)));
     stats.appendChild(card);
   }}
   $('summary').replaceChildren(stats);
 
   const status = $('status-line');
   status.replaceChildren();
-  status.append(node('span', 'pill hot', data.room.status));
-  status.append(node('span', 'pill', `room ${{data.room.room_id}}`));
-  status.append(node('span', 'pill', `updated ${{data.generated_at}}`));
-  if (data.missing_expected_agents.length === 0) status.append(node('span', 'pill ok', 'all expected agents joined'));
-  else status.append(node('span', 'pill', `missing ${{data.missing_expected_agents.join(', ')}}`));
+  status.append(node('span', 'pill hot', statusText(data.room.status)));
+  status.append(node('span', 'pill', t('roomPrefix') + ' ' + data.room.room_id));
+  status.append(node('span', 'pill', t('updatedPrefix') + ' ' + data.generated_at));
+  if (data.missing_expected_agents.length === 0) status.append(node('span', 'pill ok', t('allAgentsJoined')));
+  else status.append(node('span', 'pill', t('missingPrefix') + ' ' + data.missing_expected_agents.join(', ')));
 
   const agents = $('agents');
   agents.replaceChildren();
-  if (data.participants.length === 0) agents.appendChild(node('div', 'empty', 'No child agents have joined this room.'));
+  if (data.participants.length === 0) agents.appendChild(node('div', 'empty', t('noAgents')));
   for (const participant of data.participants) {{
     const row = node('div', 'agent');
-    row.append(node('span', null, `${{participant.agent_id}} · ${{participant.role || 'agent'}}`));
+    row.append(node('span', null, participant.agent_id + ' · ' + (participant.role || t('agentFallback'))));
     row.append(node('span', 'small', participant.last_seen_at));
     agents.appendChild(row);
   }}
 
   const timeline = $('timeline');
   timeline.replaceChildren();
-  if (data.timeline.length === 0) timeline.appendChild(node('div', 'empty', 'No messages or artifacts yet.'));
+  if (data.timeline.length === 0) timeline.appendChild(node('div', 'empty', t('noTimeline')));
   for (const event of data.timeline) {{
     const card = node('article', 'event ' + event.kind);
     const head = node('div', 'event-head');
-    head.append(node('div', 'event-title', `${{event.kind}} · ${{event.title || event.id}}`));
-    head.append(node('div', 'event-meta', `${{event.created_at || '-'}} · ${{event.actor || '-'}} · ${{event.role || '-'}}`));
+    head.append(node('div', 'event-title', eventKindText(event.kind) + ' · ' + (event.title || event.id)));
+    head.append(node('div', 'event-meta', (event.created_at || '-') + ' · ' + (event.actor || '-') + ' · ' + (event.role || '-')));
     card.appendChild(head);
     card.appendChild(node('div', 'event-content', asText(event.content)));
     timeline.appendChild(card);
@@ -483,15 +638,18 @@ function connectEvents() {{
     return;
   }}
   const source = new EventSource('/api/rooms/' + encodeURIComponent(ROOM_ID) + '/events');
-  source.addEventListener('open', () => setConnection('live via SSE', 'ok'));
+  source.addEventListener('open', () => setConnection('liveViaSSE', 'ok'));
   source.addEventListener('snapshot', (event) => renderSnapshot(JSON.parse(event.data)));
   source.addEventListener('error', () => {{
-    setConnection('SSE reconnecting', '');
+    setConnection('sseReconnecting', '');
   }});
 }}
-loadRooms().catch(err => setConnection('rooms failed: ' + err.message));
+setupLanguageSwitch();
+applyStaticTranslations();
+renderConnection();
+loadRooms().catch(() => setConnection('roomsFailed', ''));
 if (ROOM_ID) connectEvents();
-else setConnection('select a room', '');
+else setConnection('selectRoom', '');
 </script>
 </body>
 </html>"""

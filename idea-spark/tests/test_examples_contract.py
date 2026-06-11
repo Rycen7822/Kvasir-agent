@@ -91,6 +91,9 @@ def test_readme_and_bundled_skill_document_realtime_dashboard():
     assert "read-only" in combined.lower()
     assert "EventSource" in combined or "SSE" in combined
     assert "subagent" in combined.lower()
+    assert "EN" in combined
+    assert "中文" in combined
+    assert "local storage" in combined.lower()
 
 
 def test_examples_do_not_document_legacy_aliases_or_internal_execution():

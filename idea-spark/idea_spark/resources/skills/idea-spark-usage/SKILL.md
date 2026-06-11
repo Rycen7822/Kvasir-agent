@@ -79,7 +79,7 @@ For a specific room:
 http://127.0.0.1:8765/room/<room_id>
 ```
 
-The dashboard reads the same SQLite ledger used by the tools. It shows rooms, joined subagents, missing expected agents, live messages, artifacts, gate decisions, and open needs. Room pages use `EventSource` / SSE for near-real-time updates and fall back to browser polling.
+The dashboard reads the same SQLite ledger used by the tools. It shows rooms, joined subagents, missing expected agents, live messages, artifacts, gate decisions, and open needs. Room pages use `EventSource` / SSE for near-real-time updates and fall back to browser polling. The top-right `EN` / `中文` switch changes dashboard UI labels in-place and persists the preference in browser local storage; it does not translate room titles or agent-authored discussion content.
 
 Safety boundary:
 

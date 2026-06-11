@@ -117,7 +117,7 @@ A room-specific URL is:
 http://127.0.0.1:8765/room/<room_id>
 ```
 
-The dashboard reads the same SQLite ledger as the Hermes tools. It shows rooms, joined subagents, missing expected agents, messages, artifacts, gate records, and open needs. Room pages use `EventSource` / SSE for near-real-time updates and fall back to browser polling if SSE is unavailable.
+The dashboard reads the same SQLite ledger as the Hermes tools. It shows rooms, joined subagents, missing expected agents, messages, artifacts, gate records, and open needs. Room pages use `EventSource` / SSE for near-real-time updates and fall back to browser polling if SSE is unavailable. The top-right `EN` / `中文` switch changes the dashboard UI language in-place and stores the preference in browser local storage; room titles and agent-authored content are left unchanged.
 
 Dashboard safety boundary:
 

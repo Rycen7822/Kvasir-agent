@@ -193,8 +193,41 @@ def test_dashboard_html_uses_compact_industrial_radii():
     assert radii
     assert max(radii) <= 10
     assert "border-radius: 999px" not in html
-    for large_literal in ["border-radius: 12px", "border-radius: 14px", "border-radius: 16px", "border-radius: 17px", "border-radius: 18px", "border-radius: 22px"]:
+    for large_literal in [
+        "border-radius: 12px",
+        "border-radius: 14px",
+        "border-radius: 16px",
+        "border-radius: 17px",
+        "border-radius: 18px",
+        "border-radius: 22px",
+    ]:
         assert large_literal not in html
+
+
+def test_dashboard_html_exposes_bilingual_language_switch():
+    from idea_spark import dashboard
+
+    html = dashboard._room_html("lang-room")
+
+    assert 'id="language-switch"' in html
+    assert 'data-lang-option="en"' in html
+    assert 'data-lang-option="zh"' in html
+    assert "ideaSparkDashboardLanguage" in html
+    assert "const TRANSLATIONS" in html
+    assert "function setLanguage" in html
+    assert "function applyStaticTranslations" in html
+    assert "localStorage" in html
+    for required_text in [
+        "Idea-Spark 实时房间",
+        "房间",
+        "实时监控",
+        "只读 · 本地",
+        "消息",
+        "产物",
+        "未加入",
+        "全部预期代理已加入",
+    ]:
+        assert required_text in html
 
 
 def test_dashboard_module_cli_help_explains_local_readonly_server():
