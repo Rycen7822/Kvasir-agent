@@ -476,11 +476,24 @@ def _insert_link(
 
 
 def idea_spark_artifact_create(args: dict, **kwargs) -> str:
+    args = dict(args)
+    if "artifact_type" not in args and "type" in args:
+        args["artifact_type"] = args["type"]
+    if "producer_agent" not in args:
+        if "created_by" in args:
+            args["producer_agent"] = args["created_by"]
+        elif "agent_id" in args:
+            args["producer_agent"] = args["agent_id"]
+    if "content" in args and not isinstance(args["content"], dict):
+        args["content"] = {"text": str(args["content"])}
+    status = args.get("status", "proposed")
     missing = _require(args, "room_id", "artifact_type", "producer_agent", "content")
     if missing:
         return err(f"missing required field: {missing}")
     if args["artifact_type"] not in ARTIFACT_TYPES:
         return err("invalid artifact_type", artifact_type=args["artifact_type"])
+    if status not in ARTIFACT_STATUSES:
+        return err("invalid artifact status", status=status)
     if not isinstance(args["content"], dict):
         return err("content must be an object")
     parent_links = args.get("parent_links") or []
@@ -507,6 +520,7 @@ def idea_spark_artifact_create(args: dict, **kwargs) -> str:
                 producer_agent=args["producer_agent"],
                 title=args.get("title"),
                 content=args["content"],
+                status=status,
                 metadata=args.get("metadata") or {},
             )
             if not deduplicated:
@@ -519,12 +533,19 @@ def idea_spark_artifact_create(args: dict, **kwargs) -> str:
                         target_artifact_id=artifact_id,
                         created_by=args["producer_agent"],
                     )
-        return ok({"artifact_id": artifact_id, "content_hash": digest, "status": "proposed", "deduplicated": deduplicated})
+        return ok({"artifact_id": artifact_id, "content_hash": digest, "status": status, "deduplicated": deduplicated})
 
     return with_retry(run)
 
 
 def idea_spark_artifact_read(args: dict, **kwargs) -> str:
+    args = dict(args)
+    if "artifact_ids" not in args and "artifact_id" in args:
+        args["artifact_ids"] = [args["artifact_id"]]
+    if "artifact_type" not in args and "type" in args:
+        args["artifact_type"] = args["type"]
+    if "producer_agent" not in args and "created_by" in args:
+        args["producer_agent"] = args["created_by"]
     missing = _require(args, "room_id")
     if missing:
         return err(f"missing required field: {missing}")
@@ -611,6 +632,9 @@ def _gate_link_relation(decision: str) -> str:
 
 
 def idea_spark_gate_record(args: dict, **kwargs) -> str:
+    args = dict(args)
+    if "created_by" not in args and "decided_by" in args:
+        args["created_by"] = args["decided_by"]
     missing = _require(args, "room_id", "gate_type", "decision", "rationale")
     if missing:
         return err(f"missing required field: {missing}")
@@ -693,7 +717,10 @@ def idea_spark_gate_record(args: dict, **kwargs) -> str:
 
 
 def idea_spark_need_create(args: dict, **kwargs) -> str:
-    missing = _require(args, "room_id", "target_artifact_type", "query", "rationale", "pressure_score")
+    args = dict(args)
+    if "pressure_score" not in args:
+        args["pressure_score"] = 0.5
+    missing = _require(args, "room_id", "target_artifact_type", "query", "rationale")
     if missing:
         return err(f"missing required field: {missing}")
     if args["target_artifact_type"] not in ARTIFACT_TYPES:

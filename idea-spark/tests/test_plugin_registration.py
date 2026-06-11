@@ -1,5 +1,8 @@
+import importlib.util
 import inspect
 import json
+import sys
+import types
 from pathlib import Path
 
 from test_schema_contract import EXPECTED_TOOL_NAMES
@@ -105,3 +108,48 @@ def test_no_handler_raises_on_minimal_invalid_payload():
         payload = json.loads(result)
         assert payload["success"] is False
         assert "error" in payload
+
+
+def test_hermes_namespaced_plugin_load_can_run_store_migrations(temp_idea_spark_db):
+    """Hermes loads user plugins as hermes_plugins.<slug>, not top-level packages."""
+    parent_name = "hermes_plugins_test"
+    module_name = f"{parent_name}.idea_spark"
+    for name in list(sys.modules):
+        if name == parent_name or name.startswith(f"{parent_name}."):
+            sys.modules.pop(name)
+
+    parent = types.ModuleType(parent_name)
+    parent.__path__ = []  # type: ignore[attr-defined]
+    parent.__package__ = parent_name
+    sys.modules[parent_name] = parent
+
+    plugin_dir = Path("idea_spark").resolve()
+    spec = importlib.util.spec_from_file_location(
+        module_name,
+        plugin_dir / "__init__.py",
+        submodule_search_locations=[str(plugin_dir)],
+    )
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    module.__package__ = module_name
+    module.__path__ = [str(plugin_dir)]
+    sys.modules[module_name] = module
+    spec.loader.exec_module(module)
+
+    ctx = FakeContext()
+    module.register(ctx)
+    handler = next(tool["handler"] for tool in ctx.tools if tool["name"] == "idea_spark_room_create")
+    result = json.loads(
+        handler(
+            {
+                "room_id": "namespaced-plugin-smoke",
+                "title": "namespaced plugin smoke",
+                "topic": "store migrations resolve relative to hermes plugin namespace",
+                "created_by": "test",
+            }
+        )
+    )
+
+    assert result["success"] is True
+    assert result["room_id"] == "namespaced-plugin-smoke"
+    assert temp_idea_spark_db.exists()

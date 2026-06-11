@@ -75,7 +75,8 @@ class IdeaSparkStore:
                 for version, filename in MIGRATIONS:
                     if version in applied:
                         continue
-                    sql = resources.files("idea_spark.migrations").joinpath(filename).read_text(encoding="utf-8")
+                    migrations_pkg = f"{__package__}.migrations" if __package__ else "idea_spark.migrations"
+                    sql = resources.files(migrations_pkg).joinpath(filename).read_text(encoding="utf-8")
                     conn.executescript(sql)
                     conn.execute(
                         "insert or ignore into schema_migrations(version, applied_at) values (?, datetime('now'))",

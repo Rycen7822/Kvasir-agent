@@ -75,6 +75,58 @@ def test_artifact_create_deduplicates_same_type_and_content_in_room(temp_idea_sp
     assert len(read["artifacts"]) == 1
 
 
+def test_schema_friendly_artifact_aliases_match_handler_contract(temp_idea_spark_db):
+    room_id = make_room()
+    created = call(
+        idea_spark_artifact_create,
+        {
+            "room_id": room_id,
+            "type": "ResearchGoal",
+            "title": "schema alias artifact",
+            "content": "plain text content from the public schema",
+            "created_by": "schema-agent",
+            "status": "accepted",
+        },
+    )
+
+    assert created["success"] is True
+    assert created["status"] == "accepted"
+    read_by_alias = call(idea_spark_artifact_read, {"room_id": room_id, "artifact_id": created["artifact_id"], "type": "ResearchGoal"})
+    artifact = read_by_alias["artifacts"][0]
+    assert artifact["producer_agent"] == "schema-agent"
+    assert artifact["content"] == {"text": "plain text content from the public schema"}
+
+
+def test_gate_and_need_schema_aliases_match_handler_contract(temp_idea_spark_db):
+    room_id = make_room()
+    artifact = create_artifact(room_id)
+
+    gate = call(
+        idea_spark_gate_record,
+        {
+            "room_id": room_id,
+            "gate_type": "schema-compat",
+            "input_artifact_ids": [artifact["artifact_id"]],
+            "decision": "accepted",
+            "rationale": "Schema alias decided_by should populate created_by.",
+            "decided_by": "schema-gatekeeper",
+        },
+    )
+    assert gate["success"] is True
+
+    need = call(
+        idea_spark_need_create,
+        {
+            "room_id": room_id,
+            "target_artifact_type": "PriorArtEvidence",
+            "query": "missing evidence",
+            "rationale": "pressure score defaults when omitted",
+        },
+    )
+    assert need["success"] is True
+    assert need["pressure_score"] == 0.5
+
+
 def test_invalid_artifact_type_status_relation_and_gate_decision_return_error_json(temp_idea_spark_db):
     room_id = make_room()
     artifact = create_artifact(room_id)
