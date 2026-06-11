@@ -96,6 +96,24 @@ def test_readme_and_bundled_skill_document_realtime_dashboard():
     assert "local storage" in combined.lower()
 
 
+def test_bundled_skill_documents_round_based_subagent_work_mode():
+    skill = read_text("idea_spark/resources/skills/idea-spark-usage/SKILL.md")
+
+    assert "## Recommended round-based work mode" in skill
+    assert "short-lived workers" in skill
+    assert "persistent chat-room members" in skill
+    assert "Use the Idea-Spark room as the durable shared memory" in skill
+    for phase in ["r0/seed", "r1/review", "r2/rebuttal", "r3/gate"]:
+        assert phase in skill
+    for role in ["PriorArtBreaker", "FeasibilityBreaker", "AuthorAdvocate", "Gatekeeper"]:
+        assert role in skill
+    for artifact_type in ["Rebuttal", "RevisionPlan", "ScoreCard", "MetaReview"]:
+        assert artifact_type in skill
+    assert "For live-room readability" in skill
+    assert "idea_spark_message_post" in skill
+    assert "persistent multi-process runner" in skill
+
+
 def test_examples_do_not_document_legacy_aliases_or_internal_execution():
     text = "\n".join(
         [

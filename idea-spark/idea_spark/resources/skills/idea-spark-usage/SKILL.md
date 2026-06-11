@@ -28,6 +28,24 @@ Idea-Spark is a Hermes standalone plugin/toolset named `idea_spark`. It is not a
 9. Final conclusions require `idea_spark_gate_record`; do not treat chat consensus as a final decision.
 10. Parent exports the deterministic Markdown report with `idea_spark_room_export`.
 
+## Recommended round-based work mode
+
+Default to parent-orchestrated, round-based debate. `delegate_task` children are short-lived workers: they receive one bounded task from the parent, join the room, read the ledger, write messages/artifacts, return a summary to the parent, and then stop. Do not assume subagents remain online as persistent chat-room members unless a separate long-running runner/daemon has been explicitly built for that task.
+
+Use the Idea-Spark room as the durable shared memory between these short-lived children. A child can respond to other agents only by reading what those agents already wrote into the room, then writing its own message, artifact, link, rebuttal, score, need, or gate record. The parent creates the multi-turn discussion by launching more rounds after reading the room state.
+
+Preferred default sequence:
+
+1. `r0/seed`: Parent creates the room, sets `metadata.expected_agents`, and seeds `ResearchGoal`, `IdeaCard`, and `EvaluationRubric` artifacts.
+2. `r1/review`: Launch independent reviewers in parallel, usually `PriorArtBreaker`, `FeasibilityBreaker`, `SkepticalAC`, and `ExperimentPlanner`. Each child joins, reads the seed artifacts, posts a concise room message, and creates typed objections/evidence/risks/plans.
+3. `r2/rebuttal`: Launch response and repair roles, usually `AuthorAdvocate`, `SchemaSurgeon`, and optionally `ExperimentPlanner` again. Each child reads `NoveltyObjection`, `FeasibilityObjection`, `ReviewerRisk`, and prior messages, then writes `Rebuttal`, `RevisionPlan`, `ExperimentPlan`, or `OpenNeed` artifacts that explicitly cite or link the artifacts they address.
+4. `r3/gate`: Launch `MetaReviewer` and/or `Gatekeeper`. They read the whole ledger, produce `ScoreCard`/`MetaReview` artifacts, and record the final decision with `idea_spark_gate_record`.
+5. Export with `idea_spark_room_export` only after the gate decision or an explicit `needs_more_evidence` outcome is recorded.
+
+For live-room readability, require every child to write at least one `idea_spark_message_post` narrative update and at least one durable typed artifact when it has substantive content. Prefer artifact links over vague references such as “the previous reviewer said”. Use `idea_spark_round_wait` only as a finite barrier; on timeout, continue with partial state, record missing expected agents, and avoid blocking the whole discussion indefinitely.
+
+When the user asks for “subagents discussing with each other,” use this round-based pattern by default rather than trying to keep `delegate_task` children alive. Use a persistent multi-process runner only when the user explicitly asks for always-on agents that poll the room and continue replying over time.
+
 ## Recommended roles
 
 Typical ML idea review roles:
