@@ -26,6 +26,7 @@ README_SECTIONS = [
     "## Install",
     "## Enable and restart",
     "## Quick smoke test",
+    "## Realtime browser dashboard",
     "## Parent protocol",
     "## Child protocol",
     "## Failure modes",
@@ -78,6 +79,18 @@ def test_readme_documents_restart_or_reset_after_enabling_plugin():
     assert "$HERMES_HOME/idea-spark/idea_spark.sqlite3" in text
     assert "IDEA_SPARK_DB" in text
     assert "IDEA_SPARK_EXPORT_DIR" in text
+
+
+def test_readme_and_bundled_skill_document_realtime_dashboard():
+    readme = read_text("README.md")
+    skill = read_text("idea_spark/resources/skills/idea-spark-usage/SKILL.md")
+    combined = f"{readme}\n{skill}"
+
+    assert "python3 -m idea_spark.dashboard" in combined
+    assert "http://127.0.0.1:" in combined
+    assert "read-only" in combined.lower()
+    assert "EventSource" in combined or "SSE" in combined
+    assert "subagent" in combined.lower()
 
 
 def test_examples_do_not_document_legacy_aliases_or_internal_execution():

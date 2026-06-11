@@ -10,7 +10,7 @@ The runtime model is shared-ledger coordination. A parent creates a room, seeds 
 
 ## What it is not
 
-Idea-Spark is not a chat transcript summarizer. It is not a scheduler, ranking engine, dashboard, web server, vector database, or autonomous web/file/terminal executor. Same-turn child discussion is SQLite shared-ledger coordination, not P2P socket chat.
+Idea-Spark is not a chat transcript summarizer. It is not a scheduler, ranking engine, vector database, or autonomous web/file/terminal executor. Same-turn child discussion is SQLite shared-ledger coordination, not P2P socket chat. The optional realtime dashboard is a local read-only viewer over that ledger; it is started explicitly from the CLI and is not launched by Hermes tool handlers.
 
 ## Tool list
 
@@ -96,6 +96,38 @@ In a fresh session with the plugin enabled, call this flow:
 
 The export must return Markdown with the fixed report sections.
 
+## Realtime browser dashboard
+
+Start the local read-only dashboard from this source tree:
+
+```bash
+cd /home/xu/project/autosci-delphi/idea-spark
+python3 -m idea_spark.dashboard --host 127.0.0.1 --port 8765
+```
+
+Open:
+
+```text
+http://127.0.0.1:8765/
+```
+
+A room-specific URL is:
+
+```text
+http://127.0.0.1:8765/room/<room_id>
+```
+
+The dashboard reads the same SQLite ledger as the Hermes tools. It shows rooms, joined subagents, missing expected agents, messages, artifacts, gate records, and open needs. Room pages use `EventSource` / SSE for near-real-time updates and fall back to browser polling if SSE is unavailable.
+
+Dashboard safety boundary:
+
+- Localhost bind by default: `127.0.0.1`.
+- Read-only SQLite access; the server does not write ledger rows.
+- GET/HEAD/OPTIONS only; mutation methods return 405.
+- No npm build, external web service, authentication layer, or remote hosting is included in this MVP.
+
+Use `IDEA_SPARK_DB=/absolute/path/to/idea_spark.sqlite3` or `--db /absolute/path/to/idea_spark.sqlite3` when monitoring a non-default ledger.
+
 ## Parent protocol
 
 1. Create the room with `idea_spark_room_create`.
@@ -147,17 +179,17 @@ python3 -m pytest tests/test_schema_contract.py tests/test_plugin_registration.p
 python3 -m pytest tests/test_store_migrations.py -q
 python3 -m pytest tests/test_tools_room.py tests/test_export.py -q
 python3 -m pytest tests/test_tools_artifacts_gates.py -q
-python3 -m pytest tests/test_examples_contract.py -q
+python3 -m pytest tests/test_dashboard.py tests/test_examples_contract.py -q
 ```
 
 ## Phase locks
 
 MVP includes the room/message barrier, typed artifact ledger, gates, open needs, fixed Markdown export, protocol examples, and plugin discovery checks.
 
-Locked until MVP gates pass:
+Locked until the ledger/export/dashboard gates pass:
 
 - Pairwise tournaments and Elo.
 - ArtifactReactor scheduling.
-- Visualization and dashboards.
 - Vector retrieval or embedding cache.
+- Remote or authenticated dashboard hosting.
 - Alternate public tool names.

@@ -58,6 +58,36 @@ Keep `metadata.expected_agents` no larger than the current `delegation.max_concu
 6. idea_spark_room_export(room_id=..., format="markdown")
 ```
 
+## Realtime browser dashboard
+
+When the user wants to watch subagents while they are discussing, start the local read-only dashboard from the Idea-Spark source tree:
+
+```bash
+cd /home/xu/project/autosci-delphi/idea-spark
+python3 -m idea_spark.dashboard --host 127.0.0.1 --port 8765
+```
+
+Then open:
+
+```text
+http://127.0.0.1:8765/
+```
+
+For a specific room:
+
+```text
+http://127.0.0.1:8765/room/<room_id>
+```
+
+The dashboard reads the same SQLite ledger used by the tools. It shows rooms, joined subagents, missing expected agents, live messages, artifacts, gate decisions, and open needs. Room pages use `EventSource` / SSE for near-real-time updates and fall back to browser polling.
+
+Safety boundary:
+
+- The dashboard is localhost-only by default and read-only.
+- It accepts GET/HEAD/OPTIONS; mutation methods return 405.
+- It is a CLI-started monitor, not a Hermes tool handler that launches web/server actions.
+- Use `--db /absolute/path/to/idea_spark.sqlite3` or `IDEA_SPARK_DB=...` for a non-default ledger.
+
 ## Child prompt checklist
 
 Each child prompt should include:
