@@ -327,25 +327,25 @@ def _page_shell(room_id: str | None) -> str:
     .wrap {{ max-width: 1440px; margin: 0 auto; padding: 24px; }}
     .brand {{ display: flex; gap: 14px; align-items: baseline; flex-wrap: wrap; }}
     h1 {{ margin: 0; font-size: clamp(28px, 4vw, 54px); letter-spacing: -.06em; }}
-    .badge {{ border: 1px solid var(--line); border-radius: 999px; padding: 6px 10px; color: var(--muted); font-family: var(--mono); font-size: 12px; }}
+    .badge {{ border: 1px solid var(--line); border-radius: 4px; padding: 6px 10px; color: var(--muted); font-family: var(--mono); font-size: 12px; }}
     .grid {{ display: grid; grid-template-columns: 330px minmax(0, 1fr); gap: 18px; align-items: start; }}
-    .panel {{ background: rgba(17, 17, 17, .88); border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 20px 80px rgba(0,0,0,.35); overflow: hidden; }}
+    .panel {{ background: rgba(17, 17, 17, .88); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 20px 80px rgba(0,0,0,.35); overflow: hidden; }}
     .panel h2 {{ margin: 0; padding: 16px 18px; border-bottom: 1px solid var(--line); font-size: 14px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }}
     .panel-body {{ padding: 16px 18px; }}
-    .rooms a {{ display: block; color: var(--ink); text-decoration: none; padding: 13px; border: 1px solid var(--line); border-radius: 14px; margin-bottom: 10px; background: var(--panel-2); }}
+    .rooms a {{ display: block; color: var(--ink); text-decoration: none; padding: 13px; border: 1px solid var(--line); border-radius: 6px; margin-bottom: 10px; background: var(--panel-2); }}
     .rooms a:hover {{ border-color: var(--accent); }}
     .room-title {{ font-weight: 700; }}
     .small {{ color: var(--muted); font-size: 12px; line-height: 1.5; }}
     .stats {{ display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin: 0 0 18px; }}
-    .stat {{ padding: 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 16px; }}
+    .stat {{ padding: 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; }}
     .stat strong {{ display: block; font-size: 28px; }}
     .stat span {{ color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }}
     .status-line {{ display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 18px; }}
-    .pill {{ border: 1px solid var(--line); border-radius: 999px; padding: 7px 10px; font-size: 12px; color: var(--muted); background: rgba(255,255,255,.03); }}
+    .pill {{ border: 1px solid var(--line); border-radius: 4px; padding: 7px 10px; font-size: 12px; color: var(--muted); background: rgba(255,255,255,.03); }}
     .pill.hot {{ color: #111; background: var(--accent); border-color: var(--accent); }}
     .pill.ok {{ color: #06140b; background: var(--ok); border-color: var(--ok); }}
     .timeline {{ display: flex; flex-direction: column; gap: 12px; }}
-    .event {{ border: 1px solid var(--line); border-radius: 17px; background: linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.018)); padding: 14px; }}
+    .event {{ border: 1px solid var(--line); border-radius: 8px; background: linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.018)); padding: 14px; }}
     .event.message {{ border-left: 4px solid var(--accent-2); }}
     .event.artifact {{ border-left: 4px solid var(--accent); }}
     .event.gate {{ border-left: 4px solid var(--bad); }}
@@ -355,8 +355,8 @@ def _page_shell(room_id: str | None) -> str:
     .event-meta {{ color: var(--muted); font-family: var(--mono); font-size: 12px; }}
     .event-content {{ white-space: pre-wrap; line-height: 1.55; color: #e8e8e8; }}
     .agents {{ display: grid; gap: 10px; }}
-    .agent {{ display: flex; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel-2); }}
-    .empty {{ color: var(--muted); border: 1px dashed var(--line); border-radius: 14px; padding: 16px; }}
+    .agent {{ display: flex; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel-2); }}
+    .empty {{ color: var(--muted); border: 1px dashed var(--line); border-radius: 6px; padding: 16px; }}
     code {{ font-family: var(--mono); color: var(--accent); }}
     @media (max-width: 900px) {{ .grid {{ grid-template-columns: 1fr; }} .stats {{ grid-template-columns: repeat(2, 1fr); }} }}
   </style>

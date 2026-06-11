@@ -182,6 +182,21 @@ def test_dashboard_http_serves_health_html_json_sse_and_rejects_mutations(temp_i
         server.server_close()
 
 
+def test_dashboard_html_uses_compact_industrial_radii():
+    import re
+
+    from idea_spark import dashboard
+
+    html = dashboard._room_html("radius-room")
+    radii = [int(value) for value in re.findall(r"border-radius:\s*(\d+)px", html)]
+
+    assert radii
+    assert max(radii) <= 10
+    assert "border-radius: 999px" not in html
+    for large_literal in ["border-radius: 12px", "border-radius: 14px", "border-radius: 16px", "border-radius: 17px", "border-radius: 18px", "border-radius: 22px"]:
+        assert large_literal not in html
+
+
 def test_dashboard_module_cli_help_explains_local_readonly_server():
     result = subprocess.run(
         [sys.executable, "-m", "idea_spark.dashboard", "--help"],
