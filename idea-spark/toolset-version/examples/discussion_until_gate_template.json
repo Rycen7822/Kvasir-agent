@@ -1,0 +1,9 @@
+{
+  "goal": "Coordinate an Idea-Spark discussion-until-gate review. Join/read the room state, then launch bounded child rounds outside the plugin tool handlers. Use phase order: Seed / Framing; Novelty Attack; Weakness / Feasibility Attack; Author Rebuttal / Improvement Draft; Re-review / Cross-examination; Gate. max_rounds=4. After each phase call idea_spark_room_status and stop only after has_terminal_gate=true. Gatekeeper must call idea_spark_gate_record with close_room=true for the terminal gate. A message-only gate is not final. If max_rounds is exhausted without an accept/reject/supersede/retract decision, record needs_more_evidence as the terminal gate. Do not call skill_manage.",
+  "context": "room_id=<ROOM_ID>; idea_summary=<IDEA_SUMMARY>; required placeholders to replace before use: <ROOM_ID>, <IDEA_SUMMARY>. Use toolsets=[\"idea_spark\", \"skills\"] for child roles by default. Children must call idea_spark_room_join first, load skill_view(name=\"idea-spark:idea-spark-usage\") when protocol details are needed, write at least one message and one typed artifact when substantive content exists, use idea_spark_need_create / idea_spark_need_update for evidence gaps, and never treat summaries or messages as final gates. max_rounds=4; stop only after has_terminal_gate=true; Gatekeeper must call idea_spark_gate_record.",
+  "toolsets": [
+    "idea_spark",
+    "skills"
+  ],
+  "role": "orchestrator"
+}

@@ -2,6 +2,8 @@
 idea-spark/reference/
 idea-spark/local-test/
 idea-spark/tmp/
+idea-spark/*-version/local-test/
+idea-spark/*-version/tmp/
 
 # Python transient files
 __pycache__/

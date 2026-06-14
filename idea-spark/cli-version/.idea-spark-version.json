@@ -1,0 +1,7 @@
+{
+  "version_directory": "cli-version",
+  "mode": "cli-first",
+  "source": "/home/xu/project/autosci-delphi/idea-spark",
+  "created_at": "2026-06-14T20:20:15+0800",
+  "notes": "Snapshot copied from current working tree. Default mode keeps Hermes tools disabled; use CLI command hermes idea-spark call ... --json-file ... ."
+}

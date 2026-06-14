@@ -4,12 +4,14 @@ import time
 import uuid
 from collections.abc import Callable
 from typing import Any
+from urllib.parse import quote
 
 from .export import render_markdown
 from .schemas import ARTIFACT_STATUSES, ARTIFACT_TYPES, GATE_DECISIONS, PROTOCOL, RELATIONS, TOOL_NAMES
 from .store import IdeaSparkStore, canonical_json, content_hash, with_retry
 
 NEED_STATUSES = {"open", "claimed", "resolved", "stale", "cancelled"}
+DEFAULT_DASHBOARD_BASE_URL = "http://127.0.0.1:8765"
 
 
 def _json(payload: dict) -> str:
@@ -30,6 +32,17 @@ def _now() -> str:
 
 def _new_id(prefix: str) -> str:
     return f"{prefix}_{uuid.uuid4().hex[:12]}"
+
+
+def _dashboard_base_url(args: dict) -> str:
+    metadata_value = args.get("metadata")
+    metadata = metadata_value if isinstance(metadata_value, dict) else {}
+    value = args.get("dashboard_base_url") or metadata.get("dashboard_base_url") or DEFAULT_DASHBOARD_BASE_URL
+    return str(value).rstrip("/")
+
+
+def _room_url(room_id: str, args: dict) -> str:
+    return f"{_dashboard_base_url(args)}/room/{quote(str(room_id), safe='')}"
 
 
 def _store() -> IdeaSparkStore:
@@ -163,7 +176,14 @@ def idea_spark_room_create(args: dict, **kwargs) -> str:
                     canonical_json(metadata),
                 ),
             )
-        return ok({"room_id": room_id, "status": args.get("status", "open")})
+        return ok(
+            {
+                "room_id": room_id,
+                "status": args.get("status", "open"),
+                "dashboard_url": f"{_dashboard_base_url(args)}/",
+                "room_url": _room_url(room_id, args),
+            }
+        )
 
     try:
         return with_retry(run)
@@ -922,7 +942,7 @@ def idea_spark_need_update(args: dict, **kwargs) -> str:
 
 
 _TOOL_DESCRIPTIONS = {
-    "idea_spark_room_create": "Create an Idea-Spark shared-ledger review room. Set metadata.expected_agents when round barriers should wait for named child agents. For protocol guidance, load skill idea-spark:idea-spark-usage.",
+    "idea_spark_room_create": "Create an Idea-Spark shared-ledger review room and return room_url for the dashboard. Set metadata.expected_agents when round barriers should wait for named child agents. For protocol guidance, load skill idea-spark:idea-spark-usage.",
     "idea_spark_room_join": "Register a delegate_task child agent in an Idea-Spark room. Children should call this first before reading or writing room state.",
     "idea_spark_room_status": "Return room status, ledger counts, and expected agents that have not joined yet.",
     "idea_spark_message_post": "Post a concise round/phase narrative update, optionally linked to artifact IDs. Use artifacts for durable claims rather than only free text.",
@@ -952,7 +972,7 @@ _TOOL_PROPERTIES = {
 }
 
 _SCHEMA_FIELDS = {
-    "idea_spark_room_create": ["room_id", "title", "topic", "created_by", "protocol", "status", "metadata"],
+    "idea_spark_room_create": ["room_id", "title", "topic", "created_by", "protocol", "status", "dashboard_base_url", "metadata"],
     "idea_spark_room_join": ["room_id", "agent_id", "role", "display_name", "metadata"],
     "idea_spark_room_status": ["room_id"],
     "idea_spark_message_post": ["room_id", "round_id", "phase", "agent_id", "role", "content", "artifact_ids"],
@@ -1000,6 +1020,7 @@ _FIELD_OVERRIDES = {
     "created_by": {"type": "string"},
     "protocol": {"type": "string"},
     "status": {"type": "string"},
+    "dashboard_base_url": {"type": "string", "description": "Optional dashboard base URL used to compute room_url, e.g. http://127.0.0.1:8879."},
     "display_name": {"type": "string"},
     "content": {"type": "string"},
     "limit": {"type": "integer", "minimum": 1, "maximum": 200},

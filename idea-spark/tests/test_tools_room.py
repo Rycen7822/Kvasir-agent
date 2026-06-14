@@ -31,6 +31,34 @@ def make_room(expected_agents=None):
     return result["room_id"]
 
 
+def test_room_create_returns_dashboard_room_url(temp_idea_spark_db):
+    result = call(
+        idea_spark_room_create,
+        {"room_id": "room with spaces", "title": "link room", "topic": "surface dashboard link", "created_by": "parent"},
+    )
+
+    assert result["success"] is True
+    assert result["dashboard_url"] == "http://127.0.0.1:8765/"
+    assert result["room_url"] == "http://127.0.0.1:8765/room/room%20with%20spaces"
+
+
+def test_room_create_accepts_custom_dashboard_base_url(temp_idea_spark_db):
+    result = call(
+        idea_spark_room_create,
+        {
+            "room_id": "custom-link-room",
+            "title": "custom link room",
+            "topic": "surface actual dashboard port",
+            "created_by": "parent",
+            "dashboard_base_url": "http://127.0.0.1:8879/",
+        },
+    )
+
+    assert result["success"] is True
+    assert result["dashboard_url"] == "http://127.0.0.1:8879/"
+    assert result["room_url"] == "http://127.0.0.1:8879/room/custom-link-room"
+
+
 def test_room_create_join_post_read_round_trip(temp_idea_spark_db):
     room_id = make_room(["agent-a"])
 

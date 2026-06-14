@@ -1,0 +1,13 @@
+[project]
+name = "idea-spark"
+version = "0.1.0"
+description = "Typed artifact swarm debate room for Hermes delegate_task child agents."
+requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

@@ -45,6 +45,17 @@ def test_round_wait_schema_exposes_per_call_expected_agents():
     assert "expected_agents" not in schema["parameters"]["required"]
 
 
+def test_room_create_schema_exposes_dashboard_base_url():
+    from idea_spark.tools import schema_for
+
+    schema = schema_for("idea_spark_room_create")
+    props = schema["parameters"]["properties"]
+
+    assert props["dashboard_base_url"]["type"] == "string"
+    assert "room_url" in schema["description"]
+    assert "dashboard_base_url" not in schema["parameters"]["required"]
+
+
 def test_read_schemas_expose_delta_cursor_fields():
     from idea_spark.tools import schema_for
 
