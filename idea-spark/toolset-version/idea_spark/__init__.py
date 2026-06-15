@@ -4,7 +4,7 @@ from .schemas import TOOL_NAMES, TOOLSET
 from .tools import HANDLERS, schema_for
 
 SKILL_NAME = "idea-spark-usage"
-SKILL_DESCRIPTION = "Use Idea-Spark shared-ledger debate rooms with Hermes delegate_task child agents."
+SKILL_DESCRIPTION = "Use Idea-Spark toolset-first shared-ledger debate rooms with Hermes delegate_task child agents, continuous r1-r4 gates, and standalone handoff reports."
 
 
 def _skill_path() -> Path:

@@ -83,6 +83,26 @@ def test_register_declares_bundled_usage_skill():
     assert skill["path"].name == "SKILL.md"
     assert skill["path"].exists()
     assert "delegate_task" in skill["description"]
+    assert "toolset-first" in skill["description"]
+    assert "continuous r1-r4" in skill["description"]
+    assert "standalone handoff reports" in skill["description"]
+
+
+def test_bundled_skill_documents_toolset_role_boundaries_and_handoff_report():
+    skill_text = Path("idea_spark/resources/skills/idea-spark-usage/SKILL.md").read_text(encoding="utf-8")
+    parent_ref = Path("idea_spark/resources/skills/idea-spark-usage/references/parent-controller.md").read_text(encoding="utf-8")
+    subagent_ref = Path("idea_spark/resources/skills/idea-spark-usage/references/subagent-contract.md").read_text(encoding="utf-8")
+    handoff_ref = Path("idea_spark/resources/skills/idea-spark-usage/references/handoff-report.md").read_text(encoding="utf-8")
+
+    assert "Thin workflow router" in skill_text
+    assert "**[PARENT-ONLY] Parent/main agent:**" in skill_text
+    assert "**[SUBAGENT-ONLY] Subagent/child agent:**" in skill_text
+    assert "Do not stop after r1/r2/r3" in skill_text
+    assert "r1 → r2 → r3 → r4" in parent_ref
+    assert "Mandatory skill re-read after each phase" in parent_ref
+    assert 'toolsets=["idea_spark", "skills"]' in subagent_ref
+    assert "Ledger export vs handoff report" in handoff_ref
+    assert "not automatically suitable as a human handoff report" in handoff_ref
 
 
 def test_register_matches_manifest_tool_names():

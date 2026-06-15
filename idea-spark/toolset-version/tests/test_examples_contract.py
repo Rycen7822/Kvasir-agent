@@ -41,10 +41,17 @@ def read_text(path):
     return Path(path).read_text(encoding="utf-8")
 
 
+def skill_reference_texts():
+    base = Path("idea_spark/resources/skills/idea-spark-usage")
+    return [read_text(path) for path in sorted((base / "references").glob("*.md"))]
+
+
 def test_examples_use_only_canonical_tool_names():
     text = "\n".join(
         [
             read_text("README.md"),
+            read_text("idea_spark/resources/skills/idea-spark-usage/SKILL.md"),
+            *skill_reference_texts(),
             read_text("examples/ml_idea_review_prompt.md"),
             read_text("examples/delegate_task_template.json"),
         ]
@@ -85,7 +92,8 @@ def test_readme_documents_restart_or_reset_after_enabling_plugin():
 def test_readme_and_bundled_skill_document_realtime_dashboard():
     readme = read_text("README.md")
     skill = read_text("idea_spark/resources/skills/idea-spark-usage/SKILL.md")
-    combined = f"{readme}\n{skill}"
+    toolset_dashboard = read_text("idea_spark/resources/skills/idea-spark-usage/references/toolset-dashboard.md")
+    combined = f"{readme}\n{skill}\n{toolset_dashboard}"
 
     assert "python3 -m idea_spark.dashboard" in combined
     assert "http://127.0.0.1:" in combined
@@ -99,20 +107,45 @@ def test_readme_and_bundled_skill_document_realtime_dashboard():
 
 def test_bundled_skill_documents_round_based_subagent_work_mode():
     skill = read_text("idea_spark/resources/skills/idea-spark-usage/SKILL.md")
+    parent_ref = read_text("idea_spark/resources/skills/idea-spark-usage/references/parent-controller.md")
+    combined = f"{skill}\n{parent_ref}"
 
-    assert "## Recommended round-based work mode" in skill
-    assert "short-lived workers" in skill
-    assert "persistent chat-room members" in skill
-    assert "Use the Idea-Spark room as the durable shared memory" in skill
-    for phase in ["r0/seed", "r1/review", "r2/rebuttal", "r3/gate"]:
-        assert phase in skill
+    assert "Thin workflow router" in skill
+    assert "**[PARENT-ONLY] Parent/main agent:**" in skill
+    assert "**[SUBAGENT-ONLY] Subagent/child agent:**" in skill
+    assert "## Role routing — choose exactly one lane first" in skill
+    assert "## [PARENT-ONLY] Mandatory phase re-read checkpoint" in skill
+    assert "## Hard boundary: [PARENT-ONLY] vs [SUBAGENT-ONLY]" in skill
+    assert "Do not follow this section from a subagent prompt" in skill
+    for phase in ["r0/seed", "r1/review", "r2/rebuttal", "r3/re-review", "r4/gate", "final/handoff"]:
+        assert phase in combined
     for role in ["PriorArtBreaker", "FeasibilityBreaker", "AuthorAdvocate", "Gatekeeper"]:
         assert role in skill
     for artifact_type in ["Rebuttal", "RevisionPlan", "ScoreCard", "MetaReview"]:
         assert artifact_type in skill
-    assert "For live-room readability" in skill
+    assert "re-read this SKILL.md" in skill
     assert "idea_spark_message_post" in skill
-    assert "persistent multi-process runner" in skill
+
+
+def test_bundled_skill_is_thin_toolset_router_with_parent_and_subagent_references():
+    base = Path("idea_spark/resources/skills/idea-spark-usage")
+    skill = read_text(base / "SKILL.md")
+    refs = {path.name: read_text(path) for path in sorted((base / "references").glob("*.md"))}
+
+    assert len(skill.encode("utf-8")) < 9000
+    assert set(refs) == {"handoff-report.md", "parent-controller.md", "subagent-contract.md", "toolset-dashboard.md"}
+    assert skill.count("[PARENT-ONLY]") >= 5
+    assert skill.count("[SUBAGENT-ONLY]") >= 4
+    assert "references/parent-controller.md" in skill
+    assert "references/subagent-contract.md" in skill
+    assert "references/toolset-dashboard.md" in skill
+    assert "references/handoff-report.md" in skill
+    assert "If a plugin-bundled reference request returns this main SKILL again" in skill
+    assert "The parent must keep the phase loop moving" in refs["parent-controller.md"]
+    assert "A subagent performs one assigned role in one phase" in refs["subagent-contract.md"]
+    assert 'toolsets=["idea_spark", "skills"]' in refs["subagent-contract.md"]
+    assert "not automatically suitable as a human handoff report" in refs["handoff-report.md"]
+    assert "Direct toolset operations" in refs["toolset-dashboard.md"]
 
 
 def test_examples_do_not_document_legacy_aliases_or_internal_execution():
@@ -147,31 +180,44 @@ def test_delegate_task_template_is_valid_and_mentions_idea_spark_toolsets():
 
 def test_bundled_skill_requires_skills_toolset_for_subagents():
     skill = read_text("idea_spark/resources/skills/idea-spark-usage/SKILL.md")
+    subagent_contract = read_text("idea_spark/resources/skills/idea-spark-usage/references/subagent-contract.md")
+    toolset_dashboard = read_text("idea_spark/resources/skills/idea-spark-usage/references/toolset-dashboard.md")
+    combined = f"{skill}\n{subagent_contract}\n{toolset_dashboard}"
 
-    assert 'toolsets=["idea_spark", "skills"' in skill
-    assert 'skill_view(name="idea-spark:idea-spark-usage")' in skill
-    assert "Do not call `skill_manage`" in skill
+    assert 'toolsets=["idea_spark", "skills"]' in combined
+    assert 'skill_view(name="idea-spark:idea-spark-usage")' in combined
+    assert "Do not call `skill_manage`" in combined
 
 
 def test_bundled_skill_documents_discussion_until_gate_controller_contract():
     skill = read_text("idea_spark/resources/skills/idea-spark-usage/SKILL.md")
+    parent_ref = read_text("idea_spark/resources/skills/idea-spark-usage/references/parent-controller.md")
+    handoff_ref = read_text("idea_spark/resources/skills/idea-spark-usage/references/handoff-report.md")
+    toolset_dashboard = read_text("idea_spark/resources/skills/idea-spark-usage/references/toolset-dashboard.md")
+    subagent_contract = read_text("idea_spark/resources/skills/idea-spark-usage/references/subagent-contract.md")
+    combined = f"{skill}\n{parent_ref}\n{handoff_ref}\n{toolset_dashboard}\n{subagent_contract}"
 
     required = [
         "discussion-until-gate",
         "Seed / Framing",
         "Novelty Attack",
-        "Weakness / Feasibility Attack",
+        "r1 / Novelty Attack",
+        "r2 / Author Rebuttal / Improvement Draft",
+        "r3 / Re-review / Cross-examination",
+        "r4 / Gate",
         "Author Rebuttal / Improvement Draft",
         "Re-review / Cross-examination",
         "Gate",
         "has_terminal_gate",
-        "Gatekeeper must call idea_spark_gate_record",
+        "Gatekeeper must call `idea_spark_gate_record`",
         "message-only gate is not final",
+        "Round-continuity rule",
+        "Standalone handoff report contract",
         'toolsets=["idea_spark", "skills"]',
         "Do not call `skill_manage`",
     ]
     for text in required:
-        assert text in skill
+        assert text in combined
 
 
 def test_readme_and_prompt_document_discussion_until_gate_without_scheduler_claims():

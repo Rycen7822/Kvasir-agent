@@ -1,7 +1,7 @@
 ---
 name: idea-spark-usage
-description: Use the Idea-Spark Hermes plugin to coordinate delegate_task child agents through typed artifact debate rooms, gates, open needs, and deterministic Markdown export.
-version: 0.1.0
+description: Thin workflow router for the Idea-Spark toolset-first shared-ledger review room: parent-orchestrated r1-r4 discussion-until-gate, subagent role contracts, dashboard mechanics, and standalone handoff reports.
+version: 0.1.1
 author: Hermes Agent
 license: MIT
 metadata:
@@ -11,158 +11,90 @@ metadata:
 
 # Idea-Spark Usage
 
-Load this when the task asks to run, coordinate, inspect, or explain an Idea-Spark review room.
+Load this when the task asks to run, coordinate, inspect, or explain an Idea-Spark review room with the `idea_spark` Hermes toolset.
 
-Idea-Spark is a Hermes standalone plugin/toolset named `idea_spark`. It is not a subagent launcher. The parent agent launches children with `delegate_task`; Idea-Spark gives those agents a shared SQLite ledger.
+Idea-Spark is a Hermes standalone plugin/toolset named `idea_spark`. It is not a subagent launcher: the **parent agent** launches bounded `delegate_task` children, and Idea-Spark supplies the shared SQLite ledger where those children join, read, write messages, write typed artifacts, record open needs, and record gates.
 
-## Core protocol
+Default mode for this version is **toolset-first**. Child delegates normally use `toolsets=["idea_spark", "skills"]`; add external toolsets only when that role needs outside evidence or files.
 
-1. Parent creates one room with `idea_spark_room_create`.
-2. Parent seeds durable starting artifacts such as `ResearchGoal`, `IdeaCard`, and `EvaluationRubric` with `idea_spark_artifact_create`.
-3. Parent delegates child roles with `toolsets=["idea_spark", "skills"]` by default. Add external toolsets only when needed, e.g. `web`, `file`, or `terminal`.
-4. Every child must first call `idea_spark_room_join` using its assigned `room_id`, `agent_id`, and `role`.
-5. Every child should then load this bundled protocol with `skill_view(name="idea-spark:idea-spark-usage")` when it needs procedural details. Do not call `skill_manage` from child prompts.
-6. Children read current state with `idea_spark_room_status`, `idea_spark_message_read`, and `idea_spark_artifact_read` before writing.
-7. Children create typed artifacts for claims, objections, evidence, rebuttals, risks, experiments, score cards, meta-reviews, and open needs.
-8. Children link provenance with `idea_spark_artifact_link` instead of relying on free-text memory.
-9. Use `idea_spark_round_wait` with finite `timeout_s`; on timeout, continue with partial state and explicitly record missing agents.
-10. Final conclusions require `idea_spark_gate_record`; do not treat chat consensus as a final decision.
-11. Parent exports the deterministic Markdown report with `idea_spark_room_export`.
+## Who is this document for?
 
-## Recommended round-based work mode
+- **[PARENT-ONLY] Parent/main agent:** read this whole thin workflow first. If orchestrating a room, also load `references/parent-controller.md`.
+- **[SUBAGENT-ONLY] Subagent/child agent:** load this skill, then load `references/subagent-contract.md`. Follow subagent-only rules unless explicitly assigned orchestration duties.
+- **Human-readable reporting:** after the terminal gate, load `references/handoff-report.md` before writing a report for researchers outside the room.
+- **Toolset/dashboard mechanics:** load `references/toolset-dashboard.md` only when you need exact direct-tool, dashboard, type, or safety details.
 
-Default to parent-orchestrated, round-based debate. `delegate_task` children are short-lived workers: they receive one bounded task from the parent, join the room, read the ledger, write messages/artifacts, return a summary to the parent, and then stop. Do not assume subagents remain online as persistent chat-room members unless a separate long-running runner/daemon has been explicitly built for that task.
+## Role routing — choose exactly one lane first
 
-Use the Idea-Spark room as the durable shared memory between these short-lived children. A child can respond to other agents only by reading what those agents already wrote into the room, then writing its own message, artifact, link, rebuttal, score, need, or gate record. The parent creates the multi-turn discussion by launching more rounds after reading the room state.
+| If this run is... | You are... | Read next | Do not do |
+|---|---|---|---|
+| Creating/controlling the room, launching delegates, moving r1→r2→r3→r4, closing gate, or writing final report | **[PARENT-ONLY] parent/main agent** | `references/parent-controller.md` | Do not behave like a one-role reviewer or stop after a child summary. |
+| A delegated reviewer/rebutter/planner/gatekeeper | **[SUBAGENT-ONLY] subagent/child agent** | `references/subagent-contract.md` | Do not launch agents, manage the room, export reports, or load parent-only workflow unless told. |
+| Writing a researcher-facing deliverable after the room is gated | **[PARENT-ONLY] report writer** | `references/handoff-report.md` | Do not hand off the raw ledger as the readable report. |
+| Looking up exact direct-tool, dashboard, type, or command syntax | **mechanics lookup** | `references/toolset-dashboard.md` | Do not copy mechanics into child prompts unless needed for that role. |
 
-Preferred default sequence:
+## Reference map
 
-1. `r0/seed`: Parent creates the room, sets `metadata.expected_agents`, and seeds `ResearchGoal`, `IdeaCard`, and `EvaluationRubric` artifacts.
-2. `r1/review`: Launch independent reviewers in parallel, usually `PriorArtBreaker`, `FeasibilityBreaker`, `SkepticalAC`, and `ExperimentPlanner`. Each child joins, reads the seed artifacts, posts a concise room message, and creates typed objections/evidence/risks/plans.
-3. `r2/rebuttal`: Launch response and repair roles, usually `AuthorAdvocate`, `SchemaSurgeon`, and optionally `ExperimentPlanner` again. Each child reads `NoveltyObjection`, `FeasibilityObjection`, `ReviewerRisk`, and prior messages, then writes `Rebuttal`, `RevisionPlan`, `ExperimentPlan`, or `OpenNeed` artifacts that explicitly cite or link the artifacts they address.
-4. `r3/gate`: Launch `MetaReviewer` and/or `Gatekeeper`. They read the whole ledger, produce `ScoreCard`/`MetaReview` artifacts, and record the final decision with `idea_spark_gate_record`.
-5. Export with `idea_spark_room_export` only after the gate decision or an explicit `needs_more_evidence` outcome is recorded.
+Load references with `skill_view(name="idea-spark:idea-spark-usage", file_path="...")` when supported. If a plugin-bundled reference request returns this main SKILL again, use `read_file` on `idea_spark/resources/skills/idea-spark-usage/<reference-path>` in the Idea-Spark plugin source tree.
 
-For live-room readability, require every child to write at least one `idea_spark_message_post` narrative update and at least one durable typed artifact when it has substantive content. Prefer artifact links over vague references such as “the previous reviewer said”. Use `idea_spark_round_wait` only as a finite barrier; on timeout, continue with partial state, record missing expected agents, and avoid blocking the whole discussion indefinitely.
+- `references/parent-controller.md` — parent-only continuous r1 → r2 → r3 → r4 controller, phase verification, retries, and mandatory skill re-read checkpoints.
+- `references/subagent-contract.md` — child-only join/read/write/link/message rules, default `toolsets=["idea_spark", "skills"]`, artifact expectations, and prompt checklist.
+- `references/toolset-dashboard.md` — direct `idea_spark_*` tool operations, dashboard monitoring, public operation names, artifact/gate types, and safety boundary.
+- `references/handoff-report.md` — standalone readable report requirements, self-containment scan, and distinction between ledger export and human handoff.
 
-When the user asks for “subagents discussing with each other,” use this round-based pattern by default rather than trying to keep `delegate_task` children alive. Use a persistent multi-process runner only when the user explicitly asks for always-on agents that poll the room and continue replying over time.
+## [PARENT-ONLY] Parent workflow, short form
 
-## Discussion-until-gate controller contract
+Do not follow this section from a subagent prompt unless explicitly assigned to orchestrate the room.
 
-Use this `discussion-until-gate` contract when the parent/orchestrator must continue debate until a real gate closes the room.
+1. Create one room with `idea_spark_room_create` and seed durable `ResearchGoal`, `IdeaCard`, and `EvaluationRubric` artifacts.
+2. Launch `r1/review` children such as `PriorArtBreaker`, `FeasibilityBreaker`, `SkepticalAC`, and `ExperimentPlanner`; every child writes at least one message and at least one typed artifact.
+3. Verify r1 by reading room status/messages/artifacts.
+4. **Re-read this SKILL.md with `skill_view(name="idea-spark:idea-spark-usage")` before launching r2.** Use the current checklist below to confirm r1 is not terminal.
+5. Launch `r2/rebuttal` and repair roles such as `AuthorAdvocate`, `SchemaSurgeon`, `ExperimentPlanner`, or `BaselineRepair`; r2 reads r1 artifacts and writes `Rebuttal`, `RevisionPlan`, `ExperimentPlan`, `BenchmarkRequirement`, or `RegimeTransition` artifacts.
+6. Verify r2, retry a missing required role once with a narrower prompt if it joined but wrote no artifacts, then **re-read this SKILL.md** before launching r3.
+7. Launch `r3/re-review` roles such as prior-art re-review, feasibility re-review, skeptical AC, and open-need curator; r3 writes `MetaReview`, `ScoreCard`, and/or `OpenNeed` updates.
+8. Verify r3 and **re-read this SKILL.md** before launching r4.
+9. Launch `r4/gate`; Gatekeeper must write final `ScoreCard` / `MetaReview` and call `idea_spark_gate_record(close_room=true)`.
+10. Stop only after `idea_spark_room_status` reports `has_terminal_gate=true`.
+11. Export the deterministic ledger with `idea_spark_room_export`, then write a standalone handoff report when the user needs to share results outside the room.
 
-Controller stop condition:
+## [PARENT-ONLY] Mandatory phase re-read checkpoint
 
-- After each phase, call `idea_spark_room_status`.
-- Continue while `has_terminal_gate` is false.
-- Stop only when `has_terminal_gate` is true from a real `idea_spark_gate_record` row and its paired `GateDecision` artifact.
-- A message-only gate is not final. A child summary, parent synthesis, dashboard text, or message saying “accepted” is not a gate.
-- `needs_more_evidence` is a terminal gate decision by default when `max_rounds=4` is exhausted.
+Idea-Spark runs create long context. The parent/main agent must not rely on memory after a long child-agent round.
 
-Default phase order:
+After **each** phase (`r1`, `r2`, `r3`, and before final reporting), the parent must:
 
-1. `Seed / Framing`: Parent creates the room, records `ResearchGoal`, `IdeaCard`, and `EvaluationRubric`, and sets phase metadata.
-2. `Novelty Attack`: `PriorArtBreaker` writes `PriorArtEvidence` and `NoveltyObjection` artifacts.
-3. `Weakness / Feasibility Attack`: `FeasibilityBreaker`, `SkepticalAC`, and `ExperimentPlanner` write `FeasibilityObjection`, `ReviewerRisk`, `BenchmarkRequirement`, `StressTest`, and `ExperimentPlan` artifacts.
-4. `Author Rebuttal / Improvement Draft`: `AuthorAdvocate` and `SchemaSurgeon` write `Rebuttal`, `RevisionPlan`, and `RegimeTransition` artifacts linked to the objections they address.
-5. `Re-review / Cross-examination`: reviewers read the rebuttals, resolve or create `OpenNeed` records, and update evidence gaps with `idea_spark_need_update`.
-6. `Gate`: `Gatekeeper` or `MetaReviewer` writes `ScoreCard` / `MetaReview`; Gatekeeper must call idea_spark_gate_record with `close_room=true` for the terminal decision.
+1. Read room status and verify the expected messages/artifacts for the phase.
+2. Call `skill_view(name="idea-spark:idea-spark-usage")` again.
+3. Use this checklist to decide the next action:
+   - If r1 is complete and no terminal gate exists, launch r2; do not summarize as done.
+   - If r2 is complete and no terminal gate exists, launch r3; retry missing repair roles once if needed.
+   - If r3 is complete and no terminal gate exists, launch r4 Gatekeeper.
+   - If r4 recorded a real gate and `has_terminal_gate=true`, export and write the handoff report when needed.
+   - If a required source, tool, or safety decision is missing, record an `OpenNeed` or ask the user only for that blocker.
 
-Role output contract:
+## [PARENT-ONLY] Discussion-until-gate stop rule
 
-- Every substantive child writes at least one `idea_spark_message_post` and at least one typed artifact.
-- Open evidence gaps use `idea_spark_need_create`; claim, resolve, reopen, stale, or cancel those gaps with `idea_spark_need_update`.
-- Child delegate calls use `toolsets=["idea_spark", "skills"]` by default. Add web/file/terminal only when that role explicitly needs external evidence.
-- Every child loads this protocol with `skill_view(name="idea-spark:idea-spark-usage")` when it needs procedural detail. Do not call `skill_manage`.
-- Low-level `idea_spark_*` tool handlers never start agents, spawn workers, or poll autonomously; only the parent/orchestrator launches bounded child tasks.
+- `r1`, `r2`, and `r3` are never terminal phases.
+- Do not stop after r1/r2/r3; continue to the next phase after verification and the mandatory skill re-read checkpoint.
+- A child summary, parent synthesis, dashboard text, exported ledger, or message saying “accepted” is not a gate.
+- Stop only when room status says `has_terminal_gate=true` from a real `idea_spark_gate_record` row and paired `GateDecision` artifact.
+- If `max_rounds=4` is exhausted without enough evidence, record a real `needs_more_evidence` gate at r4 instead of stopping early.
 
-## Recommended roles
+## Hard boundary: [PARENT-ONLY] vs [SUBAGENT-ONLY]
 
-Typical ML idea review roles:
+- **[PARENT-ONLY] The parent** creates the room, starts or checks the dashboard when needed, launches delegates, verifies every phase, re-reads this skill between phases, decides retries, records or delegates the terminal gate, exports the ledger, and writes the standalone handoff report.
+- **[SUBAGENT-ONLY] A subagent** handles one bounded role. It joins the room, reads current ledger state, writes its message/artifacts/open needs, verifies its own writes, returns a summary, and stops.
+- **[SUBAGENT-ONLY] Subagents must not** assume they are persistent room members. They should not call `skill_manage`, spawn more agents, export the final report, or decide that the whole room is complete unless assigned Gatekeeper and explicitly instructed to call `idea_spark_gate_record`.
 
-- `PriorArtBreaker`
-- `FeasibilityBreaker`
-- `SkepticalAC`
-- `AuthorAdvocate`
-- `ExperimentPlanner`
-- `Gatekeeper`
-- `SchemaSurgeon`
-- `MetaReviewer`
+## Minimal role/tool rules
 
-Keep `metadata.expected_agents` no larger than the current `delegation.max_concurrent_children` when strict barriers are required. Otherwise use timeout-only soft barriers.
+- Default child delegate toolsets are `toolsets=["idea_spark", "skills"]`; add external toolsets only when that role needs outside evidence.
+- Every substantive child writes at least one `idea_spark_message_post` and one typed artifact.
+- Prefer artifact links over vague references to “previous reviewer”.
+- Open evidence gaps use `idea_spark_need_create` / `idea_spark_need_update`.
+- Final decisions use `idea_spark_gate_record`; message-only gates are invalid.
 
-## Minimal parent flow
+## Human handoff rule
 
-```text
-1. idea_spark_room_create({
-   "title": "...",
-   "topic": "...",
-   "metadata": {"expected_agents": ["prior", "feasibility", "gatekeeper"]}
-})
-2. idea_spark_artifact_create(room_id=..., type="ResearchGoal", title=..., content={...})
-3. delegate_task children with toolsets=["idea_spark", "skills", ...]
-4. idea_spark_round_wait(room_id=..., round_id="r1", phase="review", timeout_s=60)
-5. idea_spark_room_status(room_id=...)
-6. idea_spark_room_export(room_id=..., format="markdown")
-```
-
-## Realtime browser dashboard
-
-When the user wants to watch subagents while they are discussing, start the local management dashboard from the Idea-Spark source tree:
-
-```bash
-cd /home/xu/project/autosci-delphi/idea-spark
-python3 -m idea_spark.dashboard --host 127.0.0.1 --port 8765
-```
-
-Then open:
-
-```text
-http://127.0.0.1:8765/
-```
-
-For a specific room:
-
-```text
-http://127.0.0.1:8765/room/<room_id>
-```
-
-The dashboard reads the same SQLite ledger used by the tools. It shows rooms, joined subagents, missing expected agents, live messages, artifacts, gate decisions, and open needs. Room pages use `EventSource` / SSE for near-real-time updates and fall back to browser polling. The top-right `EN` / `中文` switch changes dashboard UI labels in-place and persists the preference in browser local storage; it does not translate room titles or agent-authored discussion content. Status views are read-only; local room deletion is limited to the explicit room management path guarded by `room_delete_enabled` and `confirm=<room_id>`.
-
-Safety boundary:
-
-- The dashboard is localhost-only by default.
-- It does not edit messages, artifacts, gates, open needs, or participant rows directly.
-- It accepts GET/HEAD/OPTIONS for monitoring; DELETE is limited to `/api/rooms/<room_id>?confirm=<room_id>`.
-- It is a CLI-started monitor, not a Hermes tool handler that launches web/server actions.
-- Use `--db /absolute/path/to/idea_spark.sqlite3` or `IDEA_SPARK_DB=...` for a non-default ledger.
-
-## Child prompt checklist
-
-Each child prompt should include:
-
-- Room id.
-- Stable agent id.
-- Role name.
-- Required first action: `idea_spark_room_join`.
-- Required toolsets: `toolsets=["idea_spark", "skills"]` plus external toolsets only when needed.
-- Required skill loading: call `skill_view(name="idea-spark:idea-spark-usage")` after joining if protocol details are needed. Do not call `skill_manage`.
-- Round id and phase naming convention.
-- Required artifact types for that role.
-- Whether external tools are allowed.
-- Requirement to record missing evidence through `idea_spark_need_create`.
-- Requirement to use `idea_spark_gate_record` only for explicit gate decisions.
-
-## Artifact types
-
-Allowed artifact types are:
-
-`ResearchGoal`, `IdeaCard`, `EvaluationRubric`, `AtomicClaim`, `Assumption`, `PriorArtEvidence`, `EvidenceLink`, `NoveltyObjection`, `FeasibilityObjection`, `ReviewerRisk`, `Rebuttal`, `RevisionPlan`, `ExperimentPlan`, `StressTest`, `BenchmarkRequirement`, `ScoreCard`, `GateDecision`, `OpenNeed`, `RegimeTransition`, `MetaReview`.
-
-Allowed statuses: `proposed`, `accepted`, `rejected`, `superseded`, `retracted`, `stale`.
-
-Gate decisions: `accepted`, `rejected`, `superseded`, `retracted`, `needs_more_evidence`.
-
-## Safety boundary
-
-Idea-Spark tools only operate on their SQLite ledger and Markdown export. They do not run web, shell, terminal, browser, file-system automation, or network actions. Give child agents external toolsets explicitly through `delegate_task` when needed.
+`idea_spark_room_export` is an internal ledger export, not automatically a researcher-ready report. When the user asks for a report or the output will be handed to someone who cannot inspect the room, write a standalone Markdown report after the terminal gate and scan it for local paths, URLs, room IDs, artifact IDs, need IDs, and gate IDs, plus “see file/path” wording before delivery.
