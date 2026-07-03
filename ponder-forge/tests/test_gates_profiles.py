@@ -101,6 +101,56 @@ def test_analysis_gate_explains_missing_metric_command(tmp_path, monkeypatch):
     assert any("metric_output.command" in gap.get("profile_specific_reason", "") for gap in gate["gaps"])
 
 
+def test_gate_metrics_report_real_coverage_for_passed_artifact_backed_assertion(tmp_path, monkeypatch):
+    store = _store(tmp_path, monkeypatch)
+    run = store.create_run(goal="research task", profile="research")
+    task = store.create_task(run["run_id"], role="researcher", goal="produce report")
+    result = ingest_report(
+        store,
+        {
+            "run_id": run["run_id"],
+            "task_id": task["task_id"],
+            "role": "researcher",
+            "summary": "supported fact",
+            "assertions": [
+                {
+                    "assertion_type": "factual_claim",
+                    "text": "artifact-backed supported fact",
+                    "importance": 0.95,
+                    "critical": True,
+                    "evidence": [
+                        {"evidence_type": "source_quote", "source_ref": "note.md", "quote_or_observation": "quoted"},
+                        {"evidence_type": "definition_boundary", "source_ref": "boundary.md"},
+                    ],
+                }
+            ],
+            "artifacts": [{"artifact_type": "analysis_report", "path": "report.md", "summary": "fixture"}],
+        },
+    )
+    _accept_with_independent_verdict(store, run["run_id"], result["assertion_ids"][0])
+
+    gate = evaluate_gate(store, run["run_id"])
+
+    assert gate["status"] == "passed"
+    assert gate["metrics"]["independent_review_coverage"] == 1.0
+    assert gate["metrics"]["artifact_reproducibility_coverage"] == 1.0
+    assert gate["metrics"]["final_statement_trace_coverage"] == 1.0
+    assert gate["metrics"]["blocking_gap_count"] == 0
+
+
+def test_gate_metrics_distinguish_unsupported_assertions_from_gap_count(tmp_path, monkeypatch):
+    store = _store(tmp_path, monkeypatch)
+    run_id, _assertion_id = _run_with_report(store, "research", "factual_claim", [])
+
+    gate = evaluate_gate(store, run_id)
+
+    assert gate["status"] == "blocked"
+    assert gate["metrics"]["unsupported_critical_assertions"] == 1
+    assert gate["metrics"]["blocking_gap_count"] == 2
+    assert gate["metrics"]["independent_review_coverage"] == 0.0
+    assert gate["metrics"]["final_statement_trace_coverage"] == 0.0
+
+
 def test_profile_gates_pass_supported_profile_evidence(tmp_path, monkeypatch):
     cases = [
         (

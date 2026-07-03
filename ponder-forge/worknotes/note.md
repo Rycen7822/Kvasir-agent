@@ -104,3 +104,44 @@ Deeply understand `/home/xu/project/loop/DeepScientist/quests/001`, analyze STAG
 - installed-copy tests: same command under `/home/xu/.hermes/plugins/ponder_forge` -> `38 passed`.
 - compileall passed for source and installed copy.
 - quest path check: `git -C /home/xu/project/loop/DeepScientist status --short -- quests/001` returned no changes.
+
+### Round 4 first attempt / PF-REAL-006
+
+- guardrail refreshed from `worknotes/goal(禁止修改).md`; stricter stop rule is at least three real workflow rounds and three consecutive clean passes.
+- fresh run created via current tool surface: `pf_run_496b1615dbc7`; plan/prepare produced three analysis roles and delegation context included quest path, READ ONLY constraints, and `metric_output.command` gate detail.
+- native `delegate_task` launched for data_inspector, metric_analyst, reproduction_runner as `deleg_2383de9a`; result is still pending and cannot be used for final closeout until returned.
+- controller-side real Stage10 read-only report wrote `worknotes/round4_controller_metric_report.md` and `worknotes/round4_controller_metric_summary.json`.
+- PF-REAL-006 found: public `ponder_forge_report_submit` accepted alias-shaped report payload with `success=true` but returned `evidence_ids=[]`; gate then produced misleading `missing_critical_assertion` because alias keys were silently ignored.
+- fix plan completed: `worknotes/pf_real_006_repair_plan.md`; source fix in `report_ingest.py` adds narrow alias normalization and fail-loud validation before mutation.
+- RED reproduced: three new report-ingest tests failed on current code; GREEN after fix: `tests/test_report_ingest.py` -> `4 passed`; focused public/gate tests -> `12 passed`; full source tests -> `41 passed`; source compileall passed.
+- install verification after fix: copy-install smoke installed 9 tools / 6 hooks / 1 command / 1 skill at `/home/xu/.hermes/plugins/ponder_forge`; installed-copy full tests -> `41 passed`; installed-copy compileall passed.
+- fresh installed process alias smoke passed: alias payload created 2 evidence ids and malformed unlinked evidence failed with `unlinked evidence`; current TUI tool binding remains stale for `report_submit`, so clean reruns after PF-REAL-006 must use a fresh installed process or fresh Hermes process.
+- Round 4 first attempt does not count as clean. Clean counter resets after PF-REAL-006; next step is fresh installed real workflow runs until three consecutive clean passes.
+
+### Async delegation results for Round 4 first attempt
+
+- `deleg_2383de9a` returned all three real child roles. The children performed read-only Stage10 analysis and wrote only Ponder-Forge worknotes/plots.
+- Verified Ponder-Forge pool for `pf_run_496b1615dbc7`: 3 tasks, 7 reports, 29 assertions, 6 evidence items, 14 artifacts. Gate remains blocked.
+- Root cause of the blocked state is PF-REAL-006 impact: reports submitted before the alias-normalization fix created unsupported critical assertions with dropped evidence. `reconcile` returned no safe repair and cannot infer missing evidence.
+- This run proves native child delegation/report collection executed on the real Stage10 task, but it is a deliberately non-clean run and is not part of the post-fix clean streak.
+- Subagents independently confirmed Stage10 conclusion: large eval and seed robustness pass; CE selection/model-family/downstream/oral gates remain closed; next work should prioritize cost-to-contain selector improvement, model-family resource coverage, stale hash/audit drift, taxonomy clarification, and downstream only after gates reopen.
+
+### PF-REAL-007
+
+- Full source tests exposed a fixture hygiene issue after cleanup: `tests/test_mini_cases_static.py` depended on ignored `worknotes/ponder_forge_smoke_report_template.md`.
+- Repair plan completed: `worknotes/pf_real_007_repair_plan.md`.
+- Fix: tracked fixture added at `tests/fixtures/ponder_forge_smoke_report_template.md`, test updated, ignored worknotes copy removed.
+- Focused verification: `tests/test_mini_cases_static.py` -> `3 passed`.
+
+### PF-REAL-008 and final clean streak
+
+- Real trigger: after a fresh installed clean run passed, `gate_status` still returned placeholder metrics (`independent_review_coverage=0.0`, `artifact_reproducibility_coverage=0.0`, `final_statement_trace_coverage=0.0`) and `unsupported_critical_assertions` counted gaps instead of assertions.
+- Repair plan completed: `worknotes/pf_real_008_repair_plan.md`.
+- Fix: `gates.py` now computes supported critical assertion count, true unsupported assertion count, `blocking_gap_count`, independent review coverage, artifact-backed coverage, and final trace coverage from the graph.
+- RED tests failed on the old implementation; GREEN after fix: `tests/test_gates_profiles.py` -> `7 passed`; full source suite -> `43 passed`; source compileall passed.
+- Installed copy refreshed at `/home/xu/.hermes/plugins/ponder_forge`; installed-copy suite -> `43 passed`; installed-copy compileall passed; copy smoke reported 9 tools / 6 hooks / 1 command / 1 skill.
+- Post-PF-REAL-008 clean pass #1: `round4_retry_clean` / `pf_run_1f1b9c2ef2b7`, alias payload, `gate=passed`, `final_status=final`, late report rejected, coverage metrics all `1.0`.
+- Post-PF-REAL-008 clean pass #2: `round5_clean` / `pf_run_29228431433a`, canonical payload, `gate=passed`, `final_status=final`, late report rejected, coverage metrics all `1.0`.
+- Post-PF-REAL-008 clean pass #3: `round6_clean` / `pf_run_c0f170979d4d`, alias payload, `gate=passed`, `final_status=final`, late report rejected, coverage metrics all `1.0`.
+- The clean-run script compared nine Stage10 key files before/after by size, mtime, and sha256; `quest_key_files_unchanged=true`.
+- Current stability judgement: PF-REAL-001..008 are closed in source and installed copy. Three consecutive post-last-fix real workflow rounds produced no new plugin defects.

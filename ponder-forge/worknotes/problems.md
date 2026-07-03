@@ -71,9 +71,57 @@
 - fix: delegation contexts now state the analysis profile requirement that at least one `metric_output` evidence item must include a non-empty `command` and `exit_code`; gate gaps now include `profile_specific_reason` mentioning `metric_output.command`.
 - verification: focused PF-REAL-005 tests passed; prepare/gate tests passed; full source tests `38 passed`; compileall passed; copy install smoke succeeded; installed-copy tests `38 passed`; installed-copy compileall passed.
 
-## Stability closeout
+## Superseded stability closeout
 
 - PF-REAL-001..005 are closed in source and in the installed copy at `/home/xu/.hermes/plugins/ponder_forge`.
 - Clean pass #1 after the last fix: Round 2 retry run `pf_run_97ba23c5ffc5` reached `gate=passed` and `final_status=final`, rendered evidence/artifact/verdict traces, rejected a late report on completed run, and preserved final report hash.
 - Clean pass #2 after the last fix: Round 3 run `pf_run_6fa8a73606e2` reached `gate=passed` and `final_status=final`, rendered evidence/artifact/verdict traces, rejected a late report on completed run, and preserved final report hash.
-- Exit condition met: two consecutive fresh real-run passes produced no new plugin defect.
+- This closeout was superseded by PF-REAL-006, PF-REAL-007, and PF-REAL-008 discovered during continued real-task running.
+
+### PF-REAL-006 — `report_submit` silently accepts alias-shaped reports and drops evidence
+
+- status: Closed in source and installed copy.
+- discovered_at: 2026-07-04T05:31:44+08:00
+- real trigger: Round 4 fresh run `pf_run_496b1615dbc7` used the public `ponder_forge_report_submit` tool from the current Hermes tool surface for the Stage10 read-only analysis task.
+- observed failure: a controller report using intuitive keys (`assertions[*].type`, `assertions[*].statement`, top-level `evidence`, and `artifacts[*].kind`) returned `success=true` but created `evidence_ids=[]`; gate then reported `missing_critical_assertion` because assertions had default type/text instead of the intended `data_result` statement.
+- impact: severe report-format stability defect. A real agent can believe a structured report was accepted while Ponder-Forge silently drops evidence and later blocks or misdiagnoses the gate.
+- root cause: public tool schema is `additionalProperties: true`, while `report_ingest.py` only consumes exact nested fields (`assertion_type`, `text`, `assertions[*].evidence`, `evidence_type`, `source_ref`, `quote_or_observation`, `artifact_type`). There is no normalization or validation for common alias-shaped payloads.
+- fix plan: write `worknotes/pf_real_006_repair_plan.md`; then add narrow report normalization/validation at the `report_ingest.py` owner seam, with tests proving alias payloads ingest evidence and malformed reports fail loudly.
+- current run status: Round 4 first attempt does not count as clean. Restart after PF-REAL-006 is fixed and installed; clean-pass count resets after this new defect.
+- real impact confirmed after delegate results returned: `pf_run_496b1615dbc7` contains 7 reports / 29 assertions / 6 evidence items, but gate remains blocked because fix-before reports created unsupported critical assertions with no attached evidence; `reconcile` cannot safely infer missing evidence. This polluted run is intentionally not counted as clean. The fix prevents new alias-shaped reports from entering that state by normalizing evidence or failing loudly before mutation.
+- fix implemented: `report_ingest.py` normalizes `type`/`statement`/top-level `evidence`/`kind` aliases and rejects unlinked or missing `evidence_refs`; tests cover success and failure paths.
+- source verification: report-ingest focused tests passed, public/gate tests passed, full source tests passed, compileall passed.
+- install verification: copy-install smoke succeeded; installed-copy full tests passed; fresh installed alias smoke created 2 evidence rows and rejected unlinked evidence.
+- post-fix real verification: after PF-REAL-008 final install, three consecutive fresh installed real-task rounds passed using both alias and canonical report formats: `pf_run_1f1b9c2ef2b7`, `pf_run_29228431433a`, `pf_run_c0f170979d4d`.
+
+### PF-REAL-007 — Full test suite depended on ignored worknotes fixture
+
+- status: Closed in source and installed copy.
+- discovered_at: 2026-07-04T05:35:00+08:00
+- real trigger: after cleaning old intermediate worknotes, full source tests failed at `test_smoke_report_template_exists_and_has_metrics` because `worknotes/ponder_forge_smoke_report_template.md` had been archived/deleted.
+- observed failure: `FileNotFoundError` for a test fixture under `ponder-forge/worknotes/`, while `.gitignore` ignores that directory.
+- impact: clean checkouts or cleaned workspaces cannot reliably run the full Ponder-Forge suite; this undermines repeatable verification after real-run fixes.
+- root cause: a static smoke template fixture lived under ignored scratch/worknotes instead of tracked test data.
+- fix plan: `worknotes/pf_real_007_repair_plan.md`.
+- fix: moved the template content to tracked `tests/fixtures/ponder_forge_smoke_report_template.md`, updated `tests/test_mini_cases_static.py`, and removed the ignored worknotes copy.
+- verification: `tests/test_mini_cases_static.py` -> `3 passed`; full source suite -> `43 passed`; installed-copy suite -> `43 passed`.
+
+### PF-REAL-008 — `gate_status` metrics reported placeholder coverage values
+
+- status: Closed in source and installed copy.
+- discovered_at: 2026-07-04T05:54:27+08:00
+- real trigger: post-PF-REAL-006 clean run `pf_run_e4ccb5bd3af5` reached `gate_status=passed`, but the returned metrics still reported `independent_review_coverage=0.0`, `artifact_reproducibility_coverage=0.0`, and `final_statement_trace_coverage=0.0`.
+- observed failure: gate pass/fail was correct, but status metrics were misleading; `unsupported_critical_assertions` also counted gaps instead of critical assertions, so a single bad assertion could inflate the count.
+- impact: operator-facing gate status was not trustworthy enough for long-running stability decisions, even when finalize was correct.
+- root cause: `gates.py` returned placeholder coverage metrics and used `len(gaps)` for an assertion-count metric.
+- fix plan: `worknotes/pf_real_008_repair_plan.md`.
+- fix: `evaluate_gate` now computes supported critical assertion count, true unsupported critical assertion count, blocking gap count, independent review coverage, artifact-backed coverage, and final-statement trace coverage from existing graph rows.
+- verification: RED tests reproduced the placeholder/inflated-count failures; focused gate tests -> `7 passed`; full source suite -> `43 passed`; installed-copy suite -> `43 passed`; post-fix real clean rounds showed all three coverage metrics at `1.0` and zero blocking gaps.
+
+## Final stability closeout
+
+- PF-REAL-001..008 are closed in source and in the installed copy at `/home/xu/.hermes/plugins/ponder_forge`.
+- Final clean pass #1 after the last fix: `round4_retry_clean` run `pf_run_1f1b9c2ef2b7`, alias-shaped report payload, `gate=passed`, `final_status=final`, late report rejected, gate coverage metrics all `1.0`.
+- Final clean pass #2 after the last fix: `round5_clean` run `pf_run_29228431433a`, canonical nested report payload, `gate=passed`, `final_status=final`, late report rejected, gate coverage metrics all `1.0`.
+- Final clean pass #3 after the last fix: `round6_clean` run `pf_run_c0f170979d4d`, alias-shaped report payload, `gate=passed`, `final_status=final`, late report rejected, gate coverage metrics all `1.0`.
+- Quest key-file guard: the final clean-run script compared size, mtime, and sha256 for nine Stage10 files before and after all three rounds; `quest_key_files_unchanged=true`.

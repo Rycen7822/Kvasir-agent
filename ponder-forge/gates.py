@@ -52,6 +52,15 @@ def _reports_by_id(store: PonderForgeStore, run_id: str) -> dict[str, JsonDict]:
     return {row["report_id"]: row for row in store.list_rows("reports", run_id)}
 
 
+def _artifacts_by_report(store: PonderForgeStore, run_id: str) -> dict[str, list[JsonDict]]:
+    grouped: dict[str, list[JsonDict]] = defaultdict(list)
+    for artifact in store.list_rows("artifacts", run_id):
+        report_id = artifact.get("report_id")
+        if report_id:
+            grouped[str(report_id)].append(artifact)
+    return grouped
+
+
 def _has_independent_accept_verdict(
     store: PonderForgeStore,
     run_id: str,
@@ -81,9 +90,14 @@ def evaluate_gate(store: PonderForgeStore, run_id: str) -> JsonDict:
     assertions = store.list_rows("assertions", run_id)
     evidence_by_assertion = _evidence_by_assertion(store, run_id)
     reports = _reports_by_id(store, run_id)
+    artifacts_by_report = _artifacts_by_report(store, run_id)
 
     critical = [row for row in assertions if _critical(row, profile.critical_assertion_types)]
     accepted_count = 0
+    supported_count = 0
+    independent_accept_count = 0
+    artifact_backed_count = 0
+    final_traceable_count = 0
     gaps: list[JsonDict] = []
     if not critical:
         gaps.append(
@@ -100,6 +114,12 @@ def evaluate_gate(store: PonderForgeStore, run_id: str) -> JsonDict:
         evidence = evidence_by_assertion.get(assertion["assertion_id"], [])
         profile_specific_gap = _profile_specific_gap(profile.profile_id, evidence)
         supported = _has_required_groups(evidence, profile.required_evidence_groups) and profile_specific_gap is None
+        if supported:
+            supported_count += 1
+        report = reports.get(str(assertion.get("report_id")))
+        report_id = str(report.get("report_id")) if report else ""
+        if report_id and artifacts_by_report.get(report_id):
+            artifact_backed_count += 1
         if not supported:
             gap = {
                 "target_id": assertion["assertion_id"],
@@ -109,7 +129,12 @@ def evaluate_gate(store: PonderForgeStore, run_id: str) -> JsonDict:
             if profile_specific_gap:
                 gap["profile_specific_reason"] = profile_specific_gap
             gaps.append(gap)
-        if not _has_independent_accept_verdict(store, run_id, assertion, reports):
+        has_independent_accept = _has_independent_accept_verdict(store, run_id, assertion, reports)
+        if has_independent_accept:
+            independent_accept_count += 1
+        if supported and has_independent_accept:
+            final_traceable_count += 1
+        if not has_independent_accept:
             gaps.append(
                 {
                     "gap_type": "missing_independent_verdict",
@@ -118,14 +143,18 @@ def evaluate_gate(store: PonderForgeStore, run_id: str) -> JsonDict:
                 }
             )
 
+    critical_count = len(critical)
+    coverage_denominator = float(critical_count) if critical_count else 1.0
     metrics = {
-        "critical_assertion_count": len(critical),
+        "critical_assertion_count": critical_count,
         "accepted_critical_assertion_count": accepted_count,
-        "unsupported_critical_assertions": len(gaps),
+        "supported_critical_assertion_count": supported_count,
+        "unsupported_critical_assertions": critical_count - supported_count,
+        "blocking_gap_count": len(gaps),
         "unresolved_conflicts": 0,
-        "independent_review_coverage": 0.0,
-        "artifact_reproducibility_coverage": 0.0,
-        "final_statement_trace_coverage": 0.0,
+        "independent_review_coverage": independent_accept_count / coverage_denominator if critical_count else 0.0,
+        "artifact_reproducibility_coverage": artifact_backed_count / coverage_denominator if critical_count else 0.0,
+        "final_statement_trace_coverage": final_traceable_count / coverage_denominator if critical_count else 0.0,
         "budget_used": 0,
     }
     status = "passed" if not gaps else "blocked"

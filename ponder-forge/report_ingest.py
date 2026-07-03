@@ -10,11 +10,106 @@ except ImportError:
 JsonDict = dict[str, Any]
 
 
+def _first_nonempty(payload: JsonDict, *keys: str) -> Any:
+    for key in keys:
+        value = payload.get(key)
+        if value not in (None, ""):
+            return value
+    return None
+
+
+def _normalize_evidence_payload(payload: JsonDict) -> JsonDict:
+    normalized = dict(payload)
+    evidence_type = _first_nonempty(normalized, "evidence_type", "type")
+    source_ref = _first_nonempty(normalized, "source_ref", "source")
+    observation = _first_nonempty(normalized, "quote_or_observation", "summary", "observation")
+    artifact_path = _first_nonempty(normalized, "artifact_path", "path")
+    if evidence_type is not None:
+        normalized["evidence_type"] = str(evidence_type)
+    if source_ref is not None:
+        normalized["source_ref"] = source_ref
+    if observation is not None:
+        normalized["quote_or_observation"] = observation
+    if artifact_path is not None:
+        normalized["artifact_path"] = artifact_path
+    return normalized
+
+
+def _normalize_artifact_payload(payload: JsonDict) -> JsonDict:
+    normalized = dict(payload)
+    artifact_type = _first_nonempty(normalized, "artifact_type", "kind", "type")
+    summary = _first_nonempty(normalized, "summary", "description")
+    if artifact_type is not None:
+        normalized["artifact_type"] = str(artifact_type)
+    if summary is not None:
+        normalized["summary"] = summary
+    return normalized
+
+
+def _evidence_refs(payload: JsonDict) -> list[str]:
+    refs = payload.get("evidence_refs") or []
+    if isinstance(refs, str):
+        refs = [refs]
+    return [str(ref) for ref in refs]
+
+
+def _normalize_assertion_payloads(payload: JsonDict) -> list[JsonDict]:
+    assertions = [dict(item) for item in (payload.get("assertions") or [])]
+    top_level_evidence = payload.get("evidence") or payload.get("evidence_items") or []
+    evidence_by_id: dict[str, JsonDict] = {}
+    for item in top_level_evidence:
+        evidence = _normalize_evidence_payload(dict(item))
+        evidence_id = evidence.get("id")
+        if evidence_id not in (None, ""):
+            evidence_by_id[str(evidence_id)] = evidence
+
+    consumed_evidence_ids: set[str] = set()
+    for assertion in assertions:
+        assertion_type = _first_nonempty(assertion, "assertion_type", "type")
+        text = _first_nonempty(assertion, "text", "statement")
+        if assertion_type in (None, ""):
+            raise ValueError("assertion is missing assertion_type")
+        if text in (None, ""):
+            raise ValueError("assertion is missing text")
+        assertion["assertion_type"] = str(assertion_type)
+        assertion["text"] = str(text)
+
+        nested_evidence = assertion.get("evidence") or []
+        if nested_evidence:
+            assertion["evidence"] = [_normalize_evidence_payload(dict(item)) for item in nested_evidence]
+            continue
+
+        refs = _evidence_refs(assertion)
+        if refs:
+            missing = [ref for ref in refs if ref not in evidence_by_id]
+            if missing:
+                raise ValueError(f"missing evidence_refs: {missing}")
+            assertion["evidence"] = [dict(evidence_by_id[ref]) for ref in refs]
+            consumed_evidence_ids.update(refs)
+
+    if top_level_evidence:
+        evidence_ids = {str(item.get("id")) for item in top_level_evidence if item.get("id") not in (None, "")}
+        if len(evidence_ids) != len(top_level_evidence):
+            raise ValueError("unlinked evidence: top-level evidence requires id plus assertion evidence_refs")
+        unlinked = sorted(evidence_ids - consumed_evidence_ids)
+        if unlinked:
+            raise ValueError(f"unlinked evidence: {unlinked}")
+    return assertions
+
+
+def _normalize_payload(payload: JsonDict) -> JsonDict:
+    normalized = dict(payload)
+    normalized["assertions"] = _normalize_assertion_payloads(normalized)
+    normalized["artifacts"] = [_normalize_artifact_payload(dict(item)) for item in (normalized.get("artifacts") or [])]
+    return normalized
+
+
 def _edge_relation_for_evidence(item: JsonDict) -> str:
     return "refutes" if item.get("counterevidence") else "supports"
 
 
 def ingest_report(store: PonderForgeStore, payload: JsonDict) -> JsonDict:
+    payload = _normalize_payload(payload)
     run_id = str(payload["run_id"])
     task_id = payload.get("task_id")
     run = store.get_run(run_id)

@@ -42,6 +42,6 @@ def test_mini_benchmark_script_runs_all_cases(tmp_path):
 
 
 def test_smoke_report_template_exists_and_has_metrics():
-    text = (ROOT / "worknotes" / "ponder_forge_smoke_report_template.md").read_text(encoding="utf-8")
+    text = (ROOT / "tests" / "fixtures" / "ponder_forge_smoke_report_template.md").read_text(encoding="utf-8")
     for term in ("unsupported_assertion_rate", "blocked_final_attempts", "successful_finalizations", "live_delegate_status"):
         assert term in text
