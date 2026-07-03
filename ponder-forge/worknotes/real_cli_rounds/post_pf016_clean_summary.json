@@ -1,0 +1,674 @@
+[
+  {
+    "coverage": {
+      "artifact_reproducibility_coverage": 1.0,
+      "final_statement_trace_coverage": 1.0,
+      "independent_review_coverage": 1.0
+    },
+    "critical_count": 5,
+    "delegation_check": {
+      "has_data_result": true,
+      "has_exit_code_zero": true,
+      "has_json_contract": true,
+      "has_no_direct_tool_name": true,
+      "required_evidence_occurrences": 1,
+      "task_count": 5
+    },
+    "final_hash_idempotent": true,
+    "final_status_1": "final",
+    "final_status_2": "final",
+    "gate": {
+      "finalize_allowed": true,
+      "gaps": [],
+      "metrics": {
+        "accepted_critical_assertion_count": 5,
+        "artifact_reproducibility_coverage": 1.0,
+        "blocking_gap_count": 0,
+        "budget_used": 0,
+        "critical_assertion_count": 5,
+        "final_statement_trace_coverage": 1.0,
+        "independent_review_coverage": 1.0,
+        "supported_critical_assertion_count": 5,
+        "unresolved_conflicts": 0,
+        "unsupported_critical_assertions": 0
+      },
+      "profile": "analysis",
+      "status": "passed",
+      "success": true
+    },
+    "installed_worknotes_exists": false,
+    "late_submit_success": false,
+    "missing_arg_json": true,
+    "quest_guard_unchanged": true,
+    "reconcile": {
+      "delegate_task_payload_suggestion": {
+        "tasks": []
+      },
+      "marked_orphan": [],
+      "repaired": [],
+      "run_id": "pf_run_ebdb28c7b36b",
+      "success": true
+    },
+    "reconcile_unknown": {
+      "error": "unknown run_id: pf_run_ebdb28c7b36b_unknown",
+      "success": false
+    },
+    "reports": [
+      {
+        "report_file": "/home/xu/project/autosci-delphi/ponder-forge/worknotes/real_cli_rounds/post_pf016_clean1/report_0_data_inspector.json",
+        "role": "data_inspector",
+        "submit": {
+          "artifact_ids": [
+            "pf_artifact_b05ccc8af1e4"
+          ],
+          "assertion_ids": [
+            "pf_assertion_edaf0a173003"
+          ],
+          "evidence_ids": [
+            "pf_evidence_1bc9ce2adfb3",
+            "pf_evidence_f72155f1a21a",
+            "pf_evidence_91d6e2aee42f"
+          ],
+          "report_id": "pf_report_6274016b8da6",
+          "success": true
+        },
+        "task_id": "pf_task_8236191e4f6b"
+      },
+      {
+        "report_file": "/home/xu/project/autosci-delphi/ponder-forge/worknotes/real_cli_rounds/post_pf016_clean1/report_1_metric_analyst.json",
+        "role": "metric_analyst",
+        "submit": {
+          "artifact_ids": [
+            "pf_artifact_246bdc81acdf"
+          ],
+          "assertion_ids": [
+            "pf_assertion_e00f997fb99c"
+          ],
+          "evidence_ids": [
+            "pf_evidence_397d3fc92dfc",
+            "pf_evidence_fc58daa167de",
+            "pf_evidence_0f99b491e15c"
+          ],
+          "report_id": "pf_report_5bc7eb4d104e",
+          "success": true
+        },
+        "task_id": "pf_task_770ce967c988"
+      },
+      {
+        "report_file": "/home/xu/project/autosci-delphi/ponder-forge/worknotes/real_cli_rounds/post_pf016_clean1/report_2_reproduction_runner.json",
+        "role": "reproduction_runner",
+        "submit": {
+          "artifact_ids": [
+            "pf_artifact_1d86e7210d92"
+          ],
+          "assertion_ids": [
+            "pf_assertion_658badd8117f"
+          ],
+          "evidence_ids": [
+            "pf_evidence_123b24c9046a",
+            "pf_evidence_6e4c73b29603",
+            "pf_evidence_be4be636185e"
+          ],
+          "report_id": "pf_report_d2d947ba91d7",
+          "success": true
+        },
+        "task_id": "pf_task_fa3f151dc077"
+      },
+      {
+        "report_file": "/home/xu/project/autosci-delphi/ponder-forge/worknotes/real_cli_rounds/post_pf016_clean1/report_3_sanity_reviewer.json",
+        "role": "sanity_reviewer",
+        "submit": {
+          "artifact_ids": [
+            "pf_artifact_727579a0b4c8"
+          ],
+          "assertion_ids": [
+            "pf_assertion_1bd17b0bc724"
+          ],
+          "evidence_ids": [
+            "pf_evidence_f4f7cc365035",
+            "pf_evidence_04276bd1cc8f",
+            "pf_evidence_5ec4eff47d25"
+          ],
+          "report_id": "pf_report_a99cdd08f3d7",
+          "success": true
+        },
+        "task_id": "pf_task_814b5f52e131"
+      },
+      {
+        "report_file": "/home/xu/project/autosci-delphi/ponder-forge/worknotes/real_cli_rounds/post_pf016_clean1/report_4_narrative_reviewer.json",
+        "role": "narrative_reviewer",
+        "submit": {
+          "artifact_ids": [
+            "pf_artifact_b16ca657784e"
+          ],
+          "assertion_ids": [
+            "pf_assertion_561b74e807aa"
+          ],
+          "evidence_ids": [
+            "pf_evidence_37d69fc66410",
+            "pf_evidence_57ab9d5a6345",
+            "pf_evidence_b3a5267e00d4"
+          ],
+          "report_id": "pf_report_d6dbafe4e50b",
+          "success": true
+        },
+        "task_id": "pf_task_58327b85be38"
+      }
+    ],
+    "reviews": [
+      {
+        "assertion_id": "pf_assertion_edaf0a173003",
+        "reviewer_task_id": "pf_task_f3c4af270272",
+        "verdict": true
+      },
+      {
+        "assertion_id": "pf_assertion_e00f997fb99c",
+        "reviewer_task_id": "pf_task_5953115d23d5",
+        "verdict": true
+      },
+      {
+        "assertion_id": "pf_assertion_658badd8117f",
+        "reviewer_task_id": "pf_task_3dc058101a97",
+        "verdict": true
+      },
+      {
+        "assertion_id": "pf_assertion_1bd17b0bc724",
+        "reviewer_task_id": "pf_task_5b87b6e9ee4b",
+        "verdict": true
+      },
+      {
+        "assertion_id": "pf_assertion_561b74e807aa",
+        "reviewer_task_id": "pf_task_a88cebd7e9b3",
+        "verdict": true
+      }
+    ],
+    "round": "post_pf016_clean1",
+    "run_id": "pf_run_ebdb28c7b36b",
+    "snapshot": {
+      "ce_selection_gate_passed": false,
+      "claim_boundary": true,
+      "downstream_executed": false,
+      "downstream_result_manifest": null,
+      "gate_closed": true,
+      "large_eval_rows": 360,
+      "large_eval_status": "passed_S10-12_large_heldout_eval_alignment_audit",
+      "model_family_gate_met": false
+    },
+    "status_after": {
+      "counts": {
+        "agent_tasks": 10,
+        "artifacts": 5,
+        "assertions": 5,
+        "evidence_items": 15,
+        "reports": 5
+      },
+      "gate_status": "passed",
+      "next_required_action": "complete",
+      "run_id": "pf_run_ebdb28c7b36b",
+      "run_status": "completed",
+      "success": true
+    },
+    "status_before": {
+      "counts": {
+        "agent_tasks": 10,
+        "artifacts": 5,
+        "assertions": 5,
+        "evidence_items": 15,
+        "reports": 5
+      },
+      "gate_status": "passed",
+      "next_required_action": "finalize",
+      "run_id": "pf_run_ebdb28c7b36b",
+      "run_status": "planning",
+      "success": true
+    }
+  },
+  {
+    "coverage": {
+      "artifact_reproducibility_coverage": 1.0,
+      "final_statement_trace_coverage": 1.0,
+      "independent_review_coverage": 1.0
+    },
+    "critical_count": 5,
+    "delegation_check": {
+      "has_data_result": true,
+      "has_exit_code_zero": true,
+      "has_json_contract": true,
+      "has_no_direct_tool_name": true,
+      "required_evidence_occurrences": 1,
+      "task_count": 5
+    },
+    "final_hash_idempotent": true,
+    "final_status_1": "final",
+    "final_status_2": "final",
+    "gate": {
+      "finalize_allowed": true,
+      "gaps": [],
+      "metrics": {
+        "accepted_critical_assertion_count": 5,
+        "artifact_reproducibility_coverage": 1.0,
+        "blocking_gap_count": 0,
+        "budget_used": 0,
+        "critical_assertion_count": 5,
+        "final_statement_trace_coverage": 1.0,
+        "independent_review_coverage": 1.0,
+        "supported_critical_assertion_count": 5,
+        "unresolved_conflicts": 0,
+        "unsupported_critical_assertions": 0
+      },
+      "profile": "analysis",
+      "status": "passed",
+      "success": true
+    },
+    "installed_worknotes_exists": false,
+    "late_submit_success": false,
+    "missing_arg_json": true,
+    "quest_guard_unchanged": true,
+    "reconcile": {
+      "delegate_task_payload_suggestion": {
+        "tasks": []
+      },
+      "marked_orphan": [],
+      "repaired": [],
+      "run_id": "pf_run_2ce6694c55c8",
+      "success": true
+    },
+    "reconcile_unknown": {
+      "error": "unknown run_id: pf_run_2ce6694c55c8_unknown",
+      "success": false
+    },
+    "reports": [
+      {
+        "report_file": "/home/xu/project/autosci-delphi/ponder-forge/worknotes/real_cli_rounds/post_pf016_clean2/report_0_data_inspector.json",
+        "role": "data_inspector",
+        "submit": {
+          "artifact_ids": [
+            "pf_artifact_f214ff349e46"
+          ],
+          "assertion_ids": [
+            "pf_assertion_e1a0b17d583b"
+          ],
+          "evidence_ids": [
+            "pf_evidence_cc097ca0f1c6",
+            "pf_evidence_c25cda0990d7",
+            "pf_evidence_7e59cd1d19cc"
+          ],
+          "report_id": "pf_report_7c6d3c6035d3",
+          "success": true
+        },
+        "task_id": "pf_task_db1406768c8b"
+      },
+      {
+        "report_file": "/home/xu/project/autosci-delphi/ponder-forge/worknotes/real_cli_rounds/post_pf016_clean2/report_1_metric_analyst.json",
+        "role": "metric_analyst",
+        "submit": {
+          "artifact_ids": [
+            "pf_artifact_e8e04f14e176"
+          ],
+          "assertion_ids": [
+            "pf_assertion_bda02c509e5d"
+          ],
+          "evidence_ids": [
+            "pf_evidence_ab22c39f3d91",
+            "pf_evidence_f53b176c3dd6",
+            "pf_evidence_027787ebfd00"
+          ],
+          "report_id": "pf_report_dfbfccd18cdb",
+          "success": true
+        },
+        "task_id": "pf_task_518060281d45"
+      },
+      {
+        "report_file": "/home/xu/project/autosci-delphi/ponder-forge/worknotes/real_cli_rounds/post_pf016_clean2/report_2_reproduction_runner.json",
+        "role": "reproduction_runner",
+        "submit": {
+          "artifact_ids": [
+            "pf_artifact_815110c13ce0"
+          ],
+          "assertion_ids": [
+            "pf_assertion_30b271467529"
+          ],
+          "evidence_ids": [
+            "pf_evidence_d37252ee92b7",
+            "pf_evidence_b4d74e359d8e",
+            "pf_evidence_78235212e22b"
+          ],
+          "report_id": "pf_report_e0bfc0b5e311",
+          "success": true
+        },
+        "task_id": "pf_task_842a045e26b4"
+      },
+      {
+        "report_file": "/home/xu/project/autosci-delphi/ponder-forge/worknotes/real_cli_rounds/post_pf016_clean2/report_3_sanity_reviewer.json",
+        "role": "sanity_reviewer",
+        "submit": {
+          "artifact_ids": [
+            "pf_artifact_cd50d0929eaf"
+          ],
+          "assertion_ids": [
+            "pf_assertion_c079179f3d7a"
+          ],
+          "evidence_ids": [
+            "pf_evidence_a20e23bdbcca",
+            "pf_evidence_8bbffe6a8104",
+            "pf_evidence_f5f7f938010b"
+          ],
+          "report_id": "pf_report_66038e6f8f4a",
+          "success": true
+        },
+        "task_id": "pf_task_d3757c000d80"
+      },
+      {
+        "report_file": "/home/xu/project/autosci-delphi/ponder-forge/worknotes/real_cli_rounds/post_pf016_clean2/report_4_narrative_reviewer.json",
+        "role": "narrative_reviewer",
+        "submit": {
+          "artifact_ids": [
+            "pf_artifact_af36bc9de57a"
+          ],
+          "assertion_ids": [
+            "pf_assertion_a6b5802fcf5c"
+          ],
+          "evidence_ids": [
+            "pf_evidence_5620382ad193",
+            "pf_evidence_d0eb7cf1161f",
+            "pf_evidence_080ee1b4909d"
+          ],
+          "report_id": "pf_report_3ae895225fb2",
+          "success": true
+        },
+        "task_id": "pf_task_c279d5739c1d"
+      }
+    ],
+    "reviews": [
+      {
+        "assertion_id": "pf_assertion_e1a0b17d583b",
+        "reviewer_task_id": "pf_task_129964b0ece0",
+        "verdict": true
+      },
+      {
+        "assertion_id": "pf_assertion_bda02c509e5d",
+        "reviewer_task_id": "pf_task_47f4cae0b7c1",
+        "verdict": true
+      },
+      {
+        "assertion_id": "pf_assertion_30b271467529",
+        "reviewer_task_id": "pf_task_f94d2f438b3a",
+        "verdict": true
+      },
+      {
+        "assertion_id": "pf_assertion_c079179f3d7a",
+        "reviewer_task_id": "pf_task_0c1bac105299",
+        "verdict": true
+      },
+      {
+        "assertion_id": "pf_assertion_a6b5802fcf5c",
+        "reviewer_task_id": "pf_task_4c948d7675c2",
+        "verdict": true
+      }
+    ],
+    "round": "post_pf016_clean2",
+    "run_id": "pf_run_2ce6694c55c8",
+    "snapshot": {
+      "ce_selection_gate_passed": false,
+      "claim_boundary": true,
+      "downstream_executed": false,
+      "downstream_result_manifest": null,
+      "gate_closed": true,
+      "large_eval_rows": 360,
+      "large_eval_status": "passed_S10-12_large_heldout_eval_alignment_audit",
+      "model_family_gate_met": false
+    },
+    "status_after": {
+      "counts": {
+        "agent_tasks": 10,
+        "artifacts": 5,
+        "assertions": 5,
+        "evidence_items": 15,
+        "reports": 5
+      },
+      "gate_status": "passed",
+      "next_required_action": "complete",
+      "run_id": "pf_run_2ce6694c55c8",
+      "run_status": "completed",
+      "success": true
+    },
+    "status_before": {
+      "counts": {
+        "agent_tasks": 10,
+        "artifacts": 5,
+        "assertions": 5,
+        "evidence_items": 15,
+        "reports": 5
+      },
+      "gate_status": "passed",
+      "next_required_action": "finalize",
+      "run_id": "pf_run_2ce6694c55c8",
+      "run_status": "planning",
+      "success": true
+    }
+  },
+  {
+    "coverage": {
+      "artifact_reproducibility_coverage": 1.0,
+      "final_statement_trace_coverage": 1.0,
+      "independent_review_coverage": 1.0
+    },
+    "critical_count": 5,
+    "delegation_check": {
+      "has_data_result": true,
+      "has_exit_code_zero": true,
+      "has_json_contract": true,
+      "has_no_direct_tool_name": true,
+      "required_evidence_occurrences": 1,
+      "task_count": 5
+    },
+    "final_hash_idempotent": true,
+    "final_status_1": "final",
+    "final_status_2": "final",
+    "gate": {
+      "finalize_allowed": true,
+      "gaps": [],
+      "metrics": {
+        "accepted_critical_assertion_count": 5,
+        "artifact_reproducibility_coverage": 1.0,
+        "blocking_gap_count": 0,
+        "budget_used": 0,
+        "critical_assertion_count": 5,
+        "final_statement_trace_coverage": 1.0,
+        "independent_review_coverage": 1.0,
+        "supported_critical_assertion_count": 5,
+        "unresolved_conflicts": 0,
+        "unsupported_critical_assertions": 0
+      },
+      "profile": "analysis",
+      "status": "passed",
+      "success": true
+    },
+    "installed_worknotes_exists": false,
+    "late_submit_success": false,
+    "missing_arg_json": true,
+    "quest_guard_unchanged": true,
+    "reconcile": {
+      "delegate_task_payload_suggestion": {
+        "tasks": []
+      },
+      "marked_orphan": [],
+      "repaired": [],
+      "run_id": "pf_run_8b02996ca00c",
+      "success": true
+    },
+    "reconcile_unknown": {
+      "error": "unknown run_id: pf_run_8b02996ca00c_unknown",
+      "success": false
+    },
+    "reports": [
+      {
+        "report_file": "/home/xu/project/autosci-delphi/ponder-forge/worknotes/real_cli_rounds/post_pf016_clean3/report_0_data_inspector.json",
+        "role": "data_inspector",
+        "submit": {
+          "artifact_ids": [
+            "pf_artifact_356326568cb9"
+          ],
+          "assertion_ids": [
+            "pf_assertion_ef0a30a623e3"
+          ],
+          "evidence_ids": [
+            "pf_evidence_0e8a7ada5fac",
+            "pf_evidence_38afa9a4ffb9",
+            "pf_evidence_cf8ef16dc6e4"
+          ],
+          "report_id": "pf_report_fb7c4ee6e0db",
+          "success": true
+        },
+        "task_id": "pf_task_7b21cb439453"
+      },
+      {
+        "report_file": "/home/xu/project/autosci-delphi/ponder-forge/worknotes/real_cli_rounds/post_pf016_clean3/report_1_metric_analyst.json",
+        "role": "metric_analyst",
+        "submit": {
+          "artifact_ids": [
+            "pf_artifact_69b1f6911e31"
+          ],
+          "assertion_ids": [
+            "pf_assertion_70a1df86330a"
+          ],
+          "evidence_ids": [
+            "pf_evidence_35f33e72c1c7",
+            "pf_evidence_e9d1fcc927ca",
+            "pf_evidence_df95125ae7aa"
+          ],
+          "report_id": "pf_report_e639da9e687f",
+          "success": true
+        },
+        "task_id": "pf_task_27db2ab6660c"
+      },
+      {
+        "report_file": "/home/xu/project/autosci-delphi/ponder-forge/worknotes/real_cli_rounds/post_pf016_clean3/report_2_reproduction_runner.json",
+        "role": "reproduction_runner",
+        "submit": {
+          "artifact_ids": [
+            "pf_artifact_4088f307ee06"
+          ],
+          "assertion_ids": [
+            "pf_assertion_29b9c9a62fad"
+          ],
+          "evidence_ids": [
+            "pf_evidence_ceecd01ad2f3",
+            "pf_evidence_3153719549ab",
+            "pf_evidence_d10c74e20654"
+          ],
+          "report_id": "pf_report_713194a9651b",
+          "success": true
+        },
+        "task_id": "pf_task_03ea39da6063"
+      },
+      {
+        "report_file": "/home/xu/project/autosci-delphi/ponder-forge/worknotes/real_cli_rounds/post_pf016_clean3/report_3_sanity_reviewer.json",
+        "role": "sanity_reviewer",
+        "submit": {
+          "artifact_ids": [
+            "pf_artifact_57f80309b257"
+          ],
+          "assertion_ids": [
+            "pf_assertion_384c4d68ab87"
+          ],
+          "evidence_ids": [
+            "pf_evidence_f758a9acb0aa",
+            "pf_evidence_5aa574bc0876",
+            "pf_evidence_7f6907cfbec6"
+          ],
+          "report_id": "pf_report_c7fb418b35c1",
+          "success": true
+        },
+        "task_id": "pf_task_0d275f80e4e6"
+      },
+      {
+        "report_file": "/home/xu/project/autosci-delphi/ponder-forge/worknotes/real_cli_rounds/post_pf016_clean3/report_4_narrative_reviewer.json",
+        "role": "narrative_reviewer",
+        "submit": {
+          "artifact_ids": [
+            "pf_artifact_1e1390aee02c"
+          ],
+          "assertion_ids": [
+            "pf_assertion_e8db3f0c7eb0"
+          ],
+          "evidence_ids": [
+            "pf_evidence_e10cbd9b3191",
+            "pf_evidence_57f2f3c188e0",
+            "pf_evidence_19f8d65629f1"
+          ],
+          "report_id": "pf_report_10faabddb339",
+          "success": true
+        },
+        "task_id": "pf_task_323d524451ac"
+      }
+    ],
+    "reviews": [
+      {
+        "assertion_id": "pf_assertion_ef0a30a623e3",
+        "reviewer_task_id": "pf_task_98bcf7e4dfa4",
+        "verdict": true
+      },
+      {
+        "assertion_id": "pf_assertion_70a1df86330a",
+        "reviewer_task_id": "pf_task_1dfb0abd8527",
+        "verdict": true
+      },
+      {
+        "assertion_id": "pf_assertion_29b9c9a62fad",
+        "reviewer_task_id": "pf_task_647bb162fcdf",
+        "verdict": true
+      },
+      {
+        "assertion_id": "pf_assertion_384c4d68ab87",
+        "reviewer_task_id": "pf_task_9c9560c3cc90",
+        "verdict": true
+      },
+      {
+        "assertion_id": "pf_assertion_e8db3f0c7eb0",
+        "reviewer_task_id": "pf_task_53b7648e8473",
+        "verdict": true
+      }
+    ],
+    "round": "post_pf016_clean3",
+    "run_id": "pf_run_8b02996ca00c",
+    "snapshot": {
+      "ce_selection_gate_passed": false,
+      "claim_boundary": true,
+      "downstream_executed": false,
+      "downstream_result_manifest": null,
+      "gate_closed": true,
+      "large_eval_rows": 360,
+      "large_eval_status": "passed_S10-12_large_heldout_eval_alignment_audit",
+      "model_family_gate_met": false
+    },
+    "status_after": {
+      "counts": {
+        "agent_tasks": 10,
+        "artifacts": 5,
+        "assertions": 5,
+        "evidence_items": 15,
+        "reports": 5
+      },
+      "gate_status": "passed",
+      "next_required_action": "complete",
+      "run_id": "pf_run_8b02996ca00c",
+      "run_status": "completed",
+      "success": true
+    },
+    "status_before": {
+      "counts": {
+        "agent_tasks": 10,
+        "artifacts": 5,
+        "assertions": 5,
+        "evidence_items": 15,
+        "reports": 5
+      },
+      "gate_status": "passed",
+      "next_required_action": "finalize",
+      "run_id": "pf_run_8b02996ca00c",
+      "run_status": "planning",
+      "success": true
+    }
+  }
+]

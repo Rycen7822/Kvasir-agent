@@ -142,3 +142,95 @@
 - fix implemented: `delegation.py` now emits a compact child JSON contract, analysis `data_result`/`critical` gate guidance, role duties for analysis roles, and duplicate evidence-line filtering; bundled skill now includes the manual child report contract.
 - source verification: focused prepare-delegations tests `4 passed`; full source tests `39 passed`; compileall exit 0; source payload inspection showed `required_evidence_occurrences=1`, `has_json_skeleton=True`, `has_data_result_hint=True`, `has_critical_hint=True`, and `has_role_specific_data_inspector=True`.
 - install verification: copy-install smoke returned `tool_count=0`, `hook_count=0`, `command_count=1`, `skill_count=1`; installed-copy tests `39 passed`; installed compileall exit 0; fresh installed CLI temp-home `delegations` inspection showed `required_evidence_occurrences=1`, schema/data_result/critical/role hints present, and no direct-tool name in context.
+
+### PF-REAL-010 — Missing required CLI arguments bypass the JSON error envelope
+
+- status: Closed in source and installed copy; clean-round count reset after this fix.
+- discovered_at: 2026-07-04T07:26:04+08:00 during wave2 installed CLI error-path audit and parent reproduction.
+- real trigger: `wave2_cli_error_paths_temp_home.md` ran installed `submit-report` without `--file` while auditing the real Ponder-Forge CLI surface.
+- observed failure: `submit-report` without required `--file` exits `2`, writes argparse usage to stderr, and writes no JSON to stdout.
+- parent reproduction: `worknotes/real_cli_rounds/round1/parent_reproductions_after_wave2.json` records `missing_file_arg.returncode=2`, `stdout=""`, and `json_error=JSONDecodeError(...)`.
+- impact: automation that treats Ponder-Forge CLI failures as JSON cannot parse this common argument-validation failure.
+- root cause: argparse calls `ArgumentParser.error()`/`SystemExit` before `main()` can wrap the failure in `_err(...)`.
+- required fix boundary: keep human `--help` behavior; make argument-validation errors emit the same JSON envelope as runtime failures.
+- fix: `JsonArgumentParser.error()` raises into the CLI JSON envelope while preserving normal help behavior.
+- verification: focused source suite `25 passed`, full source suite `46 passed`, installed-copy suite `46 passed`, installed final reproduction shows `missing_arg_json=true` and empty stderr.
+
+### PF-REAL-011 — `reconcile` reports success for unknown run ids
+
+- status: Closed in source and installed copy; clean-round count reset after this fix.
+- discovered_at: 2026-07-04T07:26:04+08:00 during wave2 reconcile audit and parent reproduction.
+- real trigger: installed CLI `reconcile --run-id pf_run_unknown_parent_repro --stale-after-seconds 0`.
+- observed failure: command returns exit `0` and `{"success": true, ...}` even though the run id does not exist.
+- parent reproduction: `parent_reproductions_after_wave2.json` records `reconcile_unknown.json.success=true` for the unknown run.
+- impact: operators can mistake a typo or stale run id for a successful reconciliation.
+- root cause: `reconcile_run()` iterates zero tasks and returns a no-op payload without validating `store.get_run(run_id)`.
+- required fix boundary: use the same unknown-run failure semantics as `plan`, `status`, `gate`, and `finalize`.
+- fix: `reconcile_run()` validates `store.get_run(run_id)` before no-op/retry logic.
+- verification: focused/source/installed tests passed; installed final reproduction shows `reconcile_unknown_success=false`.
+
+### PF-REAL-012 — `status` keeps asking for `finalize` after a run is already completed
+
+- status: Closed in source and installed copy; clean-round count reset after this fix.
+- discovered_at: 2026-07-04T07:26:04+08:00 during wave2 happy-path audit and parent reproduction.
+- real trigger: after a temp-home installed run finalized successfully, `status --run-id ...` was called again.
+- observed failure: status returned `gate_status="passed"` and `next_required_action="finalize"` even though the run status was completed and final artifacts already existed.
+- parent reproduction: `parent_reproductions_after_wave2.json` records `status_after_final.json.next_required_action="finalize"`.
+- impact: controller loops can re-finalize unnecessarily or treat a completed run as unfinished.
+- root cause: `cmd_status()` derives `next_required_action` only from current gate state and ignores the persisted completed run/final report state.
+- required fix boundary: preserve the existing `verify`/`finalize` actions before completion; return an explicit terminal action for completed/final runs.
+- fix: `cmd_status()` now returns `run_status` and terminal `next_required_action="complete"` when a completed run has final report artifacts.
+- verification: focused/source/installed tests passed; installed final reproduction shows `status_after_final_next="complete"`.
+
+### PF-REAL-013 — Analysis gate accepts failed metric commands despite requiring `exit_code`
+
+- status: Closed in source and installed copy; clean-round count reset after this fix.
+- discovered_at: 2026-07-04T07:26:04+08:00 during wave2 profile/gate audit and parent reproduction.
+- real trigger: parent submitted an analysis `data_result` with `metric_output.command="python eval.py"` and `exit_code=1`, plus `transform_script` and `sanity_check`, then accepted the independent review.
+- observed failure: `gate` returned `status="passed"` and `finalize_allowed=true`.
+- parent reproduction: `parent_reproductions_after_wave2.json` records `analysis_exit_code_1_gate.gate.status="passed"` and a final report preserving the failed metric output.
+- impact: a failed computation can satisfy the computation-provenance gate, contradicting the child guidance that says `metric_output` needs `command` and `exit_code`.
+- root cause: `_profile_specific_gap("analysis", evidence)` checks only that a `metric_output` has a non-empty `command`; it ignores missing/nonzero `exit_code`.
+- required fix boundary: require at least one analysis `metric_output` with a non-empty command and successful exit code; add a regression for nonzero/missing exit code.
+- fix: analysis profile-specific gate now requires a `metric_output` item with non-empty `command` and `exit_code=0`.
+- verification: focused/source/installed tests passed; installed final reproduction shows `analysis_exit_code_1_gate="blocked"` and `analysis_exit_code_0_gate="passed"`.
+
+### PF-REAL-014 — Delegation report contract is analysis-shaped for non-analysis profiles and retry payloads
+
+- status: Closed in source and installed copy; clean-round count reset after this fix.
+- discovered_at: 2026-07-04T07:26:04+08:00 during wave2 report-schema/profile audit and parent reproduction.
+- real trigger: parent created a coding-profile run and inspected installed `delegations` output.
+- observed failure: the coding child context contained `"assertion_type": "<profile_assertion_type>"` and analysis evidence examples (`metric_output`, `sanity_check`, `reproduction_log`) instead of the coding `code_claim` and coding evidence groups.
+- parent reproduction: `parent_reproductions_after_wave2.json` records `contains_placeholder=true`, `contains_metric_output=true`, and `contains_code_claim=false` for the coding delegation contract.
+- related wave2 finding: `wave2_report_schema_ergonomics.md` also showed reconcile retry payloads use a thinner context than first-wave delegations.
+- impact: non-analysis child agents can follow the prompt exactly and still produce reports that fail the profile gate or require parent repair.
+- root cause: `_report_contract(profile_id)` only special-cases analysis and otherwise emits a placeholder plus hard-coded analysis-style evidence examples; `reconcile._retry_payload()` separately constructs a thin retry prompt.
+- required fix boundary: generate the report contract from `ProfileSpec` for every profile and reuse the same child-context builder for first-wave and retry/orphan payloads.
+- fix: `delegation.py` now builds child contexts from `ProfileSpec`, emits profile-specific assertion/evidence examples, and exports the same builder for reconcile retry payloads; bundled skill now documents profile anchors and reviewer/reconcile status boundaries.
+- verification: focused/source/installed tests passed; installed final reproduction shows coding context has `code_claim`, no placeholder, no `metric_output` leakage, and `passing_test` guidance.
+
+### PF-REAL-015 — Profile gate matrix admits or rejects evidence inconsistently with its own vocabulary
+
+- status: Closed in source and installed copy; clean-round count reset after this fix.
+- discovered_at: 2026-07-04T07:26:04+08:00 during wave2 profile/gate matrix audit and parent reproduction.
+- real triggers and parent reproductions:
+  - `worknotes/real_cli_rounds/round1/parent_profile_gate_matrix_repro.json` records coding `root_cause_trace + failing_test(exit_code=1)` gate status `passed`.
+  - The same repro records math `proof_step + proof_check` gate status `passed` even though `proof_check` is not advertised in `math.required_evidence_types`.
+  - The same repro records math `proof_step + critique + counterexample(resolved=true)` gate status `blocked` with `math proof gate has unresolved counterexample evidence`.
+- impact: profile gates are not trustworthy enough for complex non-analysis tasks: coding can finalize with only failing proof, math can pass on unadvertised vocabulary, and math can block negative/resolved counterexample-search evidence.
+- root cause: profile required groups and profile-specific gaps are too coarse: coding treats `failing_test` as sufficient execution proof; math accepts `proof_check` without advertising it and treats any `counterexample` evidence as unresolved regardless of payload metadata.
+- required fix boundary: patch only clear contract mismatches now. Require successful coding execution evidence for coding gates; advertise `proof_check`; make math counterexample blocking inspect unresolved/positive counterexample evidence instead of the token alone; add gap types for operator diagnostics.
+- fix: coding gates require successful `passing_test` or `execution_log.exit_code=0`; math advertises `proof_check`; math counterexample blocking distinguishes positive/unresolved counterexamples from resolved/negative search evidence; profile-evidence gaps include `gap_type`.
+- verification: focused/source/installed tests passed; installed final reproduction shows coding failing-test-only gate is `blocked` and math resolved counterexample-search gate is `passed`.
+
+### PF-REAL-016 — Copy installer includes private worknotes in installed plugin
+
+- status: Closed in source and installed copy; clean-round count reset after this fix.
+- discovered_at: 2026-07-04T07:47:32+08:00 while processing wave2 installed packaging audit.
+- real trigger: `wave2_installed_packaging_audit.md` observed installed copy includes `worknotes/`.
+- observed failure: `/home/xu/.hermes/plugins/ponder_forge` carries source worknotes/real-run artifacts that are not needed for runtime plugin operation.
+- impact: installed plugin can be bloated and can leak stale/private agent evidence into a runtime plugin directory; future install comparisons become noisier.
+- root cause: `scripts/copy_install_smoke.py` excludes `reference`, `tmp`, caches, and coverage files but not `worknotes`.
+- required fix boundary: exclude `worknotes` from copied installs; keep source worknotes in the repo and keep runtime skills/prompts/tests/scripts installed.
+- fix: added `worknotes` to `EXCLUDED_DIR_NAMES`; `test_copy_install_smoke.py` asserts copied targets omit `worknotes/`.
+- verification: focused source suite `30 passed`; full source suite `46 passed`; installed-copy suite `46 passed`; installed compileall exit 0; installed smoke confirmed `installed_worknotes=false`, no direct-tool string leakage in delegation, and JSON error envelope still works.

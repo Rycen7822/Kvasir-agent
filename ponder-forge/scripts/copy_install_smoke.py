@@ -9,7 +9,7 @@ import types
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-EXCLUDED_DIR_NAMES = {".git", "__pycache__", ".pytest_cache", "reference", "tmp"}
+EXCLUDED_DIR_NAMES = {".git", "__pycache__", ".pytest_cache", "reference", "tmp", "worknotes"}
 EXCLUDED_FILE_NAMES = {".coverage"}
 
 

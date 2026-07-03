@@ -101,6 +101,27 @@ def test_analysis_gate_explains_missing_metric_command(tmp_path, monkeypatch):
     assert any("metric_output.command" in gap.get("profile_specific_reason", "") for gap in gate["gaps"])
 
 
+def test_analysis_gate_blocks_nonzero_metric_exit_code(tmp_path, monkeypatch):
+    store = _store(tmp_path, monkeypatch)
+    run_id, assertion_id = _run_with_report(
+        store,
+        "analysis",
+        "data_result",
+        [
+            {"evidence_type": "metric_output", "source_ref": "metrics.json", "command": "python eval.py", "exit_code": 1},
+            {"evidence_type": "transform_script", "source_ref": "eval.py"},
+            {"evidence_type": "sanity_check", "source_ref": "sanity.log"},
+        ],
+    )
+    _accept_with_independent_verdict(store, run_id, assertion_id)
+
+    gate = evaluate_gate(store, run_id)
+
+    assert gate["status"] == "blocked"
+    assert any("exit_code" in gap.get("profile_specific_reason", "") for gap in gate["gaps"])
+    assert any(gap.get("gap_type") == "missing_profile_evidence" for gap in gate["gaps"])
+
+
 def test_gate_metrics_report_real_coverage_for_passed_artifact_backed_assertion(tmp_path, monkeypatch):
     store = _store(tmp_path, monkeypatch)
     run = store.create_run(goal="research task", profile="research")
@@ -138,6 +159,25 @@ def test_gate_metrics_report_real_coverage_for_passed_artifact_backed_assertion(
     assert gate["metrics"]["blocking_gap_count"] == 0
 
 
+def test_coding_gate_blocks_failing_test_without_successful_execution(tmp_path, monkeypatch):
+    store = _store(tmp_path, monkeypatch)
+    run_id, assertion_id = _run_with_report(
+        store,
+        "coding",
+        "code_claim",
+        [
+            {"evidence_type": "root_cause_trace", "source_ref": "bug.md"},
+            {"evidence_type": "failing_test", "source_ref": "pytest.log", "command": "pytest", "exit_code": 1},
+        ],
+    )
+    _accept_with_independent_verdict(store, run_id, assertion_id)
+
+    gate = evaluate_gate(store, run_id)
+
+    assert gate["status"] == "blocked"
+    assert any("successful" in gap.get("profile_specific_reason", "") for gap in gate["gaps"])
+
+
 def test_gate_metrics_distinguish_unsupported_assertions_from_gap_count(tmp_path, monkeypatch):
     store = _store(tmp_path, monkeypatch)
     run_id, _assertion_id = _run_with_report(store, "research", "factual_claim", [])
@@ -149,6 +189,43 @@ def test_gate_metrics_distinguish_unsupported_assertions_from_gap_count(tmp_path
     assert gate["metrics"]["blocking_gap_count"] == 2
     assert gate["metrics"]["independent_review_coverage"] == 0.0
     assert gate["metrics"]["final_statement_trace_coverage"] == 0.0
+
+
+def test_math_counterexample_gap_distinguishes_resolved_search_from_positive_counterexample(tmp_path, monkeypatch):
+    store = _store(tmp_path / "resolved", monkeypatch)
+    run_id, assertion_id = _run_with_report(
+        store,
+        "math",
+        "proof_step",
+        [
+            {"evidence_type": "proof_step", "source_ref": "proof.md"},
+            {"evidence_type": "critique", "source_ref": "review.md"},
+            {"evidence_type": "counterexample", "source_ref": "search.md", "quote_or_observation": "counterexample search found none", "resolved": True},
+        ],
+    )
+    _accept_with_independent_verdict(store, run_id, assertion_id)
+
+    resolved_gate = evaluate_gate(store, run_id)
+
+    assert resolved_gate["status"] == "passed"
+
+    store = _store(tmp_path / "positive", monkeypatch)
+    run_id, assertion_id = _run_with_report(
+        store,
+        "math",
+        "proof_step",
+        [
+            {"evidence_type": "proof_step", "source_ref": "proof.md"},
+            {"evidence_type": "critique", "source_ref": "review.md"},
+            {"evidence_type": "counterexample", "source_ref": "search.md", "quote_or_observation": "positive counterexample found"},
+        ],
+    )
+    _accept_with_independent_verdict(store, run_id, assertion_id)
+
+    positive_gate = evaluate_gate(store, run_id)
+
+    assert positive_gate["status"] == "blocked"
+    assert any("counterexample" in gap.get("profile_specific_reason", "") for gap in positive_gate["gaps"])
 
 
 def test_profile_gates_pass_supported_profile_evidence(tmp_path, monkeypatch):

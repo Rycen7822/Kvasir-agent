@@ -53,4 +53,8 @@ def test_bundled_skill_is_cli_first_and_has_no_direct_tool_guidance():
     assert "cli.py" in text
     assert "submit-report --file" in text
     assert "delegate_task" in text
+    assert "code_claim" in text
+    assert "exit_code=0" in text
+    assert "next_required_action=\"complete\"" in text
+    assert "delegate_task_payload_suggestion" in text
     assert "ponder_forge_" not in text

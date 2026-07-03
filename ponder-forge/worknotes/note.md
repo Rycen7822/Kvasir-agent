@@ -335,3 +335,87 @@ Deeply understand `/home/xu/project/loop/DeepScientist/quests/001`, analyze STAG
 - installed-copy compileall: exit 0.
 - fresh installed CLI temp-home validation run `pf_run_f9bc1919aa2a`: five analysis roles generated; first child context had `required_evidence_occurrences=1`, `has_json_skeleton=True`, `has_data_result_hint=True`, `has_critical_hint=True`, `has_role_specific_data_inspector=True`, and `has_direct_tool_name=False`.
 - PF-REAL-009 status: closed in source and installed copy. Current Round 1 is a defect-discovery run and does not count as clean; clean-round count restarts after this fix.
+
+### PF-REAL-009 commit/push
+
+- commit: `c531bd4 fix: strengthen ponder-forge delegation contracts`.
+- pushed to `origin/main`.
+- commit scope: Ponder-Forge source, bundled skill, tests, `note.md`, `problems.md`, and PF-REAL-009 repair plan/scratch notes.
+- next action: start fresh installed real clean round #1 after PF-REAL-009.
+
+### post-PF-REAL-009 clean round #1
+
+- round dir: `worknotes/real_cli_rounds/post_pf009_clean1/`.
+- run_id: `pf_run_f6eb0cb396a3`.
+- installed CLI workflow completed: `start`, `plan`, `delegations`, `submit-report` x3, `verify` task creation/verdict x3, `status`, `gate`, `finalize` twice, `reconcile`, and late submit rejection.
+- delegation contract check: `required_evidence_occurrences=1`, schema/data_result/critical/role hints present, no direct-tool name in child context.
+- gate: `passed`; critical assertions 3/3 supported and accepted; independent/artifact/final trace coverage all `1.0`; blocking gaps `0`.
+- finalization: final status `final` twice; final report hash idempotent.
+- lifecycle: late submit returned nonzero with `success=false`; reconcile returned success with empty repair/orphan lists.
+- quest guard: 12 key Stage10 files unchanged by size, mtime, and sha256.
+- clean streak after PF-REAL-009: 1.
+
+### post-PF-REAL-009 clean rounds #2 and #3
+
+- clean round #2 dir: `worknotes/real_cli_rounds/post_pf009_clean2/`, run_id `pf_run_bbb19dd9962e`.
+- clean round #3 dir: `worknotes/real_cli_rounds/post_pf009_clean3/`, run_id `pf_run_1f991fba39cd`.
+- both rounds completed installed CLI `start`, `plan`, `delegations`, `submit-report` x3, `verify` task creation/verdict x3, `status`, `gate`, `finalize` twice, `reconcile`, late submit rejection, and quest before/after guard.
+- both rounds: delegation contract check passed (`required_evidence_occurrences=1`, schema/data_result/critical/role hints present, no direct-tool name).
+- both rounds: `gate=passed`, critical assertions 3/3 supported/accepted, independent/artifact/final trace coverage all `1.0`, blocking gaps `0`.
+- both rounds: final report idempotent, late submit rejected with `success=false`, reconcile returned success with no repairs/orphans, and quest guard unchanged.
+- clean streak after PF-REAL-009: 3.
+- next action: process remaining wave1/wave2 subagent reports before final closeout; do not declare final completion while delegated audits are unhandled.
+
+### wave2 parent reproductions reset the clean streak
+
+- parent reproduction file: `worknotes/real_cli_rounds/round1/parent_reproductions_after_wave2.json`.
+- confirmed: missing required CLI arg is non-JSON; `reconcile` unknown run returns `success=true`; `status` after completed final still says `next_required_action="finalize"`; analysis gate passes `metric_output.exit_code=1`; coding delegation contract contains `<profile_assertion_type>` and analysis evidence examples.
+- parent matrix reproduction file: `worknotes/real_cli_rounds/round1/parent_profile_gate_matrix_repro.json`.
+- confirmed: coding `root_cause_trace + failing_test(exit_code=1)` passes; math `proof_check` passes while unadvertised; math resolved/negative counterexample-search evidence blocks.
+- problems logged as PF-REAL-010..015 in `worknotes/problems.md`.
+- plan: `worknotes/pf_real_010_015_contract_consistency_repair_plan.md`; design audit in `worknotes/tmp_pf_real_010_015_contract_consistency/01_design_audit.md`.
+- clean streak after PF-REAL-009 is no longer valid for final closeout; restart from 0 after PF-REAL-010..015 are fixed and installed.
+
+### PF-REAL-010..015 source fix status
+
+- RED: focused source suite reproduced 9 failures across CLI status/envelope, reconcile, analysis/coding/math gates, profile vocabulary, and coding delegation contract.
+- GREEN: focused source suite `tests/test_cli_contract.py tests/test_hooks_reconcile.py tests/test_gates_profiles.py tests/test_profiles.py tests/test_prepare_delegations.py -q` -> `25 passed`.
+- full source suite: `46 passed`; source `compileall` exit 0.
+- source temp-home smoke confirmed missing CLI arg is JSON, reconcile unknown run fails JSON, and coding delegation contract now has `code_claim`, no placeholder, and no `metric_output` leakage.
+- installed copy refresh started after this source verification; clean streak remains 0 until installed validation and fresh real rounds pass.
+
+### PF-REAL-010..015 installed fix status
+
+- bundled skill was also patched so usage docs match the runtime contract: no direct tools/hooks, profile-specific child report anchors, reviewer payload loop, `status.next_required_action="complete"`, and reconcile limited to stale/orphan retry payloads.
+- source after skill patch: focused suite with mini/static tests `29 passed`; full source suite `46 passed`; source compileall exit 0.
+- installed copy refreshed again after skill patch: copy smoke returned `tool_count=0`, `hook_count=0`, `command_count=1`, `skill_count=1`; installed skill equals source and contains `code_claim`, terminal complete status guidance, and no direct hooks/tools wording.
+- installed verification: full installed suite `46 passed`; installed compileall exit 0.
+- installed final reproduction: `worknotes/real_cli_rounds/post_pf010_015_installed_repro_final.json` confirms missing CLI arg JSON envelope, reconcile unknown run failure, analysis `exit_code=1` blocked, analysis `exit_code=0` passed and status terminal `complete`, coding failing-test-only blocked, math resolved counterexample-search passed, and coding delegation contract is profile-specific.
+- problems PF-REAL-010..015 closed in `worknotes/problems.md`; clean streak reset to 0 after this final install.
+
+### PF-REAL-016 packaging cleanup
+
+- wave2 installed packaging audit noted installed copy included `worknotes/`; this is packaging cleanliness/privacy noise, not a runtime CLI failure, but it should be fixed before final install confidence.
+- PF-REAL-016 logged in `worknotes/problems.md`.
+- test added: `tests/test_copy_install_smoke.py` asserts copied target has no `worknotes/`.
+- source change: `scripts/copy_install_smoke.py` now excludes `worknotes` from install copies.
+- clean streak after PF-REAL-010..015 is superseded by this packaging change; restart after PF-REAL-016 install verification.
+
+### PF-REAL-016 installed fix status
+
+- source verification: focused suite including copy-install/static/CLI/gate/delegation tests `30 passed`; full source suite `46 passed`; source compileall exit 0.
+- installed copy refreshed after PF-REAL-016: copy smoke returned `tool_count=0`, `hook_count=0`, `command_count=1`, `skill_count=1`.
+- installed copy now has `worknotes_exists=false`; runtime skill/tests remain installed.
+- installed verification: full installed suite `46 passed`; installed compileall exit 0; temp-home installed smoke confirmed missing arg JSON, profile-specific analysis delegation, no direct-tool string, and `installed_worknotes=false`.
+- PF-REAL-016 closed in `worknotes/problems.md`; final clean streak starts after this install.
+
+### final post-PF-REAL-016 clean streak
+
+- final clean summary: `worknotes/real_cli_rounds/post_pf016_clean_summary.json`.
+- clean round #1: `post_pf016_clean1`, run `pf_run_ebdb28c7b36b`.
+- clean round #2: `post_pf016_clean2`, run `pf_run_2ce6694c55c8`.
+- clean round #3: `post_pf016_clean3`, run `pf_run_8b02996ca00c`.
+- each final clean round used installed CLI with isolated persistent `HERMES_HOME` under that round dir, read the real quest Stage10 artifacts, and wrote no quest files.
+- each final clean round exercised `submit-report` missing-arg JSON error, `start`, `plan`, `delegations`, five `submit-report` calls, independent-review task creation, five accepted verdicts, `status`, `gate`, `finalize` twice, post-final `status`, `reconcile`, unknown-run `reconcile`, late-submit rejection, final-report idempotency, installed packaging `worknotes` absence, and quest before/after guards.
+- all three final rounds: `gate=passed`, `critical_count=5`, independent/artifact/final trace coverage all `1.0`, `status_after.next_required_action="complete"`, late submit rejected, unknown reconcile rejected, missing-arg error JSON, installed `worknotes` absent, and quest guard unchanged.
+- all 20 worker reports landed and are synthesized in `worknotes/real_cli_rounds/round1/worker_reports_final_synthesis.md`; no unhandled blocking plugin issue remains.

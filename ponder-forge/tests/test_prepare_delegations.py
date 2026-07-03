@@ -114,3 +114,18 @@ def test_prepare_delegations_includes_child_report_contract_and_role_guidance(tm
         assert "Final response must contain a single valid JSON object" in context
     assert "Role duty: inventory datasets" in contexts_by_role["data_inspector"]
     assert "Role duty: recompute or extract key metrics" in contexts_by_role["metric_analyst"]
+
+
+def test_prepare_delegations_uses_profile_specific_report_contract_for_coding(tmp_path, monkeypatch):
+    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    store, start, _plan = _start_and_plan("fix failing pytest in store.py", profile="coding", max_tasks_per_wave=1)
+
+    prepared = prepare_delegations(store, start["run_id"])
+
+    context = prepared["delegate_task_payload"]["tasks"][0]["context"]
+    assert "code_claim" in context
+    assert "root_cause_trace" in context
+    assert "passing_test" in context or "execution_log" in context
+    assert "<profile_assertion_type>" not in context
+    assert "metric_output" not in context
+    assert "data_result" not in context

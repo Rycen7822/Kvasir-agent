@@ -4,7 +4,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, NoReturn
 
 try:
     from .delegation import prepare_delegations
@@ -28,6 +28,11 @@ except ImportError:
     from verifier import verify_run
 
 JsonDict = dict[str, Any]
+
+
+class JsonArgumentParser(argparse.ArgumentParser):
+    def error(self, message: str) -> NoReturn:
+        raise ValueError(message)
 
 
 def _json(payload: JsonDict) -> str:
@@ -152,12 +157,20 @@ def cmd_status(args: argparse.Namespace) -> JsonDict:
     store = _store()
     counts = {table: len(store.list_rows(table, args.run_id)) for table in ("agent_tasks", "reports", "assertions", "evidence_items", "artifacts")}
     gate = evaluate_gate(store, args.run_id)
+    run = store.get_run(args.run_id)
+    run_status = str(run.get("status") or "unknown") if run else "unknown"
+    final_report_present = bool(run and run.get("final_report_md"))
+    if run_status == "completed" and final_report_present:
+        next_action = "complete"
+    else:
+        next_action = "finalize" if gate["finalize_allowed"] else "verify"
     return _ok(
         {
             "run_id": args.run_id,
+            "run_status": run_status,
             "counts": counts,
             "gate_status": gate["status"],
-            "next_required_action": "finalize" if gate["finalize_allowed"] else "verify",
+            "next_required_action": next_action,
         }
     )
 
@@ -206,7 +219,7 @@ def cmd_reconcile(args: argparse.Namespace) -> JsonDict:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Ponder-Forge CLI")
+    parser = JsonArgumentParser(description="Ponder-Forge CLI")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     start = subparsers.add_parser("start", help="Create a Ponder-Forge run")

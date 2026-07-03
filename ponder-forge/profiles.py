@@ -49,7 +49,7 @@ PROFILES: dict[str, ProfileSpec] = {
     "math": ProfileSpec(
         profile_id="math",
         roles=("solver", "proof_checker", "counterexample_searcher", "revision_solver", "final_proof_reviewer"),
-        required_evidence_types=("proof_attempt", "proof_step", "lemma", "critique", "counterexample", "revision_trace"),
+        required_evidence_types=("proof_attempt", "proof_step", "lemma", "critique", "proof_check", "counterexample", "revision_trace"),
         critical_assertion_types=("proof_step",),
         required_evidence_groups=(("proof_step",), ("critique", "proof_check")),
         gate_name="generate-verify-revise",

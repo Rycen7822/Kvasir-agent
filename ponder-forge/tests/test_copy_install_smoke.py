@@ -29,3 +29,4 @@ def test_copy_install_smoke_to_temp_directory(tmp_path):
     assert (target / "__init__.py").exists()
     assert (target / "cli.py").exists()
     assert not (target / "ponder_forge").exists()
+    assert not (target / "worknotes").exists()

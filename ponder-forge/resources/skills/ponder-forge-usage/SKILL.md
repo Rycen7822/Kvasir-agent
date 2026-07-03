@@ -9,7 +9,7 @@ author: Hermes Agent
 
 Use Ponder-Forge for complex problems that need multiple child agents, structured evidence, independent review, gate checks, and graph-backed finalization.
 
-Ponder-Forge is intentionally operated as a skill + CLI workflow. It does not expose Ponder-Forge direct model tools by default.
+Ponder-Forge is intentionally operated as a skill + CLI workflow. The installed workflow exposes no Ponder-Forge direct model tools or hooks; use native Hermes `delegate_task` for child execution and the Ponder-Forge CLI for state transitions.
 
 ## CLI path
 
@@ -49,7 +49,7 @@ For source-tree development only, use the repository-local `cli.py`.
    python3 "$PF_CLI" submit-report --file <report.json>
    ```
 
-   The report JSON must include `run_id`, `role`, `summary`, and profile-appropriate assertions/evidence. Include `task_id` when the report belongs to a planned task.
+   The report JSON must include `run_id`, `role`, `summary`, and profile-appropriate assertions/evidence. Include `task_id` when the report belongs to a planned task. Prefer the exact child report contract embedded in `delegations` output; it contains the active profile's critical assertion type and gate-required evidence groups.
 
    Child report contract for manual delegations:
 
@@ -61,24 +61,20 @@ For source-tree development only, use the repository-local `cli.py`.
      "summary": "short evidence-backed summary",
      "assertions": [
        {
-         "assertion_type": "<profile assertion type such as data_result>",
+         "assertion_type": "<profile critical assertion type; never leave this placeholder literal>",
          "text": "claim to preserve in final reasoning",
          "importance": 0.9,
          "critical": true,
          "confidence": 0.8,
          "evidence": [
            {
-             "evidence_type": "metric_output",
+             "evidence_type": "<profile evidence type>",
              "source_ref": "path or command source",
              "quote_or_observation": "observed value or output",
              "command": "exact command if applicable",
              "exit_code": 0
            },
-           {
-             "evidence_type": "sanity_check",
-             "source_ref": "path",
-             "quote_or_observation": "consistency check"
-           }
+           {"evidence_type": "<another required profile evidence type>", "source_ref": "path", "quote_or_observation": "consistency check"}
          ]
        }
      ],
@@ -88,7 +84,7 @@ For source-tree development only, use the repository-local `cli.py`.
    }
    ```
 
-   Children should return this JSON to the parent/controller. Children must not call the CLI themselves; the parent/controller submits reports and records verdicts.
+   Children should return this JSON to the parent/controller. Children must not call the CLI themselves; the parent/controller submits reports and records verdicts. Profile anchors: `research` uses `factual_claim`; `coding` uses `code_claim` with `root_cause_trace` plus successful `passing_test` or `execution_log` with `exit_code=0`; `design` uses `design_decision`; `analysis` uses `data_result` with `metric_output.command` and `exit_code=0`; `math` uses `proof_step` plus `critique` or `proof_check` and only positive/unresolved counterexample evidence blocks.
 
 6. Run independent review or record a verdict:
 
@@ -96,6 +92,8 @@ For source-tree development only, use the repository-local `cli.py`.
    python3 "$PF_CLI" verify --run-id <run_id> --mode independent_review --target-id <assertion_id>
    python3 "$PF_CLI" verify --run-id <run_id> --mode independent_review --target-id <assertion_id> --reviewer-task-id <task_id> --independent-from-task-id <producer_task_id> --verdict accept --confidence 0.9 --rationale "<why>"
    ```
+
+   The first command creates reviewer tasks and may return a `delegate_task_payload_suggestion`; call native `delegate_task` with that payload, then record each reviewer verdict with the returned reviewer task id and the original producer task id.
 
 7. Check the gate:
 
@@ -109,12 +107,14 @@ For source-tree development only, use the repository-local `cli.py`.
    python3 "$PF_CLI" finalize --run-id <run_id>
    ```
 
-9. If tasks are stale or missing reports, inspect status and reconcile:
+9. Inspect status and reconcile only stale running/orphan work:
 
    ```bash
    python3 "$PF_CLI" status --run-id <run_id>
    python3 "$PF_CLI" reconcile --run-id <run_id>
    ```
+
+   `status.next_required_action="complete"` is terminal. If tasks are still queued or reports are missing, use `delegations --run-id <run_id>` and native `delegate_task`; use `reconcile` for stale running/orphan tasks and follow any returned retry payload.
 
 ## Operating rules
 

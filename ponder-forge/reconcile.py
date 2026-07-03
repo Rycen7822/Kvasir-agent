@@ -3,12 +3,19 @@ from __future__ import annotations
 import time
 
 try:
+    from .delegation import build_child_context
+    from .profiles import get_profile
     from .store import PonderForgeStore
 except ImportError:
+    from delegation import build_child_context
+    from profiles import get_profile
     from store import PonderForgeStore
 
 
 def reconcile_run(store: PonderForgeStore, run_id: str, *, stale_after_seconds: int = 1800) -> dict:
+    run = store.get_run(run_id)
+    if not run:
+        raise ValueError(f"unknown run_id: {run_id}")
     now = time.time()
     marked_orphan: list[str] = []
     repaired: list[str] = []
@@ -22,7 +29,7 @@ def reconcile_run(store: PonderForgeStore, run_id: str, *, stale_after_seconds: 
             store.append_event(run_id, "task_orphaned", {"reason": "stale_running", "age_seconds": age}, task_id=task["task_id"])
             marked_orphan.append(task["task_id"])
     retry_tasks = [task for task in store.list_rows("agent_tasks", run_id) if task.get("status") == "orphan"]
-    payload = _retry_payload(store, run_id, retry_tasks)
+    payload = _retry_payload(run_id, retry_tasks, run)
     return {
         "run_id": run_id,
         "repaired": repaired,
@@ -40,17 +47,17 @@ def _age_seconds(started_at: str | None, now: float) -> int:
         return 10**9
 
 
-def _retry_payload(store: PonderForgeStore, run_id: str, tasks: list[dict]) -> dict:
+def _retry_payload(run_id: str, tasks: list[dict], run: dict) -> dict:
     if not tasks:
         return {"tasks": []}
     payload_tasks = []
-    run = store.get_run(run_id) or {"profile": "unknown"}
+    profile = get_profile(str(run["profile"]))
     for task in tasks:
         marker = f"[PONDER_FORGE_RUN_ID={run_id}] [PONDER_FORGE_TASK_ID={task['task_id']}] [PONDER_FORGE_ROLE={task['role']}]"
         payload_tasks.append(
             {
                 "goal": f"{marker} Retry orphaned task: {task['goal']}",
-                "context": f"[PONDER_FORGE_PROFILE={run['profile']}]\nReturn a structured JSON report to the parent/controller. The parent/controller submits it with the Ponder-Forge CLI.",
+                "context": build_child_context(run, profile, task, retry=True),
                 "role": "leaf",
             }
         )

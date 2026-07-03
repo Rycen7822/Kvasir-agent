@@ -40,10 +40,54 @@ def _has_required_groups(evidence: list[JsonDict], groups: tuple[tuple[str, ...]
     return all(any(kind in evidence_types for kind in group) for group in groups)
 
 
+def _successful_exit_code(value: Any) -> bool:
+    if isinstance(value, bool):
+        return False
+    if value == 0:
+        return True
+    if isinstance(value, str):
+        try:
+            return int(value.strip()) == 0
+        except ValueError:
+            return False
+    return False
+
+
+def _has_successful_evidence(evidence: list[JsonDict], *types: str) -> bool:
+    type_set = set(types)
+    for item in evidence:
+        if item.get("evidence_type") not in type_set:
+            continue
+        if item.get("evidence_type") == "passing_test":
+            return True
+        if item.get("command") and _successful_exit_code(item.get("exit_code")):
+            return True
+    return False
+
+
+def _unresolved_counterexample(item: JsonDict) -> bool:
+    if item.get("evidence_type") != "counterexample":
+        return False
+    raw = _raw(item)
+    if item.get("counterevidence") or raw.get("counterevidence"):
+        return True
+    if raw.get("resolved") is True or raw.get("status") in {"resolved", "none_found", "negative"}:
+        return False
+    observation = str(item.get("quote_or_observation") or raw.get("quote_or_observation") or "").lower()
+    if any(term in observation for term in ("found none", "no counterexample", "none found", "resolved")):
+        return False
+    return True
+
+
 def _profile_specific_gap(profile: str, evidence: list[JsonDict]) -> str | None:
-    if profile == "analysis" and not any(item.get("evidence_type") == "metric_output" and item.get("command") for item in evidence):
-        return "analysis metric_output.command is required for at least one metric_output evidence item"
-    if profile == "math" and any(item.get("evidence_type") == "counterexample" for item in evidence):
+    if profile == "analysis" and not any(
+        item.get("evidence_type") == "metric_output" and item.get("command") and _successful_exit_code(item.get("exit_code"))
+        for item in evidence
+    ):
+        return "analysis metric_output.command and exit_code=0 are required for at least one metric_output evidence item"
+    if profile == "coding" and not _has_successful_evidence(evidence, "passing_test", "execution_log"):
+        return "coding gate requires successful execution evidence: passing_test or execution_log.exit_code=0"
+    if profile == "math" and any(_unresolved_counterexample(item) for item in evidence):
         return "math proof gate has unresolved counterexample evidence"
     return None
 
@@ -122,6 +166,7 @@ def evaluate_gate(store: PonderForgeStore, run_id: str) -> JsonDict:
             artifact_backed_count += 1
         if not supported:
             gap = {
+                "gap_type": "missing_profile_evidence",
                 "target_id": assertion["assertion_id"],
                 "reason": "critical assertion lacks required profile evidence",
                 "required_groups": profile.required_evidence_groups,

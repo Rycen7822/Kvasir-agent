@@ -11,9 +11,19 @@ CLI = ROOT / "cli.py"
 
 
 def run_cli(tmp_path: Path, *args: str, input_text: str | None = None, expect_success: bool = True) -> dict:
+    result = _run_cli_process(tmp_path, *args, input_text=input_text)
+    if expect_success:
+        assert result.returncode == 0, result.stderr + result.stdout
+    else:
+        assert result.returncode != 0, result.stderr + result.stdout
+    assert result.stdout.strip(), result.stderr
+    return json.loads(result.stdout)
+
+
+def _run_cli_process(tmp_path: Path, *args: str, input_text: str | None = None) -> subprocess.CompletedProcess[str]:
     env = os.environ.copy()
     env["HERMES_HOME"] = str(tmp_path / "hermes-home")
-    result = subprocess.run(
+    return subprocess.run(
         [sys.executable, str(CLI), *args],
         cwd=ROOT,
         env=env,
@@ -22,12 +32,6 @@ def run_cli(tmp_path: Path, *args: str, input_text: str | None = None, expect_su
         capture_output=True,
         check=False,
     )
-    if expect_success:
-        assert result.returncode == 0, result.stderr + result.stdout
-    else:
-        assert result.returncode != 0, result.stderr + result.stdout
-    assert result.stdout.strip(), result.stderr
-    return json.loads(result.stdout)
 
 
 def test_cli_workflow_start_plan_report_verify_gate_finalize_and_late_reject(tmp_path):
@@ -149,6 +153,8 @@ def test_cli_workflow_start_plan_report_verify_gate_finalize_and_late_reject(tmp
     status = run_cli(tmp_path, "status", "--run-id", start["run_id"])
     assert status["counts"]["reports"] == 1
     assert status["gate_status"] == "passed"
+    assert status["run_status"] == "completed"
+    assert status["next_required_action"] == "complete"
 
 
 def test_cli_submit_report_accepts_stdin(tmp_path):
@@ -167,3 +173,13 @@ def test_cli_submit_report_accepts_stdin(tmp_path):
 
     assert submitted["success"] is True
     assert submitted["report_id"].startswith("pf_report_")
+
+
+def test_cli_argument_errors_use_json_error_envelope(tmp_path):
+    result = _run_cli_process(tmp_path, "submit-report")
+
+    assert result.returncode != 0
+    assert result.stderr == ""
+    payload = json.loads(result.stdout)
+    assert payload["success"] is False
+    assert "--file" in payload["error"]

@@ -17,6 +17,14 @@ def test_profiles_define_five_data_records():
         assert profile.gate_name
 
 
+def test_profile_gate_groups_are_advertised_evidence_tokens():
+    for profile_id in PROFILE_IDS:
+        profile = get_profile(profile_id)
+        accepted_tokens = {token for group in profile.required_evidence_groups for token in group}
+
+        assert accepted_tokens <= set(profile.required_evidence_types), profile_id
+
+
 def test_profile_auto_routing_is_deterministic():
     assert select_profile("fix failing pytest in store.py") == "coding"
     assert select_profile("analyze csv metrics and plot experiment results") == "analysis"

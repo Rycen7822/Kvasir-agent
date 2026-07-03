@@ -42,8 +42,26 @@ def test_reconcile_marks_stale_running_task_orphan(tmp_path, monkeypatch):
     retry = result["delegate_task_payload_suggestion"]
     assert retry["tasks"]
     assert task["task_id"] in retry["tasks"][0]["goal"]
+    retry_context = retry["tasks"][0]["context"]
+    assert "Child report JSON contract:" in retry_context
+    assert "data_result" in retry_context
+    assert "metric_output" in retry_context
+    assert "command" in retry_context
+    assert "exit_code" in retry_context
 
 
 def test_obsolete_tool_hook_schema_adapters_are_removed():
     for rel in ("tools.py", "schemas.py", "hooks.py", "role_policy.py"):
         assert not (ROOT / rel).exists()
+
+
+def test_reconcile_rejects_unknown_run_id(tmp_path, monkeypatch):
+    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    store = _store()
+
+    try:
+        reconcile_run(store, "pf_run_missing", stale_after_seconds=0)
+    except ValueError as exc:
+        assert "unknown run_id: pf_run_missing" in str(exc)
+    else:
+        raise AssertionError("reconcile_run should reject unknown run ids")

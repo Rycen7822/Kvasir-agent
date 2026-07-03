@@ -14,19 +14,36 @@ def _required_evidence_line(profile) -> str:
     return f"Required evidence types: {', '.join(profile.required_evidence_types)}."
 
 
-def _profile_gate_guidance(profile_id: str) -> list[str]:
-    if profile_id == "analysis":
-        return [
-            "Analysis gate detail: at least one material claim should use assertion_type=\"data_result\" with importance>=0.8 or critical=true.",
-            "Analysis evidence detail: attach metric_output evidence with non-empty command and exit_code, plus transform_script or reproduction_log, plus sanity_check where applicable.",
-        ]
-    return []
+def _critical_assertion_type(profile) -> str:
+    return str(profile.critical_assertion_types[0]) if profile.critical_assertion_types else "claim"
+
+
+def _render_required_groups(profile) -> str:
+    rendered = []
+    for group in profile.required_evidence_groups:
+        rendered.append("(" + " OR ".join(group) + ")" if len(group) > 1 else group[0])
+    return " AND ".join(rendered)
+
+
+def _profile_gate_guidance(profile) -> list[str]:
+    assertion_type = _critical_assertion_type(profile)
+    lines = [
+        f"Profile gate detail: material claims should use assertion_type=\"{assertion_type}\" with importance>=0.8 or critical=true.",
+        f"Gate-required evidence groups: {_render_required_groups(profile)}.",
+    ]
+    if profile.profile_id == "analysis":
+        lines.append("Analysis evidence detail: at least one metric_output evidence item must include a non-empty command and exit_code=0.")
+    if profile.profile_id == "coding":
+        lines.append("Coding evidence detail: include root_cause_trace plus successful execution evidence such as passing_test or execution_log with exit_code=0.")
+    if profile.profile_id == "math":
+        lines.append("Math evidence detail: include proof_step plus critique or proof_check; only positive/unresolved counterexample evidence blocks the gate.")
+    return lines
 
 
 _ROLE_DUTIES = {
     "analysis": {
         "data_inspector": "Role duty: inventory datasets, artifacts, row counts, hashes, and data-boundary anomalies.",
-        "metric_analyst": "Role duty: recompute or extract key metrics and include metric_output evidence with command and exit_code.",
+        "metric_analyst": "Role duty: recompute or extract key metrics and include metric_output evidence with command and exit_code=0.",
         "reproduction_runner": "Role duty: run or describe read-only reproduction commands and preserve exact command outputs.",
         "sanity_reviewer": "Role duty: challenge metric consistency, gate boundaries, and overclaim risks.",
         "narrative_reviewer": "Role duty: synthesize evidence-backed conclusions and next-step recommendations without overclaiming.",
@@ -39,13 +56,48 @@ def _role_guidance(profile_id: str, role: str) -> list[str]:
     return [duty] if duty else []
 
 
-def _report_contract(profile_id: str) -> list[str]:
-    assertion_type = "data_result" if profile_id == "analysis" else "<profile_assertion_type>"
+_PREFERRED_EXAMPLE_EVIDENCE = {
+    "research": ("source_quote",),
+    "coding": ("root_cause_trace", "passing_test"),
+    "design": ("constraint", "existing_owner_seam", "decision_reason"),
+    "analysis": ("metric_output", "transform_script", "sanity_check"),
+    "math": ("proof_step", "critique"),
+}
+
+
+def _example_evidence_item(evidence_type: str) -> dict[str, object]:
+    item: dict[str, object] = {
+        "evidence_type": evidence_type,
+        "source_ref": "path or command",
+        "quote_or_observation": "observed value",
+    }
+    if evidence_type in {"metric_output", "execution_log", "passing_test"}:
+        item["command"] = "exact command if applicable"
+        item["exit_code"] = 0
+    return item
+
+
+def _example_evidence(profile) -> list[dict]:
+    evidence_types = _PREFERRED_EXAMPLE_EVIDENCE.get(profile.profile_id)
+    if evidence_types is None:
+        evidence_types = tuple(group[0] for group in profile.required_evidence_groups)
+    return [_example_evidence_item(kind) for kind in evidence_types]
+
+
+def _report_contract(profile) -> list[str]:
+    assertion_shape = {
+        "assertion_type": _critical_assertion_type(profile),
+        "text": "evidence-backed claim",
+        "importance": 0.9,
+        "critical": True,
+        "confidence": 0.8,
+        "evidence": _example_evidence(profile),
+    }
     return [
         "Child report JSON contract:",
         "Final response must contain a single valid JSON object matching this schema, with no Markdown wrapper. If you also write a human-readable note, list it in artifacts[]. Do not call the Ponder-Forge CLI.",
         "Required top-level keys: \"run_id\", \"task_id\", \"role\", \"summary\", \"assertions\", \"artifacts\".",
-        f"Minimal assertion shape: {{\"assertion_type\": \"{assertion_type}\", \"text\": \"evidence-backed claim\", \"importance\": 0.9, \"critical\": true, \"confidence\": 0.8, \"evidence\": [{{\"evidence_type\": \"metric_output\", \"source_ref\": \"path or command\", \"quote_or_observation\": \"observed value\", \"command\": \"exact command if applicable\", \"exit_code\": 0}}, {{\"evidence_type\": \"sanity_check\", \"source_ref\": \"path\", \"quote_or_observation\": \"consistency check\"}}, {{\"evidence_type\": \"reproduction_log\", \"source_ref\": \"path or command\", \"quote_or_observation\": \"reproduction note\"}}]}}",
+        f"Minimal assertion shape: {json.dumps(assertion_shape, ensure_ascii=False)}",
         "Artifact shape: {\"artifact_type\": \"report\", \"path\": \"path/to/artifact\", \"summary\": \"what it contains\"}.",
         "If you use top-level evidence instead of nested assertion evidence, every evidence item needs an id and each assertion must reference it with evidence_refs.",
     ]
@@ -58,39 +110,48 @@ def _task_context_lines(task_context: object, required_line: str) -> list[str]:
     return [text]
 
 
+def _constraint_lines(run: dict) -> list[str]:
+    config = json.loads(run.get("config_json") or "{}")
+    constraints = config.get("constraints") if isinstance(config, dict) else None
+    if isinstance(constraints, list) and constraints:
+        return ["Ponder-Forge constraints:", *[f"- {constraint}" for constraint in constraints]]
+    return []
+
+
+def build_child_context(run: dict, profile, task: dict, *, retry: bool = False) -> str:
+    required_line = _required_evidence_line(profile)
+    retry_lines = ["Retry context: this task was orphaned or stale; return a fresh child report for the same assigned task."] if retry else []
+    return "\n".join(
+        [
+            f"[PONDER_FORGE_PROFILE={profile.profile_id}]",
+            f"Ponder-Forge run goal: {run['user_goal']}",
+            *_constraint_lines(run),
+            *retry_lines,
+            "You are a Ponder-Forge child agent. Work only on the assigned task.",
+            "Return a structured JSON report to the parent/controller with run_id, task_id, role, summary, assertions, evidence, and artifacts where applicable.",
+            "Do not mutate Ponder-Forge state or finalize the run; the parent/controller submits your JSON report with the Ponder-Forge CLI.",
+            required_line,
+            *_profile_gate_guidance(profile),
+            *_role_guidance(profile.profile_id, str(task.get("role") or "")),
+            *_report_contract(profile),
+            *_task_context_lines(task.get("context"), required_line),
+        ]
+    )
+
+
 def prepare_delegations(store: PonderForgeStore, run_id: str) -> dict:
     run = store.get_run(run_id)
     if not run:
         raise ValueError(f"unknown run_id: {run_id}")
     profile = get_profile(str(run["profile"]))
-    config = json.loads(run.get("config_json") or "{}")
-    constraints = config.get("constraints") if isinstance(config, dict) else None
-    constraint_lines = []
-    if isinstance(constraints, list) and constraints:
-        constraint_lines = ["Ponder-Forge constraints:", *[f"- {constraint}" for constraint in constraints]]
     tasks = [task for task in store.list_rows("agent_tasks", run_id) if task.get("status") == "queued"]
     payload_tasks = []
     for task in tasks:
         marker = f"[PONDER_FORGE_RUN_ID={run_id}] [PONDER_FORGE_TASK_ID={task['task_id']}] [PONDER_FORGE_ROLE={task['role']}]"
-        required_line = _required_evidence_line(profile)
         payload_tasks.append(
             {
                 "goal": f"{marker} {task['goal']}",
-                "context": "\n".join(
-                    [
-                        f"[PONDER_FORGE_PROFILE={profile.profile_id}]",
-                        f"Ponder-Forge run goal: {run['user_goal']}",
-                        *constraint_lines,
-                        "You are a Ponder-Forge child agent. Work only on the assigned task.",
-                        "Return a structured JSON report to the parent/controller with run_id, task_id, role, summary, assertions, evidence, and artifacts where applicable.",
-                        "Do not mutate Ponder-Forge state or finalize the run; the parent/controller submits your JSON report with the Ponder-Forge CLI.",
-                        required_line,
-                        *_profile_gate_guidance(profile.profile_id),
-                        *_role_guidance(profile.profile_id, str(task.get("role") or "")),
-                        *_report_contract(profile.profile_id),
-                        *_task_context_lines(task.get("context"), required_line),
-                    ]
-                ),
+                "context": build_child_context(run, profile, task),
                 "role": "leaf",
             }
         )
