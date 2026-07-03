@@ -1,0 +1,24 @@
+{
+  "profile": "research",
+  "goal": "source-backed factual synthesis from notes",
+  "expected_status": "final",
+  "report": {
+    "summary": "The fact is supported by a quoted source.",
+    "assertions": [
+      {
+        "assertion_type": "factual_claim",
+        "text": "Research profile requires source-backed evidence.",
+        "importance": 0.95,
+        "critical": true,
+        "evidence": [
+          {
+            "evidence_type": "source_quote",
+            "source_ref": "worknotes/ponder_forge_project_plan_v2.md",
+            "quote_or_observation": "不同 profile 的 evidence 类型不同",
+            "directness": 0.9
+          }
+        ]
+      }
+    ]
+  }
+}

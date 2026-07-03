@@ -1,0 +1,21 @@
+name: ponder-forge
+kind: standalone
+version: 0.1.0
+description: Verification-centric multi-subagent team plugin for complex Hermes tasks.
+provides_tools:
+  - ponder_forge_start
+  - ponder_forge_plan
+  - ponder_forge_prepare_delegations
+  - ponder_forge_report_submit
+  - ponder_forge_pool_status
+  - ponder_forge_verify
+  - ponder_forge_gate_status
+  - ponder_forge_finalize
+  - ponder_forge_reconcile
+provides_hooks:
+  - subagent_start
+  - subagent_stop
+  - post_tool_call
+  - pre_tool_call
+  - pre_llm_call
+  - on_session_end

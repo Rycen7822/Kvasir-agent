@@ -1,0 +1,227 @@
+{
+  "run_id": "pf_run_6fa8a73606e2",
+  "tasks": [
+    {
+      "task_id": "pf_task_86ccf52571e6",
+      "run_id": "pf_run_6fa8a73606e2",
+      "node_id": "pf_node_b1ffdec9df43",
+      "parent_task_id": null,
+      "hermes_child_session_id": null,
+      "hermes_subagent_id": null,
+      "role": "data_inspector",
+      "goal": "Work as data_inspector on the analysis profile task. Produce structured evidence, not a final answer.",
+      "context": "Required evidence types: dataset, transform_script, metric_output, sanity_check, plot_artifact, reproduction_log.",
+      "status": "queued",
+      "priority": 0,
+      "delegation_id": null,
+      "started_at": null,
+      "finished_at": null,
+      "error": null,
+      "raw_json": "{\"profile\": \"analysis\", \"required_evidence_types\": [\"dataset\", \"transform_script\", \"metric_output\", \"sanity_check\", \"plot_artifact\", \"reproduction_log\"]}"
+    },
+    {
+      "task_id": "pf_task_6b90247eae3e",
+      "run_id": "pf_run_6fa8a73606e2",
+      "node_id": "pf_node_9d765895b1ab",
+      "parent_task_id": null,
+      "hermes_child_session_id": null,
+      "hermes_subagent_id": null,
+      "role": "metric_analyst",
+      "goal": "Work as metric_analyst on the analysis profile task. Produce structured evidence, not a final answer.",
+      "context": "Required evidence types: dataset, transform_script, metric_output, sanity_check, plot_artifact, reproduction_log.",
+      "status": "queued",
+      "priority": 0,
+      "delegation_id": null,
+      "started_at": null,
+      "finished_at": null,
+      "error": null,
+      "raw_json": "{\"profile\": \"analysis\", \"required_evidence_types\": [\"dataset\", \"transform_script\", \"metric_output\", \"sanity_check\", \"plot_artifact\", \"reproduction_log\"]}"
+    },
+    {
+      "task_id": "pf_task_f684a6bd0bc5",
+      "run_id": "pf_run_6fa8a73606e2",
+      "node_id": "pf_node_4af7a0630ed1",
+      "parent_task_id": null,
+      "hermes_child_session_id": null,
+      "hermes_subagent_id": null,
+      "role": "reproduction_runner",
+      "goal": "Work as reproduction_runner on the analysis profile task. Produce structured evidence, not a final answer.",
+      "context": "Required evidence types: dataset, transform_script, metric_output, sanity_check, plot_artifact, reproduction_log.",
+      "status": "queued",
+      "priority": 0,
+      "delegation_id": null,
+      "started_at": null,
+      "finished_at": null,
+      "error": null,
+      "raw_json": "{\"profile\": \"analysis\", \"required_evidence_types\": [\"dataset\", \"transform_script\", \"metric_output\", \"sanity_check\", \"plot_artifact\", \"reproduction_log\"]}"
+    }
+  ],
+  "prepared_context_checks": {
+    "read_only": true,
+    "metric_command_guidance": true
+  },
+  "metric_submit": {
+    "success": true,
+    "report_id": "pf_report_772cd12b9ab2",
+    "assertion_ids": [
+      "pf_assertion_4d6879730a27"
+    ],
+    "evidence_ids": [
+      "pf_evidence_89cb0d242a21",
+      "pf_evidence_fa752bf7a764",
+      "pf_evidence_8d9bb233bfe3"
+    ],
+    "artifact_ids": [
+      "pf_artifact_b843dafceae9"
+    ]
+  },
+  "reviewer_task": {
+    "task_id": "pf_task_e3de3be24865",
+    "run_id": "pf_run_6fa8a73606e2",
+    "node_id": null,
+    "parent_task_id": "pf_task_6b90247eae3e",
+    "hermes_child_session_id": null,
+    "hermes_subagent_id": null,
+    "role": "repro_reviewer",
+    "goal": "Independently review assertion pf_assertion_4d6879730a27: Stage10 is complete only as a conservative evidence package: large-eval and seed-robustness evidence passed, but CE-selection and model-family gates failed, downstream and oral gates are closed, and next work must close CE cost-to-contain and family/resource coverage before downstream or oral-readiness claims.",
+    "context": "[PONDER_FORGE_PROFILE=analysis]\ntarget_assertion_id=pf_assertion_4d6879730a27\nindependent_from_task_id=pf_task_6b90247eae3e\nReview only visible assertion/evidence. Do not continue producer reasoning.\nSubmit verdict via ponder_forge_verify with mode=independent_review.",
+    "status": "queued",
+    "priority": 10,
+    "delegation_id": null,
+    "started_at": null,
+    "finished_at": null,
+    "error": null,
+    "raw_json": "{\"independent_from_task_id\": \"pf_task_6b90247eae3e\", \"target_assertion_id\": \"pf_assertion_4d6879730a27\", \"verifier_mode\": \"independent_review\"}"
+  },
+  "reviewer_submit": {
+    "success": true,
+    "report_id": "pf_report_65188ad5ed7b",
+    "assertion_ids": [
+      "pf_assertion_cd52f897dad0"
+    ],
+    "evidence_ids": [
+      "pf_evidence_ccd2fbdc88de"
+    ],
+    "artifact_ids": [
+      "pf_artifact_65463aa89c04"
+    ]
+  },
+  "verdict": {
+    "success": true,
+    "run_id": "pf_run_6fa8a73606e2",
+    "verifier_mode": "independent_review",
+    "recorded_verdict": {
+      "verdict_id": "pf_verdict_0b0b44aae75e",
+      "run_id": "pf_run_6fa8a73606e2",
+      "profile": "analysis",
+      "target_type": "assertion",
+      "target_id": "pf_assertion_4d6879730a27",
+      "reviewer_role": "repro_reviewer",
+      "reviewer_task_id": "pf_task_e3de3be24865",
+      "verifier_mode": "independent_review",
+      "independent_from_task_id": "pf_task_6b90247eae3e",
+      "verdict": "accept",
+      "confidence": 0.96,
+      "rationale": "Round 3 source review accepted the bounded Stage10 gate claim.",
+      "required_actions_json": "[]",
+      "created_at": "2026-07-03T20:51:09Z",
+      "raw_json": "{\"source\": \"ponder_forge_verify\"}"
+    },
+    "final_verdict": true
+  },
+  "gate_before_finalize": {
+    "success": true,
+    "status": "passed",
+    "profile": "analysis",
+    "finalize_allowed": true,
+    "metrics": {
+      "critical_assertion_count": 1,
+      "accepted_critical_assertion_count": 1,
+      "unsupported_critical_assertions": 0,
+      "unresolved_conflicts": 0,
+      "independent_review_coverage": 0.0,
+      "artifact_reproducibility_coverage": 0.0,
+      "final_statement_trace_coverage": 0.0,
+      "budget_used": 0
+    },
+    "gaps": []
+  },
+  "finalize": {
+    "success": true,
+    "status": "final",
+    "run_id": "pf_run_6fa8a73606e2",
+    "final_report_markdown": "# Ponder-Forge Final Report\n\n## Findings\n\n- Stage10 is complete only as a conservative evidence package: large-eval and seed-robustness evidence passed, but CE-selection and model-family gates failed, downstream and oral gates are closed, and next work must close CE cost-to-contain and family/resource coverage before downstream or oral-readiness claims.\n  - Evidence trace:\n    - `metric_output`: /home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/08_meta/STAGE10_META_ANALYSIS.json — {\"audit_forbidden_claim_scan_passed\": true, \"ce_selection_gate_passed\": null, \"claim_ledger_boundaries_present\": true, \"downstream_gate_status\": \"closed\", \"downstream_run_executed\": false, \"large_eval_expected_rows\": 360, \"large_eval_gate_…\n    - `reproduction_log`: /home/xu/project/autosci-delphi/ponder-forge/worknotes/round3_controller_metric_report.md — Round 3 controller report records the read-only metric command, parsed JSON summary, and source boundary.\n    - `sanity_check`: /home/xu/project/autosci-delphi/ponder-forge/worknotes/round3_controller_metric_report.md — Sanity checks: large_eval rows equal expected rows; no large_eval hard failures; seed robustness rows are present; downstream and oral statuses are closed; forbidden-claim scan passed; claim ledger boundaries are present.\n  - Artifact trace:\n    - `worknotes_report`: /home/xu/project/autosci-delphi/ponder-forge/worknotes/round3_controller_metric_report.md — Round 3 controller metric report with real Stage10 gate evidence.\n  - Verifier verdicts:\n    - `accept` by repro_reviewer, confidence=0.96 — Round 3 source review accepted the bounded Stage10 gate claim.\n",
+    "artifact_paths": {
+      "final_md": "/home/xu/.hermes/ponder_forge/runs/pf_run_6fa8a73606e2/final.md",
+      "graph_json": "/home/xu/.hermes/ponder_forge/runs/pf_run_6fa8a73606e2/graph.json",
+      "verdicts_json": "/home/xu/.hermes/ponder_forge/runs/pf_run_6fa8a73606e2/verdicts.json",
+      "pool_status_json": "/home/xu/.hermes/ponder_forge/runs/pf_run_6fa8a73606e2/pool_status.json"
+    }
+  },
+  "trace_checks": {
+    "Evidence trace": true,
+    "Artifact trace": true,
+    "Verifier verdicts": true,
+    "metric_output": true,
+    "round3_controller_metric_report.md": true,
+    "repro_reviewer": true
+  },
+  "late_submit_result": {
+    "success": false,
+    "error": "run is already completed; report submission is closed",
+    "run_id": "pf_run_6fa8a73606e2",
+    "status": "completed"
+  },
+  "gate_after_late_submit": {
+    "success": true,
+    "status": "passed",
+    "profile": "analysis",
+    "finalize_allowed": true,
+    "metrics": {
+      "critical_assertion_count": 1,
+      "accepted_critical_assertion_count": 1,
+      "unsupported_critical_assertions": 0,
+      "unresolved_conflicts": 0,
+      "independent_review_coverage": 0.0,
+      "artifact_reproducibility_coverage": 0.0,
+      "final_statement_trace_coverage": 0.0,
+      "budget_used": 0
+    },
+    "gaps": []
+  },
+  "finalize_again": {
+    "success": true,
+    "status": "final",
+    "run_id": "pf_run_6fa8a73606e2",
+    "final_report_markdown": "# Ponder-Forge Final Report\n\n## Findings\n\n- Stage10 is complete only as a conservative evidence package: large-eval and seed-robustness evidence passed, but CE-selection and model-family gates failed, downstream and oral gates are closed, and next work must close CE cost-to-contain and family/resource coverage before downstream or oral-readiness claims.\n  - Evidence trace:\n    - `metric_output`: /home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/08_meta/STAGE10_META_ANALYSIS.json — {\"audit_forbidden_claim_scan_passed\": true, \"ce_selection_gate_passed\": null, \"claim_ledger_boundaries_present\": true, \"downstream_gate_status\": \"closed\", \"downstream_run_executed\": false, \"large_eval_expected_rows\": 360, \"large_eval_gate_…\n    - `reproduction_log`: /home/xu/project/autosci-delphi/ponder-forge/worknotes/round3_controller_metric_report.md — Round 3 controller report records the read-only metric command, parsed JSON summary, and source boundary.\n    - `sanity_check`: /home/xu/project/autosci-delphi/ponder-forge/worknotes/round3_controller_metric_report.md — Sanity checks: large_eval rows equal expected rows; no large_eval hard failures; seed robustness rows are present; downstream and oral statuses are closed; forbidden-claim scan passed; claim ledger boundaries are present.\n  - Artifact trace:\n    - `worknotes_report`: /home/xu/project/autosci-delphi/ponder-forge/worknotes/round3_controller_metric_report.md — Round 3 controller metric report with real Stage10 gate evidence.\n  - Verifier verdicts:\n    - `accept` by repro_reviewer, confidence=0.96 — Round 3 source review accepted the bounded Stage10 gate claim.\n",
+    "artifact_paths": {
+      "final_md": "/home/xu/.hermes/ponder_forge/runs/pf_run_6fa8a73606e2/final.md",
+      "graph_json": "/home/xu/.hermes/ponder_forge/runs/pf_run_6fa8a73606e2/graph.json",
+      "verdicts_json": "/home/xu/.hermes/ponder_forge/runs/pf_run_6fa8a73606e2/verdicts.json",
+      "pool_status_json": "/home/xu/.hermes/ponder_forge/runs/pf_run_6fa8a73606e2/pool_status.json"
+    },
+    "idempotent": true
+  },
+  "final_hash_before": "d5b57c44e22a40468d8dd40b3baccd15eaabefef7740ca66b2dedeeb496c5f00",
+  "final_hash_after": "d5b57c44e22a40468d8dd40b3baccd15eaabefef7740ca66b2dedeeb496c5f00",
+  "final_hash_unchanged": true,
+  "metric_report": "/home/xu/project/autosci-delphi/ponder-forge/worknotes/round3_controller_metric_report.md",
+  "verdict_report": "/home/xu/project/autosci-delphi/ponder-forge/worknotes/round3_controller_reviewer_verdict.md",
+  "metric_summary": {
+    "audit_forbidden_claim_scan_passed": true,
+    "ce_selection_gate_passed": null,
+    "claim_ledger_boundaries_present": true,
+    "downstream_gate_status": "closed",
+    "downstream_run_executed": false,
+    "large_eval_expected_rows": 360,
+    "large_eval_gate_passed": null,
+    "large_eval_hard_failures": [],
+    "large_eval_rows": 360,
+    "model_family_gate_met": null,
+    "oral_closed": false,
+    "seed_robustness_gate_passed": null,
+    "seed_robustness_rows": 252,
+    "status_mentions_complete": true,
+    "target_write_ledger_matches_endpoint_rows": true
+  }
+}

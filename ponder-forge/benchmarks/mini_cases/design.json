@@ -1,0 +1,21 @@
+{
+  "profile": "design",
+  "goal": "choose a stable plugin architecture",
+  "expected_status": "final",
+  "report": {
+    "summary": "The design decision is tied to constraints and owner seams.",
+    "assertions": [
+      {
+        "assertion_type": "design_decision",
+        "text": "The plugin should keep one runtime and profile-specific gates.",
+        "importance": 0.95,
+        "critical": true,
+        "evidence": [
+          {"evidence_type": "constraint", "source_ref": "plan", "quote_or_observation": "do not override delegate_task"},
+          {"evidence_type": "existing_owner_seam", "source_ref": "tools.py", "quote_or_observation": "tools wrap runtime seams"},
+          {"evidence_type": "decision_reason", "source_ref": "design_audit", "quote_or_observation": "avoid duplicate runtimes"}
+        ]
+      }
+    ]
+  }
+}

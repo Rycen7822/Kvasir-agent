@@ -1,0 +1,234 @@
+from __future__ import annotations
+
+from gates import evaluate_gate
+from renderer import render_final_report
+from report_ingest import ingest_report
+from store import PonderForgeStore
+
+
+def _store(tmp_path, monkeypatch):
+    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    store = PonderForgeStore()
+    store.initialize()
+    return store
+
+
+def _run_with_report(store, profile: str, assertion_type: str, evidence: list[dict]):
+    run = store.create_run(goal=f"{profile} task", profile=profile)
+    task = store.create_task(run["run_id"], role="tester", goal="produce report")
+    result = ingest_report(
+        store,
+        {
+            "run_id": run["run_id"],
+            "task_id": task["task_id"],
+            "role": "tester",
+            "summary": "critical assertion",
+            "assertions": [
+                {
+                    "assertion_type": assertion_type,
+                    "text": f"critical {profile} assertion",
+                    "importance": 0.95,
+                    "confidence": 0.8,
+                    "evidence": evidence,
+                    "critical": True,
+                }
+            ],
+        },
+    )
+    return run["run_id"], result["assertion_ids"][0]
+
+
+def _accept_with_independent_verdict(store, run_id: str, assertion_id: str):
+    assertion = [row for row in store.list_rows("assertions", run_id) if row["assertion_id"] == assertion_id][0]
+    report = store.get_report(assertion["report_id"])
+    producer_task_id = report["task_id"]
+    run = store.get_run(run_id)
+    reviewer = store.create_task(run_id, role="independent_reviewer", goal="review assertion", parent_task_id=producer_task_id)
+    store.create_verdict(
+        run_id=run_id,
+        profile=run["profile"],
+        target_type="assertion",
+        target_id=assertion_id,
+        reviewer_role="independent_reviewer",
+        reviewer_task_id=reviewer["task_id"],
+        verifier_mode="independent_review",
+        independent_from_task_id=producer_task_id,
+        verdict="accept",
+        confidence=0.9,
+        rationale="fixture independent review",
+    )
+    store.update_assertion_status(assertion_id, "accepted")
+
+
+def test_profile_gates_block_missing_required_evidence(tmp_path, monkeypatch):
+    cases = [
+        ("research", "factual_claim", []),
+        ("coding", "code_claim", [{"evidence_type": "code_pointer", "source_ref": "app.py:10"}]),
+        ("design", "design_decision", [{"evidence_type": "requirement", "source_ref": "request"}]),
+        ("analysis", "data_result", [{"evidence_type": "metric_output", "source_ref": "metrics.json"}]),
+        ("math", "proof_step", [{"evidence_type": "proof_step", "source_ref": "attempt"}]),
+    ]
+    for profile, assertion_type, evidence in cases:
+        store = _store(tmp_path / profile, monkeypatch)
+        run_id, assertion_id = _run_with_report(store, profile, assertion_type, evidence)
+        _accept_with_independent_verdict(store, run_id, assertion_id)
+
+        gate = evaluate_gate(store, run_id)
+
+        assert gate["status"] == "blocked", profile
+        assert gate["finalize_allowed"] is False
+        assert gate["metrics"]["unsupported_critical_assertions"] == 1
+        assert gate["gaps"]
+
+
+def test_analysis_gate_explains_missing_metric_command(tmp_path, monkeypatch):
+    store = _store(tmp_path, monkeypatch)
+    run_id, assertion_id = _run_with_report(
+        store,
+        "analysis",
+        "data_result",
+        [
+            {"evidence_type": "metric_output", "source_ref": "metrics.json"},
+            {"evidence_type": "transform_script", "source_ref": "eval.py"},
+            {"evidence_type": "sanity_check", "source_ref": "sanity.log"},
+        ],
+    )
+    _accept_with_independent_verdict(store, run_id, assertion_id)
+
+    gate = evaluate_gate(store, run_id)
+
+    assert gate["status"] == "blocked"
+    assert any("metric_output.command" in gap.get("profile_specific_reason", "") for gap in gate["gaps"])
+
+
+def test_profile_gates_pass_supported_profile_evidence(tmp_path, monkeypatch):
+    cases = [
+        (
+            "research",
+            "factual_claim",
+            [
+                {"evidence_type": "source_quote", "source_ref": "note.md", "quote_or_observation": "quoted fact", "directness": 0.9},
+                {"evidence_type": "definition_boundary", "source_ref": "note.md"},
+            ],
+        ),
+        (
+            "coding",
+            "code_claim",
+            [
+                {"evidence_type": "root_cause_trace", "source_ref": "bug.md"},
+                {"evidence_type": "execution_log", "source_ref": "pytest.log", "command": "pytest", "exit_code": 0},
+                {"evidence_type": "passing_test", "source_ref": "tests/test_bug.py"},
+            ],
+        ),
+        (
+            "design",
+            "design_decision",
+            [
+                {"evidence_type": "constraint", "source_ref": "plan"},
+                {"evidence_type": "existing_owner_seam", "source_ref": "module.py"},
+                {"evidence_type": "decision_reason", "source_ref": "adr"},
+            ],
+        ),
+        (
+            "analysis",
+            "data_result",
+            [
+                {"evidence_type": "metric_output", "source_ref": "metrics.json", "command": "python eval.py", "exit_code": 0},
+                {"evidence_type": "transform_script", "source_ref": "eval.py"},
+                {"evidence_type": "sanity_check", "source_ref": "sanity.log"},
+            ],
+        ),
+        (
+            "math",
+            "proof_step",
+            [
+                {"evidence_type": "proof_step", "source_ref": "attempt"},
+                {"evidence_type": "critique", "source_ref": "review"},
+                {"evidence_type": "revision_trace", "source_ref": "attempt2"},
+            ],
+        ),
+    ]
+    for profile, assertion_type, evidence in cases:
+        store = _store(tmp_path / profile, monkeypatch)
+        run_id, assertion_id = _run_with_report(store, profile, assertion_type, evidence)
+        _accept_with_independent_verdict(store, run_id, assertion_id)
+
+        gate = evaluate_gate(store, run_id)
+
+        assert gate["status"] == "passed", profile
+        assert gate["finalize_allowed"] is True
+        assert gate["metrics"]["unsupported_critical_assertions"] == 0
+
+
+def test_renderer_blocks_unlinked_final_statement_and_renders_linked_accepted_assertion(tmp_path, monkeypatch):
+    store = _store(tmp_path, monkeypatch)
+    run_id, assertion_id = _run_with_report(
+        store,
+        "research",
+        "factual_claim",
+        [{"evidence_type": "source_quote", "source_ref": "note.md", "quote_or_observation": "quoted fact"}],
+    )
+    statement = store.create_final_statement(run_id, section="Findings", text="critical research assertion")
+
+    blocked = render_final_report(store, run_id)
+    assert blocked["status"] == "blocked"
+    assert blocked["gaps"][0]["reason"] == "final statement has no accepted assertion link"
+
+    store.update_assertion_status(assertion_id, "accepted")
+    assertion = [row for row in store.list_rows("assertions", run_id) if row["assertion_id"] == assertion_id][0]
+    report = store.get_report(assertion["report_id"])
+    assert report is not None
+    reviewer = store.create_task(run_id, role="independent_reviewer", goal="review assertion", parent_task_id=report["task_id"])
+    store.create_verdict(
+        run_id=run_id,
+        profile="research",
+        target_type="assertion",
+        target_id=assertion_id,
+        reviewer_role="independent_reviewer",
+        reviewer_task_id=reviewer["task_id"],
+        verifier_mode="independent_review",
+        independent_from_task_id=report["task_id"],
+        verdict="accept",
+        confidence=0.9,
+        rationale="fixture independent review",
+    )
+    store.create_artifact(
+        run_id=run_id,
+        report_id=assertion["report_id"],
+        artifact_type="analysis_report",
+        path="artifact.md",
+        summary="fixture artifact summary",
+    )
+    store.link_final_statement(statement["statement_id"], assertion_id, relation="rendered_as")
+    final = render_final_report(store, run_id)
+
+    assert final["status"] == "final"
+    assert "critical research assertion" in final["final_report_markdown"]
+    assert "note.md" in final["final_report_markdown"]
+    assert "quoted fact" in final["final_report_markdown"]
+    assert "artifact.md" in final["final_report_markdown"]
+    assert "fixture independent review" in final["final_report_markdown"]
+    assert final["artifact_paths"]["final_md"].endswith("final.md")
+
+
+def test_renderer_auto_statements_are_linked_to_accepted_assertions(tmp_path, monkeypatch):
+    store = _store(tmp_path, monkeypatch)
+    run_id, assertion_id = _run_with_report(
+        store,
+        "research",
+        "factual_claim",
+        [{"evidence_type": "source_quote", "source_ref": "note.md", "quote_or_observation": "quoted fact"}],
+    )
+    store.update_assertion_status(assertion_id, "accepted")
+
+    final = render_final_report(store, run_id)
+    statement = store.list_rows("final_statements", run_id)[0]
+
+    assert final["status"] == "final"
+    assert store.list_rows("statement_assertion_links") == [
+        {
+            "statement_id": statement["statement_id"],
+            "assertion_id": assertion_id,
+            "relation": "rendered_as",
+        }
+    ]
