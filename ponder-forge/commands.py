@@ -1,26 +1,32 @@
 from __future__ import annotations
 
-import importlib.util
 import json
+import importlib.util
 from pathlib import Path
-from typing import Any
 
 try:
-    from .tools import ponder_forge_start
+    from .cli import start_run
 except ImportError:
-    spec = importlib.util.spec_from_file_location("ponder_forge_local_tools", Path(__file__).resolve().parent / "tools.py")
-    if spec is None or spec.loader is None:
+    _cli_spec = importlib.util.spec_from_file_location("ponder_forge_local_cli", Path(__file__).resolve().parent / "cli.py")
+    if _cli_spec is None or _cli_spec.loader is None:
         raise
-    _tools = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(_tools)
-    ponder_forge_start = _tools.ponder_forge_start
+    _cli = importlib.util.module_from_spec(_cli_spec)
+    _cli_spec.loader.exec_module(_cli)
+    start_run = _cli.start_run
+
+INSTALLED_CLI = "${HERMES_HOME:-$HOME/.hermes}/plugins/ponder_forge/cli.py"
 
 
-def start_ponder_forge_command(ctx: Any, raw_args: str) -> str:
+def start_ponder_forge_command(ctx, raw_args: str) -> str:
+    del ctx
     goal = (raw_args or "").strip()
     if not goal:
         return json.dumps({"success": False, "error": "missing complex problem"}, ensure_ascii=False)
-    result = json.loads(ponder_forge_start({"goal": goal, "profile": "auto"}))
-    if result.get("success"):
-        result["instruction"] = f"Call ponder_forge_plan with run_id={result['run_id']}. Do not answer finally before ponder_forge_finalize."
+    result = {"success": True, **start_run(goal, profile="auto")}
+    run_id = result["run_id"]
+    result["instruction"] = (
+        f"Use terminal: python3 {INSTALLED_CLI} plan --run-id {run_id}; "
+        f"then python3 {INSTALLED_CLI} delegations --run-id {run_id}. "
+        "Continue with native delegate_task and submit child JSON reports through the CLI."
+    )
     return json.dumps(result, ensure_ascii=False)

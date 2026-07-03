@@ -45,3 +45,12 @@ def test_smoke_report_template_exists_and_has_metrics():
     text = (ROOT / "tests" / "fixtures" / "ponder_forge_smoke_report_template.md").read_text(encoding="utf-8")
     for term in ("unsupported_assertion_rate", "blocked_final_attempts", "successful_finalizations", "live_delegate_status"):
         assert term in text
+
+
+def test_bundled_skill_is_cli_first_and_has_no_direct_tool_guidance():
+    text = (ROOT / "resources" / "skills" / "ponder-forge-usage" / "SKILL.md").read_text(encoding="utf-8")
+
+    assert "cli.py" in text
+    assert "submit-report --file" in text
+    assert "delegate_task" in text
+    assert "ponder_forge_" not in text

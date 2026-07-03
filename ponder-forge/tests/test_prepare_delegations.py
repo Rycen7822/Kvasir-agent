@@ -1,14 +1,17 @@
 from __future__ import annotations
 
-import json
 import importlib.util
 from pathlib import Path
+
+from delegation import prepare_delegations
+from planner import plan_run
+from store import PonderForgeStore
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def _load_tools():
-    spec = importlib.util.spec_from_file_location("ponder_forge_tools_delegation_test", ROOT / "tools.py")
+def _load_cli():
+    spec = importlib.util.spec_from_file_location("ponder_forge_cli_prepare_test", ROOT / "cli.py")
     assert spec is not None
     assert spec.loader is not None
     module = importlib.util.module_from_spec(spec)
@@ -16,29 +19,33 @@ def _load_tools():
     return module
 
 
-HANDLERS = _load_tools().HANDLERS
+start_run = _load_cli().start_run
 
 
-def _call(name: str, args: dict) -> dict:
-    return json.loads(HANDLERS[name](args))
+def _store() -> PonderForgeStore:
+    store = PonderForgeStore()
+    store.initialize()
+    return store
+
+
+def _start_and_plan(goal: str, profile: str = "auto", *, max_tasks_per_wave: int | None = None, constraints: list[str] | None = None):
+    budget = {"max_tasks_per_wave": max_tasks_per_wave} if max_tasks_per_wave is not None else {}
+    start = start_run(goal, profile=profile, budget=budget, constraints=constraints or [])
+    store = _store()
+    plan = plan_run(store, start["run_id"])
+    return store, start, plan
 
 
 def test_prepare_delegations_returns_native_delegate_task_payload(tmp_path, monkeypatch):
     monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-    start = _call(
-        "ponder_forge_start",
-        {
-            "goal": "fix failing pytest in store.py using project alpha context",
-            "profile": "auto",
-            "budget": {"max_tasks_per_wave": 2},
-            "constraints": ["do not modify external fixture alpha"],
-        },
+    store, start, plan = _start_and_plan(
+        "fix failing pytest in store.py using project alpha context",
+        max_tasks_per_wave=2,
+        constraints=["do not modify external fixture alpha"],
     )
-    plan = _call("ponder_forge_plan", {"run_id": start["run_id"]})
 
-    prepared = _call("ponder_forge_prepare_delegations", {"run_id": start["run_id"]})
+    prepared = prepare_delegations(store, start["run_id"])
 
-    assert prepared["success"] is True
     assert prepared["native_tool_to_call_next"] == "delegate_task"
     payload = prepared["delegate_task_payload"]
     assert set(payload) == {"tasks"}
@@ -53,26 +60,26 @@ def test_prepare_delegations_returns_native_delegate_task_payload(tmp_path, monk
         assert "[PONDER_FORGE_PROFILE=coding]" in task["context"]
         assert "project alpha context" in task["context"]
         assert "do not modify external fixture alpha" in task["context"]
-        assert "ponder_forge_report_submit" in task["context"]
+        assert "Return a structured JSON report to the parent/controller" in task["context"]
+        assert "parent/controller submits your JSON report" in task["context"]
+        assert "ponder_forge_" not in task["context"]
 
 
 def test_prepare_delegations_is_idempotent_for_queued_tasks(tmp_path, monkeypatch):
     monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-    start = _call("ponder_forge_start", {"goal": "analyze csv metrics", "profile": "auto", "budget": {"max_tasks_per_wave": 1}})
-    _call("ponder_forge_plan", {"run_id": start["run_id"]})
+    store, start, _plan = _start_and_plan("analyze csv metrics", max_tasks_per_wave=1)
 
-    first = _call("ponder_forge_prepare_delegations", {"run_id": start["run_id"]})
-    second = _call("ponder_forge_prepare_delegations", {"run_id": start["run_id"]})
+    first = prepare_delegations(store, start["run_id"])
+    second = prepare_delegations(store, start["run_id"])
 
     assert first["delegate_task_payload"] == second["delegate_task_payload"]
 
 
 def test_prepare_delegations_exposes_analysis_metric_command_requirement(tmp_path, monkeypatch):
     monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-    start = _call("ponder_forge_start", {"goal": "analyze csv metrics", "profile": "analysis"})
-    _call("ponder_forge_plan", {"run_id": start["run_id"]})
+    store, start, _plan = _start_and_plan("analyze csv metrics", profile="analysis")
 
-    prepared = _call("ponder_forge_prepare_delegations", {"run_id": start["run_id"]})
+    prepared = prepare_delegations(store, start["run_id"])
 
     contexts = [task["context"] for task in prepared["delegate_task_payload"]["tasks"]]
     assert contexts

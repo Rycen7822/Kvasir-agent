@@ -1,14 +1,22 @@
 from __future__ import annotations
 
 import importlib.util
-import json
+from argparse import Namespace
 from pathlib import Path
+
+import pytest
+
+from gates import evaluate_gate
+from planner import plan_run
+from report_ingest import ingest_report
+from store import PonderForgeStore
+from verifier import verify_run
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def _load_tools():
-    spec = importlib.util.spec_from_file_location("ponder_forge_tools_p1_test", ROOT / "tools.py")
+def _load_cli():
+    spec = importlib.util.spec_from_file_location("ponder_forge_cli_verifier_test", ROOT / "cli.py")
     assert spec is not None
     assert spec.loader is not None
     module = importlib.util.module_from_spec(spec)
@@ -16,19 +24,22 @@ def _load_tools():
     return module
 
 
-HANDLERS = _load_tools().HANDLERS
+CLI = _load_cli()
 
 
-def _call(name: str, args: dict) -> dict:
-    return json.loads(HANDLERS[name](args))
+def _store() -> PonderForgeStore:
+    store = PonderForgeStore()
+    store.initialize()
+    return store
 
 
-def _supported_coding_run() -> tuple[str, str, str]:
-    start = _call("ponder_forge_start", {"goal": "fix failing pytest", "profile": "coding"})
-    plan = _call("ponder_forge_plan", {"run_id": start["run_id"]})
+def _supported_coding_run() -> tuple[PonderForgeStore, str, str, str]:
+    start = CLI.start_run("fix failing pytest", profile="coding")
+    store = _store()
+    plan = plan_run(store, start["run_id"])
     producer_task = plan["tasks"][0]
-    report = _call(
-        "ponder_forge_report_submit",
+    report = ingest_report(
+        store,
         {
             "run_id": start["run_id"],
             "task_id": producer_task["task_id"],
@@ -59,18 +70,17 @@ def _supported_coding_run() -> tuple[str, str, str]:
             ],
         },
     )
-    return start["run_id"], report["assertion_ids"][0], producer_task["task_id"]
+    return store, start["run_id"], report["assertion_ids"][0], producer_task["task_id"]
 
 
 def test_precheck_cannot_satisfy_critical_verdict_or_finalize(tmp_path, monkeypatch):
     monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-    run_id, assertion_id, _producer_task_id = _supported_coding_run()
+    store, run_id, assertion_id, _producer_task_id = _supported_coding_run()
 
-    precheck = _call("ponder_forge_verify", {"run_id": run_id, "mode": "precheck", "target_id": assertion_id})
-    gate = _call("ponder_forge_gate_status", {"run_id": run_id})
-    final = _call("ponder_forge_finalize", {"run_id": run_id})
+    precheck = verify_run(store, run_id, {"run_id": run_id, "mode": "precheck", "target_id": assertion_id})
+    gate = evaluate_gate(store, run_id)
+    final = CLI.cmd_finalize(Namespace(run_id=run_id))
 
-    assert precheck["success"] is True
     assert precheck["verifier_mode"] == "precheck"
     assert precheck["final_verdict"] is False
     assert gate["status"] == "blocked"
@@ -80,18 +90,18 @@ def test_precheck_cannot_satisfy_critical_verdict_or_finalize(tmp_path, monkeypa
 
 def test_independent_review_task_and_verdict_allow_finalize(tmp_path, monkeypatch):
     monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-    run_id, assertion_id, producer_task_id = _supported_coding_run()
+    store, run_id, assertion_id, producer_task_id = _supported_coding_run()
 
-    review = _call("ponder_forge_verify", {"run_id": run_id, "mode": "independent_review", "target_id": assertion_id})
-    assert review["success"] is True
+    review = verify_run(store, run_id, {"run_id": run_id, "mode": "independent_review", "target_id": assertion_id})
     assert review["reviewer_tasks"]
     reviewer_task = review["reviewer_tasks"][0]
     assert reviewer_task["role"] == "causality_reviewer"
     assert producer_task_id != reviewer_task["task_id"]
     assert producer_task_id in reviewer_task["context"]
 
-    verdict = _call(
-        "ponder_forge_verify",
+    verdict = verify_run(
+        store,
+        run_id,
         {
             "run_id": run_id,
             "mode": "independent_review",
@@ -104,10 +114,9 @@ def test_independent_review_task_and_verdict_allow_finalize(tmp_path, monkeypatc
             "rationale": "reviewed diff and test evidence independently",
         },
     )
-    gate = _call("ponder_forge_gate_status", {"run_id": run_id})
-    final = _call("ponder_forge_finalize", {"run_id": run_id})
+    gate = evaluate_gate(store, run_id)
+    final = CLI.cmd_finalize(Namespace(run_id=run_id))
 
-    assert verdict["success"] is True
     assert verdict["recorded_verdict"]["verifier_mode"] == "independent_review"
     assert verdict["recorded_verdict"]["independent_from_task_id"] == producer_task_id
     assert gate["status"] == "passed"
@@ -116,30 +125,29 @@ def test_independent_review_task_and_verdict_allow_finalize(tmp_path, monkeypatc
 
 def test_non_independent_verdict_is_rejected(tmp_path, monkeypatch):
     monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-    run_id, assertion_id, producer_task_id = _supported_coding_run()
+    store, run_id, assertion_id, producer_task_id = _supported_coding_run()
 
-    rejected = _call(
-        "ponder_forge_verify",
-        {
-            "run_id": run_id,
-            "mode": "independent_review",
-            "target_id": assertion_id,
-            "reviewer_task_id": producer_task_id,
-            "reviewer_role": "developer",
-            "independent_from_task_id": producer_task_id,
-            "verdict": "accept",
-        },
-    )
-
-    assert rejected["success"] is False
-    assert "not independent" in rejected["error"]
+    with pytest.raises(ValueError, match="not independent"):
+        verify_run(
+            store,
+            run_id,
+            {
+                "run_id": run_id,
+                "mode": "independent_review",
+                "target_id": assertion_id,
+                "reviewer_task_id": producer_task_id,
+                "reviewer_role": "developer",
+                "independent_from_task_id": producer_task_id,
+                "verdict": "accept",
+            },
+        )
 
 
 def test_independent_review_task_creation_is_idempotent(tmp_path, monkeypatch):
     monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-    run_id, assertion_id, _producer_task_id = _supported_coding_run()
+    store, run_id, assertion_id, _producer_task_id = _supported_coding_run()
 
-    first = _call("ponder_forge_verify", {"run_id": run_id, "mode": "independent_review", "target_id": assertion_id})
-    second = _call("ponder_forge_verify", {"run_id": run_id, "mode": "independent_review", "target_id": assertion_id})
+    first = verify_run(store, run_id, {"run_id": run_id, "mode": "independent_review", "target_id": assertion_id})
+    second = verify_run(store, run_id, {"run_id": run_id, "mode": "independent_review", "target_id": assertion_id})
 
     assert first["reviewer_tasks"][0]["task_id"] == second["reviewer_tasks"][0]["task_id"]

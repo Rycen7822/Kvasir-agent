@@ -145,3 +145,114 @@ Deeply understand `/home/xu/project/loop/DeepScientist/quests/001`, analyze STAG
 - Post-PF-REAL-008 clean pass #3: `round6_clean` / `pf_run_c0f170979d4d`, alias payload, `gate=passed`, `final_status=final`, late report rejected, coverage metrics all `1.0`.
 - The clean-run script compared nine Stage10 key files before/after by size, mtime, and sha256; `quest_key_files_unchanged=true`.
 - Current stability judgement: PF-REAL-001..008 are closed in source and installed copy. Three consecutive post-last-fix real workflow rounds produced no new plugin defects.
+
+## Skill + pure CLI conversion
+
+### Planning start
+
+- started_at: 2026-07-04T06:11:31+08:00
+- completion: not complete; planning scratch and design audit have been created, implementation has not started.
+- user request: convert Ponder-Forge into a true `skill + pure CLI` workflow and then execute the plan; avoid model-visible Ponder-Forge tools/hooks by default.
+- scratch_dir: `worknotes/tmp_skill_pure_cli_plan/`
+- design_artifact: `worknotes/tmp_skill_pure_cli_plan/design_audit.md`
+- final_plan_target: `worknotes/2026-07-04-skill-pure-cli-implementation-plan.md`
+- design rows: B1-B8 baseline, D1-D6 decisions, C1-C6 compression actions.
+- key decision: add a stdlib CLI around existing core modules; rewrite plugin registration so default installed Ponder-Forge exposes zero model-visible tools and zero hooks; keep bundled skill and CLI/slash guidance.
+- deletion decision: physical deletion of `tools.py`, `schemas.py`, and `hooks.py` is now in scope after CLI/registration tests cover the workflow, because keeping them would leave misleading dead adapters.
+- confidence check: high confidence in design direction, but not yet 100% until final implementation plan is written, reread, and structurally checked.
+
+### Plan complete
+
+- plan_path: `worknotes/2026-07-04-skill-pure-cli-implementation-plan.md`
+- plan_status: complete and structurally checked.
+- structural checks: 9 tasks, balanced Markdown fences, design audit path present, explicit zero-tool/zero-hook target, deletion of `tools.py`/`schemas.py`/`hooks.py`, installed-copy verification, and no-commit policy all present.
+- design audit correction: initial deferral of adapter deletion was rejected because it would leave dead code; final D6/C6 delete the obsolete tool/schema/hook adapters after CLI tests cover the workflow.
+- confidence check: I am 100% confident the written plan is executable and aligned with the user request. Implementation has not started yet.
+
+### Task 1 RED tests
+
+- files changed: `tests/test_cli_contract.py`, `tests/test_plugin_registration.py`, `tests/test_copy_install_smoke.py`.
+- RED command: `PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -p no:cacheprovider tests/test_cli_contract.py tests/test_plugin_registration.py tests/test_copy_install_smoke.py -q`.
+- RED result: 6 failed as expected.
+- failure coverage: missing `cli.py`; manifest still lists 9 tools; plugin register still exposes 9 tools/6 hooks; slash command lacks `next_command` and still relies on old tool path; copy-install smoke still reports `tool_count=9`.
+- confidence check: 100% confident RED proves the replacement contract and is not a false failure.
+
+### Task 2 CLI implementation
+
+- file added: `cli.py`.
+- focused command: `PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -p no:cacheprovider tests/test_cli_contract.py -q`.
+- result: `2 passed`.
+- code review: `cli.py` has no imports from `tools.py`, `schemas.py`, or `hooks.py`; it calls existing owner seams (`plan_run`, `prepare_delegations`, `ingest_report`, `verify_run`, `evaluate_gate`, `render_final_report`, `reconcile_run`) instead of duplicating core algorithms.
+- redundancy check: no extra daemon, bridge tool, package framework, or workflow abstraction was added. The CLI is 275 lines and stdlib-only.
+- confidence check: 100% confident Task 2 preserves workflow behavior through pure CLI for the tested path.
+
+### Tasks 3-4 command and registration rewrite
+
+- files changed: `commands.py`, `__init__.py`, `plugin.yaml`.
+- focused command: `PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -p no:cacheprovider tests/test_plugin_registration.py tests/test_copy_install_smoke.py -q`.
+- result: `4 passed`.
+- combined command: `PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -p no:cacheprovider tests/test_cli_contract.py tests/test_plugin_registration.py tests/test_copy_install_smoke.py -q`.
+- result: `6 passed`.
+- code review: `__init__.py` registers only `/ponder-forge` command and bundled skill; `plugin.yaml` has `provides_tools: []` and `provides_hooks: []`; `commands.py` returns installed-path CLI guidance and contains no old tool instruction.
+- redundancy check: no bridge tool, no runtime hook, no compatibility toggle added.
+- confidence check: 100% confident default plugin registration is now skill/command-only at source level.
+
+### Task 5 bundled skill rewrite
+
+- files changed: `resources/skills/ponder-forge-usage/SKILL.md`, `tests/test_mini_cases_static.py`.
+- focused command: `PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -p no:cacheprovider tests/test_mini_cases_static.py -q`.
+- result: `4 passed`.
+- skill review: skill now instructs installed-path `cli.py`, `start`, `plan`, `delegations`, native `delegate_task`, `submit-report --file`, `verify`, `gate`, `finalize`, `status`, and `reconcile`.
+- stale guidance check: skill contains zero occurrences of `ponder_forge_start`, `ponder_forge_plan`, and `ponder_forge_report_submit`.
+- confidence check: 100% confident bundled skill is pure CLI-first and no longer directs agents toward hidden Ponder-Forge tools.
+
+### Task 6 scope correction
+
+- pre-delete search found additional stale direct-tool contract surfaces: `delegation.py`, `prompts/reviewers/*.md`, `scripts/run_mini_benchmark.py`, `tests/test_prepare_delegations.py`, `tests/test_profile_verifiers.py`, `tests/test_verifier_independence.py`, `tests/test_hooks_reconcile.py`, and hook-only `role_policy.py`.
+- design audit updated with B9/B10, D7, and C7.
+- implementation plan Task 6 updated to rewrite child/reviewer guidance, mini benchmark, and tests before deleting obsolete adapter files.
+- confidence check: 100% confident this correction is required; proceeding without it would leave hidden old-tool instructions and dead code.
+
+### Task 6 obsolete adapter deletion and stale guidance cleanup
+
+- files deleted: `tools.py`, `schemas.py`, `hooks.py`, `role_policy.py`, `tests/test_tools_contract.py`.
+- files rewritten around old guidance: `delegation.py`, `reconcile.py`, `verifier.py`, `prompts/reviewers/*.md`, `scripts/run_mini_benchmark.py`, `tests/test_prepare_delegations.py`, `tests/test_profile_verifiers.py`, `tests/test_verifier_independence.py`, `tests/test_hooks_reconcile.py`, `tests/test_plugin_registration.py`.
+- active stale scan excluding `worknotes/`, `reference/`, caches: 0 hits for deleted adapter imports/schema names and the nine old `ponder_forge_*` direct tool names.
+- focused command: `PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -p no:cacheprovider tests/test_cli_contract.py tests/test_plugin_registration.py tests/test_copy_install_smoke.py tests/test_prepare_delegations.py tests/test_profile_verifiers.py tests/test_verifier_independence.py tests/test_hooks_reconcile.py tests/test_mini_cases_static.py -q`.
+- result: `21 passed`.
+- redundancy check: no bridge tool, no hook compatibility layer, no role-policy shim, no old tool-handler test remains. `cli.py` is the single command surface and delegates algorithmic work to existing owner modules.
+- confidence check: 100% confident Task 6 is complete at source focused-test level; moving to broad source and installed-copy verification.
+
+### Task 7 source landing verification
+
+- command: `PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -p no:cacheprovider tests/ -q`.
+- result: `38 passed`.
+- command: `python3 -m compileall -q .`.
+- result: exit 0, no output.
+- active stale scan excluding `worknotes/`, `reference/`, caches: `hit_count 0`.
+- command: `git diff --check -- ponder-forge`.
+- result: exit 0, no output.
+- confidence check: 100% confident source tree is internally consistent after pure CLI conversion; proceeding to installed-copy verification.
+
+### Task 8 installed-copy verification
+
+- copy-install command: `python3 scripts/copy_install_smoke.py --target /home/xu/.hermes/plugins/ponder_forge`.
+- copy-install result: `{"command_count": 1, "hook_count": 0, "installed": true, "is_symlink": false, "module_file": "/home/xu/.hermes/plugins/ponder_forge/__init__.py", "skill_count": 1, "target": "/home/xu/.hermes/plugins/ponder_forge", "tool_count": 0}`.
+- installed test command: `PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -p no:cacheprovider tests/ -q` in `/home/xu/.hermes/plugins/ponder_forge`.
+- installed test result: `38 passed`.
+- installed compile command: `python3 -m compileall -q .` in `/home/xu/.hermes/plugins/ponder_forge`.
+- installed compile result: exit 0, no output.
+- installed CLI smoke: `HERMES_HOME=$(mktemp -d) python3 /home/xu/.hermes/plugins/ponder_forge/cli.py start --goal "research source notes" --profile auto` returned `success=true`, `profile=research`, `next_command=plan`, run `pf_run_d37edea68861`.
+- source/installed hash comparison: `cli.py`, `__init__.py`, `commands.py`, `plugin.yaml`, `delegation.py`, `verifier.py`, `reconcile.py`, `scripts/run_mini_benchmark.py`, bundled skill, and key tests all `MATCH`.
+- confidence check: 100% confident normal installed path is command+skill only with zero model-visible Ponder-Forge tools/hooks.
+
+### Task 9 final closeout
+
+- plan status: complete. Plan path: `worknotes/2026-07-04-skill-pure-cli-implementation-plan.md`.
+- design audit status: complete. Design artifact path: `worknotes/tmp_skill_pure_cli_plan/design_audit.md`.
+- implementation status: complete. Default Ponder-Forge plugin registration is command+skill only; `plugin.yaml` declares `provides_tools: []` and `provides_hooks: []`; obsolete direct-tool adapter files were deleted.
+- source verification status: complete with `38 passed`, compileall exit 0, diff check exit 0, stale scan `hit_count 0`.
+- installed-copy verification status: complete with copy smoke `tool_count=0`, `hook_count=0`, `command_count=1`, `skill_count=1`; installed tests `38 passed`; installed compileall exit 0; installed CLI smoke returned `success=true`.
+- quest boundary: no commands wrote to `/home/xu/project/loop/DeepScientist/quests/001`.
+- commit/push status: not executed because the implementation plan explicitly says no commit/push unless the user explicitly asks; this closeout leaves the working tree changed for review.
+- confidence check: 100% confident the source and installed-copy implementation satisfy true skill + pure CLI. Remaining operational note: an already-running Hermes session may still have old hot-loaded tool definitions until restart/reload; installed copy is verified clean.

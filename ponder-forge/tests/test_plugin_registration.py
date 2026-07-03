@@ -7,25 +7,9 @@ import types
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-EXPECTED_TOOL_NAMES = [
-    "ponder_forge_start",
-    "ponder_forge_plan",
-    "ponder_forge_prepare_delegations",
-    "ponder_forge_report_submit",
-    "ponder_forge_pool_status",
-    "ponder_forge_verify",
-    "ponder_forge_gate_status",
-    "ponder_forge_finalize",
-    "ponder_forge_reconcile",
-]
-EXPECTED_HOOKS = [
-    "subagent_start",
-    "subagent_stop",
-    "post_tool_call",
-    "pre_tool_call",
-    "pre_llm_call",
-    "on_session_end",
-]
+EXPECTED_TOOLS: list[str] = []
+EXPECTED_HOOKS: list[str] = []
+OBSOLETE_HOOKS = ["subagent_start", "subagent_stop", "post_tool_call", "pre_tool_call", "pre_llm_call", "on_session_end"]
 
 
 class FakeContext:
@@ -102,24 +86,22 @@ def test_manifest_declares_flat_plugin_contract():
     assert "kind: standalone" in text
     assert "provides_tools:" in text
     assert "provides_hooks:" in text
-    assert _manifest_list("provides_tools") == EXPECTED_TOOL_NAMES
+    assert _manifest_list("provides_tools") == EXPECTED_TOOLS
     assert _manifest_list("provides_hooks") == EXPECTED_HOOKS
+    assert "ponder_forge_" not in text
+    assert not any(name in text for name in OBSOLETE_HOOKS)
     assert not (ROOT / "ponder_forge").exists(), "plugin source must stay flat; no nested package"
 
 
-def test_register_exposes_tools_hooks_command_and_bundled_skill(tmp_path, monkeypatch):
+def test_register_exposes_only_command_and_bundled_skill(tmp_path, monkeypatch):
     monkeypatch.setenv("HERMES_HOME", str(tmp_path))
     plugin = _load_plugin()
     ctx = FakeContext()
 
     plugin.register(ctx)
 
-    assert [tool["name"] for tool in ctx.tools] == EXPECTED_TOOL_NAMES
-    assert all(tool["toolset"] == "ponder_forge" for tool in ctx.tools)
-    assert all(tool["schema"]["name"] == tool["name"] for tool in ctx.tools)
-    assert all(callable(tool["handler"]) for tool in ctx.tools)
-    assert [hook["hook_name"] for hook in ctx.hooks] == EXPECTED_HOOKS
-    assert all(callable(hook["callback"]) for hook in ctx.hooks)
+    assert ctx.tools == []
+    assert ctx.hooks == []
     assert [command["name"] for command in ctx.commands] == ["ponder-forge"]
     assert ctx.commands[0]["args_hint"] == "<complex problem>"
     assert callable(ctx.commands[0]["handler"])
@@ -129,18 +111,16 @@ def test_register_exposes_tools_hooks_command_and_bundled_skill(tmp_path, monkey
     assert "Ponder-Forge" in ctx.skills[0]["description"]
 
 
-def test_registered_tool_handlers_return_json_until_full_workflow_lands(tmp_path, monkeypatch):
+def test_slash_command_creates_run_and_cli_next_instruction(tmp_path, monkeypatch):
     monkeypatch.setenv("HERMES_HOME", str(tmp_path))
     plugin = _load_plugin()
     ctx = FakeContext()
     plugin.register(ctx)
 
-    for tool in ctx.tools:
-        payload = json.loads(tool["handler"]({}))
-        assert isinstance(payload, dict)
-        assert "success" in payload
-        live_payload = json.loads(
-            tool["handler"]({}, task_id="synthetic-task", tool_call_id="synthetic-call")
-        )
-        assert isinstance(live_payload, dict)
-        assert "success" in live_payload
+    result = json.loads(ctx.commands[0]["handler"]("research source notes"))
+
+    assert result["success"] is True
+    assert result["profile"] == "research"
+    assert result["next_command"] == "plan"
+    assert "cli.py plan --run-id" in result["instruction"]
+    assert "ponder_forge_" not in result["instruction"]

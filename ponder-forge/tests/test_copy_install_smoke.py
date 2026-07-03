@@ -22,6 +22,10 @@ def test_copy_install_smoke_to_temp_directory(tmp_path):
     assert payload["installed"] is True
     assert payload["is_symlink"] is False
     assert payload["module_file"].endswith("ponder_forge/__init__.py")
-    assert payload["tool_count"] == 9
+    assert payload["tool_count"] == 0
+    assert payload["hook_count"] == 0
+    assert payload["command_count"] == 1
+    assert payload["skill_count"] == 1
     assert (target / "__init__.py").exists()
+    assert (target / "cli.py").exists()
     assert not (target / "ponder_forge").exists()

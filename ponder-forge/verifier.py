@@ -74,7 +74,7 @@ def create_reviewer_tasks(store: PonderForgeStore, run_id: str, args: dict) -> d
                     f"target_assertion_id={assertion['assertion_id']}",
                     f"independent_from_task_id={producer_task_id or ''}",
                     "Review only visible assertion/evidence. Do not continue producer reasoning.",
-                    "Submit verdict via ponder_forge_verify with mode=independent_review.",
+                    "Return a structured JSON reviewer verdict to the parent/controller. The parent/controller records it with the Ponder-Forge CLI verify command.",
                 ]
             ),
             parent_task_id=producer_task_id,
@@ -117,7 +117,7 @@ def record_independent_verdict(store: PonderForgeStore, run_id: str, args: dict)
         confidence=float(args["confidence"]) if args.get("confidence") is not None else None,
         rationale=args.get("rationale"),
         required_actions=args.get("required_actions") or [],
-        raw={"source": "ponder_forge_verify"},
+        raw={"source": "cli_verify"},
     )
     if verdict_value == "accept":
         store.update_assertion_status(target_id, "accepted")

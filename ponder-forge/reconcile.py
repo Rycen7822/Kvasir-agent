@@ -50,7 +50,7 @@ def _retry_payload(store: PonderForgeStore, run_id: str, tasks: list[dict]) -> d
         payload_tasks.append(
             {
                 "goal": f"{marker} Retry orphaned task: {task['goal']}",
-                "context": f"[PONDER_FORGE_PROFILE={run['profile']}]\nSubmit structured evidence with ponder_forge_report_submit.",
+                "context": f"[PONDER_FORGE_PROFILE={run['profile']}]\nReturn a structured JSON report to the parent/controller. The parent/controller submits it with the Ponder-Forge CLI.",
                 "role": "leaf",
             }
         )

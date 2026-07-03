@@ -4,51 +4,60 @@ import argparse
 import importlib.util
 import json
 import os
+import sys
 import tempfile
+from argparse import Namespace
 from pathlib import Path
-from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 CASES_DIR = ROOT / "benchmarks" / "mini_cases"
 
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
-def load_tools():
-    import sys
+from gates import evaluate_gate
+from planner import plan_run
+from report_ingest import ingest_report
+from store import PonderForgeStore
+from verifier import verify_run
 
-    if str(ROOT) not in sys.path:
-        sys.path.insert(0, str(ROOT))
-    spec = importlib.util.spec_from_file_location("ponder_forge_benchmark_tools", ROOT / "tools.py")
+
+def _load_cli():
+    spec = importlib.util.spec_from_file_location("ponder_forge_cli_benchmark", ROOT / "cli.py")
     if spec is None or spec.loader is None:
-        raise RuntimeError("cannot load tools.py")
+        raise RuntimeError("cannot load cli.py")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    return module.HANDLERS
+    return module
 
 
-def call(handlers: dict, name: str, args: dict) -> dict:
-    result = json.loads(handlers[name](args))
-    if not result.get("success"):
-        raise RuntimeError(f"{name} failed: {result}")
-    return result
+CLI = _load_cli()
 
 
-def run_case(handlers: dict, case: dict) -> dict:
+def _store() -> PonderForgeStore:
+    store = PonderForgeStore()
+    store.initialize()
+    return store
+
+
+def run_case(case: dict) -> dict:
     with tempfile.TemporaryDirectory(prefix=f"pf-{case['profile']}-") as home:
         old_home = os.environ.get("HERMES_HOME")
         os.environ["HERMES_HOME"] = home
         try:
-            start = call(handlers, "ponder_forge_start", {"goal": case["goal"], "profile": case["profile"]})
-            plan = call(handlers, "ponder_forge_plan", {"run_id": start["run_id"]})
+            start = CLI.start_run(case["goal"], profile=case["profile"])
+            store = _store()
+            plan = plan_run(store, start["run_id"])
             producer_task = plan["tasks"][0]
             report_payload = dict(case["report"])
             report_payload.update({"run_id": start["run_id"], "task_id": producer_task["task_id"], "role": producer_task["role"]})
-            report = call(handlers, "ponder_forge_report_submit", report_payload)
+            report = ingest_report(store, report_payload)
             assertion_id = report["assertion_ids"][0]
-            review = call(handlers, "ponder_forge_verify", {"run_id": start["run_id"], "mode": "independent_review", "target_id": assertion_id})
+            review = verify_run(store, start["run_id"], {"run_id": start["run_id"], "mode": "independent_review", "target_id": assertion_id})
             reviewer_task = review["reviewer_tasks"][0]
-            call(
-                handlers,
-                "ponder_forge_verify",
+            verify_run(
+                store,
+                start["run_id"],
                 {
                     "run_id": start["run_id"],
                     "mode": "independent_review",
@@ -61,8 +70,8 @@ def run_case(handlers: dict, case: dict) -> dict:
                     "rationale": "mini benchmark fixture review",
                 },
             )
-            gate = call(handlers, "ponder_forge_gate_status", {"run_id": start["run_id"]})
-            final = call(handlers, "ponder_forge_finalize", {"run_id": start["run_id"]})
+            gate = evaluate_gate(store, start["run_id"])
+            final = CLI.cmd_finalize(Namespace(run_id=start["run_id"]))
             return {
                 "profile": case["profile"],
                 "run_id": start["run_id"],
@@ -81,9 +90,8 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
-    handlers = load_tools()
     cases = [json.loads(path.read_text(encoding="utf-8")) for path in sorted(CASES_DIR.glob("*.json"))]
-    results = [run_case(handlers, case) for case in cases]
+    results = [run_case(case) for case in cases]
     summary = {
         "cases": results,
         "summary": {

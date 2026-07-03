@@ -38,7 +38,7 @@ def _ignore(dir_path: str, names: list[str]) -> set[str]:
     for name in names:
         if name in EXCLUDED_DIR_NAMES or name in EXCLUDED_FILE_NAMES:
             ignored.add(name)
-        if name == "tmp_ponder_forge_plan_v2" and Path(dir_path).name == "worknotes":
+        if name.startswith("tmp_") and Path(dir_path).name == "worknotes":
             ignored.add(name)
     return ignored
 
