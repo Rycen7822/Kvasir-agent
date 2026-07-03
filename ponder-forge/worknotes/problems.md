@@ -125,3 +125,20 @@
 - Final clean pass #2 after the last fix: `round5_clean` run `pf_run_29228431433a`, canonical nested report payload, `gate=passed`, `final_status=final`, late report rejected, gate coverage metrics all `1.0`.
 - Final clean pass #3 after the last fix: `round6_clean` run `pf_run_c0f170979d4d`, alias-shaped report payload, `gate=passed`, `final_status=final`, late report rejected, gate coverage metrics all `1.0`.
 - Quest key-file guard: the final clean-run script compared size, mtime, and sha256 for nine Stage10 files before and after all three rounds; `quest_key_files_unchanged=true`.
+
+### PF-REAL-009 — Delegation child context is not enough to produce parent-submittable reports
+
+- status: Closed in source and installed copy; clean-round count resets after this fix.
+- discovered_at: 2026-07-04T07:11:35+08:00 during the resumed real STAGE10 run.
+- real trigger: Round 1 run `pf_run_353e985cf14a` generated installed CLI `delegations` payload for the read-only STAGE10 analysis task, then wave1 child reports started returning as Markdown rather than parent-submittable JSON.
+- observed failure: the generated child context says only `Return a structured JSON report ... with run_id, task_id, role, summary, assertions, evidence, and artifacts where applicable`; it omits an exact JSON skeleton, accepted assertion/evidence/artifact field names, top-level `evidence_refs` rules, profile-critical `data_result`/`critical` requirements, and role-specific duties. It also repeats `Required evidence types: dataset, transform_script, metric_output, sanity_check, plot_artifact, reproduction_log.` twice.
+- parent reproduction: parsing `worknotes/real_cli_rounds/round1/delegations.json` found `required_evidence_occurrences=2`, `has_json_skeleton=False`, `has_data_result_hint=False`, `has_critical_hint=False`, and `has_role_specific_data_inspector=False`.
+- independent worker evidence: `workers/ponder_cli_operator_observer.md` lines 28-157 identifies the same blocker and proposes minimal fixes: embed schema skeleton, profile-specific critical gate hints, role-duty lines, de-duplicate evidence text, and clarify child output channel.
+- impact: real child agents can produce useful prose but not reliably produce JSON that `submit-report` ingests and `gate` accepts. The parent must manually repair reports, which weakens long-run stability for complex real tasks.
+- suspected root cause: `planner.py` stores the same generic `Required evidence types` line in every task, and `delegation.py` also appends the same profile evidence line while giving only a prose description of the report contract.
+- required fix boundary: patch only the delegation/planning instruction owner seam and tests; do not add new runtime surfaces unless the plan proves the existing CLI/help path cannot carry the contract.
+- root cause: `delegation.py` assembled child context from generic prose and duplicated `planner.py` task context; it did not expose the report-ingest schema, profile-critical assertion expectations, or role-specific duties.
+- fix plan: `worknotes/pf_real_009_delegation_child_contract_repair_plan.md`.
+- fix implemented: `delegation.py` now emits a compact child JSON contract, analysis `data_result`/`critical` gate guidance, role duties for analysis roles, and duplicate evidence-line filtering; bundled skill now includes the manual child report contract.
+- source verification: focused prepare-delegations tests `4 passed`; full source tests `39 passed`; compileall exit 0; source payload inspection showed `required_evidence_occurrences=1`, `has_json_skeleton=True`, `has_data_result_hint=True`, `has_critical_hint=True`, and `has_role_specific_data_inspector=True`.
+- install verification: copy-install smoke returned `tool_count=0`, `hook_count=0`, `command_count=1`, `skill_count=1`; installed-copy tests `39 passed`; installed compileall exit 0; fresh installed CLI temp-home `delegations` inspection showed `required_evidence_occurrences=1`, schema/data_result/critical/role hints present, and no direct-tool name in context.

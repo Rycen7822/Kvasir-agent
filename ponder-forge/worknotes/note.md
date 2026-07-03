@@ -256,3 +256,82 @@ Deeply understand `/home/xu/project/loop/DeepScientist/quests/001`, analyze STAG
 - quest boundary: no commands wrote to `/home/xu/project/loop/DeepScientist/quests/001`.
 - commit/push status: not executed because the implementation plan explicitly says no commit/push unless the user explicitly asks; this closeout leaves the working tree changed for review.
 - confidence check: 100% confident the source and installed-copy implementation satisfy true skill + pure CLI. Remaining operational note: an already-running Hermes session may still have old hot-loaded tool definitions until restart/reload; installed copy is verified clean.
+
+## Real CLI stability loop after pure CLI conversion
+
+### Scope capture
+
+- status: planning document for this real-run stability loop is not complete; 100% confidence is not justified yet.
+- goal file reread: `worknotes/goal(禁止修改).md` lines 1-73 confirm the STAGE10 read-only quest task, Ponder-Forge-only edit boundary, immediate problems ledger updates, writing-plans repair planning, repeated real runs, and final confidence reporting requirements.
+- installed smoke: `python3 scripts/copy_install_smoke.py --target /home/xu/.hermes/plugins/ponder_forge` returned `tool_count=0`, `hook_count=0`, `command_count=1`, `skill_count=1`.
+- installed CLI help/start smoke: `/home/xu/.hermes/plugins/ponder_forge/cli.py` exposes all required commands; temp-home `start` returned `success=true`, `profile=analysis`, `next_command=plan`.
+- scratch created: `worknotes/tmp_real_cli_stability_20260704/` with `00_scope_requirements.md`, `01_size_inventory.md`, and `02_plugin_current_state_notes.md`.
+- next action: read STAGE10 result/status files in small batches, write evidence notes, then finalize the real-run stability plan before launching the full Ponder-Forge workflow.
+
+### Real-run planning complete
+
+- Stage10 evidence notes written: `worknotes/tmp_real_cli_stability_20260704/03_stage10_evidence_notes.md` and `04_selector_gate_notes.md`.
+- design audit written: `worknotes/tmp_real_cli_stability_20260704/05_design_audit.md`.
+- final plan written: `worknotes/2026-07-04-real-cli-stability-loop-plan.md`.
+- confidence review written: `worknotes/tmp_real_cli_stability_20260704/07_confidence_review.md`.
+- structural check passed: 10 tasks, required paths present, code fences balanced, exact quest no-modification rule present, no vague planning terms from the configured scan.
+- planning status: complete; 100% confident the plan is executable and bounded. Implementation/runtime confidence remains to be earned through real rounds.
+
+### Real-run Task 1 install check
+
+- installed copy refreshed with `python3 scripts/copy_install_smoke.py --target /home/xu/.hermes/plugins/ponder_forge`.
+- result: `installed=true`, `is_symlink=false`, `tool_count=0`, `hook_count=0`, `command_count=1`, `skill_count=1`.
+- plugin enabled check: `hermes plugins list` shows `ponder-forge enabled`.
+- installed CLI help exposes all required commands: `start`, `plan`, `delegations`, `submit-report`, `status`, `verify`, `gate`, `finalize`, `reconcile`.
+- corrected source/installed hash check covered key files: `cli.py`, `plugin.yaml`, `planner.py`, `profiles.py`, `report_ingest.py`, `gates.py`, `store.py`, `verifier.py`, `renderer.py`, `reconcile.py`, `delegation.py`, and bundled skill; result `diff=[]`, `missing=[]`.
+- note: two controller-side ad-hoc hash checks first referenced stale filenames `verification.py` and `finalizer.py`; those were invalid check inputs, not Ponder-Forge defects.
+
+### Real-run Round 1 start/plan/delegations
+
+- round dir: `worknotes/real_cli_rounds/round1/`.
+- quest guard before manifest created at `round1/quest_guard_before.jsonl` for 12 authoritative Stage10 files.
+- installed CLI `start` returned `success=true`, `profile=analysis`, `run_id=pf_run_353e985cf14a`, `next_command=plan`.
+- installed CLI `plan` created five analysis tasks: `data_inspector`, `metric_analyst`, `reproduction_runner`, `sanity_reviewer`, `narrative_reviewer`.
+- installed CLI `delegations` returned a native `delegate_task_payload`; controller summary initially counted the wrong key and printed `delegation_count=0`, so the actual payload is being reread before dispatch. This is a controller summary bug, not a plugin issue unless the payload is absent.
+- reread confirmed `delegate_task_payload.tasks` contains five planned role tasks.
+- dispatched 10 flat leaf subagents for Round 1: the five planned analysis roles plus gate boundary, theory/ablation, claim attack, next-steps, and CLI-ergonomics observers.
+- subagent report target: `worknotes/real_cli_rounds/round1/workers/*.md`; quest path remains read-only.
+- while subagents are pending, controller will only run non-final probes and prep; no finalize/final completion claim before worker reports are returned and read.
+- installed CLI pre-report probes: `status` returned success, and `gate` returned `blocked` before any critical reports, which is expected.
+- controller metric snapshot first failed because the ad-hoc read-only Python command used stale JSON keys `hard_failure_count` and `seed_robustness_rows`; actual keys are `hard_failures` and `seed_robustness_row_count`. This was controller command error, not a plugin defect; corrected snapshot follows.
+- corrected controller metric snapshot succeeded: downstream gate `closed`, downstream run `false`, large eval endpoint rows `360/360`, hard failures `0`, recovery endpoint rows `1380`, seed robustness rows `252`, selector count `6`.
+- report/verify schema prep: read installed source/tests for `report_ingest`, `verifier`, `gates`, `renderer`, and CLI contract; Round 1 reports will be parent-curated JSON with critical `data_result` assertions plus `metric_output.command`, `exit_code`, `sanity_check`, and `reproduction_log`/`transform_script` evidence.
+- report drafts are staged only in `round1/reports/README.md` and `controller_report_draft_notes.md`; no report submission will occur until worker reports are returned and read.
+
+### Real-run Round 1 worker recovery / wave2 dispatch
+
+- first worker report sweep found 3/10 wave1 reports written: `sanity_reviewer.md`, `narrative_reviewer.md`, `stage10_claim_attack_reviewer.md`.
+- 7/10 wave1 reports still missing at that sweep: `data_inspector`, `metric_analyst`, `reproduction_runner`, `stage10_gate_boundary_reviewer`, `stage10_theory_ablation_reviewer`, `stage10_next_steps_planner`, `ponder_cli_operator_observer`.
+- read the 3 returned reports. All agree Stage10 must be reported as a conservative/gate-bounded evidence package and must not claim downstream utility, oral readiness, broad model-family generality, CE selector success, universal recovery, or conclusive mechanism proof.
+- dispatched wave2 with 10 additional leaf workers, bringing total subagents to the requested cap of 20. Wave2 covers installed CLI happy path, error paths, lifecycle idempotency, reconcile, report schema ergonomics, bundled skill guidance, installed packaging, profile/gate matrix, state files, and quest guard audit.
+- wave2 workers are forbidden to mutate quest/source/live run; any CLI run must use isolated temp `HERMES_HOME`; controller must reproduce any claimed plugin defect before logging it in `problems.md`.
+
+### PF-REAL-009 repair planning
+
+- issue logged: `problems.md` PF-REAL-009.
+- real trigger: Round 1 installed `delegations` payload for `pf_run_353e985cf14a`; child context omitted report schema, `data_result`/`critical` gate hints, role duties, and duplicated required evidence text.
+- parent reproduction: first child context had `required_evidence_occurrences=2`, `has_json_skeleton=False`, `has_data_result_hint=False`, `has_critical_hint=False`, `has_role_specific_data_inspector=False`.
+- design audit: `worknotes/tmp_pf_real_009_delegation_contract/02_design_audit.md`.
+- repair plan: `worknotes/pf_real_009_delegation_child_contract_repair_plan.md`.
+- confidence review: `worknotes/tmp_pf_real_009_delegation_contract/03_confidence_review.md`.
+
+### PF-REAL-009 source implementation
+
+- RED proof: `tests/test_prepare_delegations.py` failed because context duplicated `Required evidence types:` and lacked child report contract fields.
+- implementation: patched `delegation.py` to emit a compact child JSON contract, analysis `data_result`/`critical` gate guidance, role duties for analysis roles, and duplicate evidence-line filtering.
+- documentation: patched bundled `resources/skills/ponder-forge-usage/SKILL.md` with a manual child report contract while preserving CLI-first/no-direct-tool guidance.
+- source verification: focused prepare-delegations tests `4 passed`; full source tests `39 passed`; `python3 -m compileall -q .` exit 0.
+- source payload inspection: `required_evidence_occurrences=1`, `has_json_skeleton=True`, `has_data_result_hint=True`, `has_critical_hint=True`, `has_role_specific_data_inspector=True`, context length `2058`.
+
+### PF-REAL-009 installed verification
+
+- installed copy refreshed with `python3 scripts/copy_install_smoke.py --target /home/xu/.hermes/plugins/ponder_forge`; result remained pure CLI/skill: `tool_count=0`, `hook_count=0`, `command_count=1`, `skill_count=1`.
+- installed-copy tests: `39 passed`.
+- installed-copy compileall: exit 0.
+- fresh installed CLI temp-home validation run `pf_run_f9bc1919aa2a`: five analysis roles generated; first child context had `required_evidence_occurrences=1`, `has_json_skeleton=True`, `has_data_result_hint=True`, `has_critical_hint=True`, `has_role_specific_data_inspector=True`, and `has_direct_tool_name=False`.
+- PF-REAL-009 status: closed in source and installed copy. Current Round 1 is a defect-discovery run and does not count as clean; clean-round count restarts after this fix.

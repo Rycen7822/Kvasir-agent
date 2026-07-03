@@ -84,3 +84,33 @@ def test_prepare_delegations_exposes_analysis_metric_command_requirement(tmp_pat
     contexts = [task["context"] for task in prepared["delegate_task_payload"]["tasks"]]
     assert contexts
     assert all("metric_output" in context and "command" in context for context in contexts)
+
+
+def test_prepare_delegations_includes_child_report_contract_and_role_guidance(tmp_path, monkeypatch):
+    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    store, start, _plan = _start_and_plan("analyze csv metrics", profile="analysis", max_tasks_per_wave=5)
+
+    prepared = prepare_delegations(store, start["run_id"])
+
+    payload_tasks = prepared["delegate_task_payload"]["tasks"]
+    contexts_by_role = {
+        task["goal"].split("[PONDER_FORGE_ROLE=")[1].split("]")[0]: task["context"]
+        for task in payload_tasks
+    }
+    assert {"data_inspector", "metric_analyst"} <= set(contexts_by_role)
+    for context in contexts_by_role.values():
+        assert context.count("Required evidence types:") == 1
+        assert "Child report JSON contract:" in context
+        assert '"assertions"' in context
+        assert '"evidence"' in context
+        assert '"artifacts"' in context
+        assert "assertion_type" in context
+        assert "data_result" in context
+        assert "critical" in context
+        assert "metric_output" in context
+        assert "command" in context
+        assert "exit_code" in context
+        assert "reproduction_log" in context or "transform_script" in context
+        assert "Final response must contain a single valid JSON object" in context
+    assert "Role duty: inventory datasets" in contexts_by_role["data_inspector"]
+    assert "Role duty: recompute or extract key metrics" in contexts_by_role["metric_analyst"]

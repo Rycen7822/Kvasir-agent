@@ -51,6 +51,45 @@ For source-tree development only, use the repository-local `cli.py`.
 
    The report JSON must include `run_id`, `role`, `summary`, and profile-appropriate assertions/evidence. Include `task_id` when the report belongs to a planned task.
 
+   Child report contract for manual delegations:
+
+   ```json
+   {
+     "run_id": "<run id>",
+     "task_id": "<planned task id>",
+     "role": "<planned role>",
+     "summary": "short evidence-backed summary",
+     "assertions": [
+       {
+         "assertion_type": "<profile assertion type such as data_result>",
+         "text": "claim to preserve in final reasoning",
+         "importance": 0.9,
+         "critical": true,
+         "confidence": 0.8,
+         "evidence": [
+           {
+             "evidence_type": "metric_output",
+             "source_ref": "path or command source",
+             "quote_or_observation": "observed value or output",
+             "command": "exact command if applicable",
+             "exit_code": 0
+           },
+           {
+             "evidence_type": "sanity_check",
+             "source_ref": "path",
+             "quote_or_observation": "consistency check"
+           }
+         ]
+       }
+     ],
+     "artifacts": [
+       {"artifact_type": "report", "path": "path/to/report.md", "summary": "what it contains"}
+     ]
+   }
+   ```
+
+   Children should return this JSON to the parent/controller. Children must not call the CLI themselves; the parent/controller submits reports and records verdicts.
+
 6. Run independent review or record a verdict:
 
    ```bash
