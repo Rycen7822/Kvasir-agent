@@ -4,7 +4,8 @@
 - source: installed `reconcile` output `33_reconcile_after_payload_schema_guard.json`
 - batch payload: `35_repair_batch_D_payload.json`
 - batch D size: 3
-- batch D status: prepared for dispatch; pending delegation id
+- batch D delegation_id: `deleg_53373d23`
+- batch D status: dispatched at `2026-07-05T02:02:00+0800`; pending async return
 - record policy: run `collect_and_submit_repairs.py --batch D --record` only after collector reaches `3/3 all_valid`
 
 ## Batch D task ids
