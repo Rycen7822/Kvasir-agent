@@ -172,6 +172,13 @@
 - Installed run `pf_run_80cb097d3870` now has reports `111`, assertions `152`, evidence items `555`, artifacts `0`; swarm topology remains complete and `status.next_required_action=verify`.
 - All 63 gate-gap repair payloads from installed `reconcile` are recorded exactly once across batches A-D. Next action: run installed independent-review/gate/reconcile/finalize cycle and only then close the live stability loop.
 
+### 2026-07-05T02:31:00+08:00 Second-round re-review prepared
+
+- Ran installed `verify --mode independent_review` after all repair reports were recorded. Output saved as `42_verify_after_repairs.json`; installed status saved as `43_status_after_verify_repairs.json`.
+- The verify pass produced 72 reviewer tasks total: 17 already finished from earlier revised assertions and 55 new queued reviewer tasks for repaired assertions. Status returned to `next_required_action=delegations` as expected.
+- Prepared second-round reviewer assets: `44_rereview_payload_all.json`, `44_rereview_batch_A_payload.json`, `44_rereview_batch_B_payload.json`, `44_rereview_batch_C_payload.json`, `44_rereview_dispatch_manifest.json`, `44_rereviewer_wrapper.md`, and scoped collector `collect_and_record_rereviewers.py`.
+- Collector dry-run correctly found `0/55` current re-review verdicts, proving old reviewer results are not being reused. Next action: dispatch re-review batches A-C (20/20/15), collect all 55, record through installed `verify`, then gate/reconcile/finalize.
+
 ### 2026-07-04T20:32:50+08:00 Continuation completion audit
 
 - Re-read the plan acceptance gates and current active worknote status before relying on prior context.
