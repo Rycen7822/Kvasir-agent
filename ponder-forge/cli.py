@@ -10,7 +10,7 @@ try:
     from .delegation import prepare_delegations
     from .gates import evaluate_gate, supported_critical_assertion_ids
     from .planner import plan_run
-    from .profiles import select_profile
+    from .profiles import list_profiles, select_profile
     from .reconcile import reconcile_run
     from .renderer import render_final_report
     from .report_ingest import ingest_report
@@ -20,7 +20,7 @@ except ImportError:
     from delegation import prepare_delegations
     from gates import evaluate_gate, supported_critical_assertion_ids
     from planner import plan_run
-    from profiles import select_profile
+    from profiles import list_profiles, select_profile
     from reconcile import reconcile_run
     from renderer import render_final_report
     from report_ingest import ingest_report
@@ -28,6 +28,7 @@ except ImportError:
     from verifier import verify_run
 
 JsonDict = dict[str, Any]
+COMMAND_NAMES = ("start", "plan", "delegations", "submit-report", "status", "verify", "gate", "finalize", "reconcile")
 
 
 class JsonArgumentParser(argparse.ArgumentParser):
@@ -43,8 +44,11 @@ def _ok(payload: JsonDict | None = None) -> JsonDict:
     return {"success": True, **(payload or {})}
 
 
-def _err(message: str, **extra: Any) -> JsonDict:
-    return {"success": False, "error": message, **extra}
+def _err(message: str, *, hint: str | None = None, **extra: Any) -> JsonDict:
+    payload = {"success": False, "error": message, **extra}
+    if hint:
+        payload["hint"] = hint
+    return payload
 
 
 def _emit(payload: JsonDict) -> int:
@@ -58,12 +62,66 @@ def _store() -> PonderForgeStore:
     return store
 
 
-def _load_json_file(path: str) -> JsonDict:
-    raw = sys.stdin.read() if path == "-" else Path(path).expanduser().read_text(encoding="utf-8")
-    payload = json.loads(raw)
+def _hint_for_error(message: str) -> str:
+    profiles = ", ".join(("auto", *list_profiles()))
+    if "arguments are required: command" in message or "argument command: invalid choice" in message:
+        return f"Use one subcommand: {', '.join(COMMAND_NAMES)}."
+    if "arguments are required: --file" in message:
+        return "Use `submit-report --file report.json` or `submit-report --file -` for stdin."
+    if "arguments are required: --goal" in message:
+        return "Use `start --goal \"...\"`; keep `--profile auto` unless a specific profile is needed."
+    if "arguments are required: --run-id" in message:
+        return "Use `--run-id pf_run_...` from the previous `start` output."
+    if "argument --mode: invalid choice" in message:
+        return "Use `--mode precheck` or `--mode independent_review`."
+    if "argument --verdict: invalid choice" in message:
+        return "Use `--verdict accept`, `reject`, or `revise`."
+    if "argument --stale-after-seconds: invalid int value" in message:
+        return "Pass integer seconds, e.g. `--stale-after-seconds 1800`."
+    if "unknown Ponder-Forge profile" in message:
+        return f"Use `--profile` one of: {profiles}."
+    if "--budget-json" in message:
+        return "Pass a JSON object, e.g. `--budget-json '{\"max_rounds\": 2}'`, or omit it."
+    if "JSON report file was not found" in message:
+        return "Check the path or use `--file -` to read the report JSON from stdin."
+    if "invalid JSON" in message:
+        return "Fix the JSON object; check quotes/commas, or pass valid JSON with `--file -`."
+    if "JSON payload must be an object" in message or "must decode to a JSON object" in message:
+        return "Use a top-level JSON object `{...}`, not a list or scalar."
+    if "report JSON must include run_id" in message:
+        return "Include run_id from `start`; include task_id from `plan`/`delegations` when available."
+    if "unknown run_id" in message:
+        return "Use a `run_id` returned by `start`; rerun `start` if you lost it."
+    if "target_id is required for independent verdict" in message:
+        return "Pass `--target-id pf_assertion_...` before recording an independent verdict."
+    if "unknown target assertion" in message:
+        return "Use a target assertion id from `submit-report`, `gate`, or the same run."
+    return "Run the same command with `--help` for accepted arguments."
+
+
+def _load_json_object_text(raw: str, source: str) -> JsonDict:
+    try:
+        payload = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"invalid JSON in {source}: line {exc.lineno} column {exc.colno}") from exc
     if not isinstance(payload, dict):
-        raise ValueError("JSON payload must be an object")
+        raise ValueError(f"{source} must decode to a JSON object")
     return payload
+
+
+def _load_json_file(path: str) -> JsonDict:
+    source = "stdin" if path == "-" else "--file"
+    if path == "-":
+        raw = sys.stdin.read()
+    else:
+        expanded = Path(path).expanduser()
+        try:
+            raw = expanded.read_text(encoding="utf-8")
+        except FileNotFoundError as exc:
+            raise ValueError(f"JSON report file was not found: {expanded}") from exc
+        except OSError as exc:
+            raise ValueError(f"could not read JSON report file: {expanded}: {exc.strerror or exc}") from exc
+    return _load_json_object_text(raw, source)
 
 
 def _final_artifact_paths(store: PonderForgeStore, run_id: str) -> JsonDict:
@@ -115,9 +173,7 @@ def start_run(
 
 
 def cmd_start(args: argparse.Namespace) -> JsonDict:
-    budget = json.loads(args.budget_json) if args.budget_json else {}
-    if not isinstance(budget, dict):
-        raise ValueError("--budget-json must decode to an object")
+    budget = _load_json_object_text(args.budget_json, "--budget-json") if args.budget_json else {}
     return _ok(
         start_run(
             args.goal,
@@ -281,7 +337,8 @@ def main(argv: list[str] | None = None) -> int:
         args = parser.parse_args(argv)
         return _emit(args.func(args))
     except Exception as exc:
-        return _emit(_err(str(exc)))
+        message = str(exc)
+        return _emit(_err(message, hint=_hint_for_error(message)))
 
 
 if __name__ == "__main__":

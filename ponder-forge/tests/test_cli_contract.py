@@ -183,3 +183,46 @@ def test_cli_argument_errors_use_json_error_envelope(tmp_path):
     payload = json.loads(result.stdout)
     assert payload["success"] is False
     assert "--file" in payload["error"]
+
+
+def test_cli_argument_errors_include_short_actionable_hints(tmp_path):
+    cases = [
+        ((), "Use one subcommand"),
+        (("submit-report",), "submit-report --file"),
+        (("verify", "--run-id", "pf_missing", "--mode", "bogus"), "precheck"),
+        (("start", "--goal", "x", "--profile", "typo"), "--profile"),
+    ]
+
+    for args, hint_fragment in cases:
+        result = _run_cli_process(tmp_path, *args)
+        assert result.returncode != 0
+        assert result.stderr == ""
+        payload = json.loads(result.stdout)
+        assert payload["success"] is False
+        assert hint_fragment in payload["hint"]
+        assert len(payload["hint"]) <= 180
+        assert "usage:" not in payload["hint"].lower()
+
+
+def test_cli_file_input_errors_include_short_actionable_hints(tmp_path):
+    missing = tmp_path / "missing.json"
+    bad_json = tmp_path / "bad.json"
+    bad_json.write_text("{bad json", encoding="utf-8")
+    no_run = tmp_path / "no_run.json"
+    no_run.write_text(json.dumps({"summary": "missing run"}), encoding="utf-8")
+
+    cases = [
+        (("submit-report", "--file", str(missing)), "JSON report file was not found", "Check the path"),
+        (("submit-report", "--file", str(bad_json)), "invalid JSON in --file", "Fix the JSON"),
+        (("submit-report", "--file", str(no_run)), "report JSON must include run_id", "Include run_id"),
+    ]
+
+    for args, error_fragment, hint_fragment in cases:
+        result = _run_cli_process(tmp_path, *args)
+        assert result.returncode != 0
+        assert result.stderr == ""
+        payload = json.loads(result.stdout)
+        assert payload["success"] is False
+        assert error_fragment in payload["error"]
+        assert hint_fragment in payload["hint"]
+        assert len(payload["hint"]) <= 180
