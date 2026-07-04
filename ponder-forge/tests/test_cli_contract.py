@@ -77,6 +77,8 @@ def test_cli_workflow_start_plan_report_verify_gate_finalize_and_late_reject(tmp
     assert delegations["success"] is True
     assert delegations["native_tool_to_call_next"] == "delegate_task"
     assert delegations["delegate_task_payload"]["tasks"]
+    lane_context = delegations["delegate_task_payload"]["tasks"][0]["context"]
+    assert "Top-level \"artifacts\" must be a JSON array" in lane_context
 
     report_path = tmp_path / "producer_report.json"
     report_path.write_text(
@@ -337,16 +339,23 @@ def test_cli_argument_errors_include_short_actionable_hints(tmp_path):
 
 
 def test_cli_file_input_errors_include_short_actionable_hints(tmp_path):
+    start = run_cli(tmp_path, "start", "--goal", "research source notes")
     missing = tmp_path / "missing.json"
     bad_json = tmp_path / "bad.json"
     bad_json.write_text("{bad json", encoding="utf-8")
     no_run = tmp_path / "no_run.json"
     no_run.write_text(json.dumps({"summary": "missing run"}), encoding="utf-8")
+    bad_artifacts = tmp_path / "bad_artifacts.json"
+    bad_artifacts.write_text(
+        json.dumps({"run_id": start["run_id"], "summary": "bad artifacts", "artifacts": {"path": "lane.md"}}),
+        encoding="utf-8",
+    )
 
     cases = [
         (("submit-report", "--file", str(missing)), "JSON report file was not found", "Check the path"),
         (("submit-report", "--file", str(bad_json)), "invalid JSON in --file", "Fix the JSON"),
         (("submit-report", "--file", str(no_run)), "report JSON must include run_id", "Include run_id"),
+        (("submit-report", "--file", str(bad_artifacts)), "artifacts must be a JSON array", 'Use "artifacts": []'),
     ]
 
     for args, error_fragment, hint_fragment in cases:

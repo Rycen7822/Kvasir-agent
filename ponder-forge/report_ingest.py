@@ -102,7 +102,10 @@ def _normalize_assertion_payloads(payload: JsonDict) -> list[JsonDict]:
 def _normalize_payload(payload: JsonDict) -> JsonDict:
     normalized = dict(payload)
     normalized["assertions"] = _normalize_assertion_payloads(normalized)
-    normalized["artifacts"] = [_normalize_artifact_payload(dict(item)) for item in (normalized.get("artifacts") or [])]
+    artifacts = normalized.get("artifacts") or []
+    if not isinstance(artifacts, list):
+        raise ValueError("artifacts must be a JSON array; use [] if there are no artifacts")
+    normalized["artifacts"] = [_normalize_artifact_payload(dict(item)) for item in artifacts]
     return normalized
 
 

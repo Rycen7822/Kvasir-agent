@@ -132,6 +132,31 @@ def test_ingest_report_normalizes_alias_payload_with_top_level_evidence(tmp_path
     assert artifact["summary"] == "round report"
 
 
+def test_ingest_report_rejects_non_array_artifacts_with_clear_error(tmp_path, monkeypatch):
+    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    store = PonderForgeStore()
+    store.initialize()
+    run = store.create_run(goal="analyze experiment", profile="analysis")
+
+    try:
+        ingest_report(
+            store,
+            {
+                "run_id": run["run_id"],
+                "role": "metric_analyst",
+                "summary": "agent returned artifact metadata as an object",
+                "assertions": [],
+                "artifacts": {"path": "lane.md", "summary": "wrong shape"},
+            },
+        )
+    except ValueError as exc:
+        assert "artifacts must be a JSON array" in str(exc)
+    else:
+        raise AssertionError("expected artifacts array shape error")
+
+    assert store.count_rows("reports") == 0
+
+
 def test_ingest_report_rejects_unlinked_top_level_evidence(tmp_path, monkeypatch):
     monkeypatch.setenv("HERMES_HOME", str(tmp_path))
     store = PonderForgeStore()

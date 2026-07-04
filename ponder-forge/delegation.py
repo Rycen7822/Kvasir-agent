@@ -184,6 +184,7 @@ def _lane_report_contract(profile) -> list[str]:
         "Lane report JSON contract:",
         "Final lane response must contain a single valid JSON object with no Markdown wrapper.",
         'Required top-level keys: "run_id", "task_id", "role", "summary", "child_reports", "assertions", "artifacts".',
+        'Top-level "artifacts" must be a JSON array of artifact metadata objects; use [] when no artifacts were created.',
         f"Each child_reports[] item should match this shape: {json.dumps(child_shape, ensure_ascii=False)}",
     ]
 

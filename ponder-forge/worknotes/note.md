@@ -46,6 +46,17 @@
 - Stage10 analysis conclusion used across rounds: next work should focus on CE selector cost-to-contain, model-family/resource gate closure, and preserving closed claim boundaries before downstream/oral escalation.
 - Current engineering confidence: 100% for the Ponder-Forge features exercised in this real workflow and regression suite: copied install, default 8x4 planning, delegation payloads, report ingestion, rich independent reviewer payloads, verdict recording, gate, finalize, reconcile, status routing, late-submit rejection, and quest read-only discipline. Do not overclaim untested external API failure modes or true concurrent network subagent execution beyond the generated payload contract and the controller-recorded verdict path.
 
+### 2026-07-04T22:20:00+08:00 Late async lane result handled; PF-REAL-020 fixed
+
+- A previously dispatched real orchestrator subagent returned after closeout for old diagnostic run `pf_run_7474232e15cf` / lane task `pf_task_4a9b2e5df0c9`.
+- Controller validation: complete JSON parsed from `/home/xu/.hermes/cache/delegation/subagent-summary-0-20260704_220207_990706.txt`; top-level required keys present; 5 child reports; child assertions/evidence include `metric_output`, `reproduction_log`, `transform_script`, and `sanity_check`; at least one `metric_output` has non-empty command and `exit_code=0`.
+- It was not submitted to the old run: the task already had a report, and duplicate submission would add duplicate child reports/assertions to a diagnostic run that is already excluded from the clean streak.
+- New issue found: top-level `artifacts` was a metadata object instead of an array, and `submit-report` would fail with an unclear ingest type error. Classified as PF-REAL-020.
+- Fix: lane context now explicitly says top-level `artifacts` must be a JSON array and to use `[]` when none; ingest fails clearly with `artifacts must be a JSON array`; CLI hint gives the corrective shape.
+- Regression: delegation context test covers the prompt contract, CLI bad-artifacts test covers actionable error/hint, and ingest unit test covers no partial report writes on this shape error.
+- Verification after PF-REAL-020: source targeted tests `16 passed`; source full suite `71 passed`; copy install smoke succeeded; installed-copy full suite `71 passed`; installed bad-artifacts smoke returned exit code 1 with the expected `artifacts must be a JSON array` error and short hint.
+- Installed real rounds after PF-REAL-020 fix: `clean1_post_pf020` / `pf_run_69e2f55cf4c0`, `clean2_post_pf020` / `pf_run_a793e41c7893`, and `clean3_post_pf020` / `pf_run_e416482a0d8a` all completed with quest unchanged, 8 delegation payloads, 8 submitted lane reports, 40 accepted verdicts, gate `passed`, final status `final`, reconcile empty, terminal status `completed` / `complete`, and late submit rejected.
+
 ### 2026-07-04T20:32:50+08:00 Continuation completion audit
 
 - Re-read the plan acceptance gates and current active worknote status before relying on prior context.

@@ -94,6 +94,8 @@ def _hint_for_error(message: str) -> str:
         return "Use a top-level JSON object `{...}`, not a list or scalar."
     if "report JSON must include run_id" in message:
         return "Include run_id from `start`; include task_id from `plan`/`delegations` when available."
+    if "artifacts must be a JSON array" in message:
+        return 'Use "artifacts": [] for none, or a list like [{"artifact_type":"report","path":"...","summary":"..."}].'
     if "unknown run_id" in message:
         return "Use a `run_id` returned by `start`; rerun `start` if you lost it."
     if "target_id is required for independent verdict" in message:
