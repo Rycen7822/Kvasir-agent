@@ -179,6 +179,12 @@
 - Prepared second-round reviewer assets: `44_rereview_payload_all.json`, `44_rereview_batch_A_payload.json`, `44_rereview_batch_B_payload.json`, `44_rereview_batch_C_payload.json`, `44_rereview_dispatch_manifest.json`, `44_rereviewer_wrapper.md`, and scoped collector `collect_and_record_rereviewers.py`.
 - Collector dry-run correctly found `0/55` current re-review verdicts, proving old reviewer results are not being reused. Next action: dispatch re-review batches A-C (20/20/15), collect all 55, record through installed `verify`, then gate/reconcile/finalize.
 
+### 2026-07-05T02:32:44+08:00 Second-round re-review dispatched
+
+- Dispatched 55 queued second-round reviewer leaf subagents in three batches: A `deleg_bba98113` (20), B `deleg_93cbcb57` (20), C `deleg_97410db8` (15).
+- Added checkpoint `45_rereview_pending.md` and scoped watcher `watch_and_record_rereviewers.py`; watcher only records through installed `verify` after collector reaches `55/55 all_valid`.
+- Live stability loop remains pending until the second-round verdicts are recorded and installed gate/reconcile/finalize complete.
+
 ### 2026-07-04T20:32:50+08:00 Continuation completion audit
 
 - Re-read the plan acceptance gates and current active worknote status before relying on prior context.
