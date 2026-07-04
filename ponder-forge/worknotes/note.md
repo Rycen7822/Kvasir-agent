@@ -57,6 +57,26 @@
 - Verification after PF-REAL-020: source targeted tests `16 passed`; source full suite `71 passed`; copy install smoke succeeded; installed-copy full suite `71 passed`; installed bad-artifacts smoke returned exit code 1 with the expected `artifacts must be a JSON array` error and short hint.
 - Installed real rounds after PF-REAL-020 fix: `clean1_post_pf020` / `pf_run_69e2f55cf4c0`, `clean2_post_pf020` / `pf_run_a793e41c7893`, and `clean3_post_pf020` / `pf_run_e416482a0d8a` all completed with quest unchanged, 8 delegation payloads, 8 submitted lane reports, 40 accepted verdicts, gate `passed`, final status `final`, reconcile empty, terminal status `completed` / `complete`, and late submit rejected.
 
+### 2026-07-04T22:39:32+08:00 PF-REAL-021 live-subagent proof gap opened
+
+- User correctly challenged the claim that all functions had been truly tested. Re-audit confirms post-PF-REAL-020 clean rounds validated installed CLI/state/gate/finalize with controller-generated reports; they did not prove three consecutive rounds where actual Hermes lane coordinator orchestrator subagents and reviewer leaf subagents executed the generated payloads.
+- Current planning status: `worknotes/2026-07-04-pf-real-021-live-subagent-stability-plan.md` is complete, and confidence in the plan is 100%. Stability confidence for Ponder-Forge is not complete until live rounds pass.
+- New issue recorded: PF-REAL-021 in `worknotes/problems.md`.
+- Install status before live round 01: `/home/xu/.hermes/plugins/ponder_forge` exists, is copied install, config has `ponder-forge` enabled, and source/installed hashes match for `cli.py`, `delegation.py`, `report_ingest.py`, `verifier.py`, `store.py`, and `plugin.yaml`.
+- Repo status before live round 01: `HEAD == origin/main == eb40d045aae8ab935d360260cde7c44c8b2c924f`; only untracked `CODEX_STATE.md` remains outside the Ponder-Forge scope and must not be staged.
+- Quest baseline signature for no-write guard: file_count `175707`, latest_mtime_ns `1782083849137958327`, latest_path `.ds/bash_exec/summary.json`. Broad quest `git status` timed out, so use signature comparison and targeted reads instead of broad status scans.
+- Next action: start installed-copy live round 01 in isolated `HERMES_HOME`, dispatch exact Ponder-Forge generated lane coordinator payloads through live `delegate_task`, and do not report final completion while async results are pending.
+
+### 2026-07-04T22:45:00+08:00 Live round 01 lane orchestrators dispatched
+
+- Installed-copy live round 01 started with isolated `HERMES_HOME`: `worknotes/real_subagent_stability_2026-07-04/hermes_home_live_01`.
+- Ponder-Forge run id: `pf_run_80cb097d3870`.
+- Saved outputs: `live_round_01/01_start.json`, `02_plan.json`, `03_delegations.json`, and `04_status_after_lane_dispatch.json`.
+- `delegations` returned exactly 8 lane coordinator orchestrator tasks. Each generated task contains the quest path, read-only constraint, JSON report contract, and role markers.
+- Dispatched 8 live orchestrator subagents as delegation `deleg_edd050a1`. Each subagent was instructed to read `03_delegations.json`, extract its own `delegate_task_payload.tasks[index]`, and execute that exact Ponder-Forge generated task.
+- Current status after dispatch: run `planning`, `next_required_action=delegations`, swarm lane_count `8`, child_count `40`, queued_delegation_count `8`, finished counts `0`. This is expected while lane reports are pending.
+- Stability status: not complete; live lane results are pending. Do not submit lane reports, create reviewers, gate, finalize, or claim 100% stability until async results return and are validated.
+
 ### 2026-07-04T20:32:50+08:00 Continuation completion audit
 
 - Re-read the plan acceptance gates and current active worknote status before relying on prior context.
