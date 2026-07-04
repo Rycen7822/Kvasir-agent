@@ -123,6 +123,12 @@
 - Dispatched batch A (20 leaf repair subagents) as `deleg_84780d7b`. Each subagent receives its repair task id and reads the exact local batch payload file `live_round_01/35_repair_batch_A_payload.json`, avoiding long-line context truncation.
 - Current status: repair results are pending async return; do not report the stability loop complete. Next action after return is collect/validate the 20 JSON reports, submit them through installed `submit-report`, then dispatch the remaining repair batches or re-run gate as appropriate.
 
+### 2026-07-05T00:07:52+08:00 Repair collector prepared
+
+- Added `live_round_01/collect_and_submit_repairs.py` for gate-gap repair batches. It scans Hermes delegation cache plus `state.db`, validates report JSON against the exact batch payload, preserves quest signature, and records complete validated batches through installed `submit-report` only with `--record`.
+- Syntax check passed: `python3 -m py_compile collect_and_submit_repairs.py`.
+- Batch A dry-run summary is expected pending state: expected `20`, found `0`, `all_found=false`, `all_valid=false`; summary saved as `37_repair_batch_A_collect_summary.json`.
+
 ### 2026-07-04T20:32:50+08:00 Continuation completion audit
 
 - Re-read the plan acceptance gates and current active worknote status before relying on prior context.
