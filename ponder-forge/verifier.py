@@ -16,6 +16,7 @@ REVIEWER_ROLES = {
     "analysis": "repro_reviewer",
     "math": "proof_reviewer",
 }
+REVIEW_CONTEXT_SCHEMA_VERSION = 2
 
 
 def reviewer_role_for_profile(profile_id: str) -> str:
@@ -60,26 +61,23 @@ def create_reviewer_tasks(store: PonderForgeStore, run_id: str, args: dict) -> d
         existing = _accepted_independent_verdicts(store, assertion, producer_task_id)
         if existing:
             continue
+        context = _review_context(store, profile.profile_id, assertion, producer_task_id)
+        raw = _review_task_raw(assertion, producer_task_id)
         existing_task = _existing_reviewer_task(store, run_id, assertion["assertion_id"])
         if existing_task:
+            existing_raw = _raw(existing_task)
+            if existing_raw.get("review_context_schema_version") != REVIEW_CONTEXT_SCHEMA_VERSION:
+                existing_task = store.update_task_context(existing_task["task_id"], context, raw=raw)
             tasks.append(existing_task)
             continue
         task = store.create_task(
             run_id,
             role=reviewer_role,
             goal=f"Independently review assertion {assertion['assertion_id']}: {assertion['text']}",
-            context="\n".join(
-                [
-                    f"[PONDER_FORGE_PROFILE={profile.profile_id}]",
-                    f"target_assertion_id={assertion['assertion_id']}",
-                    f"independent_from_task_id={producer_task_id or ''}",
-                    "Review only visible assertion/evidence. Do not continue producer reasoning.",
-                    "Return a structured JSON reviewer verdict to the parent/controller. The parent/controller records it with the Ponder-Forge CLI verify command.",
-                ]
-            ),
+            context=context,
             parent_task_id=producer_task_id,
             priority=10,
-            raw={"verifier_mode": "independent_review", "target_assertion_id": assertion["assertion_id"], "independent_from_task_id": producer_task_id},
+            raw=raw,
         )
         tasks.append(task)
     return {"run_id": run_id, "verifier_mode": "independent_review", "reviewer_tasks": tasks, "delegate_task_payload_suggestion": _payload(run_id, profile.profile_id, tasks)}
@@ -119,6 +117,9 @@ def record_independent_verdict(store: PonderForgeStore, run_id: str, args: dict)
         required_actions=args.get("required_actions") or [],
         raw={"source": "cli_verify"},
     )
+    reviewer_task = store.get_task(reviewer_task_id) if reviewer_task_id else None
+    if reviewer_task and reviewer_task.get("run_id") == run_id:
+        store.update_task_status(reviewer_task_id, "finished")
     if verdict_value == "accept":
         store.update_assertion_status(target_id, "accepted")
     return {"run_id": run_id, "verifier_mode": "independent_review", "recorded_verdict": verdict, "final_verdict": verdict_value == "accept"}
@@ -151,6 +152,101 @@ def _raw(row: dict) -> dict:
         return json.loads(row.get("raw_json") or "{}")
     except json.JSONDecodeError:
         return {}
+
+
+def _clip(value: object, limit: int = 420) -> str:
+    text = str(value or "").replace("\n", " ").strip()
+    if len(text) <= limit:
+        return text
+    return text[: limit - 1].rstrip() + "…"
+
+
+def _review_task_raw(assertion: dict, producer_task_id: str | None) -> dict:
+    return {
+        "verifier_mode": "independent_review",
+        "target_assertion_id": assertion["assertion_id"],
+        "independent_from_task_id": producer_task_id,
+        "review_context_schema_version": REVIEW_CONTEXT_SCHEMA_VERSION,
+    }
+
+
+def _review_context(store: PonderForgeStore, profile_id: str, assertion: dict, producer_task_id: str | None) -> str:
+    report_id = str(assertion.get("report_id") or "")
+    report = store.get_report(report_id) if report_id else None
+    evidence_rows = [
+        row
+        for row in store.list_rows("evidence_items", assertion["run_id"])
+        if row.get("assertion_id") == assertion["assertion_id"]
+    ]
+    artifact_rows = [
+        row for row in store.list_rows("artifacts", assertion["run_id"]) if report_id and row.get("report_id") == report_id
+    ]
+    lines = [
+        f"target_assertion_id={assertion['assertion_id']}",
+        f"independent_from_task_id={producer_task_id or ''}",
+        f"review_profile={profile_id}",
+        "",
+        "Assertion under review:",
+        f"- assertion_id: {assertion['assertion_id']}",
+        f"- assertion_type: {assertion.get('assertion_type')}",
+        f"- text: {_clip(assertion.get('text'), 900)}",
+        f"- importance: {assertion.get('importance')}",
+        f"- confidence: {assertion.get('confidence')}",
+        f"- status: {assertion.get('status')}",
+        "",
+        "Producer report:",
+        f"- report_id: {report_id or 'none'}",
+        f"- producer_task_id: {producer_task_id or 'none'}",
+        f"- role: {report.get('role') if report else 'none'}",
+        f"- summary: {_clip(report.get('summary') if report else '', 700) or 'none'}",
+        "",
+        "Evidence visible to reviewer:",
+    ]
+    if evidence_rows:
+        for index, evidence in enumerate(evidence_rows[:8], start=1):
+            metric = _clip(evidence.get("metric_json"), 180)
+            metric_suffix = f"; metric={metric}" if metric and metric != "{}" else ""
+            lines.append(
+                "- "
+                f"[{index}] evidence_id={evidence.get('evidence_id')}; "
+                f"type={evidence.get('evidence_type')}; "
+                f"source={_clip(evidence.get('source_ref'), 260)}; "
+                f"command={_clip(evidence.get('command'), 260)}; "
+                f"exit_code={evidence.get('exit_code')}; "
+                f"observation={_clip(evidence.get('quote_or_observation'), 700)}"
+                f"{metric_suffix}"
+            )
+        if len(evidence_rows) > 8:
+            lines.append(f"- {len(evidence_rows) - 8} additional evidence rows omitted from reviewer context.")
+    else:
+        lines.append("- none recorded for this assertion")
+
+    lines.extend(["", "Artifacts visible to reviewer:"])
+    if artifact_rows:
+        for index, artifact in enumerate(artifact_rows[:6], start=1):
+            lines.append(
+                "- "
+                f"[{index}] artifact_id={artifact.get('artifact_id')}; "
+                f"type={artifact.get('artifact_type')}; "
+                f"path={_clip(artifact.get('path'), 300)}; "
+                f"summary={_clip(artifact.get('summary'), 500)}"
+            )
+        if len(artifact_rows) > 6:
+            lines.append(f"- {len(artifact_rows) - 6} additional artifact rows omitted from reviewer context.")
+    else:
+        lines.append("- none recorded for the producer report")
+
+    lines.extend(
+        [
+            "",
+            "Reviewer instructions:",
+            "- Review only the assertion, producer report, evidence, and artifacts in this context.",
+            "- Do not continue the producer's reasoning or inspect private producer scratch state.",
+            "- Return JSON with verdict=accept|reject|revise, confidence, rationale, and optional required_actions.",
+            "- The parent/controller records the verdict with the Ponder-Forge CLI verify command.",
+        ]
+    )
+    return "\n".join(lines)
 
 
 def _existing_reviewer_task(store: PonderForgeStore, run_id: str, assertion_id: str) -> dict | None:

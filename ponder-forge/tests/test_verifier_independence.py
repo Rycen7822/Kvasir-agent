@@ -129,8 +129,15 @@ def test_independent_review_task_and_verdict_allow_finalize(tmp_path, monkeypatc
     assert reviewer_task["parent_task_id"] == producer_task_id
     assert producer_task_id != reviewer_task["task_id"]
     assert producer_task_id in reviewer_task["context"]
+    assert "Assertion under review" in reviewer_task["context"]
+    assert "The failing pytest is fixed by a causal code change" in reviewer_task["context"]
+    assert "Evidence visible to reviewer" in reviewer_task["context"]
+    assert "passing_test" in reviewer_task["context"]
+    assert "root_cause_trace" in reviewer_task["context"]
+    assert "pytest" in reviewer_task["context"]
     payload = review["delegate_task_payload_suggestion"]
     assert payload["tasks"][0]["role"] == "leaf"
+    assert payload["tasks"][0]["context"].count("[PONDER_FORGE_PROFILE=coding]") == 1
 
     verdict = verify_run(
         store,
@@ -184,3 +191,4 @@ def test_independent_review_task_creation_is_idempotent(tmp_path, monkeypatch):
     second = verify_run(store, run_id, {"run_id": run_id, "mode": "independent_review", "target_id": assertion_id})
 
     assert first["reviewer_tasks"][0]["task_id"] == second["reviewer_tasks"][0]["task_id"]
+    assert "Evidence visible to reviewer" in second["reviewer_tasks"][0]["context"]

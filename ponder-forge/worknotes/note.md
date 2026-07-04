@@ -7,10 +7,44 @@
 
 ## Active 8x4 swarm upgrade status
 
-- Completion audit result: complete. Tasks 1-12 are implemented, the budget key was renamed to `child_concurrency_per_lane`, and all source plus installed-copy checkpoints pass.
-- Next required action: none for this plan; the copied default-profile install at `~/.hermes/plugins/ponder_forge` has been refreshed after explicit user authorization.
-- Confidence: high. Landing gates passed, installed smoke passed, and no generated `/tmp` artifacts are tracked.
+- Completion audit result: superseded by real-run stability loop. Tasks 1-12 and the `child_concurrency_per_lane` rename are installed, but PF-REAL-018 is open from the new real run.
+- Next required action: write the PF-REAL-018 repair plan, patch verifier reviewer contexts, reinstall, and restart clean real-run rounds.
+- Confidence: not 100% yet. Default 8x4 start/plan/delegations/submit-report/status worked in real run `pf_run_7474232e15cf`, but independent reviewer payloads are too thin for actual reviewer agents.
 - Guardrail: do not read or modify sibling project `idea-spark`; keep temporary notes and drafts under `ponder-forge/worknotes/`.
+
+### 2026-07-04T21:40:00+08:00 Real-run stability loop PF-REAL-018 discovery
+
+- Governing task: read-only analysis of `/home/xu/project/loop/DeepScientist/quests/001` Stage10 results; do not modify quest code or documents; use Ponder-Forge full workflow repeatedly until three consecutive clean real rounds pass.
+- Installed plugin check passed: `/home/xu/.hermes/plugins/ponder_forge` is enabled, copied install, and key files match source.
+- Isolated real-run state home: `worknotes/real_stability_2026-07-04/hermes_home`.
+- Real run `pf_run_7474232e15cf`: `start` profile analysis succeeded; default `plan` produced budget `{top_level_runs: 8, child_concurrency_per_lane: 4, delegate_batch_size: 20}`; `delegations` returned 8 orchestrator payloads; `status` showed 8 lanes and 40 lane children; generated lane reports submitted successfully with 48 reports, 40 assertions, 120 evidence rows, and 40 artifacts; swarm topology became complete and next action became `verify`.
+- Real issue: `verify --mode independent_review` created 40 reviewer tasks and leaf payloads, but reviewer context only included profile marker, target assertion id, producer task id, and generic instructions. It omitted assertion evidence/artifacts/report summary while asking the reviewer to inspect visible evidence, and duplicated `[PONDER_FORGE_PROFILE=analysis]`.
+- Classification: PF-REAL-018, severe enough that `pf_run_7474232e15cf` does not count as a clean round. Parent/controller can manually record verdicts, but actual reviewer agents cannot do evidence-backed review from this payload.
+- Quest guard: no writes were performed under the quest path. `git diff` in the quest already shows large historical tracked changes with latest mtimes around 2026-06-22, before this session; this loop must not modify or clean them.
+- Planning status: repair plan is not complete and 100% confidence is not justified yet. Next action is a context-compaction-resistant plan under `worknotes/` using the scratch notes in `worknotes/real_stability_2026-07-04/`.
+
+### 2026-07-04T21:58:00+08:00 PF-REAL-018 fixed, PF-REAL-019 discovered
+
+- PF-REAL-018 repair plan completed at `worknotes/2026-07-04-pf-real-018-reviewer-context-repair-plan.md`; plan confidence is 100%, plugin long-run confidence is not yet 100%.
+- Implemented narrow patch: `verifier.py` now builds rich reviewer contexts with assertion, producer report, evidence, and artifacts; `_payload()` contains one profile marker; existing thin reviewer tasks refresh via `PonderForgeStore.update_task_context()`.
+- Verification before reinstall: target tests `11 passed`; full source tests `70 passed`; old real run `pf_run_7474232e15cf` refreshed reviewer task `pf_task_1c00d54ab8a7` with rich context, one profile marker, evidence/artifact sections, and metric output.
+- Reinstalled copied plugin to `/home/xu/.hermes/plugins/ponder_forge`; installed tests `70 passed`.
+- New installed real round `clean1_post_pf018` / run `pf_run_5e634c37434c` exposed PF-REAL-019: after recording 40 accepted independent verdicts, gate was `passed` but `status_after_verdicts.next_required_action` was `delegations`, because reviewer tasks remained `queued`.
+- PF-REAL-019 root cause: `record_independent_verdict()` records verdicts and accepts assertions but does not mark the reviewer task finished. `cmd_status()` sees queued reviewer tasks before finalize routing.
+- Clean streak remains zero. `clean1_post_pf018` is a failed real stability round and must not count.
+
+### 2026-07-04T22:08:00+08:00 PF-REAL-019 fixed and clean streak completed
+
+- Implemented PF-REAL-019 fix: `record_independent_verdict()` marks the reviewer task `finished` when recording a verdict for a reviewer task in the same run.
+- Regression coverage: `tests/test_cli_contract.py` now checks that after an accepted independent verdict, `status.gate_status == passed` and `status.next_required_action == finalize` before finalization.
+- Verification: target source tests `11 passed`; full source tests `70 passed`; copy install smoke succeeded; installed-copy tests `70 passed`.
+- Installed real rounds after PF-REAL-019 fix:
+  - `clean1_post_pf019` / `pf_run_e740ac0deb4b`: complete; quest unchanged; 8 delegation payloads; 40 accepted verdicts; gate passed; status after verdicts routed to `finalize`; final status `completed` / `complete`; reconcile empty; late submit rejected.
+  - `clean2_post_pf019` / `pf_run_1e61e79d2e32`: same checks passed; quest unchanged.
+  - `clean3_post_pf019` / `pf_run_95fe5641f0a8`: same checks passed; quest unchanged.
+- Clean streak is now 3 consecutive installed real-task full-function rounds with no new plugin issue.
+- Stage10 analysis conclusion used across rounds: next work should focus on CE selector cost-to-contain, model-family/resource gate closure, and preserving closed claim boundaries before downstream/oral escalation.
+- Current engineering confidence: 100% for the Ponder-Forge features exercised in this real workflow and regression suite: copied install, default 8x4 planning, delegation payloads, report ingestion, rich independent reviewer payloads, verdict recording, gate, finalize, reconcile, status routing, late-submit rejection, and quest read-only discipline. Do not overclaim untested external API failure modes or true concurrent network subagent execution beyond the generated payload contract and the controller-recorded verdict path.
 
 ### 2026-07-04T20:32:50+08:00 Continuation completion audit
 

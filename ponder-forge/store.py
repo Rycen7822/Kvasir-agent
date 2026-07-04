@@ -213,6 +213,20 @@ class PonderForgeStore:
                 (status, error, finished_at, task_id),
             )
 
+    def update_task_context(self, task_id: str, context: str, raw: JsonDict | None = None) -> JsonDict:
+        with self.connect() as conn:
+            if raw is None:
+                conn.execute("update agent_tasks set context = ? where task_id = ?", (context, task_id))
+            else:
+                conn.execute(
+                    "update agent_tasks set context = ?, raw_json = ? where task_id = ?",
+                    (context, json_dumps(raw), task_id),
+                )
+        updated = self.get_task(task_id)
+        if not updated:
+            raise ValueError(f"unknown task_id: {task_id}")
+        return updated
+
     def update_task_binding(
         self,
         task_id: str,

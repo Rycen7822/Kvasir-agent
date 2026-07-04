@@ -133,6 +133,11 @@ def test_cli_workflow_start_plan_report_verify_gate_finalize_and_late_reject(tmp
 
     review = run_cli(tmp_path, "verify", "--run-id", start["run_id"], "--mode", "independent_review", "--target-id", assertion_id)
     reviewer_task = review["reviewer_tasks"][0]
+    reviewer_payload_context = review["delegate_task_payload_suggestion"]["tasks"][0]["context"]
+    assert "Evidence visible to reviewer" in reviewer_payload_context
+    assert "source_quote" in reviewer_payload_context
+    assert "worknotes/2026-07-04-skill-pure-cli-implementation-plan.md" in reviewer_payload_context
+    assert reviewer_payload_context.count("[PONDER_FORGE_PROFILE=research]") == 1
     verdict = run_cli(
         tmp_path,
         "verify",
@@ -157,6 +162,10 @@ def test_cli_workflow_start_plan_report_verify_gate_finalize_and_late_reject(tmp
     )
     assert verdict["success"] is True
     assert verdict["final_verdict"] is True
+
+    status_after_verdict = run_cli(tmp_path, "status", "--run-id", start["run_id"])
+    assert status_after_verdict["gate_status"] == "passed"
+    assert status_after_verdict["next_required_action"] == "finalize"
 
     gate = run_cli(tmp_path, "gate", "--run-id", start["run_id"])
     assert gate["success"] is True
