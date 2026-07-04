@@ -191,6 +191,11 @@
 - Installed `gate` after re-review has full independent coverage but 4 remaining `missing_profile_evidence` gaps: `pf_assertion_9462dd8c9806`, `pf_assertion_ffcc3c70cf73`, `pf_assertion_a3c2b86585c8`, `pf_assertion_ca9d2c34b028`.
 - Installed `reconcile` emitted 4 final `gate_gap_repairer` payloads. Prepared batch E payload `35_repair_batch_E_payload.json` and checkpoint `51_repair_batch_E_pending.md`; collector/watch helpers now allow batch `E`.
 
+### 2026-07-05T02:40:29+08:00 Final repair batch E dispatched
+
+- Dispatched final repair batch E as `deleg_6b3897e0` with 4 leaf `gate_gap_repairer` tasks for the remaining profile-evidence gaps.
+- Batch E must be recorded only after `collect_and_submit_repairs.py --batch E` reaches `4/4 all_valid`; then rerun installed verify/gate/reconcile/finalize.
+
 ### 2026-07-04T20:32:50+08:00 Continuation completion audit
 
 - Re-read the plan acceptance gates and current active worknote status before relying on prior context.

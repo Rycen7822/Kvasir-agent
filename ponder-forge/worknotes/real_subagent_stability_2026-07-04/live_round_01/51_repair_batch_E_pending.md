@@ -4,7 +4,8 @@
 - source: installed `reconcile` output `50_reconcile_after_rereview.json`
 - batch payload: `35_repair_batch_E_payload.json`
 - batch E size: 4
-- status before dispatch: prepared; pending delegation id
+- delegation_id: `deleg_6b3897e0`
+- status: dispatched at `2026-07-05T02:40:29+0800`; pending async return
 
 ## Remaining target assertions
 

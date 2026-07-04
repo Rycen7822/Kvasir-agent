@@ -1,0 +1,21 @@
+{
+  "all_found": false,
+  "all_valid": false,
+  "batch": "E",
+  "expected_report_count": 4,
+  "found_report_count": 0,
+  "missing_task_ids": [
+    "pf_task_014df39b4aa3",
+    "pf_task_2ad276aad6dc",
+    "pf_task_74c337550cec",
+    "pf_task_a5a15738b176"
+  ],
+  "quest_signature": {
+    "file_count": 175707,
+    "latest_mtime_ns": 1782083849137958327,
+    "latest_path": ".ds/bash_exec/summary.json",
+    "total_size": 625172277988
+  },
+  "reports": {},
+  "run_id": "pf_run_80cb097d3870"
+}
