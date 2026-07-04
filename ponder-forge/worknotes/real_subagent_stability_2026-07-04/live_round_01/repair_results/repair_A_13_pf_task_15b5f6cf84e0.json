@@ -1,0 +1,85 @@
+{
+  "artifacts": [],
+  "assertions": [
+    {
+      "assertion_type": "data_result",
+      "confidence": 0.93,
+      "critical": true,
+      "evidence": [
+        {
+          "command": "python - <<'PY'\nimport csv, json\nfrom collections import Counter\nfrom pathlib import Path\nroot = Path('experiments/stage10')\nablation = root / '09_ablation_patching' / 'COMPONENT_ABLATION.csv'\npatching = root / '09_ablation_patching' / 'CAUSAL_PATCHING_RESULTS.csv'\naudit = root / '09_ablation_patching' / 'STAGE10_COMPONENT_ABLATION_AUDIT.json'\nwith ablation.open(newline='') as f:\n    ablation_rows = list(csv.DictReader(f))\nwith patching.open(newline='') as f:\n    patching_rows = list(csv.DictReader(f))\naudit_json = json.loads(audit.read_text())\nplot_exts = {'.png', '.pdf', '.svg'}\nplot_paths = sorted(str(p.relative_to(root)) for p in root.rglob('*') if p.is_file() and p.suffix.lower() in plot_exts)\nmetrics = {\n    'ablation_rows_csv': len(ablation_rows),\n    'patching_rows_csv': len(patching_rows),\n    'audit_ablation_count': audit_json.get('ablation_count'),\n    'audit_patching_result_count': audit_json.get('patching_result_count'),\n    'mechanism_claim_status': audit_json.get('mechanism_claim_status'),\n    'status': audit_json.get('status'),\n    'downstream_gate_status': audit_json.get('downstream_gate_status'),\n    'oral_ready_gate_status': audit_json.get('oral_ready_gate_status'),\n    'component_ablation_names': [row['ablation_name'] for row in ablation_rows],\n    'causal_patching_source_measurement_kinds': sorted(set(row['source_measurement_kind'] for row in patching_rows)),\n    'causal_patching_model_count': len(set(row['model_id'] for row in patching_rows)),\n    'primary_failure_counts': dict(Counter(row['failure_type_primary'] for row in patching_rows)),\n    'secondary_failure_counts': dict(Counter(row['failure_type_secondary'] for row in patching_rows)),\n    'plot_artifact_extensions_checked': sorted(plot_exts),\n    'plot_artifact_count_under_experiments_stage10': len(plot_paths),\n    'plot_artifact_paths_under_experiments_stage10': plot_paths,\n}\nprint(json.dumps(metrics, indent=2, sort_keys=True))\nPY",
+          "directness": 0.96,
+          "evidence_type": "metric_output",
+          "exit_code": 0,
+          "freshness": 0.92,
+          "metric": {
+            "ablation_rows_csv": 11,
+            "audit_ablation_count": 11,
+            "audit_patching_result_count": 96,
+            "causal_patching_model_count": 6,
+            "causal_patching_source_measurement_kinds": [
+              "true_measurement"
+            ],
+            "downstream_gate_status": "closed",
+            "mechanism_claim_status": "diagnostic_or_mixed",
+            "oral_ready_gate_status": "closed",
+            "patching_rows_csv": 96,
+            "plot_artifact_count_under_experiments_stage10": 0,
+            "plot_artifact_extensions_checked": [
+              ".pdf",
+              ".png",
+              ".svg"
+            ],
+            "plot_artifact_paths_under_experiments_stage10": [],
+            "primary_failure_counts": {
+              "coda-readout failure": 59,
+              "core-orbit failure": 37
+            },
+            "secondary_failure_counts": {
+              "boundary-interface failure": 1,
+              "coda-readout failure": 37,
+              "core-orbit failure": 55,
+              "low-rank repair failure": 1,
+              "none": 2
+            },
+            "status": "passed_S10-14_component_ablation_causal_patching_failure_taxonomy"
+          },
+          "quote_or_observation": "The read-only metric command exited 0 and reported ablation_rows_csv=11, patching_rows_csv=96, audit_ablation_count=11, audit_patching_result_count=96, mechanism_claim_status=diagnostic_or_mixed, status=passed_S10-14_component_ablation_causal_patching_failure_taxonomy, downstream_gate_status=closed, oral_ready_gate_status=closed, causal_patching_model_count=6, source_measurement_kinds=['true_measurement'], primary_failure_counts={'coda-readout failure': 59, 'core-orbit failure': 37}, and plot_artifact_count_under_experiments_stage10=0 for extensions .pdf/.png/.svg.",
+          "relevance": 0.96,
+          "reliability": 0.95,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001",
+          "title": "Read-only S10-14 mechanism and plot-artifact metric check"
+        },
+        {
+          "directness": 0.86,
+          "evidence_type": "transform_script",
+          "freshness": 0.88,
+          "locator": "lines 27-32 and 38-50",
+          "quote_or_observation": "The S10-14 script defines OUT_DIR=experiments/stage10/09_ablation_patching and output files COMPONENT_ABLATION.csv, CAUSAL_PATCHING_RESULTS.csv, FAILURE_TAXONOMY.md, REVIEWER_ATTACK_EVIDENCE.md, and STAGE10_COMPONENT_ABLATION_AUDIT.json. It also enumerates the required ablation variants: no-gauge, no-coda, no-tangent, no-stability, no-patching, CFC-only, LoopCert-only, CFC+LoopCert, OrbitRepair-Proxy, risk penalty off, and family balancing off.",
+          "relevance": 0.9,
+          "reliability": 0.9,
+          "source_ref": "experiments/stage10/scripts/stage10_component_ablation.py",
+          "title": "S10-14 script defines tabular ablation/patching/audit outputs and required variants"
+        },
+        {
+          "directness": 0.93,
+          "evidence_type": "sanity_check",
+          "freshness": 0.9,
+          "locator": "audit lines 2-34; reviewer lines 3-22; taxonomy lines 3-20",
+          "quote_or_observation": "STAGE10_COMPONENT_ABLATION_AUDIT.json reports mechanism_claim_status=diagnostic_or_mixed, ablation_count=11, patching_result_count=96, downstream_gate_status=closed, oral_ready_gate_status=closed, and writes_downstream=false. REVIEWER_ATTACK_EVIDENCE.md says component ablations are diagnostic ranking summaries, not a success claim. FAILURE_TAXONOMY.md says S10-14 summarizes existing Stage10 component and target artifacts and does not convert diagnostic component relations into a mechanism-success claim.",
+          "relevance": 0.94,
+          "reliability": 0.93,
+          "source_ref": "experiments/stage10/09_ablation_patching/STAGE10_COMPONENT_ABLATION_AUDIT.json; experiments/stage10/09_ablation_patching/REVIEWER_ATTACK_EVIDENCE.md; experiments/stage10/09_ablation_patching/FAILURE_TAXONOMY.md",
+          "title": "Audit and reviewer-facing notes bound mechanism claims and presentation status"
+        }
+      ],
+      "importance": 0.86,
+      "text": "Mechanism and presentation claims for Stage10 should remain bounded: S10-14 component ablation and causal patching provide diagnostic_or_mixed mechanism evidence rather than a mechanism-success claim, and Stage10 presentation is table/audit/report centered because a read-only scan found no .png, .pdf, or .svg plot artifacts under experiments/stage10."
+    }
+  ],
+  "role": "gate_gap_repairer",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Repaired the missing analysis-profile evidence gap for pf_assertion_46665d85d55a. Read-only inspection supports a narrowed claim: S10-14 mechanism evidence is diagnostic_or_mixed, component ablation and causal patching are tabular audit evidence, and a scan found zero .png/.pdf/.svg plot artifacts under experiments/stage10. No repository source files were created or modified.",
+  "task_id": "pf_task_15b5f6cf84e0",
+  "title": "Stage10 mechanism and presentation claim bounded by read-only evidence"
+}

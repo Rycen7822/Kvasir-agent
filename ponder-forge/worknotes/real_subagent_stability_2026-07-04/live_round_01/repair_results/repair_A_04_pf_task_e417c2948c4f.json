@@ -1,0 +1,63 @@
+{
+  "artifacts": [],
+  "assertions": [
+    {
+      "assertion_type": "data_result",
+      "confidence": 0.9,
+      "critical": true,
+      "evidence": [
+        {
+          "command": "python - <<'PY'\nimport csv, json\nfrom pathlib import Path\nroot = Path('/home/xu/project/loop/DeepScientist/quests/001')\nstage10 = root / 'experiments/stage10'\nstate = json.loads((stage10 / '00_freeze/STAGE10_STATE.json').read_text())\nmeta = json.loads((stage10 / '08_meta/STAGE10_META_ANALYSIS.json').read_text())\nselectors = list(csv.DictReader((stage10 / '08_meta/SELECTOR_METRICS.csv').open(newline='')))\ntwe = list(csv.DictReader((stage10 / '07_large_eval/TOKEN_WEIGHTED_EVAL.csv').open(newline='')))\neligible = [r for r in selectors if r['selector_name'] not in {'OrbitRepair-Proxy','CFC-only'}]\nsummary = {\n  'meta_gate_verdict': meta['gate_results']['gate_verdict'],\n  'closed_reasons': meta['gate_results']['closed_reasons'],\n  'meta_model_family_gate_met': meta['gate_results']['model_family_gate_met'],\n  'resource_gated_model_ids': meta['model_availability']['resource_gated_model_ids'],\n  'state_coverage_model_family_gate_met': state['coverage']['model_family_gate_met'],\n  'state_top_level_model_family_gate_met': state.get('model_family_gate_met'),\n  'state_active_entry_count': state['active_entry_count'],\n  'state_active_family_count': state['active_family_count'],\n  'eligible_selector_summary': [\n    {\n      'selector_name': r['selector_name'],\n      'delta_macro_normalized_regret_at3_vs_cfc_only': float(r['delta_macro_normalized_regret_at3_vs_cfc_only']),\n      'delta_mean_cost_to_contain_winner_vs_cfc_only': float(r['delta_mean_cost_to_contain_winner_vs_cfc_only']),\n      'beats_regret': r['beats_cfc_only_on_macro_normalized_regret_at3'],\n      'beats_cost': r['beats_cfc_only_on_mean_cost_to_contain_winner'],\n    }\n    for r in eligible\n  ],\n  'orbitrepair_proxy': next({\n      'selector_name': r['selector_name'],\n      'delta_macro_normalized_regret_at3_vs_cfc_only': float(r['delta_macro_normalized_regret_at3_vs_cfc_only']),\n      'delta_mean_cost_to_contain_winner_vs_cfc_only': float(r['delta_mean_cost_to_contain_winner_vs_cfc_only']),\n      'beats_regret': r['beats_cfc_only_on_macro_normalized_regret_at3'],\n      'beats_cost': r['beats_cfc_only_on_mean_cost_to_contain_winner'],\n    } for r in selectors if r['selector_name']=='OrbitRepair-Proxy'),\n  'token_weighted_total_rows': len(twe),\n  'token_weighted_target_rows': sum(1 for r in twe if r['source_endpoint_type']=='Y_recover'),\n  'negative_recovered_fraction_rows': sum(1 for r in twe if r['source_endpoint_type']=='Y_recover' and r['recovered_fraction'] and float(r['recovered_fraction']) < 0),\n  'min_negative_recovered_fraction': min(float(r['recovered_fraction']) for r in twe if r['source_endpoint_type']=='Y_recover' and r['recovered_fraction'] and float(r['recovered_fraction']) < 0),\n  'plot_artifact_count_png_pdf_svg_under_stage10': sum(1 for p in stage10.rglob('*') if p.suffix.lower() in {'.png','.pdf','.svg'}),\n}\nprint(json.dumps(summary, sort_keys=True))\nPY",
+          "directness": 0.96,
+          "evidence_type": "metric_output",
+          "exit_code": 0,
+          "freshness": 0.9,
+          "locator": "read-only Python aggregation over Stage10 JSON/CSV files",
+          "metric": "stage10_gate_next_step_summary",
+          "quote_or_observation": "{\"closed_reasons\": [\"CE selection gate did not beat CFC-only on both macro regret@3 and cost-to-contain\", \"Model-family gate is resource-gated\"], \"eligible_selector_summary\": [{\"beats_cost\": \"False\", \"beats_regret\": \"True\", \"delta_macro_normalized_regret_at3_vs_cfc_only\": -0.012460751734889634, \"delta_mean_cost_to_contain_winner_vs_cfc_only\": 2.833333333333334, \"selector_name\": \"LoopCert-only\"}, {\"beats_cost\": \"False\", \"beats_regret\": \"True\", \"delta_macro_normalized_regret_at3_vs_cfc_only\": -0.012460751734889634, \"delta_mean_cost_to_contain_winner_vs_cfc_only\": 2.833333333333334, \"selector_name\": \"family-balanced blend\"}, {\"beats_cost\": \"False\", \"beats_regret\": \"True\", \"delta_macro_normalized_regret_at3_vs_cfc_only\": -0.012460751734889634, \"delta_mean_cost_to_contain_winner_vs_cfc_only\": 2.833333333333334, \"selector_name\": \"risk-calibrated blend\"}, {\"beats_cost\": \"False\", \"beats_regret\": \"True\", \"delta_macro_normalized_regret_at3_vs_cfc_only\": -0.011561394104358733, \"delta_mean_cost_to_contain_winner_vs_cfc_only\": 2.666666666666666, \"selector_name\": \"Pareto-front\"}], \"meta_gate_verdict\": \"closed\", \"meta_model_family_gate_met\": false, \"min_negative_recovered_fraction\": -5.907575301080904, \"negative_recovered_fraction_rows\": 28, \"orbitrepair_proxy\": {\"beats_cost\": \"True\", \"beats_regret\": \"True\", \"delta_macro_normalized_regret_at3_vs_cfc_only\": -0.0388905861737987, \"delta_mean_cost_to_contain_winner_vs_cfc_only\": -9.0, \"selector_name\": \"OrbitRepair-Proxy\"}, \"plot_artifact_count_png_pdf_svg_under_stage10\": 0, \"resource_gated_model_ids\": [\"gemma-2-2b\", \"smollm2-1.7b\", \"opt-1.3b\", \"falcon-rw-1b\", \"stablelm-2-1.6b\", \"mistral-7b-score-side-stress\"], \"state_active_entry_count\": 6, \"state_active_family_count\": 4, \"state_coverage_model_family_gate_met\": true, \"state_top_level_model_family_gate_met\": false, \"token_weighted_target_rows\": 360, \"token_weighted_total_rows\": 366}",
+          "relevance": 0.96,
+          "reliability": 0.93,
+          "source_ref": "experiments/stage10/08_meta/STAGE10_META_ANALYSIS.json; experiments/stage10/08_meta/SELECTOR_METRICS.csv; experiments/stage10/07_large_eval/TOKEN_WEIGHTED_EVAL.csv; experiments/stage10/00_freeze/STAGE10_STATE.json",
+          "title": "Read-only Stage10 gate and next-step metric summary"
+        },
+        {
+          "directness": 0.88,
+          "evidence_type": "reproduction_log",
+          "freshness": 0.9,
+          "quote_or_observation": "The aggregation command read Stage10 JSON/CSV files and printed the metric summary with exit_code=0; it did not write to the read-only quest or to /home/xu/project/autosci-delphi.",
+          "relevance": 0.9,
+          "reliability": 0.9,
+          "source_ref": "terminal execution from /home/xu/project/autosci-delphi/ponder-forge against /home/xu/project/loop/DeepScientist/quests/001",
+          "title": "Repair evidence command executed read-only"
+        },
+        {
+          "directness": 0.9,
+          "evidence_type": "sanity_check",
+          "freshness": 0.9,
+          "quote_or_observation": "GATE_DECISION marks ce_selection_gate_passed=False and model_family_gate_met=False, lists OrbitRepair-Proxy as the only selector beating both CFC metrics, and records closed reasons for CE selection and resource-gated model-family coverage. STAGE10_CLAIM_LEDGER keeps model_family_gate and ce_selection_gate failed/closed. FAMILY_BALANCE_AUDIT shows 4/6 active families, 6/8 active entries, and six resource-gated entries. STAGE10_STATE has coverage.model_family_gate_met=true while top-level model_family_gate_met=false, confirming the state inconsistency. File searches found zero PNG/PDF/SVG artifacts under experiments/stage10.",
+          "relevance": 0.93,
+          "reliability": 0.9,
+          "source_ref": "GATE_DECISION.md lines 9-28; STAGE10_CLAIM_LEDGER.md lines 7-13; FAMILY_BALANCE_AUDIT.md lines 4-28; STAGE10_STATE.json lines 67-75 and 690-691; empty *.png/*.pdf/*.svg searches under experiments/stage10",
+          "title": "Manual source-file cross-checks agree with metric summary"
+        }
+      ],
+      "importance": 0.93,
+      "supersedes_assertion_id": "pf_assertion_ad806f761136",
+      "text": "Stage10 next-step priorities should stay evidence-side and conservative: expand or rerun resource-gated model-family coverage, improve eligible LoopCert selectors on cost-to-contain while preserving regret gains, keep OrbitRepair-Proxy labeled as a demoted proxy/baseline rather than an eligible LoopCert claim, resolve conflicting STAGE10_STATE model_family_gate_met fields, caveat the 28 negative target recovered_fraction rows, and generate plot artifacts only if visual claims are made."
+    }
+  ],
+  "confidence": 0.9,
+  "gate_gaps_repaired": [
+    {
+      "gap_type": "missing_profile_evidence",
+      "resolution": "Added a replacement data_result assertion with analysis-profile metric_output evidence carrying command and exit_code=0, plus reproduction_log and sanity_check evidence.",
+      "target_id": "pf_assertion_ad806f761136"
+    }
+  ],
+  "role": "gate_gap_repairer",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Repaired missing analysis-profile evidence for target assertion pf_assertion_ad806f761136 by narrowing it to read-only, evidence-backed Stage10 next-step priorities and adding metric_output, reproduction_log, and sanity_check evidence. No quest or autoscidelphi source files were modified.",
+  "target_assertion_id": "pf_assertion_ad806f761136",
+  "task_id": "pf_task_e417c2948c4f",
+  "title": "Gate gap repair for Stage10 evidence-side next-step priorities"
+}

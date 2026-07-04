@@ -1,0 +1,64 @@
+{
+  "artifacts": [],
+  "assertions": [
+    {
+      "assertion_type": "data_result",
+      "confidence": 0.95,
+      "evidence": [
+        {
+          "command": "python3 -c \"from pathlib import Path; import csv,json; r=Path('/home/xu/project/loop/DeepScientist/quests/001'); rows=list(csv.DictReader(open(r/'experiments/stage10/07_large_eval/TOKEN_WEIGHTED_EVAL.csv', newline=''))); L=json.load(open(r/'experiments/stage10/07_large_eval/LARGE_EVAL_SUMMARY.json')); M=json.load(open(r/'experiments/stage10/08_meta/STAGE10_META_ANALYSIS.json')); out={'token_weighted_eval_rows':len(rows),'original_reference_rows':sum(x['source_endpoint_type']=='original_reference' for x in rows),'target_100m_y_recover_rows':sum(x['source_endpoint_type']=='Y_recover' and x['training_budget_tokens']=='100000000' for x in rows),'large_eval_evaluated_endpoint_rows':L['evaluated_endpoint_rows'],'large_eval_expected_formal_endpoint_rows':L['expected_formal_endpoint_rows'],'large_eval_total_table_rows_including_original':L['total_table_rows_including_original'],'large_eval_status':L['status'],'large_eval_hard_failures':L['hard_failures'],'meta_panel_N_by_model_sum':sum(M['panel_N_by_model'].values()),'meta_selector_panel_rows_unique':sorted({x['panel_rows'] for x in M['selector_metrics']})}; print(json.dumps(out, sort_keys=True))\"",
+          "directness": 1.0,
+          "evidence_type": "metric_output",
+          "exit_code": 0,
+          "freshness": 0.95,
+          "locator": "Command executed from /home/xu/project/autosci-delphi/ponder-forge; inputs read only under /home/xu/project/loop/DeepScientist/quests/001",
+          "metric": {
+            "large_eval_evaluated_endpoint_rows": 360,
+            "large_eval_expected_formal_endpoint_rows": 360,
+            "large_eval_hard_failures": [],
+            "large_eval_status": "passed_S10-12_large_heldout_eval_alignment_audit",
+            "large_eval_total_table_rows_including_original": 366,
+            "meta_panel_N_by_model_sum": 360,
+            "meta_selector_panel_rows_unique": [
+              360
+            ],
+            "original_reference_rows": 6,
+            "target_100m_y_recover_rows": 360,
+            "token_weighted_eval_rows": 366
+          },
+          "quote_or_observation": "Command output: {\"large_eval_evaluated_endpoint_rows\": 360, \"large_eval_expected_formal_endpoint_rows\": 360, \"large_eval_hard_failures\": [], \"large_eval_status\": \"passed_S10-12_large_heldout_eval_alignment_audit\", \"large_eval_total_table_rows_including_original\": 366, \"meta_panel_N_by_model_sum\": 360, \"meta_selector_panel_rows_unique\": [360], \"original_reference_rows\": 6, \"target_100m_y_recover_rows\": 360, \"token_weighted_eval_rows\": 366}",
+          "relevance": 1.0,
+          "reliability": 0.97,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/{07_large_eval/TOKEN_WEIGHTED_EVAL.csv,07_large_eval/LARGE_EVAL_SUMMARY.json,08_meta/STAGE10_META_ANALYSIS.json}",
+          "title": "Read-only recomputation of Stage10 large-eval/meta row-count alignment"
+        },
+        {
+          "directness": 0.95,
+          "evidence_type": "sanity_check",
+          "freshness": 0.95,
+          "metric": {
+            "csv_rows_equal_large_total_table_rows": true,
+            "meta_selector_panel_rows_all_360": true,
+            "target_rows_equal_large_eval_evaluated": true,
+            "target_rows_equal_large_eval_expected": true,
+            "target_rows_equal_meta_panel_sum": true
+          },
+          "quote_or_observation": "Sanity checks from the metric output: 366 CSV data rows equals LARGE_EVAL_SUMMARY total_table_rows_including_original=366; 360 CSV 100M Y_recover target rows equals LARGE_EVAL_SUMMARY evaluated_endpoint_rows=360 and expected_formal_endpoint_rows=360; the same 360 equals the STAGE10_META_ANALYSIS panel_N_by_model sum; selector metric panel_rows values are uniformly [360].",
+          "relevance": 1.0,
+          "reliability": 0.95,
+          "source_ref": "TOKEN_WEIGHTED_EVAL.csv plus LARGE_EVAL_SUMMARY.json and STAGE10_META_ANALYSIS.json",
+          "title": "Alignment checks all resolve to the same 360 target-row count"
+        }
+      ],
+      "importance": 0.92,
+      "supersedes_assertion_id": "pf_assertion_a2358f8065c3",
+      "text": "For the read-only Stage10 artifacts, the supported S10-12/S10-13 alignment claim is row-count bounded: TOKEN_WEIGHTED_EVAL.csv contains 366 data rows total, composed of 6 original-reference rows and 360 100M Y_recover target rows; LARGE_EVAL_SUMMARY.json records evaluated_endpoint_rows=360, expected_formal_endpoint_rows=360, total_table_rows_including_original=366, status=passed_S10-12_large_heldout_eval_alignment_audit, and hard_failures=[]; STAGE10_META_ANALYSIS.json records the same S10-12 100M Y_recover primary target, panel_N_by_model sums to 360, and all selector metric panel_rows values are 360. This supports row-count consistency only, not any stronger downstream or oral-ready claim."
+    }
+  ],
+  "role": "gate_gap_repairer",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Resolved the missing analysis-profile evidence gap for pf_assertion_a2358f8065c3 by narrowing the assertion to directly inspected Stage10 row-count alignment and adding reviewer-visible metric_output evidence from a successful read-only command with exit_code=0. No source quest files or repository files were intentionally modified.",
+  "target_assertion_id": "pf_assertion_a2358f8065c3",
+  "task_id": "pf_task_45f302654c2b",
+  "title": "Repair profile evidence for Stage10 S10-12/S10-13 row-count alignment"
+}

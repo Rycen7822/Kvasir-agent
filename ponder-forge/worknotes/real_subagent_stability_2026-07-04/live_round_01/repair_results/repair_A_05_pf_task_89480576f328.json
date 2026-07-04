@@ -1,0 +1,84 @@
+{
+  "artifacts": [],
+  "assertions": [
+    {
+      "assertion_type": "gate_gap_repair_note",
+      "confidence": 0.96,
+      "critical": false,
+      "evidence": [
+        {
+          "command": "PYTHONDONTWRITEBYTECODE=1 python - <<'PY'  # read STAGE10_STATE.json, LARGE_EVAL_SUMMARY.json, STAGE10_META_ANALYSIS.json, DOWNSTREAM_GATE_STATUS.json, REPORT_AUDIT.json; assert conservative gate fields; print JSON  PY",
+          "evidence_type": "metric_output",
+          "exit_code": 0,
+          "metric": {
+            "ce_selection_gate_passed": false,
+            "downstream_gate_status": "closed",
+            "downstream_result_manifest": null,
+            "downstream_result_manifest_exists": false,
+            "downstream_run_executed": false,
+            "evaluated_endpoint_rows": 360,
+            "expected_formal_endpoint_rows": 360,
+            "large_eval_gate_passed": true,
+            "large_eval_status": "passed_S10-12_large_heldout_eval_alignment_audit",
+            "model_family_gate_met_meta": false,
+            "model_family_gate_met_state": false,
+            "model_family_gate_status": "resource_gated_family_gate_failed",
+            "oral_ready_gate_status": "closed",
+            "report_audit_ce_selection_gate_passed": false,
+            "report_audit_downstream_gate_status": "closed",
+            "report_audit_downstream_run_executed": false,
+            "report_audit_model_family_gate_met": false,
+            "resource_gated_model_ids": [
+              "gemma-2-2b",
+              "smollm2-1.7b",
+              "opt-1.3b",
+              "falcon-rw-1b",
+              "stablelm-2-1.6b",
+              "mistral-7b-score-side-stress"
+            ],
+            "seed_robustness_gate_passed": true,
+            "seed_robustness_rows": 252,
+            "stage10_active_substage": "Stage10_complete",
+            "stage10_completion_status": "complete_with_failed_model_family_gate_and_closed_downstream_oral_gates",
+            "total_table_rows_including_original": 366
+          },
+          "quote_or_observation": "{\"ce_selection_gate_passed\": false, \"downstream_gate_status\": \"closed\", \"downstream_result_manifest\": null, \"downstream_result_manifest_exists\": false, \"downstream_run_executed\": false, \"evaluated_endpoint_rows\": 360, \"expected_formal_endpoint_rows\": 360, \"large_eval_gate_passed\": true, \"large_eval_status\": \"passed_S10-12_large_heldout_eval_alignment_audit\", \"model_family_gate_met_meta\": false, \"model_family_gate_met_state\": false, \"model_family_gate_status\": \"resource_gated_family_gate_failed\", \"oral_ready_gate_status\": \"closed\", \"report_audit_ce_selection_gate_passed\": false, \"report_audit_downstream_gate_status\": \"closed\", \"report_audit_downstream_run_executed\": false, \"report_audit_model_family_gate_met\": false, \"resource_gated_model_ids\": [\"gemma-2-2b\", \"smollm2-1.7b\", \"opt-1.3b\", \"falcon-rw-1b\", \"stablelm-2-1.6b\", \"mistral-7b-score-side-stress\"], \"seed_robustness_gate_passed\": true, \"seed_robustness_rows\": 252, \"stage10_active_substage\": \"Stage10_complete\", \"stage10_completion_status\": \"complete_with_failed_model_family_gate_and_closed_downstream_oral_gates\", \"total_table_rows_including_original\": 366}",
+          "source_ref": "read-only terminal command from /home/xu/project/loop/DeepScientist/quests/001"
+        },
+        {
+          "evidence_type": "reproduction_log",
+          "quote_or_observation": "S10-15c validation and post-compression regression logs are completed with exit_code=0; validation checked active_substage=Stage10_complete, stage10_completion_status=complete_with_failed_model_family_gate_and_closed_downstream_oral_gates, model_family_gate_met=false, downstream_gate_status=closed, oral_ready_gate_status=closed, and target_write_ledger_rows=1380; regression command was rtk pytest experiments/stage10/tests -q.",
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/.ds/bash_exec/bash-6d051ba0/meta.json and bash-37f6371e/meta.json"
+        },
+        {
+          "evidence_type": "transform_script",
+          "quote_or_observation": "Gate logic records downstream_gate_status=closed, downstream_run_executed=False, result_manifest=None, writes_downstream=False, and meta gate_results set ce_selection_gate_passed=false, model_family_gate_met=false, large_eval_gate_passed=true, seed_robustness_gate_passed=true.",
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/scripts/stage10_downstream_gate.py and stage10_meta_analysis.py"
+        },
+        {
+          "command": "python cli.py gate --run-id pf_run_80cb097d3870",
+          "evidence_type": "sanity_check",
+          "exit_code": 0,
+          "quote_or_observation": "Gate output: status=blocked only by incomplete_gate_gap_repairs; critical_assertion_count=23; supported_critical_assertion_count=23; unsupported_critical_assertions=0; independent_review_coverage=1.0; final_statement_trace_coverage=1.0.",
+          "source_ref": "python cli.py gate --run-id pf_run_80cb097d3870 from /home/xu/project/autosci-delphi/ponder-forge"
+        }
+      ],
+      "importance": 0.79,
+      "supersedes_assertion_id": "pf_assertion_8011dfb8b596",
+      "text": "For superseded assertion pf_assertion_8011dfb8b596, read-only inspection supports the narrowed conservative Stage10 boundary: Stage10 is complete as an evidence package; large evaluation and seed robustness passed; CE selection failed; model-family coverage is resource-gated/false; downstream remains closed/not executed; and no downstream result manifest exists. The active run gate already reports supported and independently reviewed critical coverage, so this repair note records evidence without creating a new critical data_result assertion."
+    }
+  ],
+  "confidence": 0.96,
+  "files_created_or_modified": [],
+  "gate_gap_resolution": {
+    "missing_independent_verdict": "Read-only Ponder-Forge gate check reported supported_critical_assertion_count=23, unsupported_critical_assertions=0, independent_review_coverage=1.0, and final_statement_trace_coverage=1.0; no independent-verdict gap remains except unfinished repair-task bookkeeping.",
+    "missing_profile_evidence": "Recorded reviewer-visible metric_output evidence with command and exit_code=0, plus reproduction_log, transform_script, and sanity_check evidence from read-only inspection."
+  },
+  "repair_status": "evidence_recorded_without_new_critical_assertion",
+  "role": "gate_gap_repairer",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Read-only repair inspection confirmed the conservative Stage10 boundary and did not modify quest or repository files. A fresh metric command exited 0 and verified Stage10_complete, large_eval_gate_passed=true with 360/360 endpoint rows, seed_robustness_gate_passed=true with 252 rows, ce_selection_gate_passed=false, model_family_gate_met=false/resource_gated_family_gate_failed, downstream_gate_status=closed, downstream_run_executed=false, and no downstream result manifest. Current Ponder-Forge gate output already shows profile-evidence and independent-review coverage complete; only unfinished repair tasks remain, so this report avoids adding a new critical data_result assertion that would require another independent verdict cycle.",
+  "target_assertion_id": "pf_assertion_8011dfb8b596",
+  "task_id": "pf_task_89480576f328",
+  "title": "Gate-gap repair evidence for pf_assertion_8011dfb8b596"
+}

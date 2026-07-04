@@ -129,6 +129,18 @@
 - Syntax check passed: `python3 -m py_compile collect_and_submit_repairs.py`.
 - Batch A dry-run summary is expected pending state: expected `20`, found `0`, `all_found=false`, `all_valid=false`; summary saved as `37_repair_batch_A_collect_summary.json`.
 
+### 2026-07-05T00:26:34+08:00 Repair batch A partial collection and targeted redispatch
+
+- Old reviewer watchdog processes `proc_cab01adca13a` and `proc_3a54ea74d78e` were SIGTERM/killed after reviewer verdicts were already complete (`83/83`, `66 accept / 17 revise`); they are obsolete and unrelated to repair collection.
+- Batch A repair collector progressed from `15/20` to `18/20` valid reports. Missing task ids after a five-minute short poll: `pf_task_d37f38a65f73` (`pf_assertion_2019cdb81c3d`) and `pf_task_15b5f6cf84e0` (`pf_assertion_46665d85d55a`).
+- Added `live_round_01/watch_and_record_repair_batch.py` as a scoped helper for one repair batch: it only calls `collect_and_submit_repairs.py --record` when the batch reaches `all_valid=true`; one-shot/short-poll runs timed out incomplete and did not submit partial reports.
+- Targeted redispatch `deleg_67bc29a6` covers only the two missing batch A task ids. Do not declare batch A complete until a later collector run reaches `20/20 all_valid` and records through installed `submit-report`.
+
+### 2026-07-05T00:30:59+08:00 Repair batch A recorded; batch B dispatched
+
+- Scoped watcher reached batch A `20/20 all_valid` on attempt 4 and then invoked installed `submit-report` for all 20 reports. Installed run counts advanced to reports `68`, assertions `107`, evidence items `390`; gate remains `blocked` with `next_required_action=delegations`, as expected because 43 repair tasks remain.
+- Dispatched repair batch B (20 leaf subagents) as `deleg_b92298f2`; each reads exact local payload `live_round_01/35_repair_batch_B_payload.json`. Batch B is pending async return and must be collected/recorded with `collect_and_submit_repairs.py --batch B --record` only after `20/20 all_valid`.
+
 ### 2026-07-04T20:32:50+08:00 Continuation completion audit
 
 - Re-read the plan acceptance gates and current active worknote status before relying on prior context.

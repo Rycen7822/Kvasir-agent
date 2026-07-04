@@ -1,0 +1,101 @@
+{
+  "artifacts": [],
+  "assertions": [
+    {
+      "assertion_type": "data_result",
+      "confidence": 0.93,
+      "evidence": [
+        {
+          "command": "python3 - <<'PY'\nimport csv, json\nfrom pathlib import Path\nr = Path('/home/xu/project/loop/DeepScientist/quests/001')\nlarge = json.loads((r/'experiments/stage10/07_large_eval/LARGE_EVAL_SUMMARY.json').read_text())\nmeta = json.loads((r/'experiments/stage10/08_meta/STAGE10_META_ANALYSIS.json').read_text())\nrows = {x['selector_name']: x for x in csv.DictReader((r/'experiments/stage10/08_meta/SELECTOR_METRICS.csv').open())}\ndef f(name, key):\n    return float(rows[name][key])\nout = {\n    'large_eval_rows': large['evaluated_endpoint_rows'],\n    'expected_rows': large['expected_formal_endpoint_rows'],\n    'token_minmax': [min(v['max_total_eval_tokens'] for v in large['model_counts'].values()), max(v['max_total_eval_tokens'] for v in large['model_counts'].values())],\n    'gate': {k: meta['gate_results'][k] for k in ['gate_verdict', 'ce_selection_gate_passed', 'model_family_gate_met', 'large_eval_gate_passed', 'seed_robustness_gate_passed']},\n    'orbit_vs_cfc': [f('OrbitRepair-Proxy','macro_normalized_regret_at3'), f('CFC-only','macro_normalized_regret_at3'), f('OrbitRepair-Proxy','mean_cost_to_contain_winner'), f('CFC-only','mean_cost_to_contain_winner'), rows['OrbitRepair-Proxy']['beats_cfc_only_on_macro_normalized_regret_at3'], rows['OrbitRepair-Proxy']['beats_cfc_only_on_mean_cost_to_contain_winner']],\n    'loopcert_vs_cfc': [f('LoopCert-only','macro_normalized_regret_at3'), f('CFC-only','macro_normalized_regret_at3'), f('LoopCert-only','mean_cost_to_contain_winner'), f('CFC-only','mean_cost_to_contain_winner'), rows['LoopCert-only']['beats_cfc_only_on_macro_normalized_regret_at3'], rows['LoopCert-only']['beats_cfc_only_on_mean_cost_to_contain_winner']]\n}\nprint(json.dumps(out, sort_keys=True))\nPY",
+          "directness": 1.0,
+          "evidence_type": "metric_output",
+          "exit_code": 0,
+          "freshness": 0.93,
+          "id": "metric_stage10_large_meta_selector_summary",
+          "locator": "terminal read-only Python summary command",
+          "metric": {
+            "expected_rows": 360,
+            "gate": {
+              "ce_selection_gate_passed": false,
+              "gate_verdict": "closed",
+              "large_eval_gate_passed": true,
+              "model_family_gate_met": false,
+              "seed_robustness_gate_passed": true
+            },
+            "large_eval_rows": 360,
+            "loopcert_vs_cfc": [
+              0.03223671717595801,
+              0.044697468910847644,
+              16.666666666666668,
+              13.833333333333334,
+              "True",
+              "False"
+            ],
+            "orbit_vs_cfc": [
+              0.0058068827370489386,
+              0.044697468910847644,
+              4.833333333333333,
+              13.833333333333334,
+              "True",
+              "True"
+            ],
+            "token_minmax": [
+              2006719,
+              2008593
+            ]
+          },
+          "quote_or_observation": "Command returned exit_code=0 with expected_rows=360, large_eval_rows=360, token_minmax=[2006719,2008593], gate_verdict=closed, ce_selection_gate_passed=false, model_family_gate_met=false, orbit_vs_cfc=[0.0058068827370489386,0.044697468910847644,4.833333333333333,13.833333333333334,True,True], and loopcert_vs_cfc=[0.03223671717595801,0.044697468910847644,16.666666666666668,13.833333333333334,True,False].",
+          "relevance": 1.0,
+          "reliability": 0.96,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/{07_large_eval/LARGE_EVAL_SUMMARY.json,08_meta/STAGE10_META_ANALYSIS.json,08_meta/SELECTOR_METRICS.csv}",
+          "title": "Read-only Stage10 large-eval/meta selector metric summary"
+        },
+        {
+          "command": "python3 - <<'PY'\nimport csv, json\nfrom pathlib import Path\nr = Path('/home/xu/project/loop/DeepScientist/quests/001')\nlarge = json.loads((r/'experiments/stage10/07_large_eval/LARGE_EVAL_SUMMARY.json').read_text())\nmeta = json.loads((r/'experiments/stage10/08_meta/STAGE10_META_ANALYSIS.json').read_text())\nrows = {x['selector_name']: x for x in csv.DictReader((r/'experiments/stage10/08_meta/SELECTOR_METRICS.csv').open())}\ndef f(name, key):\n    return float(rows[name][key])\nout = {\n    'large_eval_rows': large['evaluated_endpoint_rows'],\n    'expected_rows': large['expected_formal_endpoint_rows'],\n    'token_minmax': [min(v['max_total_eval_tokens'] for v in large['model_counts'].values()), max(v['max_total_eval_tokens'] for v in large['model_counts'].values())],\n    'gate': {k: meta['gate_results'][k] for k in ['gate_verdict', 'ce_selection_gate_passed', 'model_family_gate_met', 'large_eval_gate_passed', 'seed_robustness_gate_passed']},\n    'orbit_vs_cfc': [f('OrbitRepair-Proxy','macro_normalized_regret_at3'), f('CFC-only','macro_normalized_regret_at3'), f('OrbitRepair-Proxy','mean_cost_to_contain_winner'), f('CFC-only','mean_cost_to_contain_winner'), rows['OrbitRepair-Proxy']['beats_cfc_only_on_macro_normalized_regret_at3'], rows['OrbitRepair-Proxy']['beats_cfc_only_on_mean_cost_to_contain_winner']],\n    'loopcert_vs_cfc': [f('LoopCert-only','macro_normalized_regret_at3'), f('CFC-only','macro_normalized_regret_at3'), f('LoopCert-only','mean_cost_to_contain_winner'), f('CFC-only','mean_cost_to_contain_winner'), rows['LoopCert-only']['beats_cfc_only_on_macro_normalized_regret_at3'], rows['LoopCert-only']['beats_cfc_only_on_mean_cost_to_contain_winner']]\n}\nprint(json.dumps(out, sort_keys=True))\nPY",
+          "directness": 0.9,
+          "evidence_type": "reproduction_log",
+          "exit_code": 0,
+          "freshness": 0.93,
+          "id": "repro_log_read_only_existing_outputs",
+          "locator": "payload boundary plus terminal command cwd=/home/xu/project/autosci-delphi/ponder-forge",
+          "quote_or_observation": "The repair did not rerun Stage10 writers. It only read the existing JSON/CSV/MD outputs named in the metric evidence under the read-only quest boundary and returned a JSON summary on stdout.",
+          "relevance": 0.92,
+          "reliability": 0.9,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001 existing Stage10 outputs",
+          "title": "Read-only provenance for repair evidence"
+        },
+        {
+          "directness": 1.0,
+          "evidence_type": "sanity_check",
+          "freshness": 0.92,
+          "id": "sanity_gate_decision_selector_table",
+          "locator": "GATE_DECISION.md lines 16-28; SELECTOR_METRICS.csv rows 2,3,7",
+          "quote_or_observation": "GATE_DECISION.md lists OrbitRepair-Proxy as regret@3=0.00580688273705, cost=4.83333333333, beats CFC regret=True, beats CFC cost=True; LoopCert-only as regret@3=0.032236717176, cost=16.6666666667, beats CFC regret=True, beats CFC cost=False; and CFC-only as regret@3=0.0446974689108, cost=13.8333333333. The same file states gate verdict closed, ce_selection_gate_passed=False, and model_family_gate_met=False with closed reasons at lines 25-28.",
+          "relevance": 1.0,
+          "reliability": 0.94,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/08_meta/GATE_DECISION.md and SELECTOR_METRICS.csv",
+          "title": "Gate-decision selector table resolves the prior CFC comparison gap"
+        }
+      ],
+      "importance": 0.95,
+      "supersedes_assertion_id": "pf_assertion_4f4d820dd3c3",
+      "text": "Revised Stage10 result: large heldout evaluation and S10-13 meta-analysis are internally consistent but gate-closed. LARGE_EVAL_SUMMARY reports 360 evaluated target endpoints matching 360 expected endpoints, and six active models have passed large-eval status with max_total_eval_tokens in the 2006719-2008593 range. STAGE10_META_ANALYSIS reports large_eval_gate_passed=true, seed_robustness_gate_passed=true, ce_selection_gate_passed=false, model_family_gate_met=false, and gate_verdict=closed. The selector comparison is now direct: OrbitRepair-Proxy beats CFC-only on recorded macro_normalized_regret_at3 (0.0058068827370489386 vs 0.044697468910847644) and mean_cost_to_contain_winner (4.833333333333333 vs 13.833333333333334), while LoopCert-only beats CFC-only on regret@3 but not cost (16.666666666666668 vs 13.833333333333334; beat-cost flag False)."
+    }
+  ],
+  "confidence": 0.93,
+  "files_created_or_modified": [],
+  "gap_repairs": [
+    {
+      "gap_type": "missing_independent_verdict",
+      "previous_reviewer_task_id": "pf_task_45dfef1d8eab",
+      "previous_verdict": "revise",
+      "repair_action": "replacement assertion narrows/grounds the selector-comparison claim with direct CFC-only metrics requested by the previous reviewer"
+    }
+  ],
+  "role": "gate_gap_repairer",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Read the selected batch-A repair payload and performed read-only inspection of existing Stage10 outputs. The repair addresses the prior independent reviewer objection by adding direct CFC-only selector comparison evidence: OrbitRepair-Proxy beats CFC-only on recorded regret@3 and cost metrics, while LoopCert-only does not beat CFC-only on cost. No source quest files were modified and no artifacts were produced.",
+  "target_assertion_id": "pf_assertion_4f4d820dd3c3",
+  "task_id": "pf_task_b230ebd39b19",
+  "title": "Repair independent-review gap for pf_assertion_4f4d820dd3c3"
+}

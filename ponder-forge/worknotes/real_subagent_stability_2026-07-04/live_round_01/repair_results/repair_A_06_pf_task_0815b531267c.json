@@ -1,0 +1,115 @@
+{
+  "artifacts": [],
+  "assertions": [
+    {
+      "assertion_type": "data_result",
+      "confidence": 0.96,
+      "critical": true,
+      "evidence": [
+        {
+          "command": "python3 - <<'PY'\nimport csv, json\nfrom collections import Counter\nfrom pathlib import Path\nroot = Path('/home/xu/project/loop/DeepScientist/quests/001')\neval_csv = root / 'experiments/stage10/07_large_eval/TOKEN_WEIGHTED_EVAL.csv'\nsummary_path = root / 'experiments/stage10/07_large_eval/LARGE_EVAL_SUMMARY.json'\nmanifest_path = root / 'experiments/stage10/07_large_eval/LARGE_EVAL_MANIFEST.json'\nrows = list(csv.DictReader(eval_csv.open(newline='')))\nsummary = json.loads(summary_path.read_text())\nmanifest = json.loads(manifest_path.read_text())\ntarget = [r for r in rows if r['source_endpoint_type'] == 'Y_recover' and r['training_budget_tokens'] == '100000000']\noriginal = [r for r in rows if r['source_endpoint_type'] == 'original_reference']\nby_model = Counter(r['model_id'] for r in target)\norig_by_model = Counter(r['model_id'] for r in original)\nmodel_status = {model: v['status'] for model, v in sorted(summary['model_counts'].items())}\nmodel_summary_rows = {model: v['row_count'] for model, v in sorted(summary['model_counts'].items())}\nresult = {\n    'csv_rows_total': len(rows),\n    'csv_statuses': sorted(set(r['status'] for r in rows)),\n    'summary_status': summary['status'],\n    'summary_evaluated_endpoint_rows': summary['evaluated_endpoint_rows'],\n    'summary_expected_formal_endpoint_rows': summary['expected_formal_endpoint_rows'],\n    'summary_total_table_rows_including_original': summary['total_table_rows_including_original'],\n    'active_model_count': summary['model_availability']['active_entry_count'],\n    'target_y_recover_100m_rows': len(target),\n    'target_rows_per_model': dict(sorted(by_model.items())),\n    'original_reference_rows': len(original),\n    'original_reference_rows_per_model': dict(sorted(orig_by_model.items())),\n    'summary_model_row_counts': model_summary_rows,\n    'summary_model_statuses': model_status,\n    'manifest_limit_endpoint_types': manifest['limit_endpoint_types'],\n    'manifest_limit_budgets': manifest['limit_budgets'],\n    'manifest_writes_Y_frozen': manifest['writes_Y_frozen'],\n    'manifest_writes_Y_recover': manifest['writes_Y_recover'],\n    'manifest_uses_training_batch_for_eval': manifest['uses_training_batch_for_eval'],\n    'manifest_heldout_evaluator_freeze': manifest['heldout_evaluator_freeze'],\n}\nprint(json.dumps(result, sort_keys=True))\nPY",
+          "directness": 1.0,
+          "evidence_type": "metric_output",
+          "exit_code": 0,
+          "freshness": 0.95,
+          "metric": {
+            "active_model_count": 6,
+            "csv_rows_total": 366,
+            "csv_statuses": [
+              "completed_s10_12_eval"
+            ],
+            "manifest_heldout_evaluator_freeze": "experiments/stage10/05_panel_precommit/HELDOUT_EVALUATOR_FREEZE.json",
+            "manifest_limit_budgets": [
+              100000000
+            ],
+            "manifest_limit_endpoint_types": [
+              "Y_recover"
+            ],
+            "manifest_uses_training_batch_for_eval": false,
+            "manifest_writes_Y_frozen": false,
+            "manifest_writes_Y_recover": false,
+            "original_reference_rows": 6,
+            "original_reference_rows_per_model": {
+              "llama-3.2-1b": 1,
+              "olmo-2-1b": 1,
+              "pythia-160m": 1,
+              "pythia-1b": 1,
+              "pythia-410m": 1,
+              "qwen2.5-1.5b": 1
+            },
+            "summary_evaluated_endpoint_rows": 360,
+            "summary_expected_formal_endpoint_rows": 360,
+            "summary_model_row_counts": {
+              "llama-3.2-1b": 61,
+              "olmo-2-1b": 61,
+              "pythia-160m": 61,
+              "pythia-1b": 61,
+              "pythia-410m": 61,
+              "qwen2.5-1.5b": 61
+            },
+            "summary_model_statuses": {
+              "llama-3.2-1b": "passed",
+              "olmo-2-1b": "passed",
+              "pythia-160m": "passed",
+              "pythia-1b": "passed",
+              "pythia-410m": "passed",
+              "qwen2.5-1.5b": "passed"
+            },
+            "summary_status": "passed_S10-12_large_heldout_eval_alignment_audit",
+            "summary_total_table_rows_including_original": 366,
+            "target_rows_per_model": {
+              "llama-3.2-1b": 60,
+              "olmo-2-1b": 60,
+              "pythia-160m": 60,
+              "pythia-1b": 60,
+              "pythia-410m": 60,
+              "qwen2.5-1.5b": 60
+            },
+            "target_y_recover_100m_rows": 360
+          },
+          "quote_or_observation": "Command output: 366 completed CSV rows; summary_evaluated_endpoint_rows=360 equals summary_expected_formal_endpoint_rows=360; active_model_count=6; target_y_recover_100m_rows=360 with target_rows_per_model={llama-3.2-1b:60, olmo-2-1b:60, pythia-160m:60, pythia-1b:60, pythia-410m:60, qwen2.5-1.5b:60}; original_reference_rows=6 with one per model; summary_model_statuses all passed; manifest limits endpoint_types=['Y_recover'], budgets=[100000000], heldout_evaluator_freeze=experiments/stage10/05_panel_precommit/HELDOUT_EVALUATOR_FREEZE.json, writes_Y_frozen=false, writes_Y_recover=false, uses_training_batch_for_eval=false.",
+          "relevance": 1.0,
+          "reliability": 0.98,
+          "source_ref": "Read-only Python aggregation over /home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/07_large_eval/TOKEN_WEIGHTED_EVAL.csv, LARGE_EVAL_SUMMARY.json, and LARGE_EVAL_MANIFEST.json"
+        },
+        {
+          "directness": 0.9,
+          "evidence_type": "transform_script",
+          "freshness": 0.9,
+          "locator": "lines 1238-1263",
+          "quote_or_observation": "summarize_outputs reads TOKEN_WEIGHTED_EVAL rows with status completed_s10_12_eval, counts expected_completed against expected_ids, records per-model row_count/max_total_eval_tokens/status, and writes expected_formal_endpoint_rows, evaluated_endpoint_rows, total_table_rows_including_original, model_counts, hard_failures, and passed/failed S10-12 alignment status.",
+          "relevance": 0.95,
+          "reliability": 0.95,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/scripts/stage10_large_eval.py"
+        },
+        {
+          "directness": 0.95,
+          "evidence_type": "sanity_check",
+          "freshness": 0.95,
+          "locator": "STAGE10_CLAIM_LEDGER.md lines 7-14; STAGE10_ORAL_READY_GATE.md lines 5-11",
+          "quote_or_observation": "Claim ledger records large_eval_alignment=passed with evaluated_endpoint_rows=360 and boundary 'Large heldout eval is evidence for the frozen Stage10 panel only'; original_reference_improvement is not_evaluated with boundary 'Recovered endpoints are not claimed to improve on the pretrained reference.' Oral gate status is closed and says Stage10 does not carry pretrained-reference superiority claims.",
+          "relevance": 1.0,
+          "reliability": 0.96,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/12_paper_package/STAGE10_CLAIM_LEDGER.md and STAGE10_ORAL_READY_GATE.md"
+        }
+      ],
+      "importance": 0.98,
+      "supersedes_assertion_id": "pf_assertion_116c91c722e6",
+      "text": "Read-only Stage10 inspection supports the original large-heldout boundary: TOKEN_WEIGHTED_EVAL.csv contains 360 completed 100M Y_recover target rows across the six active models (60 per model) plus 6 original-reference rows for 366 completed token-weighted rows total. The result is evidence for recovery against the frozen heldout panel, while the package explicitly leaves pretrained-reference superiority not evaluated/not claimed."
+    }
+  ],
+  "confidence": 0.96,
+  "gap_repairs": [
+    {
+      "gap_type": "missing_profile_evidence",
+      "repair": "Provided metric_output with command and exit_code=0, plus transform_script and sanity_check evidence required by the analysis profile gate."
+    }
+  ],
+  "profile": "analysis",
+  "role": "gate_gap_repairer",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Added command-backed metric_output plus transform_script and sanity_check evidence from read-only Stage10 inspection. The evidence confirms 360 100M Y_recover rows across six active models (60 each), six original-reference rows, 366 total token-weighted rows, passed S10-12 alignment, frozen heldout manifest boundaries, and no pretrained-reference superiority claim.",
+  "target_assertion_id": "pf_assertion_116c91c722e6",
+  "task_id": "pf_task_0815b531267c",
+  "title": "Repair pf_assertion_116c91c722e6 profile-evidence gap for Stage10 large heldout counts"
+}

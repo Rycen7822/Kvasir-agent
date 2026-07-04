@@ -1,0 +1,149 @@
+{
+  "artifacts": [],
+  "assertions": [
+    {
+      "assertion_type": "data_result",
+      "confidence": 0.93,
+      "critical": true,
+      "evidence": [
+        {
+          "command": "python -c <read-only Stage10 gate metric summary script over LARGE_EVAL_SUMMARY.json, STAGE10_META_ANALYSIS.json, DOWNSTREAM_GATE_STATUS.json, and SEED_ROBUSTNESS.csv>",
+          "directness": 1.0,
+          "evidence_type": "metric_output",
+          "exit_code": 0,
+          "freshness": 0.95,
+          "locator": "stdout from command run at quest root",
+          "metric": {
+            "all_large_eval_models_passed": true,
+            "ce_selection_gate_passed": false,
+            "closed_reasons": [
+              "CE selection gate did not beat CFC-only on both macro regret@3 and cost-to-contain",
+              "Model-family gate is resource-gated"
+            ],
+            "downstream_gate_status": "closed",
+            "downstream_result_manifest": null,
+            "downstream_run_executed": false,
+            "evaluated_endpoint_rows": 360,
+            "expected_formal_endpoint_rows": 360,
+            "gate_verdict": "closed",
+            "large_eval_gate_passed": true,
+            "large_eval_status": "passed_S10-12_large_heldout_eval_alignment_audit",
+            "model_count": 6,
+            "model_family_gate_met": false,
+            "oral_ready_gate_status": "closed",
+            "resource_gated_model_ids": [
+              "gemma-2-2b",
+              "smollm2-1.7b",
+              "opt-1.3b",
+              "falcon-rw-1b",
+              "stablelm-2-1.6b",
+              "mistral-7b-score-side-stress"
+            ],
+            "seed_robustness_100m_completed": 126,
+            "seed_robustness_30m_completed": 126,
+            "seed_robustness_csv_rows": 252,
+            "seed_robustness_gate_passed": true,
+            "selector_metrics_subset": {
+              "CFC-only": {
+                "beats_cost": false,
+                "beats_regret": false,
+                "cost": 13.833333333333334,
+                "regret3": 0.044697468910847644
+              },
+              "LoopCert-only": {
+                "beats_cost": false,
+                "beats_regret": true,
+                "cost": 16.666666666666668,
+                "regret3": 0.03223671717595801
+              },
+              "OrbitRepair-Proxy": {
+                "beats_cost": true,
+                "beats_regret": true,
+                "cost": 4.833333333333333,
+                "regret3": 0.0058068827370489386
+              },
+              "Pareto-front": {
+                "beats_cost": false,
+                "beats_regret": true,
+                "cost": 16.5,
+                "regret3": 0.03313607480648891
+              }
+            },
+            "token_weighted_rows_including_original": 366
+          },
+          "quote_or_observation": "Command-backed summary shows large_eval_gate_passed=true, seed_robustness_gate_passed=true, ce_selection_gate_passed=false, model_family_gate_met=false, downstream_gate_status=closed, downstream_run_executed=false, downstream_result_manifest=null, oral_ready_gate_status=closed, evaluated_endpoint_rows=360, expected_formal_endpoint_rows=360, token_weighted_rows_including_original=366, seed_robustness_csv_rows=252, and all_large_eval_models_passed=true.",
+          "relevance": 1.0,
+          "reliability": 0.96,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001",
+          "title": "Read-only Stage10 gate metric summary"
+        },
+        {
+          "directness": 0.95,
+          "evidence_type": "sanity_check",
+          "freshness": 0.9,
+          "locator": "lines 1-12 and 25-32",
+          "quote_or_observation": "GATE_DECISION.md records status passed_S10-13_meta_analysis_portfolio_gate_decision, downstream gate closed, oral ready gate closed, gate verdict closed, ce_selection_gate_passed False, large_eval_gate_passed True, seed_robustness_gate_passed True, model_family_gate_met False; closed reasons are CE selection not beating CFC-only on both required metrics and the model-family gate being resource-gated; claim boundary says S10-13 does not run downstream tasks or open oral-ready claims.",
+          "relevance": 0.98,
+          "reliability": 0.94,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/08_meta/GATE_DECISION.md",
+          "title": "Gate decision closes CE, model-family, downstream, and oral claims"
+        },
+        {
+          "directness": 0.95,
+          "evidence_type": "sanity_check",
+          "freshness": 0.9,
+          "locator": "lines 5-11",
+          "quote_or_observation": "STAGE10_ORAL_READY_GATE.md records Status: closed, with reasons CE selection did not beat CFC-only on both macro regret@3 and cost-to-contain and model-family gate is resource-gated; its boundary says Stage10 does not carry venue-readiness, downstream utility, or pretrained-reference superiority claims.",
+          "relevance": 0.96,
+          "reliability": 0.94,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/12_paper_package/STAGE10_ORAL_READY_GATE.md",
+          "title": "Oral-ready gate explicitly closed"
+        },
+        {
+          "directness": 0.93,
+          "evidence_type": "sanity_check",
+          "freshness": 0.9,
+          "locator": "lines 7-14 and 17",
+          "quote_or_observation": "The claim ledger marks model_family_gate failed, ce_selection_gate failed, large_eval_alignment passed, seed_robustness passed, downstream_utility not_evaluated with downstream_gate_status=closed and downstream_run_executed=False, oral_gate closed, and original_reference_improvement not_evaluated; it also states the package reads existing Stage10 artifacts only and does not write Y_frozen, Y_recover, or downstream result artifacts.",
+          "relevance": 0.96,
+          "reliability": 0.94,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/12_paper_package/STAGE10_CLAIM_LEDGER.md",
+          "title": "Claim ledger keeps downstream and oral claims bounded"
+        }
+      ],
+      "importance": 0.97,
+      "repair_of": "pf_assertion_1607fa5493e0",
+      "text": "Repaired/narrowed assertion for pf_assertion_1607fa5493e0: Stage10 supports a conservative evidence boundary only. Large heldout evaluation passed for 360/360 expected formal endpoints with 366 token-weighted rows including originals and all six active models passed; seed robustness passed with 252 rows and 126 completed rows at both 30M and 100M. However the CE-selection gate is false, the model-family gate is resource-gated/false, downstream remains closed and not executed with result_manifest=null, and oral-ready status is closed. Recommendations should therefore improve evidence and gate coverage rather than strengthen downstream-utility, oral-readiness, pretrained-reference-superiority, or universal-recovery claims."
+    }
+  ],
+  "files_created_or_modified": [],
+  "issues_encountered": [
+    "A full quest-wide git status timed out after 180 seconds in the large read-only quest repository; scoped diff/status for inspected Stage10/report paths succeeded and was clean."
+  ],
+  "profile": "analysis",
+  "role": "gate_gap_repairer",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Read-only Stage10 inspection repaired the profile-evidence gap by adding command-backed metric evidence and sanity checks. The supported/narrowed boundary is: large evaluation and seed robustness passed, but CE selection, model-family coverage, downstream execution, and oral-ready status remain closed or false; no files were created or modified.",
+  "target_assertion_id": "pf_assertion_1607fa5493e0",
+  "task_id": "pf_task_221bcdd79e3a",
+  "title": "Repair profile evidence gap for pf_assertion_1607fa5493e0",
+  "verification": [
+    {
+      "command": "PYTHONDONTWRITEBYTECODE=1 python - <<'PY' ... _normalize_payload(report) ... PY",
+      "exit_code": 0,
+      "summary": "Local report shape normalized with ponder-forge report_ingest._normalize_payload; nested evidence is linked under one assertion and artifacts is an empty array."
+    },
+    {
+      "command": "git status --short -- .",
+      "exit_code": 0,
+      "summary": "No modified or untracked files under ponder-forge from this repair task.",
+      "workdir": "/home/xu/project/autosci-delphi/ponder-forge"
+    },
+    {
+      "command": "git diff --name-only -- experiments/stage10 experiments/report_archive/STAGE10_RESULTS_REPORT.md && git status --short --untracked-files=no -- experiments/stage10 experiments/report_archive/STAGE10_RESULTS_REPORT.md",
+      "exit_code": 0,
+      "summary": "Scoped diff/status on inspected read-only quest Stage10/report paths returned clean.",
+      "workdir": "/home/xu/project/loop/DeepScientist/quests/001"
+    }
+  ]
+}

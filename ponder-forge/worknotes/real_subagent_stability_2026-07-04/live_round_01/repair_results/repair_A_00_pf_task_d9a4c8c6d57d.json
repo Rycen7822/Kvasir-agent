@@ -1,0 +1,89 @@
+{
+  "artifacts": [],
+  "assertions": [
+    {
+      "assertion_type": "data_result",
+      "confidence": 0.93,
+      "critical": true,
+      "evidence": [
+        {
+          "command": "python - <<'PY'\nimport csv, json\nfrom pathlib import Path\nroot = Path('/home/xu/project/loop/DeepScientist/quests/001')\nlarge = json.loads((root / 'experiments/stage10/07_large_eval/LARGE_EVAL_SUMMARY.json').read_text())\nmeta = json.loads((root / 'experiments/stage10/08_meta/STAGE10_META_ANALYSIS.json').read_text())\nwith (root / 'experiments/stage10/07_large_eval/TOKEN_WEIGHTED_EVAL.csv').open(newline='', encoding='utf-8') as fh:\n    rows = list(csv.DictReader(fh))\ntarget_rows = [r for r in rows if r.get('status') == 'completed_s10_12_eval' and r.get('source_endpoint_type') == 'Y_recover' and r.get('training_budget_tokens') == '100000000']\nmodel_statuses = {model: info.get('status') for model, info in sorted(large.get('model_counts', {}).items())}\nprint(json.dumps({\n    'token_weighted_eval_csv_rows': len(rows),\n    'target_100m_y_recover_rows_from_csv': len(target_rows),\n    'large_eval_summary_status': large.get('status'),\n    'large_eval_evaluated_endpoint_rows': large.get('evaluated_endpoint_rows'),\n    'large_eval_expected_formal_endpoint_rows': large.get('expected_formal_endpoint_rows'),\n    'large_eval_total_table_rows_including_original': large.get('total_table_rows_including_original'),\n    'large_eval_hard_failure_count': len(large.get('hard_failures', [])),\n    'large_eval_model_statuses': model_statuses,\n    'all_six_active_models_passed': len(model_statuses) == 6 and all(v == 'passed' for v in model_statuses.values()),\n    'meta_gate_results': {\n        'ce_selection_gate_passed': meta['gate_results'].get('ce_selection_gate_passed'),\n        'model_family_gate_met': meta['gate_results'].get('model_family_gate_met'),\n        'downstream_gate_status': meta['gate_results'].get('downstream_gate_status'),\n        'oral_ready_gate_status': meta['gate_results'].get('oral_ready_gate_status'),\n        'gate_verdict': meta['gate_results'].get('gate_verdict'),\n        'closed_reasons': meta['gate_results'].get('closed_reasons'),\n    },\n    'meta_model_availability': meta.get('model_availability'),\n}, sort_keys=True))\nPY",
+          "directness": 1.0,
+          "evidence_type": "metric_output",
+          "exit_code": 0,
+          "freshness": 0.9,
+          "metric": {
+            "all_six_active_models_passed": true,
+            "ce_selection_gate_passed": false,
+            "closed_reasons": [
+              "CE selection gate did not beat CFC-only on both macro regret@3 and cost-to-contain",
+              "Model-family gate is resource-gated"
+            ],
+            "downstream_gate_status": "closed",
+            "gate_verdict": "closed",
+            "large_eval_evaluated_endpoint_rows": 360,
+            "large_eval_expected_formal_endpoint_rows": 360,
+            "large_eval_hard_failure_count": 0,
+            "large_eval_model_statuses": {
+              "llama-3.2-1b": "passed",
+              "olmo-2-1b": "passed",
+              "pythia-160m": "passed",
+              "pythia-1b": "passed",
+              "pythia-410m": "passed",
+              "qwen2.5-1.5b": "passed"
+            },
+            "large_eval_summary_status": "passed_S10-12_large_heldout_eval_alignment_audit",
+            "large_eval_total_table_rows_including_original": 366,
+            "model_family_gate_met": false,
+            "oral_ready_gate_status": "closed",
+            "resource_gated_model_ids": [
+              "gemma-2-2b",
+              "smollm2-1.7b",
+              "opt-1.3b",
+              "falcon-rw-1b",
+              "stablelm-2-1.6b",
+              "mistral-7b-score-side-stress"
+            ],
+            "target_100m_y_recover_rows_from_csv": 360,
+            "token_weighted_eval_csv_rows": 366
+          },
+          "quote_or_observation": "Command exited 0 and reported token_weighted_eval_csv_rows=366, target_100m_y_recover_rows_from_csv=360, large_eval_evaluated_endpoint_rows=360, large_eval_expected_formal_endpoint_rows=360, large_eval_total_table_rows_including_original=366, large_eval_hard_failure_count=0, all_six_active_models_passed=true, ce_selection_gate_passed=false, model_family_gate_met=false, oral_ready_gate_status=closed, gate_verdict=closed, and closed_reasons include CE selection not beating CFC-only on both metrics plus resource-gated model-family coverage.",
+          "relevance": 1.0,
+          "reliability": 0.96,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001 (read-only command over Stage10 CSV/JSON outputs)",
+          "title": "Read-only recomputation of S10-12 counts and S10-13 gate state"
+        },
+        {
+          "directness": 0.92,
+          "evidence_type": "transform_script",
+          "freshness": 0.86,
+          "quote_or_observation": "stage10_large_eval.py defines TOKEN_WEIGHTED_EVAL, ALIGNMENT_AUDIT, and SUMMARY_JSON, then summarize_outputs computes expected_formal_endpoint_rows, evaluated_endpoint_rows, total_table_rows_including_original, model_counts, and hard_failures. stage10_meta_analysis.py reads TOKEN_WEIGHTED_EVAL and LARGE_EVAL_SUMMARY, computes gate_results including ce_selection_gate_passed, model_family_gate_met, downstream/oral gate statuses and closed_reasons, and writes STAGE10_META_ANALYSIS.json plus GATE_DECISION.md.",
+          "relevance": 0.94,
+          "reliability": 0.9,
+          "source_ref": "experiments/stage10/scripts/stage10_large_eval.py:47-51,1238-1264; experiments/stage10/scripts/stage10_meta_analysis.py:402-445,519-598,676-681",
+          "title": "Producing scripts for large-eval summary and meta gate"
+        },
+        {
+          "directness": 0.98,
+          "evidence_type": "sanity_check",
+          "freshness": 0.9,
+          "quote_or_observation": "LARGE_EVAL_SUMMARY reports passed_S10-12_large_heldout_eval_alignment_audit, 360 evaluated rows, 360 expected rows, 366 total rows, no hard failures, and six model_counts all status=passed. ALIGNMENT_AUDIT independently lists status passed, active_entry_count=6, active_family_count=4, model_family_gate_met=false, and all six model alignment rows passed. STAGE10_META_ANALYSIS and GATE_DECISION agree that ce_selection_gate_passed=false, model_family_gate_met=false/resource-gated, downstream_gate_status=closed, oral_ready_gate_status=closed, and gate_verdict=closed.",
+          "relevance": 1.0,
+          "reliability": 0.95,
+          "source_ref": "experiments/stage10/07_large_eval/LARGE_EVAL_SUMMARY.json:5-57; experiments/stage10/07_large_eval/ALIGNMENT_AUDIT.md:3-28; experiments/stage10/08_meta/STAGE10_META_ANALYSIS.json:2-31; experiments/stage10/08_meta/GATE_DECISION.md:3-28",
+          "title": "Cross-file consistency check of Stage10 outputs"
+        }
+      ],
+      "importance": 0.97,
+      "repairs_assertion_id": "pf_assertion_fd8a6285b656",
+      "text": "Read-only inspection supports the bounded Stage10 S10-12/S10-13 claim: the large heldout evaluation is complete and aligned with 360 evaluated 100M Y_recover endpoint rows matching 360 expected formal endpoint rows, 366 total token-weighted rows including six original-reference rows, and all six active models reporting passed status; the Stage10 CE/oral decision remains closed because CE selection did not pass and model-family coverage is resource-gated."
+    }
+  ],
+  "confidence": 0.93,
+  "role": "gate_gap_repairer",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Repaired the missing analysis-profile evidence gap for pf_assertion_fd8a6285b656 by adding a read-only metric_output with command and exit_code=0, plus transform_script and sanity_check evidence. No files were created or modified; artifacts is empty.",
+  "target_assertion_id": "pf_assertion_fd8a6285b656",
+  "task_id": "pf_task_d9a4c8c6d57d",
+  "title": "Gate-gap repair evidence for pf_assertion_fd8a6285b656"
+}

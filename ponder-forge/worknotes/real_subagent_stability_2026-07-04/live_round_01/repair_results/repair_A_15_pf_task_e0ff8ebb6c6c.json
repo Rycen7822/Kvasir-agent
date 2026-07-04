@@ -1,0 +1,80 @@
+{
+  "artifacts": [],
+  "assertions": [
+    {
+      "assertion_type": "repair_note",
+      "confidence": 0.93,
+      "critical": false,
+      "evidence": [
+        {
+          "command": "python3 -c 'import csv,json; r=list(csv.DictReader(open(\"experiments/stage10/08_meta/SELECTOR_METRICS.csv\"))); m=json.load(open(\"experiments/stage10/08_meta/STAGE10_META_ANALYSIS.json\")); a=json.load(open(\"experiments/stage10/00_freeze/MODEL_AVAILABILITY.json\")); s=json.load(open(\"experiments/stage10/00_freeze/STAGE10_STATE.json\")); print(json.dumps({\"gate\":m[\"gate_results\"],\"selectors\":{x[\"selector_name\"]:[x[\"macro_normalized_regret_at3\"],x[\"mean_cost_to_contain_winner\"],x[\"beats_cfc_only_on_macro_normalized_regret_at3\"],x[\"beats_cfc_only_on_mean_cost_to_contain_winner\"]] for x in r},\"availability\":[a[\"status\"],a[\"model_family_gate_met\"],a[\"resource_gated_model_ids\"]],\"orbitproxy\":[s[\"main_method_name\"],s[\"coverage\"][\"stage9_orbitrepair_demoted_to_proxy\"],s[\"stage9_orbitrepair_name\"]]}, sort_keys=True))'",
+          "directness": 0.98,
+          "evidence_type": "metric_output",
+          "exit_code": 0,
+          "freshness": 0.9,
+          "metric": {
+            "active_entry_count": 6,
+            "active_family_count": 4,
+            "ce_selection_gate_passed": false,
+            "cfc_only_cost": 13.833333333333334,
+            "cfc_only_regret_at3": 0.044697468910847644,
+            "loopcert_family_beats_cfc_regret_not_cost": true,
+            "loopcert_only_cost": 16.666666666666668,
+            "loopcert_only_regret_at3": 0.03223671717595801,
+            "main_method_name": "LoopCert-GAAS",
+            "model_availability_status": "resource_gated_family_gate_failed",
+            "model_family_gate_met": false,
+            "orbitrepair_proxy_cost": 4.833333333333333,
+            "orbitrepair_proxy_regret_at3": 0.0058068827370489386,
+            "resource_gated_model_ids": [
+              "gemma-2-2b",
+              "smollm2-1.7b",
+              "opt-1.3b",
+              "falcon-rw-1b",
+              "stablelm-2-1.6b",
+              "mistral-7b-score-side-stress"
+            ],
+            "stage9_orbitrepair_demoted_to_proxy": true,
+            "stage9_orbitrepair_name": "OrbitRepair-Proxy"
+          },
+          "quote_or_observation": "Read-only metric extraction returned ce_selection_gate_passed=false, model_family_gate_met=false, availability status=resource_gated_family_gate_failed, and resource_gated_model_ids=[gemma-2-2b, smollm2-1.7b, opt-1.3b, falcon-rw-1b, stablelm-2-1.6b, mistral-7b-score-side-stress]. LoopCert-only/family-balanced/risk-calibrated rows have regret@3=0.03223671717595801 vs CFC-only 0.044697468910847644 but cost=16.666666666666668 vs CFC-only 13.833333333333334, so they beat regret but not cost. Pareto-front likewise beats regret@3 but not cost. OrbitRepair-Proxy has regret@3=0.0058068827370489386 and cost=4.833333333333333, beating both metrics, while state reports main_method_name=LoopCert-GAAS, stage9_orbitrepair_demoted_to_proxy=true, and stage9_orbitrepair_name=OrbitRepair-Proxy.",
+          "relevance": 0.98,
+          "reliability": 0.95,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001 (read-only): experiments/stage10/08_meta/SELECTOR_METRICS.csv, experiments/stage10/08_meta/STAGE10_META_ANALYSIS.json, experiments/stage10/00_freeze/MODEL_AVAILABILITY.json, experiments/stage10/00_freeze/STAGE10_STATE.json"
+        },
+        {
+          "directness": 0.94,
+          "evidence_type": "transform_script",
+          "freshness": 0.9,
+          "quote_or_observation": "The recorded S10-13 selector summary table and meta-analysis encode the same closed-gate logic: ce_selection_gate_passed=false, CFC baseline retained, closed reasons include failure to beat CFC-only on both macro regret@3 and cost-to-contain plus resource-gated model-family coverage; the selector table shows OrbitRepair-Proxy beats both CFC metrics while LoopCert-family/blend/Pareto rows fail the cost criterion.",
+          "relevance": 0.96,
+          "reliability": 0.92,
+          "source_ref": "experiments/stage10/08_meta/GATE_DECISION.md:14-32 and experiments/stage10/08_meta/STAGE10_META_ANALYSIS.json:2-15,67-287"
+        },
+        {
+          "directness": 0.95,
+          "evidence_type": "sanity_check",
+          "freshness": 0.9,
+          "quote_or_observation": "Sanity inspection found explicit support for the prior review gaps: STAGE10_STATE records main_method_name=LoopCert-GAAS, model_family_gate_met=false, model_family_gate_status=resource_gated_family_gate_failed, and no_regression_locks.NO_ORBITREPAIR_SUCCESS_CLAIM=true; NO_TARGET_FIELDS names LoopCert-GAAS as the main method and OrbitRepair-Proxy as the inherited Stage9 method; ORAL_READY_GATE is closed for CE-selection and resource-gated model-family reasons; CLAIM_LEDGER marks model_family_gate and ce_selection_gate failed and oral_gate closed.",
+          "relevance": 0.97,
+          "reliability": 0.93,
+          "source_ref": "experiments/stage10/00_freeze/STAGE10_STATE.json:67-82,684-691,698; experiments/stage10/00_freeze/NO_TARGET_FIELDS.md:5-7; experiments/stage10/12_paper_package/STAGE10_ORAL_READY_GATE.md:5-11; experiments/stage10/12_paper_package/STAGE10_CLAIM_LEDGER.md:5-13"
+        }
+      ],
+      "importance": 0.62,
+      "supersedes": "pf_assertion_a9e5cfa4703e",
+      "text": "Repaired/narrowed statement for pf_assertion_a9e5cfa4703e: The Stage10 S10-13 gate remains closed because the configured LoopCert-family selector rows improve macro normalized regret@3 versus CFC-only but do not beat CFC-only on mean cost-to-contain; model-family coverage is false/resource-gated. OrbitRepair-Proxy has the best recorded regret@3 and cost among S10-13 selector rows, but Stage10 names LoopCert-GAAS as the main method and identifies OrbitRepair-Proxy as the inherited Stage9 proxy/baseline, so its metric win is not a primary LoopCert-GAAS success claim."
+    }
+  ],
+  "repair_actions": [
+    "Retained the closed S10-13 gate conclusion while narrowing it to configured LoopCert-family selectors and recorded selector metrics.",
+    "Added reviewer-visible evidence that model-family coverage is resource-gated/false.",
+    "Added reviewer-visible evidence that OrbitRepair-Proxy is inherited/proxy baseline while LoopCert-GAAS is the main method name."
+  ],
+  "role": "gate_gap_repairer",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Read-only Stage10 inspection addressed the prior independent-review revision reasons for pf_assertion_a9e5cfa4703e: resource-gated model-family status and the OrbitRepair-Proxy baseline/proxy boundary are now explicitly evidenced, and the repaired wording is narrowed to recorded S10-13 selector metrics and the closed-gate boundary. No source quest files or autoscidelphi files were modified.",
+  "target_assertion_id": "pf_assertion_a9e5cfa4703e",
+  "task_id": "pf_task_e0ff8ebb6c6c",
+  "title": "Repair note for pf_assertion_a9e5cfa4703e"
+}
