@@ -1,0 +1,79 @@
+{
+  "artifacts": [],
+  "assertions": [
+    {
+      "assertion_type": "data_result",
+      "confidence": 0.94,
+      "critical": true,
+      "evidence": [
+        {
+          "command": "python3 - <<'PY'\nimport csv, json\nfrom collections import Counter\nfrom pathlib import Path\nroot = Path('/home/xu/project/loop/DeepScientist/quests/001')\nrec_path = root/'experiments/stage10/06_recovery/RECOVERY_ENDPOINTS.csv'\nledger_path = root/'experiments/stage10/06_recovery/TARGET_WRITE_LEDGER.jsonl'\nlarge_path = root/'experiments/stage10/07_large_eval/LARGE_EVAL_SUMMARY.json'\ntoken_path = root/'experiments/stage10/07_large_eval/TOKEN_WEIGHTED_EVAL.csv'\nsplit_path = root/'experiments/stage10/07_large_eval/D_EVAL_STAGE10_V1_SPLIT_SUMMARY.json'\nsummary_path = root/'experiments/stage10/06_recovery/RECOVERY_TRAIN_EVAL_SUMMARY.json'\nstate_path = root/'experiments/stage10/00_freeze/STAGE10_STATE.json'\nwith rec_path.open(newline='') as f:\n    rec_rows = list(csv.DictReader(f))\nwith ledger_path.open() as f:\n    ledger_rows = [json.loads(line) for line in f if line.strip()]\nkey_fields = ('run_group','model_id','candidate_id','floorplan_id','adapter_rank','seed','budget_tokens','run_manifest_sha256')\nrec_keys = Counter(tuple(str(row.get(k,'')) for k in key_fields) for row in rec_rows)\nledger_keys = Counter(tuple(str(row.get(k,'')) for k in key_fields) for row in ledger_rows)\nwith token_path.open(newline='') as f:\n    token_rows = list(csv.DictReader(f))\nlarge = json.loads(large_path.read_text())\nsplit = json.loads(split_path.read_text())\nrecovery_summary = json.loads(summary_path.read_text())\nstate = json.loads(state_path.read_text())\nresult = {\n    'recovery_endpoint_rows': len(rec_rows),\n    'target_write_ledger_rows': len(ledger_rows),\n    'endpoint_ledger_key_symmetric_difference': sum((rec_keys-ledger_keys).values()) + sum((ledger_keys-rec_keys).values()),\n    'summary_target_write_ledger_matches_endpoint_rows': recovery_summary.get('target_write_ledger_matches_endpoint_rows'),\n    'state_target_write_ledger_rows': state.get('target_write_ledger_rows'),\n    'large_eval_evaluated_endpoint_rows': large.get('evaluated_endpoint_rows'),\n    'large_eval_expected_formal_endpoint_rows': large.get('expected_formal_endpoint_rows'),\n    'token_weighted_total_rows': len(token_rows),\n    'token_weighted_original_rows': sum(1 for r in token_rows if r.get('source_endpoint_type') == 'original_reference'),\n    'token_weighted_trained_rows': sum(1 for r in token_rows if r.get('endpoint_kind') == 'trained_checkpoint'),\n    'large_eval_summary_total_rows_including_original': large.get('total_table_rows_including_original'),\n    'large_eval_models': sorted(large.get('model_counts', {}).keys()),\n    'large_eval_model_row_counts': {model: info.get('row_count') for model, info in sorted(large.get('model_counts', {}).items())},\n    'split_version': split.get('split_version'),\n    'split_count': split.get('split_count'),\n    'split_summary_rows': len(split.get('split_summaries', [])),\n    'split_record_count': split.get('record_count'),\n    'split_status': split.get('status'),\n    'split_hard_failure_count': len(split.get('hard_failures', [])),\n    'split_boundary_recovery_overlap_count': split.get('split_boundary_audit', {}).get('recovery_overlap_count'),\n    'split_boundary_status': split.get('split_boundary_audit', {}).get('status'),\n}\nprint(json.dumps(result, sort_keys=True))\nPY",
+          "directness": 0.99,
+          "evidence_type": "metric_output",
+          "exit_code": 0,
+          "freshness": 0.9,
+          "metric": {
+            "endpoint_ledger_key_symmetric_difference": 0,
+            "large_eval_evaluated_endpoint_rows": 360,
+            "large_eval_expected_formal_endpoint_rows": 360,
+            "recovery_endpoint_rows": 1380,
+            "split_boundary_recovery_overlap_count": 0,
+            "split_count": 6,
+            "split_record_count": 18789,
+            "split_version": "D_eval_stage10_v1",
+            "target_write_ledger_rows": 1380,
+            "token_weighted_original_rows": 6,
+            "token_weighted_total_rows": 366,
+            "token_weighted_trained_rows": 360
+          },
+          "quote_or_observation": "{\"endpoint_ledger_key_symmetric_difference\": 0, \"large_eval_evaluated_endpoint_rows\": 360, \"large_eval_expected_formal_endpoint_rows\": 360, \"large_eval_model_row_counts\": {\"llama-3.2-1b\": 61, \"olmo-2-1b\": 61, \"pythia-160m\": 61, \"pythia-1b\": 61, \"pythia-410m\": 61, \"qwen2.5-1.5b\": 61}, \"large_eval_models\": [\"llama-3.2-1b\", \"olmo-2-1b\", \"pythia-160m\", \"pythia-1b\", \"pythia-410m\", \"qwen2.5-1.5b\"], \"large_eval_summary_total_rows_including_original\": 366, \"recovery_endpoint_rows\": 1380, \"split_boundary_recovery_overlap_count\": 0, \"split_boundary_status\": \"passed\", \"split_count\": 6, \"split_hard_failure_count\": 0, \"split_record_count\": 18789, \"split_status\": \"passed\", \"split_summary_rows\": 6, \"split_version\": \"D_eval_stage10_v1\", \"state_target_write_ledger_rows\": 1380, \"summary_target_write_ledger_matches_endpoint_rows\": true, \"target_write_ledger_rows\": 1380, \"token_weighted_original_rows\": 6, \"token_weighted_total_rows\": 366, \"token_weighted_trained_rows\": 360}",
+          "relevance": 0.99,
+          "reliability": 0.96,
+          "source_ref": "terminal command run from /home/xu/project/loop/DeepScientist/quests/001",
+          "title": "Read-only recomputation of Stage10 recovery, ledger, large-eval, and split counts"
+        },
+        {
+          "directness": 0.92,
+          "evidence_type": "transform_script",
+          "freshness": 0.86,
+          "locator": "lines 530-557 and 808-858",
+          "quote_or_observation": "target_write_records() emits one quest001.stage10.target_write_ledger.v1 record per endpoint row, marks target=Y_recover, writes_Y_frozen=False, writes_Y_recover=True, and records endpoint_row_sha256 plus run/model/candidate/floorplan/budget keys. The run path merges endpoint rows, writes RECOVERY_ENDPOINTS.csv, regenerates TARGET_WRITE_LEDGER.jsonl from completed_recovery_eval rows, and writes RECOVERY_TRAIN_EVAL_SUMMARY.json with total_endpoint_count, target_write_ledger_rows, and target_write_ledger_matches_endpoint_rows = len(ledger_rows) == completed endpoint rows.",
+          "relevance": 0.95,
+          "reliability": 0.91,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/scripts/stage10_recovery_train_eval.py",
+          "title": "Recovery runner creates target-write ledger from completed recovery endpoints and records the row-match invariant"
+        },
+        {
+          "directness": 0.92,
+          "evidence_type": "transform_script",
+          "freshness": 0.86,
+          "locator": "lines 43-55, 480-496, 1238-1264, and 1275-1301",
+          "quote_or_observation": "stage10_large_eval.py defines D_EVAL_STAGE10_V1_SPLIT_SUMMARY.json, TOKEN_WEIGHTED_EVAL.csv, and LARGE_EVAL_SUMMARY.json. The split boundary audit records recovery_overlap_count and passes only when no boundary failures exist. summarize_outputs() computes expected_formal_endpoint_rows from expected_ids, evaluated_endpoint_rows from completed expected endpoints, total_table_rows_including_original from completed TOKEN_WEIGHTED_EVAL rows, model row counts, and hard_failures.",
+          "relevance": 0.95,
+          "reliability": 0.91,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/scripts/stage10_large_eval.py",
+          "title": "Large-eval script defines split summary, token-weighted table, endpoint-count summary, and recovery-overlap audit"
+        },
+        {
+          "directness": 0.98,
+          "evidence_type": "sanity_check",
+          "freshness": 0.9,
+          "quote_or_observation": "The independent read-only computation agrees with stored summaries: RECOVERY_TRAIN_EVAL_SUMMARY.json says target_write_ledger_matches_endpoint_rows=true and target_write_ledger_rows=1380; STAGE10_STATE.json also records target_write_ledger_rows=1380; LARGE_EVAL_SUMMARY.json reports evaluated_endpoint_rows=360, expected_formal_endpoint_rows=360, and total_table_rows_including_original=366; TOKEN_WEIGHTED_EVAL.csv independently contains 366 completed rows split into 360 trained_checkpoint rows and 6 original_reference rows; D_EVAL_STAGE10_V1_SPLIT_SUMMARY.json reports split_count=6, split_status=passed, hard_failures=[], and split_boundary_audit.recovery_overlap_count=0.",
+          "relevance": 0.99,
+          "reliability": 0.94,
+          "source_ref": "Existing Stage10 artifacts: RECOVERY_TRAIN_EVAL_SUMMARY.json, STAGE10_STATE.json, LARGE_EVAL_SUMMARY.json, TOKEN_WEIGHTED_EVAL.csv, D_EVAL_STAGE10_V1_SPLIT_SUMMARY.json",
+          "title": "Cross-artifact consistency check for the revised claim"
+        }
+      ],
+      "importance": 0.93,
+      "replaces_assertion_id": "pf_assertion_d1397a06d1c4",
+      "text": "The Stage10 evaluation surface is complete for the frozen six-model active panel within the inspected artifacts: RECOVERY_ENDPOINTS.csv contains 1,380 recovery endpoint rows that match TARGET_WRITE_LEDGER.jsonl by key; S10-12 LARGE_EVAL_SUMMARY reports 360 evaluated formal endpoints out of 360 expected and TOKEN_WEIGHTED_EVAL.csv contains 366 completed rows including six original-reference rows; D_eval_stage10_v1 has six split summaries, 18,789 split records, passed split status, and recovery_overlap_count=0. This supports completeness of the existing Stage10 evaluation surface, not downstream utility or oral-readiness claims."
+    }
+  ],
+  "role": "gate_gap_repairer",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Read-only inspected /home/xu/project/loop/DeepScientist/quests/001 and recomputed the Stage10 evaluation-surface counts. The evidence supports the narrowed data_result claim: 1,380 RECOVERY_ENDPOINTS rows match 1,380 TARGET_WRITE_LEDGER rows by key, S10-12 has 360 evaluated formal endpoints out of 360 expected plus 6 original references for 366 token-weighted rows, and D_eval_stage10_v1 has 6 split summaries with zero recovery overlap. No source files were created or modified.",
+  "target_assertion_id": "pf_assertion_d1397a06d1c4",
+  "task_id": "pf_task_58ec2e500d53",
+  "title": "Stage10 evaluation-surface evidence repair for pf_assertion_d1397a06d1c4"
+}

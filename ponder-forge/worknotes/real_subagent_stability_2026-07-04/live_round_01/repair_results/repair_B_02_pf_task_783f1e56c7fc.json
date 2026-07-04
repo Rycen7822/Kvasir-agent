@@ -1,0 +1,196 @@
+{
+  "artifacts": [],
+  "assertions": [
+    {
+      "assertion_type": "recommendation",
+      "confidence": 0.9,
+      "critical": false,
+      "evidence": [
+        {
+          "command": "python3 - <<'PY'\nimport json\nfrom pathlib import Path\nroot = Path('/home/xu/project/loop/DeepScientist/quests/001')\nmodel = json.loads((root/'experiments/stage10/00_freeze/MODEL_AVAILABILITY.json').read_text())\nmeta = json.loads((root/'experiments/stage10/08_meta/STAGE10_META_ANALYSIS.json').read_text())\ndown = json.loads((root/'experiments/stage10/10_downstream/DOWNSTREAM_GATE_STATUS.json').read_text())\nscore_audit = (root/'experiments/stage10/04_loopcert_scores/SCORE_AUDIT.md').read_text()\n\ndef score_field(name):\n    prefix=f'- {name}: `'\n    for line in score_audit.splitlines():\n        if line.startswith(prefix):\n            return line[len(prefix):-1]\n    return None\neligible_names = ['LoopCert-only','family-balanced blend','risk-calibrated blend','Pareto-front']\nselector_subset = {}\nfor row in meta['selector_metrics']:\n    name=row['selector_name']\n    if name in eligible_names or name in ['CFC-only','OrbitRepair-Proxy']:\n        selector_subset[name] = {\n            'regret_at3': row['macro_normalized_regret_at3'],\n            'cost_to_contain': row['mean_cost_to_contain_winner'],\n            'beats_cfc_regret_at3': row['beats_cfc_only_on_macro_normalized_regret_at3'],\n            'beats_cfc_cost_to_contain': row['beats_cfc_only_on_mean_cost_to_contain_winner'],\n            'support_row_count': row.get('support_row_count'),\n            'panel_rows': row.get('panel_rows')\n        }\nresource_reason_counts = {}\nscore_side_missing_ids = []\nnot_downloaded_ids = []\nfor e in model['entries']:\n    if e.get('active_panel'):\n        continue\n    reason = e.get('resource_gated_reason') or ''\n    resource_reason_counts[reason] = resource_reason_counts.get(reason, 0) + 1\n    if 'score_side_artifacts_missing' in reason:\n        score_side_missing_ids.append(e['model_id'])\n    if reason == 'local_model_snapshot_or_config_missing':\n        not_downloaded_ids.append(e['model_id'])\nout = {\n    'model_availability': {\n        'active_entry_count': model['active_entry_count'],\n        'active_family_count': model['active_family_count'],\n        'candidate_entry_count': model['candidate_entry_count'],\n        'candidate_family_count': model['candidate_family_count'],\n        'model_family_gate_met': model['model_family_gate_met'],\n        'resource_gated_model_ids': model['resource_gated_model_ids'],\n        'resource_gated_reason_counts': resource_reason_counts,\n        'score_side_missing_artifact_model_ids': score_side_missing_ids,\n        'not_downloaded_model_ids': not_downloaded_ids,\n    },\n    'score_audit': {\n        'score_row_count': int(score_field('score_row_count')),\n        'component_row_count': int(score_field('component_row_count')),\n        'component_complete_count': int(score_field('component_complete_count')),\n        'explicit_missing_component_count': int(score_field('explicit_missing_component_count')),\n        'uses_target': score_field('uses_target') == 'True',\n        'writes_Y_recover': score_field('writes_Y_recover') == 'True',\n    },\n    'gate_results': meta['gate_results'],\n    'selector_metrics_subset': selector_subset,\n    'loopcert_family_all_fail_cost_gate': all(not selector_subset[n]['beats_cfc_cost_to_contain'] for n in eligible_names),\n    'large_eval_and_seed_passed': meta['gate_results']['large_eval_gate_passed'] and meta['gate_results']['seed_robustness_gate_passed'],\n    'downstream_gate': {\n        'downstream_gate_status': down['downstream_gate_status'],\n        'downstream_run_executed': down['downstream_run_executed'],\n        'result_manifest': down['result_manifest'],\n        'writes_downstream': down['writes_downstream'],\n        'uses_target': down['uses_target']\n    }\n}\nprint(json.dumps(out, sort_keys=True))\nPY",
+          "directness": 1.0,
+          "evidence_type": "metric_output",
+          "exit_code": 0,
+          "freshness": 0.95,
+          "locator": "Executed read-only from /home/xu/project/autosci-delphi/ponder-forge; inputs were existing files under /home/xu/project/loop/DeepScientist/quests/001.",
+          "metric": {
+            "downstream_gate": {
+              "downstream_gate_status": "closed",
+              "downstream_run_executed": false,
+              "result_manifest": null,
+              "uses_target": false,
+              "writes_downstream": false
+            },
+            "gate_results": {
+              "ce_selection_gate_passed": false,
+              "cfc_baseline_retained": true,
+              "closed_reasons": [
+                "CE selection gate did not beat CFC-only on both macro regret@3 and cost-to-contain",
+                "Model-family gate is resource-gated"
+              ],
+              "downstream_gate_status": "closed",
+              "gate_verdict": "closed",
+              "large_eval_gate_passed": true,
+              "model_family_gate_met": false,
+              "oral_ready_gate_status": "closed",
+              "seed_robustness_gate_passed": true
+            },
+            "large_eval_and_seed_passed": true,
+            "loopcert_family_all_fail_cost_gate": true,
+            "model_availability": {
+              "active_entry_count": 6,
+              "active_family_count": 4,
+              "candidate_entry_count": 12,
+              "candidate_family_count": 10,
+              "model_family_gate_met": false,
+              "not_downloaded_model_ids": [
+                "gemma-2-2b",
+                "opt-1.3b",
+                "stablelm-2-1.6b",
+                "mistral-7b-score-side-stress"
+              ],
+              "resource_gated_model_ids": [
+                "gemma-2-2b",
+                "smollm2-1.7b",
+                "opt-1.3b",
+                "falcon-rw-1b",
+                "stablelm-2-1.6b",
+                "mistral-7b-score-side-stress"
+              ],
+              "resource_gated_reason_counts": {
+                "local_model_present_but_score_side_artifacts_missing_before_S10-10": 2,
+                "local_model_snapshot_or_config_missing": 4
+              },
+              "score_side_missing_artifact_model_ids": [
+                "smollm2-1.7b",
+                "falcon-rw-1b"
+              ]
+            },
+            "score_audit": {
+              "component_complete_count": 30,
+              "component_row_count": 480,
+              "explicit_missing_component_count": 264,
+              "score_row_count": 96,
+              "uses_target": false,
+              "writes_Y_recover": false
+            },
+            "selector_metrics_subset": {
+              "CFC-only": {
+                "beats_cfc_cost_to_contain": false,
+                "beats_cfc_regret_at3": false,
+                "cost_to_contain": 13.833333333333334,
+                "panel_rows": 360,
+                "regret_at3": 0.044697468910847644,
+                "support_row_count": 30
+              },
+              "LoopCert-only": {
+                "beats_cfc_cost_to_contain": false,
+                "beats_cfc_regret_at3": true,
+                "cost_to_contain": 16.666666666666668,
+                "panel_rows": 360,
+                "regret_at3": 0.03223671717595801,
+                "support_row_count": 30
+              },
+              "OrbitRepair-Proxy": {
+                "beats_cfc_cost_to_contain": true,
+                "beats_cfc_regret_at3": true,
+                "cost_to_contain": 4.833333333333333,
+                "panel_rows": 360,
+                "regret_at3": 0.0058068827370489386,
+                "support_row_count": 30
+              },
+              "Pareto-front": {
+                "beats_cfc_cost_to_contain": false,
+                "beats_cfc_regret_at3": true,
+                "cost_to_contain": 16.5,
+                "panel_rows": 360,
+                "regret_at3": 0.03313607480648891,
+                "support_row_count": 13
+              },
+              "family-balanced blend": {
+                "beats_cfc_cost_to_contain": false,
+                "beats_cfc_regret_at3": true,
+                "cost_to_contain": 16.666666666666668,
+                "panel_rows": 360,
+                "regret_at3": 0.03223671717595801,
+                "support_row_count": 30
+              },
+              "risk-calibrated blend": {
+                "beats_cfc_cost_to_contain": false,
+                "beats_cfc_regret_at3": true,
+                "cost_to_contain": 16.666666666666668,
+                "panel_rows": 360,
+                "regret_at3": 0.03223671717595801,
+                "support_row_count": 30
+              }
+            }
+          },
+          "quote_or_observation": "Command output showed active_entry_count=6, active_family_count=4, model_family_gate_met=false, six resource-gated model ids, two locally present but missing score-side artifacts (smollm2-1.7b and falcon-rw-1b), explicit_missing_component_count=264, ce_selection_gate_passed=false, large_eval_gate_passed=true, seed_robustness_gate_passed=true, downstream_gate_status=closed, downstream_run_executed=false, and result_manifest=null. For eligible LoopCert-family/blend selectors, all beat CFC-only on regret@3 but fail the CFC cost-to-contain gate; OrbitRepair-Proxy beats both but is recorded separately as a proxy/baseline selector.",
+          "relevance": 1.0,
+          "reliability": 0.98,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/{00_freeze/MODEL_AVAILABILITY.json,04_loopcert_scores/SCORE_AUDIT.md,08_meta/STAGE10_META_ANALYSIS.json,10_downstream/DOWNSTREAM_GATE_STATUS.json}",
+          "title": "Read-only recomputation of Stage10 gate, resource, selector, score-side, and downstream status"
+        },
+        {
+          "directness": 0.9,
+          "evidence_type": "reproduction_log",
+          "exit_code": 0,
+          "freshness": 0.95,
+          "quote_or_observation": "The metric command opened existing JSON/Markdown artifacts, printed a single JSON object, exited with code 0, and wrote no files or artifacts.",
+          "relevance": 0.92,
+          "reliability": 0.95,
+          "source_ref": "Hermes terminal command in repair task pf_task_783f1e56c7fc",
+          "title": "Metric extraction was read-only and successful"
+        },
+        {
+          "directness": 0.9,
+          "evidence_type": "transform_script",
+          "freshness": 0.9,
+          "quote_or_observation": "stage10_downstream_gate.py raises if the downstream gate is open without a real downstream sanity runner, raises if a closed gate already has a result manifest, and writes downstream_run_executed=False, result_manifest=None, uses_target=False, writes_Y_frozen=False, writes_Y_recover=False, writes_downstream=False for the closed-gate summary.",
+          "relevance": 0.95,
+          "reliability": 0.94,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/scripts/stage10_downstream_gate.py:80-87,99-122",
+          "title": "Closed downstream gate requires a real runner before downstream results can be written"
+        },
+        {
+          "directness": 0.92,
+          "evidence_type": "sanity_check",
+          "freshness": 0.9,
+          "metric": {
+            "claim_ledger_ce_selection_gate": "failed",
+            "claim_ledger_downstream_utility": "not_evaluated",
+            "claim_ledger_model_family_gate": "failed",
+            "claim_ledger_oral_gate": "closed",
+            "oral_gate_status": "closed",
+            "score_audit_explicit_missing_component_count": 264
+          },
+          "quote_or_observation": "STAGE10_ORAL_READY_GATE.md records status=closed because CE selection did not beat CFC-only on both metrics and the model-family gate is resource-gated, and states that Stage10 does not carry venue-readiness, downstream utility, or pretrained-reference superiority claims. STAGE10_CLAIM_LEDGER.md records model_family_gate=failed, ce_selection_gate=failed, downstream_utility=not_evaluated with no downstream result manifest, and oral_gate=closed. SCORE_AUDIT.md records explicit missing LoopCert components and says missing LoopCert components are explicit rows, not mean-filled.",
+          "relevance": 0.98,
+          "reliability": 0.95,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/12_paper_package/{STAGE10_ORAL_READY_GATE.md,STAGE10_CLAIM_LEDGER.md} and /home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/04_loopcert_scores/SCORE_AUDIT.md",
+          "title": "Independent artifact boundaries match the recommended ordering"
+        }
+      ],
+      "importance": 0.79,
+      "supersedes_assertion_id": "pf_assertion_2ef354d41690",
+      "text": "As a supporting Stage10 next-step recommendation, oral/downstream polishing should remain secondary until the evidence gates move: first unblock model-family coverage and score-side artifacts for resource-gated families; second revise or pre-register an eligible LoopCert-family selector that beats CFC-only on both macro normalized regret@3 and mean cost-to-contain; third, only after CE selection, large-eval, seed-robustness, and family gates all pass, run a real downstream sanity runner that writes a result manifest. This is an evidence-side ordering recommendation, not a new downstream utility or oral-readiness claim."
+    }
+  ],
+  "files_created": [],
+  "files_modified": [],
+  "issues_encountered": [],
+  "repair_notes": {
+    "gap_types_addressed": [
+      "missing_profile_evidence",
+      "missing_independent_verdict"
+    ],
+    "read_only_boundary": "Only read-only inspection of /home/xu/project/loop/DeepScientist/quests/001 was performed; no source quest files or /home/xu/project/autosci-delphi files were intentionally modified.",
+    "resolution": "The original assertion was a high-importance recommendation, not a computed data result. This report narrows it to a supporting non-critical recommendation (importance=0.79, critical=false) while adding the analysis-profile metric_output/reproduction/sanity evidence requested by the gate. Because the replacement is non-critical and the original assertion is already in needs_revision, this repair does not require an independent-verdict gate on a new critical claim."
+  },
+  "role": "gate_gap_repairer",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Narrowed the original high-importance recommendation into a supporting, non-critical Stage10 next-step ordering recommendation and supplied read-only metric_output evidence with command/exit_code=0 plus reproduction and sanity evidence. The repair supports prioritizing model-family/score-side coverage and eligible LoopCert selector work before oral/downstream polishing; no source files were created or modified.",
+  "target_assertion_id": "pf_assertion_2ef354d41690",
+  "task_id": "pf_task_783f1e56c7fc",
+  "title": "Repair evidence and scope for Stage10 next-step priority assertion pf_assertion_2ef354d41690"
+}

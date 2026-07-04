@@ -1,0 +1,103 @@
+{
+  "artifacts": [],
+  "assertions": [
+    {
+      "assertion_type": "claim_boundary",
+      "confidence": 0.94,
+      "critical": true,
+      "evidence": [
+        {
+          "command": "python3 - <<'PY'\nimport json, pathlib, re\nroot = pathlib.Path('/home/xu/project/loop/DeepScientist/quests/001')\nreport = root/'experiments/report_archive/STAGE10_RESULTS_REPORT.md'\nledger = root/'experiments/stage10/12_paper_package/STAGE10_CLAIM_LEDGER.md'\noral = root/'experiments/stage10/12_paper_package/STAGE10_ORAL_READY_GATE.md'\naudit = root/'experiments/stage10/12_paper_package/REPORT_AUDIT.json'\ntexts = {p.name: p.read_text(encoding='utf-8') for p in (report, ledger, oral)}\na = json.loads(audit.read_text(encoding='utf-8'))\nledger_rows = [line for line in texts[ledger.name].splitlines() if line.startswith('| ') and not line.startswith('| claim') and not line.startswith('|---')]\nscan_terms = {\n  'downstream_utility_claim_blocked': ('downstream_utility | not_evaluated' in texts[ledger.name] and 'does not claim downstream utility evidence' in texts[report.name]),\n  'venue_or_oral_readiness_claim_blocked': ('oral_gate | closed' in texts[ledger.name] and 'does not carry venue-readiness' in texts[oral.name]),\n  'pretrained_reference_superiority_claim_blocked': ('original_reference_improvement | not_evaluated' in texts[ledger.name] and 'pretrained-reference superiority' in texts[oral.name]),\n  'universal_recovery_claim_blocked': ('not universal' in texts[ledger.name] and 'universal recovery certainty' in texts[report.name]),\n}\nresult = {\n  'report_forbidden_line_present': 'does not claim downstream utility evidence, venue-readiness, pretrained-reference superiority, or universal recovery certainty' in texts[report.name],\n  'claim_ledger_rows_counted': len(ledger_rows),\n  'claim_ledger_boundary_checks': scan_terms,\n  'oral_gate_status_line': next((line for line in texts[oral.name].splitlines() if line.startswith('Status:')), None),\n  'oral_gate_boundary_mentions': 'does not carry venue-readiness, downstream utility, or pretrained-reference superiority claims' in texts[oral.name],\n  'audit_status': a.get('status'),\n  'audit_forbidden_claim_scan_passed': a.get('forbidden_claim_scan_passed'),\n  'audit_forbidden_claim_hits': a.get('forbidden_claim_hits'),\n  'audit_claim_ledger_rows': a.get('claim_ledger_rows'),\n  'audit_report_markers_passed': a.get('report_markers_passed'),\n  'audit_downstream_gate_status': a.get('downstream_gate_status'),\n  'audit_downstream_run_executed': a.get('downstream_run_executed'),\n  'audit_oral_ready_gate_status': a.get('oral_ready_gate_status'),\n  'audit_write_flags': {k: a.get(k) for k in ['uses_target','writes_Y_frozen','writes_Y_recover','writes_downstream']},\n  'output_record_paths': {k: v.get('path') for k, v in a.get('output_records', {}).items() if k in ['final_report','claim_ledger','oral_ready_gate','report_audit']}\n}\nprint(json.dumps(result, ensure_ascii=False, sort_keys=True))\nPY",
+          "directness": 1.0,
+          "evidence_type": "metric_output",
+          "exit_code": 0,
+          "freshness": 0.95,
+          "locator": "experiments/report_archive/STAGE10_RESULTS_REPORT.md; experiments/stage10/12_paper_package/STAGE10_CLAIM_LEDGER.md; experiments/stage10/12_paper_package/STAGE10_ORAL_READY_GATE.md; experiments/stage10/12_paper_package/REPORT_AUDIT.json",
+          "metric": {
+            "audit_claim_ledger_rows": 9,
+            "audit_downstream_gate_status": "closed",
+            "audit_downstream_run_executed": false,
+            "audit_forbidden_claim_hits": [],
+            "audit_forbidden_claim_scan_passed": true,
+            "audit_oral_ready_gate_status": "closed",
+            "audit_report_markers_passed": true,
+            "audit_status": "passed_S10-15b_paper_package_final_report_handoff",
+            "audit_write_flags": {
+              "uses_target": false,
+              "writes_Y_frozen": false,
+              "writes_Y_recover": false,
+              "writes_downstream": false
+            },
+            "claim_ledger_boundary_checks": {
+              "downstream_utility_claim_blocked": true,
+              "pretrained_reference_superiority_claim_blocked": true,
+              "universal_recovery_claim_blocked": true,
+              "venue_or_oral_readiness_claim_blocked": true
+            },
+            "claim_ledger_rows_counted": 9,
+            "oral_gate_boundary_mentions": true,
+            "oral_gate_status_line": "Status: `closed`.",
+            "output_record_paths": {
+              "claim_ledger": "experiments/stage10/12_paper_package/STAGE10_CLAIM_LEDGER.md",
+              "final_report": "experiments/report_archive/STAGE10_RESULTS_REPORT.md",
+              "oral_ready_gate": "experiments/stage10/12_paper_package/STAGE10_ORAL_READY_GATE.md",
+              "report_audit": "experiments/stage10/12_paper_package/REPORT_AUDIT.json"
+            },
+            "report_forbidden_line_present": true
+          },
+          "quote_or_observation": "Command exited 0 and returned: forbidden_claim_scan_passed=true, forbidden_claim_hits=[], report_markers_passed=true, claim_ledger_rows=9, downstream_gate_status=closed, downstream_run_executed=false, oral_ready_gate_status=closed, all four boundary checks true, and write flags uses_target/writes_Y_frozen/writes_Y_recover/writes_downstream all false.",
+          "relevance": 1.0,
+          "reliability": 0.98,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001",
+          "title": "Read-only paper-package boundary scan"
+        },
+        {
+          "directness": 0.96,
+          "evidence_type": "reproduction_log",
+          "exit_code": 0,
+          "freshness": 0.9,
+          "locator": "meta.json lines 15, 28-35; terminal.log lines 2-3",
+          "quote_or_observation": "The recorded S10 final-report audit command was `PYTHONDONTWRITEBYTECODE=1 /home/xu/project/loop/.venv/bin/python experiments/stage10/scripts/stage10_final_report_audit.py --quest-root /home/xu/project/loop/DeepScientist/quests/001`; meta.json records status=completed and exit_code=0. terminal.log reports {\"forbidden_claim_hits\": [], \"forbidden_claim_scan_passed\": true, \"missing_report_markers\": [], \"report_markers_passed\": true, \"status\": \"passed\"}.",
+          "relevance": 0.97,
+          "reliability": 0.96,
+          "source_date": "2026-06-21T22:54:25+00:00",
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/.ds/bash_exec/bash-e6da214f/meta.json and terminal.log",
+          "title": "Existing final-report audit execution log passed"
+        },
+        {
+          "directness": 0.9,
+          "evidence_type": "transform_script",
+          "freshness": 0.88,
+          "locator": "stage10_paper_package.py lines 64-73, 253-257, 322-377, 470-472, 563-569, 626-637; stage10_final_report_audit.py lines 23-30 and 48-50",
+          "quote_or_observation": "stage10_paper_package.py defines required report markers including `forbidden claims`, scans forbidden phrases, renders claim-ledger rows where downstream_utility is not_evaluated, oral_gate is closed, original_reference_improvement is not_evaluated, and component_ablation is not universal, renders the oral boundary against venue-readiness/downstream/pretrained-reference claims, and writes audit fields for forbidden_claim_scan_passed, forbidden_claim_hits, downstream_gate_status, downstream_run_executed, and oral_ready_gate_status. stage10_final_report_audit.py imports the same audit_report function and prints the audit JSON for the generated final report.",
+          "relevance": 0.94,
+          "reliability": 0.92,
+          "source_ref": "experiments/stage10/scripts/stage10_paper_package.py; experiments/stage10/scripts/stage10_final_report_audit.py",
+          "title": "Paper-package generator and audit scripts encode forbidden-claim and boundary checks"
+        },
+        {
+          "directness": 0.98,
+          "evidence_type": "sanity_check",
+          "freshness": 0.9,
+          "locator": "STAGE10_RESULTS_REPORT.md lines 93-103; STAGE10_CLAIM_LEDGER.md lines 7-17; STAGE10_ORAL_READY_GATE.md lines 5-11; REPORT_AUDIT.json lines 327-338 and 389-416",
+          "quote_or_observation": "The final report states downstream_gate_status=closed, downstream_run_executed=False, oral gate status=closed, and explicitly says it does not claim downstream utility evidence, venue-readiness, pretrained-reference superiority, or universal recovery certainty. The claim ledger marks downstream_utility not_evaluated, oral_gate closed with no venue-readiness claim, original_reference_improvement not_evaluated, and component_ablation diagnostic/mixed rather than universal. The oral gate is Status: closed and says Stage10 does not carry venue-readiness, downstream utility, or pretrained-reference superiority claims. REPORT_AUDIT records forbidden_claim_hits=[], forbidden_claim_scan_passed=true, downstream_gate_status=closed, downstream_run_executed=false, oral_ready_gate_status=closed, report_markers_passed=true, and writes_Y_frozen/writes_Y_recover/writes_downstream=false.",
+          "relevance": 1.0,
+          "reliability": 0.95,
+          "source_ref": "experiments/report_archive/STAGE10_RESULTS_REPORT.md; experiments/stage10/12_paper_package/STAGE10_CLAIM_LEDGER.md; experiments/stage10/12_paper_package/STAGE10_ORAL_READY_GATE.md; experiments/stage10/12_paper_package/REPORT_AUDIT.json",
+          "title": "Cross-file narrative-boundary consistency check"
+        }
+      ],
+      "importance": 0.93,
+      "repairs_assertion_id": "pf_assertion_c442779c0e25",
+      "text": "Read-only inspection supports the narrowed Stage10 narrative-boundary claim: the existing final report, claim ledger, oral-ready gate, and report audit present the Stage10 paper package as conservative by explicitly closing or not evaluating downstream utility, venue/oral-readiness, pretrained-reference superiority, and universal recovery claims. This support is bounded to the audited Stage10 paper-package artifacts and does not add any downstream or oral-readiness claim."
+    }
+  ],
+  "confidence": 0.94,
+  "profile": "analysis",
+  "role": "gate_gap_repairer",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Repaired the profile-evidence gap for pf_assertion_c442779c0e25 by adding read-only metric_output evidence with command/exit_code=0 plus reproduction-log, transform-script, and sanity-check evidence showing the Stage10 report, claim ledger, oral gate, and audit close or avoid downstream utility, venue/oral-readiness, pretrained-reference superiority, and universal recovery claims. No source files were modified or artifacts created; no issues encountered.",
+  "target_assertion_id": "pf_assertion_c442779c0e25",
+  "task_id": "pf_task_014ed163c07f",
+  "title": "Stage10 conservative narrative-boundary evidence repair"
+}

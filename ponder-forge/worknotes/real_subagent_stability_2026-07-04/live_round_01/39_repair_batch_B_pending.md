@@ -8,6 +8,7 @@
 - record policy: run `collect_and_submit_repairs.py --batch B --record` only after collector reaches `20/20 all_valid`
 - partial collection: reached `19/20` by `2026-07-05T00:56:46+0800`; missing `pf_task_93f3e65c8d0c`
 - targeted redispatch: `deleg_94109186` for missing `pf_task_93f3e65c8d0c`; existing batch-B watcher `watch_and_record_repair_batch.py --batch B` remains active and should record only at `20/20 all_valid`
+- batch B final record: collector reached `20/20 all_valid` and installed `submit-report` recorded all 20 repair reports by `2026-07-05T01:16:07+0800`; installed run counts advanced to reports `88`, assertions `128`, evidence items `470`
 
 ## Batch B task ids
 - `pf_task_168ab133300e`

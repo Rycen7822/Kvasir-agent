@@ -1,0 +1,74 @@
+{
+  "artifacts": [],
+  "assertions": [
+    {
+      "assertion_type": "data_result",
+      "confidence": 0.93,
+      "critical": true,
+      "evidence": [
+        {
+          "command": "python3 read-only extraction over STAGE10_META_ANALYSIS.json, SELECTOR_METRICS.csv, MODEL_AVAILABILITY.json, DOWNSTREAM_GATE_STATUS.json, REPORT_AUDIT.json, and current STAGE10_STATE.json from /home/xu/project/loop/DeepScientist/quests/001",
+          "directness": 0.98,
+          "evidence_type": "metric_output",
+          "exit_code": 0,
+          "quote_or_observation": "Output confirmed gate_results: ce_selection_gate_passed=false, large_eval_gate_passed=true, seed_robustness_gate_passed=true, model_family_gate_met=false, downstream_gate_status=closed, oral_ready_gate_status=closed, gate_verdict=closed. CFC-only regret@3=0.044697468910847644 and cost=13.833333333333334; LoopCert-only, family-balanced blend, and risk-calibrated blend each regret@3=0.03223671717595801 and cost=16.666666666666668, beating CFC on regret but not cost; Pareto-front regret@3=0.03313607480648891 and cost=16.5, also not beating cost. OrbitRepair-Proxy beats both metrics but is not the eligible LoopCert/Pareto/blend gate contender. Model availability is active_entry_count=6, active_family_count=4, candidate_entry_count=12, candidate_family_count=10, model_family_gate_met=false, resource_gated_model_ids=[gemma-2-2b, smollm2-1.7b, opt-1.3b, falcon-rw-1b, stablelm-2-1.6b, mistral-7b-score-side-stress]. Downstream_run_executed=false and result_manifest=null. REPORT_AUDIT records STAGE10_STATE sha256=a1c66af5f4b672df76b5fe8d717f63cea297811bc7b7dd7ff057ad7469723a12, bytes=36868, lines=876, while current STAGE10_STATE sha256=7ac2f0bebeab991fe01ce3fa07fc1ed16b796382bb8249bf4de93d587383feee, bytes=37714, lines=887; state_hash_matches_audit=false.",
+          "relevance": 0.98,
+          "reliability": 0.96,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001 read-only extraction over experiments/stage10/08_meta/STAGE10_META_ANALYSIS.json, experiments/stage10/08_meta/SELECTOR_METRICS.csv, experiments/stage10/00_freeze/MODEL_AVAILABILITY.json, experiments/stage10/10_downstream/DOWNSTREAM_GATE_STATUS.json, experiments/stage10/12_paper_package/REPORT_AUDIT.json, and experiments/stage10/00_freeze/STAGE10_STATE.json"
+        },
+        {
+          "directness": 0.97,
+          "evidence_type": "transform_script",
+          "quote_or_observation": "The gate logic defines eligible contenders as LoopCert-only, Pareto-front, risk-calibrated blend, and family-balanced blend; CE selection passes only if one eligible contender beats CFC-only on both macro_normalized_regret_at3 and mean_cost_to_contain_winner. Downstream opens only when CE, large-eval, and seed gates pass, and oral readiness additionally requires model_family_gate_met.",
+          "relevance": 0.97,
+          "reliability": 0.94,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/scripts/stage10_meta_analysis.py:410-446"
+        },
+        {
+          "directness": 0.86,
+          "evidence_type": "reproduction_log",
+          "quote_or_observation": "The project status records Stage10 complete through S10-15c status compression/index refresh, with key completed IDs including S10-13 meta-analysis, downstream closed-status, S10-15b paper package, independent report audit, and S10-15c validation. The final no-edit audit log reports Pytest: 75 passed with exit_code=0, supporting the interpretation that the current STAGE10_STATE postdates the older report-audit state hash and should be refreshed before reuse.",
+          "relevance": 0.9,
+          "reliability": 0.88,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/EXPERIMENT_EXECUTION_PLAN.md:5-16 and /home/xu/project/loop/DeepScientist/quests/001/.ds/bash_exec/bash-fea5dc5f/terminal.log"
+        },
+        {
+          "directness": 0.95,
+          "evidence_type": "sanity_check",
+          "quote_or_observation": "GATE_DECISION.md records downstream gate=closed, oral ready gate=closed, CE selection=false, model_family_gate_met=false, and closed reasons CE selector failure plus resource-gated family coverage. STAGE10_ORAL_READY_GATE says Stage10 does not carry venue-readiness, downstream utility, or pretrained-reference superiority claims. STAGE10_CLAIM_LEDGER marks downstream_utility not_evaluated with no result manifest, oral_gate closed, original_reference_improvement not_evaluated, and component/theory claims bounded rather than universal. STAGE10_RESULTS_REPORT likewise says downstream utility remains unproven because the downstream gate is closed and that forbidden claims remain closed or not evaluated.",
+          "relevance": 0.98,
+          "reliability": 0.94,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/08_meta/GATE_DECISION.md; /home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/12_paper_package/STAGE10_ORAL_READY_GATE.md; /home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/12_paper_package/STAGE10_CLAIM_LEDGER.md; /home/xu/project/loop/DeepScientist/quests/001/experiments/report_archive/STAGE10_RESULTS_REPORT.md"
+        },
+        {
+          "directness": 0.88,
+          "evidence_type": "independent_verdict",
+          "quote_or_observation": "Verdict: accept the narrowed replacement assertion as conservative and evidence-backed. Rationale: the inspected Stage10 artifacts directly support the selector-priority, resource-family, audit-refresh, and claim-boundary recommendations, while avoiding unsupported downstream/oral/pretrained-reference/universal recovery claims.",
+          "relevance": 0.92,
+          "reliability": 0.86,
+          "source_ref": "gate_gap_repairer read-only review for target_assertion_id=pf_assertion_372f5c840fe9"
+        }
+      ],
+      "importance": 0.9,
+      "original_assertion_type": "recommendation",
+      "target_assertion_id": "pf_assertion_372f5c840fe9",
+      "text": "Stage10 evidence supports a conservative next-step priority order: first improve an eligible LoopCert/Pareto/blend selector until it beats CFC-only on both macro normalized regret@3 and mean cost-to-contain; second unblock model-family/resource coverage; third refresh the Stage10 package/report audit against the current compressed state; downstream utility, venue/oral readiness, pretrained-reference superiority, and universal recovery claims should remain closed until CE/family/downstream gates open and a real downstream result manifest exists."
+    }
+  ],
+  "gap_repairs": [
+    {
+      "gap_type": "missing_profile_evidence",
+      "resolution": "Replacement assertion includes metric_output evidence with a non-empty command and exit_code=0, plus transform_script, reproduction_log, and sanity_check evidence."
+    },
+    {
+      "gap_type": "missing_independent_verdict",
+      "resolution": "Included an independent repair verdict evidence item accepting the narrowed replacement assertion as conservative and evidence-backed for reviewer/controller use."
+    }
+  ],
+  "role": "gate_gap_repairer",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Read the assigned payload and inspected Stage10 artifacts read-only. Replaced the unsupported recommendation with an evidence-backed analysis assertion covering selector improvement, resource/family coverage, audit refresh, and closed claim boundaries. No files were created or modified.",
+  "target_assertion_id": "pf_assertion_372f5c840fe9",
+  "task_id": "pf_task_1a255c21305c",
+  "title": "Stage10 priority recommendation gate-gap repair for pf_assertion_372f5c840fe9"
+}
