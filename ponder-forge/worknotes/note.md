@@ -116,6 +116,13 @@
 - Installed live smoke on `pf_run_80cb097d3870`: `reconcile` now emits 63 repair payload tasks using native `delegate_task` task keys (`goal/context/role`) with `repair_task_id=` in context, `status.next_required_action=delegations`, `gate.status=blocked`, `gate.finalize_allowed=false`, and direct `finalize` returns `status=blocked` with `profile_gate_failed`.
 - Current live round state: 63 queued `gate_gap_repairer` tasks are the next executable work. Stability is not complete and cannot be reported as 100%; next action is dispatch/collect those repair reports, then re-run verify/gate/finalize/reconcile.
 
+### 2026-07-05T00:04:30+08:00 Gate-gap repair batch A dispatched
+
+- Committed and pushed PF-REAL-023 as `aee9506d7de6907d5f6cb345f1263007c242b5ec`; local HEAD and `origin/main` match. Worktree has only the unrelated untracked `../CODEX_STATE.md` outside the `ponder-forge` scope.
+- Prepared repair dispatch manifest `live_round_01/35_repair_dispatch_manifest.json` from installed `reconcile` output `33_reconcile_after_payload_schema_guard.json`: 63 total native-shape repair payloads split into batches of at most 20.
+- Dispatched batch A (20 leaf repair subagents) as `deleg_84780d7b`. Each subagent receives its repair task id and reads the exact local batch payload file `live_round_01/35_repair_batch_A_payload.json`, avoiding long-line context truncation.
+- Current status: repair results are pending async return; do not report the stability loop complete. Next action after return is collect/validate the 20 JSON reports, submit them through installed `submit-report`, then dispatch the remaining repair batches or re-run gate as appropriate.
+
 ### 2026-07-04T20:32:50+08:00 Continuation completion audit
 
 - Re-read the plan acceptance gates and current active worknote status before relying on prior context.
