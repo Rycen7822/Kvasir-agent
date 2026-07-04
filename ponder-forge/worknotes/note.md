@@ -166,6 +166,12 @@
 - Committed and pushed batch C evidence as `8ed5bc4`. Dispatched final repair batch D (3 leaf subagents) as `deleg_53373d23`; each reads exact local payload `live_round_01/35_repair_batch_D_payload.json`.
 - Current repair progress: batch A/B/C `60/60` recorded; batch D pending. After D records, run installed gate/reconcile/finalize again before reporting stability completion.
 
+### 2026-07-05T02:22:34+08:00 Final repair batch D recorded
+
+- Batch D scoped watcher exited cleanly: attempt 8, `3/3 all_valid`, status `recorded`; installed `submit-report` recorded all 3 final repair reports.
+- Installed run `pf_run_80cb097d3870` now has reports `111`, assertions `152`, evidence items `555`, artifacts `0`; swarm topology remains complete and `status.next_required_action=verify`.
+- All 63 gate-gap repair payloads from installed `reconcile` are recorded exactly once across batches A-D. Next action: run installed independent-review/gate/reconcile/finalize cycle and only then close the live stability loop.
+
 ### 2026-07-04T20:32:50+08:00 Continuation completion audit
 
 - Re-read the plan acceptance gates and current active worknote status before relying on prior context.

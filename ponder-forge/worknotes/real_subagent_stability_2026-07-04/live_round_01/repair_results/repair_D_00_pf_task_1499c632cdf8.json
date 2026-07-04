@@ -1,0 +1,96 @@
+{
+  "artifacts": [],
+  "assertions": [
+    {
+      "assertion_type": "data_result",
+      "confidence": 0.94,
+      "critical": true,
+      "evidence": [
+        {
+          "command": "python - <<'PY'\nimport csv, json\nfrom pathlib import Path\nroot = Path.cwd()\ncomponent_audit = json.loads((root/'experiments/stage10/09_ablation_patching/STAGE10_COMPONENT_ABLATION_AUDIT.json').read_text())\ntheory_audit = json.loads((root/'experiments/stage10/11_theory/STAGE10_THEORY_AUDIT.json').read_text())\nwith (root/'experiments/stage10/09_ablation_patching/COMPONENT_ABLATION.csv').open(newline='') as fh:\n    ablation_rows = list(csv.DictReader(fh))\nwith (root/'experiments/stage10/09_ablation_patching/CAUSAL_PATCHING_RESULTS.csv').open(newline='') as fh:\n    patching_rows = list(csv.DictReader(fh))\nwith (root/'experiments/stage10/11_theory/STRESS_TESTS.csv').open(newline='') as fh:\n    stress_rows = list(csv.DictReader(fh))\nclaim_ledger = (root/'experiments/stage10/12_paper_package/STAGE10_CLAIM_LEDGER.md').read_text()\nfailure_taxonomy = (root/'experiments/stage10/09_ablation_patching/FAILURE_TAXONOMY.md').read_text()\nresult = {\n    'component_audit_status': component_audit['status'],\n    'component_audit_ablation_count': component_audit['ablation_count'],\n    'component_ablation_csv_rows': len(ablation_rows),\n    'component_audit_patching_result_count': component_audit['patching_result_count'],\n    'causal_patching_csv_rows': len(patching_rows),\n    'mechanism_claim_status_component_audit': component_audit['mechanism_claim_status'],\n    'theory_audit_status': theory_audit['status'],\n    'theory_audit_stress_test_count': theory_audit['stress_test_count'],\n    'stress_test_csv_rows': len(stress_rows),\n    'mechanism_claim_status_theory_audit': theory_audit['mechanism_claim_status'],\n    'taxonomy_large_eval_reversal': component_audit['taxonomy_counts'].get('large-eval reversal'),\n    'taxonomy_training_instability': component_audit['taxonomy_counts'].get('training instability'),\n    'taxonomy_coda_incompatible': component_audit['taxonomy_counts'].get('coda incompatible'),\n    'taxonomy_gauge_misalignment': component_audit['taxonomy_counts'].get('gauge misalignment'),\n    'claim_ledger_component_boundary_present': 'Mechanism status remains diagnostic or mixed, not universal.' in claim_ledger,\n    'failure_taxonomy_boundary_present': 'does not convert diagnostic component relations into a mechanism-success claim' in failure_taxonomy,\n    'read_safety_flags': {\n        'component_audit_uses_target': component_audit['uses_target'],\n        'component_audit_writes_Y_frozen': component_audit['writes_Y_frozen'],\n        'component_audit_writes_Y_recover': component_audit['writes_Y_recover'],\n        'component_audit_writes_downstream': component_audit['writes_downstream'],\n        'theory_audit_uses_target': theory_audit['uses_target'],\n        'theory_audit_writes_Y_frozen': theory_audit['writes_Y_frozen'],\n        'theory_audit_writes_Y_recover': theory_audit['writes_Y_recover'],\n        'theory_audit_writes_downstream': theory_audit['writes_downstream'],\n    }\n}\nprint(json.dumps(result, sort_keys=True))\nPY",
+          "directness": 0.96,
+          "evidence_type": "metric_output",
+          "exit_code": 0,
+          "freshness": 0.9,
+          "metric": {
+            "causal_patching_csv_rows": 96,
+            "claim_ledger_component_boundary_present": true,
+            "component_ablation_csv_rows": 11,
+            "component_audit_ablation_count": 11,
+            "component_audit_patching_result_count": 96,
+            "component_audit_status": "passed_S10-14_component_ablation_causal_patching_failure_taxonomy",
+            "failure_taxonomy_boundary_present": true,
+            "mechanism_claim_status_component_audit": "diagnostic_or_mixed",
+            "mechanism_claim_status_theory_audit": "diagnostic_or_mixed",
+            "read_safety_flags": {
+              "component_audit_uses_target": true,
+              "component_audit_writes_Y_frozen": false,
+              "component_audit_writes_Y_recover": false,
+              "component_audit_writes_downstream": false,
+              "theory_audit_uses_target": false,
+              "theory_audit_writes_Y_frozen": false,
+              "theory_audit_writes_Y_recover": false,
+              "theory_audit_writes_downstream": false
+            },
+            "stress_test_csv_rows": 7,
+            "taxonomy_coda_incompatible": 96,
+            "taxonomy_gauge_misalignment": 92,
+            "taxonomy_large_eval_reversal": 360,
+            "taxonomy_training_instability": 1380,
+            "theory_audit_status": "passed_S10-15a_theory_package_stress_tests",
+            "theory_audit_stress_test_count": 7
+          },
+          "quote_or_observation": "{\"causal_patching_csv_rows\": 96, \"claim_ledger_component_boundary_present\": true, \"component_ablation_csv_rows\": 11, \"component_audit_ablation_count\": 11, \"component_audit_patching_result_count\": 96, \"component_audit_status\": \"passed_S10-14_component_ablation_causal_patching_failure_taxonomy\", \"failure_taxonomy_boundary_present\": true, \"mechanism_claim_status_component_audit\": \"diagnostic_or_mixed\", \"mechanism_claim_status_theory_audit\": \"diagnostic_or_mixed\", \"read_safety_flags\": {\"component_audit_uses_target\": true, \"component_audit_writes_Y_frozen\": false, \"component_audit_writes_Y_recover\": false, \"component_audit_writes_downstream\": false, \"theory_audit_uses_target\": false, \"theory_audit_writes_Y_frozen\": false, \"theory_audit_writes_Y_recover\": false, \"theory_audit_writes_downstream\": false}, \"stress_test_csv_rows\": 7, \"taxonomy_coda_incompatible\": 96, \"taxonomy_gauge_misalignment\": 92, \"taxonomy_large_eval_reversal\": 360, \"taxonomy_training_instability\": 1380, \"theory_audit_status\": \"passed_S10-15a_theory_package_stress_tests\", \"theory_audit_stress_test_count\": 7}",
+          "relevance": 0.98,
+          "reliability": 0.95,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001",
+          "workdir": "/home/xu/project/loop/DeepScientist/quests/001"
+        },
+        {
+          "directness": 0.9,
+          "evidence_type": "transform_script",
+          "quote_or_observation": "The extractor loads existing Stage10 JSON/CSV/Markdown artifacts, counts CSV DictReader rows, reads audit fields, checks boundary strings, prints JSON, and performs no file writes.",
+          "relevance": 0.9,
+          "reliability": 0.9,
+          "source_ref": "inline read-only Python extractor shown in metric_output.command"
+        },
+        {
+          "directness": 0.92,
+          "evidence_type": "sanity_check",
+          "quote_or_observation": "Audit counts match independent row counts: ablation 11=11, patching 96=96, stress tests 7=7; boundary checks were true for claim ledger and failure taxonomy; command exited 0.",
+          "relevance": 0.95,
+          "reliability": 0.9,
+          "source_ref": "experiments/stage10/09_ablation_patching/COMPONENT_ABLATION.csv; experiments/stage10/09_ablation_patching/CAUSAL_PATCHING_RESULTS.csv; experiments/stage10/11_theory/STRESS_TESTS.csv"
+        },
+        {
+          "directness": 0.95,
+          "evidence_type": "source_quote",
+          "locator": "lines 2-5, 14, 20-29",
+          "quote_or_observation": "Audit records ablation_count=11, patching_result_count=96, mechanism_claim_status=diagnostic_or_mixed, and taxonomy counts including large-eval reversal=360 and training instability=1380.",
+          "relevance": 0.95,
+          "reliability": 0.9,
+          "source_ref": "experiments/stage10/09_ablation_patching/STAGE10_COMPONENT_ABLATION_AUDIT.json"
+        },
+        {
+          "directness": 0.93,
+          "evidence_type": "source_quote",
+          "locator": "STAGE10_THEORY_AUDIT.json lines 24-29; STRESS_TESTS.csv lines 2-8; STAGE10_CLAIM_LEDGER.md line 11",
+          "quote_or_observation": "Theory audit records status=passed_S10-15a_theory_package_stress_tests, stress_test_count=7, and mechanism_claim_status=diagnostic_or_mixed; stress tests label causal patching and component ablation diagnostic_or_mixed; claim ledger states mechanism status remains diagnostic or mixed, not universal.",
+          "relevance": 0.95,
+          "reliability": 0.9,
+          "source_ref": "experiments/stage10/11_theory/STAGE10_THEORY_AUDIT.json; experiments/stage10/11_theory/STRESS_TESTS.csv; experiments/stage10/12_paper_package/STAGE10_CLAIM_LEDGER.md"
+        }
+      ],
+      "importance": 0.9,
+      "supersedes_assertion_id": "pf_assertion_a945e99ef2a4",
+      "text": "Stage10 component/theory artifacts support diagnostic or mixed mechanism evidence, not a universal mechanism-success theorem: STAGE10_COMPONENT_ABLATION_AUDIT.json and matching CSV row counts show ablation_count=11 and patching_result_count=96, STAGE10_THEORY_AUDIT.json and STRESS_TESTS.csv show stress_test_count=7, both component and theory audits report mechanism_claim_status=diagnostic_or_mixed, and the failure taxonomy highlights large-eval reversal=360 and training instability=1380."
+    }
+  ],
+  "profile": "analysis",
+  "role": "gate_gap_repairer",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Read-only inspection repaired the analysis-profile evidence gap for pf_assertion_a945e99ef2a4 by attaching metric_output with command/exit_code=0 plus transform-script and sanity-check evidence. The supported result remains bounded: Stage10 artifacts show diagnostic or mixed component/theory evidence, not a universal mechanism-success theorem. No source files were modified.",
+  "target_assertion_id": "pf_assertion_a945e99ef2a4",
+  "task_id": "pf_task_1499c632cdf8",
+  "title": "Repair evidence for Stage10 diagnostic/mixed mechanism boundary"
+}

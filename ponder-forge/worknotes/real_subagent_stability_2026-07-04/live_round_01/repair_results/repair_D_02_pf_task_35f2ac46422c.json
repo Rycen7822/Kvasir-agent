@@ -1,0 +1,58 @@
+{
+  "artifacts": [],
+  "assertions": [
+    {
+      "assertion_type": "data_result",
+      "confidence": 0.96,
+      "critical": true,
+      "evidence": [
+        {
+          "command": "python - <<'PY_METRIC'\nfrom pathlib import Path\nimport json\nroot = Path('/home/xu/project/loop/DeepScientist/quests/001')\nstage10 = root / 'experiments' / 'stage10'\npaper_figures = root / 'experiments' / 'paper_main_results' / 'figures'\nplot_exts = {'.png', '.jpg', '.jpeg', '.svg', '.pdf'}\nstage10_plot_artifacts = sorted(str(p.relative_to(root)) for p in stage10.rglob('*') if p.is_file() and p.suffix.lower() in plot_exts) if stage10.exists() else []\npaper_png_figures = sorted(str(p.relative_to(root)) for p in paper_figures.glob('*.png') if p.is_file()) if paper_figures.exists() else []\nprint(json.dumps({'quest_root': str(root), 'stage10_dir_exists': stage10.exists(), 'paper_figures_dir_exists': paper_figures.exists(), 'plot_extensions_checked': sorted(plot_exts), 'stage10_plot_artifact_count': len(stage10_plot_artifacts), 'stage10_plot_artifacts': stage10_plot_artifacts, 'paper_png_figure_count': len(paper_png_figures), 'paper_png_figures': paper_png_figures}, indent=2))\nPY_METRIC",
+          "directness": 1.0,
+          "evidence_type": "metric_output",
+          "exit_code": 0,
+          "freshness": 1.0,
+          "metric": {
+            "paper_png_figure_count": 6,
+            "stage10_plot_artifact_count": 0
+          },
+          "quote_or_observation": "{\"quest_root\":\"/home/xu/project/loop/DeepScientist/quests/001\",\"stage10_dir_exists\":true,\"paper_figures_dir_exists\":true,\"plot_extensions_checked\":[\".jpeg\",\".jpg\",\".pdf\",\".png\",\".svg\"],\"stage10_plot_artifact_count\":0,\"stage10_plot_artifacts\":[],\"paper_png_figure_count\":6,\"paper_png_figures\":[\"experiments/paper_main_results/figures/contact_sheet.png\",\"experiments/paper_main_results/figures/fig1_problem_floorplan.png\",\"experiments/paper_main_results/figures/fig2_gaas_components_ranking.png\",\"experiments/paper_main_results/figures/fig3_frozen_benchmark.png\",\"experiments/paper_main_results/figures/fig4_recoverability_100m.png\",\"experiments/paper_main_results/figures/fig5_claim_boundary_taxonomy.png\"]}",
+          "relevance": 1.0,
+          "reliability": 0.95,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001",
+          "title": "Read-only plot artifact and paper figure inventory"
+        },
+        {
+          "directness": 0.95,
+          "evidence_type": "transform_script",
+          "freshness": 1.0,
+          "quote_or_observation": "The script recursively scans experiments/stage10 for files ending in .png, .jpg, .jpeg, .svg, or .pdf and separately enumerates experiments/paper_main_results/figures/*.png; it reads filesystem metadata only and does not modify the quest.",
+          "relevance": 0.95,
+          "reliability": 0.9,
+          "source_ref": "inline Python pathlib scan in metric_output.command",
+          "title": "Inventory transform used for the metric output"
+        },
+        {
+          "directness": 0.95,
+          "evidence_type": "sanity_check",
+          "freshness": 1.0,
+          "quote_or_observation": "Both target directories existed during inspection. The Stage10 artifact list was empty, and the six paper PNGs were contact_sheet.png plus fig1 through fig5 under experiments/paper_main_results/figures.",
+          "relevance": 0.95,
+          "reliability": 0.9,
+          "source_ref": "metric_output JSON fields stage10_dir_exists, paper_figures_dir_exists, and paper_png_figures",
+          "title": "Directory existence and explicit figure list sanity check"
+        }
+      ],
+      "importance": 0.82,
+      "repairs_assertion_id": "pf_assertion_5434cac278a4",
+      "text": "Read-only artifact inventory found no plot/image/PDF artifacts with suffixes .jpeg, .jpg, .pdf, .png, or .svg under experiments/stage10, while experiments/paper_main_results/figures contains exactly six PNG paper figures; reporting should cite the paper-figure directory explicitly or add reproducible Stage10-local figure generation before implying Stage10-local plot outputs."
+    }
+  ],
+  "profile": "analysis",
+  "role": "gate_gap_repairer",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Repaired the analysis-profile evidence gap for pf_assertion_5434cac278a4 with read-only metric_output evidence that includes command and exit_code=0, plus transform-script provenance and a sanity check. No source files were created or modified.",
+  "target_assertion_id": "pf_assertion_5434cac278a4",
+  "task_id": "pf_task_35f2ac46422c",
+  "title": "Gate-gap repair: Stage10 plot artifact inventory evidence"
+}

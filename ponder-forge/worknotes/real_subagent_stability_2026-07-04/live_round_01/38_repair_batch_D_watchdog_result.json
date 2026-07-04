@@ -1,0 +1,14 @@
+{
+  "attempt": 8,
+  "batch": "D",
+  "elapsed_seconds": 467.22,
+  "record_summary": {
+    "all_found": true,
+    "all_valid": true,
+    "batch": "D",
+    "expected_report_count": 3,
+    "found_report_count": 3,
+    "missing_task_ids": []
+  },
+  "status": "recorded"
+}

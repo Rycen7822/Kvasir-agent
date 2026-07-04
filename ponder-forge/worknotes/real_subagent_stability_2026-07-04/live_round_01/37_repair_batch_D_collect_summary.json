@@ -1,20 +1,38 @@
 {
-  "all_found": false,
-  "all_valid": false,
+  "all_found": true,
+  "all_valid": true,
   "batch": "D",
   "expected_report_count": 3,
-  "found_report_count": 0,
-  "missing_task_ids": [
-    "pf_task_1499c632cdf8",
-    "pf_task_35f2ac46422c",
-    "pf_task_ca129e60ebe2"
-  ],
+  "found_report_count": 3,
+  "missing_task_ids": [],
   "quest_signature": {
     "file_count": 175707,
     "latest_mtime_ns": 1782083849137958327,
     "latest_path": ".ds/bash_exec/summary.json",
     "total_size": 625172277988
   },
-  "reports": {},
+  "reports": {
+    "pf_task_1499c632cdf8": {
+      "assertion_count": 1,
+      "errors": [],
+      "index": 0,
+      "saved_path": "/home/xu/project/autosci-delphi/ponder-forge/worknotes/real_subagent_stability_2026-07-04/live_round_01/repair_results/repair_D_00_pf_task_1499c632cdf8.json",
+      "source_ref": "state_db:messages:382080:20260705_020148_dd6be3:assistant"
+    },
+    "pf_task_35f2ac46422c": {
+      "assertion_count": 1,
+      "errors": [],
+      "index": 2,
+      "saved_path": "/home/xu/project/autosci-delphi/ponder-forge/worknotes/real_subagent_stability_2026-07-04/live_round_01/repair_results/repair_D_02_pf_task_35f2ac46422c.json",
+      "source_ref": "state_db:messages:382116:20260705_020149_2a0569:assistant"
+    },
+    "pf_task_ca129e60ebe2": {
+      "assertion_count": 1,
+      "errors": [],
+      "index": 1,
+      "saved_path": "/home/xu/project/autosci-delphi/ponder-forge/worknotes/real_subagent_stability_2026-07-04/live_round_01/repair_results/repair_D_01_pf_task_ca129e60ebe2.json",
+      "source_ref": "state_db:messages:382100:20260705_020149_b7e035:assistant"
+    }
+  },
   "run_id": "pf_run_80cb097d3870"
 }
