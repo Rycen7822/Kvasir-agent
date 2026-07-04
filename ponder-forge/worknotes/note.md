@@ -79,6 +79,15 @@
 - Controller helper prepared at `live_round_01/collect_and_submit_lanes.py`. It scans Hermes delegation summaries for `pf_run_80cb097d3870`, validates exact lane task ids/child reports/evidence/artifact-array contract, saves clean lane JSON under `live_round_01/lane_results/`, and submits only through installed `submit-report` when `--submit` is used.
 - Helper dry-run result: expected lanes `8`, found lanes `0`, all_valid `false` because live subagents are still pending; quest signature unchanged (`file_count=175707`, latest `.ds/bash_exec/summary.json`). This confirms no old summary was accidentally accepted as a current live lane result.
 
+### 2026-07-04T23:05:00+08:00 PF-REAL-022 investigation opened for no observable live lane results
+
+- Re-ran the lane collector and installed `status`; found lane reports remained `0/8`, Ponder-Forge status stayed `planning` / `next_required_action=delegations`, and swarm finished counts stayed `0`.
+- Ran a bounded 9-attempt / ~9-minute wait loop (`09_wait_for_live_lanes.log`); every collector attempt returned `found=0`, `all_found=false`, `all_valid=false`.
+- Checked delegation cache and visible processes at 2026-07-04T22:54:13+08:00. Cache latest summary was still the old `subagent-summary-0-20260704_220207_990706.txt`; visible process scan showed Hermes/TUI/gateway workers but no obvious lane subagent process. This is evidence of no observable progress, not conclusive proof of runtime death.
+- Opened PF-REAL-022 in `problems.md` as INVESTIGATING, not yet CLOSED/BLOCKING. Root cause is unknown: the nested live delegation batch may still be running, Hermes may not expose progress in cache/processes, or the Ponder-Forge lane prompt may be too broad to return reliably.
+- Evidence file: `worknotes/real_subagent_stability_2026-07-04/live_round_01/10_wait_timeout_analysis.md`.
+- Next action: start a longer bounded watchdog. If a lane report appears, validate and submit through installed `submit-report`; if none appears, treat PF-REAL-022 as a blocking live-subagent stability issue and write a focused repair plan before changing code.
+
 ### 2026-07-04T20:32:50+08:00 Continuation completion audit
 
 - Re-read the plan acceptance gates and current active worknote status before relying on prior context.
