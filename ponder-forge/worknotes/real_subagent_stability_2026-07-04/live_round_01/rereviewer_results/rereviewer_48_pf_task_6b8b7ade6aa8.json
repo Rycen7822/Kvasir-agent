@@ -1,0 +1,11 @@
+{
+  "confidence": 0.88,
+  "independent_from_task_id": "pf_task_2dc1336c07b8",
+  "rationale": "The visible producer evidence supports the narrowed assertion: metric_output evidence with exit_code=0 reports closed downstream/oral gate status, downstream_run_executed=false, mechanism_claim_status=diagnostic_or_mixed, passed/no-write no-target audit values, and 0 negative recovered_fraction values across 1,380 recovery endpoints with minimum 0.033709821134986155. The sanity_check evidence also supports no-target/no-write controls and split-boundary evidence via passed split_boundary_status and recovery_overlap_count=0. The revised wording appropriately removes the unsupported negative recovered_fraction clause and frames the result conservatively.",
+  "required_actions": [],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_6b8b7ade6aa8",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_3dd3ffb548bd",
+  "verdict": "accept"
+}

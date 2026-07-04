@@ -1,0 +1,11 @@
+{
+  "confidence": 0.93,
+  "independent_from_task_id": "pf_task_168ab133300e",
+  "rationale": "The reviewer-visible evidence directly supports the bounded mixed-result assertion: metric_output evidence exited 0 and reports large_eval_gate_passed=true, seed_robustness_gate_passed=true, ce_selection_gate_passed=false, 360/360 evaluated vs expected endpoint rows, 366 total rows including originals, and 252 seed-robustness rows. The same metric evidence and sanity_check evidence state that OrbitRepair-Proxy beats CFC-only on both selector metrics while LoopCert-only, family-balanced blend, risk-calibrated blend, and Pareto-front improve regret@3 but fail mean cost-to-contain versus CFC-only. The sanity_check also identifies OrbitRepair-Proxy as the CFC + structural-risk proxy baseline and distinguishes it from LoopCert-GAAS, matching the assertion's narration boundary. No contradictory visible artifacts are recorded.",
+  "required_actions": [],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_dff592ac9a1a",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_ae1453518e84",
+  "verdict": "accept"
+}

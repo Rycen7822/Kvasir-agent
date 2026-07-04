@@ -1,0 +1,11 @@
+{
+  "confidence": 0.94,
+  "independent_from_task_id": "pf_task_0815b531267c",
+  "rationale": "The visible evidence directly supports the asserted boundary. The metric_output exited 0 and reports 366 completed TOKEN_WEIGHTED_EVAL rows, including 360 100M Y_recover target rows split 60 per each of six active models plus six original-reference rows, with summary evaluated_endpoint_rows=360 matching expected_formal_endpoint_rows=360 and all model statuses passed. The manifest evidence ties the evaluation to Y_recover, budget 100000000, and the frozen heldout evaluator, while the sanity_check states the claim ledger/oral gate mark pretrained-reference superiority or original-reference improvement as not evaluated/not claimed. No visible evidence contradicts the assertion.",
+  "required_actions": [],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_a678e10af1e1",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_43f3fa26b764",
+  "verdict": "accept"
+}

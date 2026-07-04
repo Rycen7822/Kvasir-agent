@@ -185,6 +185,12 @@
 - Added checkpoint `45_rereview_pending.md` and scoped watcher `watch_and_record_rereviewers.py`; watcher only records through installed `verify` after collector reaches `55/55 all_valid`.
 - Live stability loop remains pending until the second-round verdicts are recorded and installed gate/reconcile/finalize complete.
 
+### 2026-07-05T02:38:20+08:00 Second-round re-review recorded; final repair E prepared
+
+- Second-round watcher recorded all 55 re-review verdicts on attempt 3: verdict counts `48 accept / 7 revise`; installed status after recording remained `blocked` with `next_required_action=verify`.
+- Installed `gate` after re-review has full independent coverage but 4 remaining `missing_profile_evidence` gaps: `pf_assertion_9462dd8c9806`, `pf_assertion_ffcc3c70cf73`, `pf_assertion_a3c2b86585c8`, `pf_assertion_ca9d2c34b028`.
+- Installed `reconcile` emitted 4 final `gate_gap_repairer` payloads. Prepared batch E payload `35_repair_batch_E_payload.json` and checkpoint `51_repair_batch_E_pending.md`; collector/watch helpers now allow batch `E`.
+
 ### 2026-07-04T20:32:50+08:00 Continuation completion audit
 
 - Re-read the plan acceptance gates and current active worknote status before relying on prior context.

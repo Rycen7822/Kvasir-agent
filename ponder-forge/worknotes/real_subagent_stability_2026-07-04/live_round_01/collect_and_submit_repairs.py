@@ -175,7 +175,7 @@ def quest_signature() -> Json:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--batch", default="A", choices=["A", "B", "C", "D"])
+    parser.add_argument("--batch", default="A", choices=["A", "B", "C", "D", "E"])
     parser.add_argument("--record", action="store_true", help="submit complete validated repair reports through installed CLI")
     args = parser.parse_args()
 

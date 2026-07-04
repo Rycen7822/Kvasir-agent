@@ -1,0 +1,11 @@
+{
+  "confidence": 0.94,
+  "independent_from_task_id": "pf_task_93f3e65c8d0c",
+  "rationale": "The visible producer evidence directly supports the bounded reproduction-log assertion. The metric_output evidence has exit_code=0 and reports log_exit_codes=0 for bash-f76a85c1, bash-9f40a7ab, bash-4555e82f, bash-f186947c, bash-76334859, and bash-37f6371e, with large_rows [360,366], gate closed, downstream [closed,false,null], ablation [11,96], theory_stress_tests=7, and pytest_75_passed=true. The reproduction_log and sanity_check evidence independently describe the same completed logs and artifact values, and the assertion explicitly avoids unsupported downstream utility, oral-readiness, or opened-gate claims.",
+  "required_actions": [],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_5aae68981895",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_4352fb5869b0",
+  "verdict": "accept"
+}

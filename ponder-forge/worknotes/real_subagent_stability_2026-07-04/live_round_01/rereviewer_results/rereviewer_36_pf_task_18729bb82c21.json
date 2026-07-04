@@ -1,0 +1,11 @@
+{
+  "confidence": 0.94,
+  "independent_from_task_id": "pf_task_6b87c445c3c4",
+  "rationale": "Visible evidence supports the bounded claim. The metric_output evidence has exit_code=0 and reports six selector metric rows: OrbitRepair-Proxy is numerically best and beats CFC-only on both regret and cost, but orbitrepair_in_configured_contenders=false. The transform_script evidence identifies the configured CE-gate contenders as LoopCert-only, Pareto-front, risk-calibrated blend, and family-balanced blend, with ce_selection_gate_passed defined by a configured contender beating CFC-only on both macro regret@3 and mean cost-to-contain. The sanity_check evidence states those configured contenders beat CFC-only on regret@3 but not cost-to-contain, and STAGE10_META_ANALYSIS/GATE_DECISION/DOWNSTREAM_GATE_STATUS agree ce_selection_gate_passed=false. Thus the assertion's no-CE-selector-success boundary is supported by the provided evidence.",
+  "required_actions": [],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_18729bb82c21",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_1cfe4d3f1726",
+  "verdict": "accept"
+}

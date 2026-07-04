@@ -1,0 +1,11 @@
+{
+  "confidence": 0.93,
+  "independent_from_task_id": "pf_task_e683d63b86cc",
+  "rationale": "The visible producer evidence supports the bounded assertion. The metric_output evidence reports exit_code=0 and states that read-only inspection returned the required REPORT_AUDIT status, forbidden-claim scan result, STAGE10_STATE hash mismatch, and zero native plot artifacts. Artifact digests corroborate REPORT_AUDIT status passed_S10-15b_paper_package_final_report_handoff with artifact_hash_count=29, forbidden_claim_scan_passed=true, and forbidden_claim_hits=[]. Additional digests support the closed-gate claim boundary: the claim ledger, final report, and oral-ready gate keep model-family/CE/downstream/oral/original-reference claims failed, closed, or not evaluated. The final report digest also records the old STAGE10_STATE hash cited by the assertion, while the metric evidence covers the live-hash mismatch. No visible evidence contradicts the assertion or expands it beyond the stated audit-refresh and non-claim-expanding reporting boundary.",
+  "required_actions": [],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_d93419216f4f",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_a3c2b86585c8",
+  "verdict": "accept"
+}

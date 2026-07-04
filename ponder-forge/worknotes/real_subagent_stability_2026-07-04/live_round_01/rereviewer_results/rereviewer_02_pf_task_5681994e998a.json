@@ -1,0 +1,13 @@
+{
+  "confidence": 0.86,
+  "independent_from_task_id": "pf_task_221bcdd79e3a",
+  "rationale": "Visible evidence supports the conservative boundary overall: evidence pf_evidence_3119170ec9ca reports large_eval_gate_passed=true, evaluated_endpoint_rows=360, expected_formal_endpoint_rows=360, token_weighted_rows_including_original=366, all_large_eval_models_passed=true, seed_robustness_gate_passed=true, ce_selection_gate_passed=false, model_family_gate_met=false, downstream_gate_status=closed, downstream_run_executed=false, downstream_result_manifest=null, and oral_ready_gate_status=closed; sanity checks pf_evidence_4417ca958b74, pf_evidence_5bb1c4176150, and pf_evidence_3e382d0a1ac4 support the closed CE/model-family/downstream/oral claim boundaries. However, the assertion's more specific seed-robustness subclaim that there are 126 completed rows at both 30M and 100M is not supported by the visible evidence, which only states seed_robustness_csv_rows=252 and seed_robustness_gate_passed=true. The assertion should be narrowed or backed by explicit reviewer-visible breakdown evidence.",
+  "required_actions": [
+    "Add reviewer-visible evidence showing seed robustness has 126 completed rows at both 30M and 100M, or revise the assertion to state only the visible support: seed_robustness_gate_passed=true with 252 seed-robustness CSV rows."
+  ],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_5681994e998a",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_9fb2727a8782",
+  "verdict": "revise"
+}
