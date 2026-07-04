@@ -167,7 +167,7 @@ def test_dashboard_reader_lists_rooms_and_builds_live_snapshot(temp_idea_spark_d
 
     rooms = reader.list_rooms()
     assert [room["room_id"] for room in rooms] == [room_id]
-    assert rooms[0]["counts"] == {"participants": 2, "messages": 2, "artifacts": 3, "gates": 1, "open_needs": 1}
+    assert rooms[0]["counts"] == {"participants": 2, "messages": 2, "artifacts": 3, "gates": 1, "open_needs": 1, "total_needs": 1}
 
     snapshot = reader.room_snapshot(room_id)
     assert snapshot["success"] is True
@@ -596,7 +596,7 @@ def test_dashboard_html_exposes_bilingual_language_switch():
 
 def test_dashboard_module_cli_help_explains_local_readonly_server():
     result = subprocess.run(
-        [sys.executable, "-m", "idea_spark.dashboard", "--help"],
+        [sys.executable, "dashboard.py", "--help"],
         cwd=Path(__file__).resolve().parents[1],
         text=True,
         capture_output=True,

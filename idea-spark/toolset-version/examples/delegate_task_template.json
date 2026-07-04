@@ -1,8 +1,0 @@
-{
-  "goal": "Join the Idea-Spark room with idea_spark_room_join, then load skill_view(name=\"idea-spark:idea-spark-usage\") for protocol details. Read the ledger, create typed artifacts for your assigned role, post linked messages, wait with bounded idea_spark_round_wait, and record gate decisions with idea_spark_gate_record when assigned. Do not call skill_manage.",
-  "context": "room_id=<ROOM_ID>; agent_id=<AGENT_ID>; role=<ROLE>; join first, load the bundled usage skill if needed, then use canonical idea_spark tools. Final conclusions require gate-backed ledger evidence.",
-  "toolsets": [
-    "idea_spark",
-    "skills"
-  ]
-}

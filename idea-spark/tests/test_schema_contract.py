@@ -43,6 +43,9 @@ def test_round_wait_schema_exposes_per_call_expected_agents():
     assert props["expected_agents"]["type"] == "array"
     assert props["expected_agents"]["items"] == {"type": "string"}
     assert "expected_agents" not in schema["parameters"]["required"]
+    assert "phase" not in schema["parameters"]["required"]
+    assert props["phases"]["type"] == "array"
+    assert props["phases"]["items"] == {"type": "string"}
 
 
 def test_room_create_schema_exposes_dashboard_base_url():
@@ -52,8 +55,10 @@ def test_room_create_schema_exposes_dashboard_base_url():
     props = schema["parameters"]["properties"]
 
     assert props["dashboard_base_url"]["type"] == "string"
+    assert props["check_dashboard"] == {"type": "boolean"}
     assert "room_url" in schema["description"]
     assert "dashboard_base_url" not in schema["parameters"]["required"]
+    assert "check_dashboard" not in schema["parameters"]["required"]
 
 
 def test_read_schemas_expose_delta_cursor_fields():

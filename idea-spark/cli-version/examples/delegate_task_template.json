@@ -1,9 +1,0 @@
-{
-  "goal": "Default CLI-first Idea-Spark child task: first create JSON payloads only under the provided payload_scratch_dir and run `hermes idea-spark call idea_spark_room_join --json-file <payload>` for the assigned room_id/agent_id/role, then load `skill_view(name=\"idea-spark:idea-spark-usage\")` for protocol details. Read state with CLI calls to idea_spark_room_status, idea_spark_message_read, and idea_spark_artifact_read; create typed artifacts with idea_spark_artifact_create; post linked messages with idea_spark_message_post; use bounded idea_spark_round_wait only when assigned and only with the shared round_id/phase for that barrier; record explicit gate decisions with idea_spark_gate_record only when assigned. Do not write transient payload JSON in the workspace root. Do not call skill_manage. If explicit tool-mode has been enabled and the session reset, the same protocol may instead use direct idea_spark tools with toolsets=[\"idea_spark\", \"skills\"].",
-  "context": "room_id=<ROOM_ID>; dashboard_room_url=<ROOM_URL>; agent_id=<AGENT_ID>; role=<ROLE>; payload_scratch_dir=/tmp/idea_spark_<RUN_ID>/<AGENT_ID>/; default mode uses terminal/file to write JSON payloads only under payload_scratch_dir and run `hermes idea-spark call <operation> --json-file <payload>`. Join first, load the bundled usage skill if needed, then use canonical idea_spark operation names. Final conclusions require gate-backed ledger evidence.",
-  "toolsets": [
-    "terminal",
-    "file",
-    "skills"
-  ]
-}

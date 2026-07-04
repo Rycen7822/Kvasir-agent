@@ -1,4 +1,6 @@
 import json
+import socket
+import threading
 
 from idea_spark.tools import (
     idea_spark_artifact_create,
@@ -6,6 +8,7 @@ from idea_spark.tools import (
     idea_spark_message_post,
     idea_spark_message_read,
     idea_spark_need_create,
+    idea_spark_need_update,
     idea_spark_room_create,
     idea_spark_room_join,
     idea_spark_room_status,
@@ -57,6 +60,64 @@ def test_room_create_accepts_custom_dashboard_base_url(temp_idea_spark_db):
     assert result["success"] is True
     assert result["dashboard_url"] == "http://127.0.0.1:8879/"
     assert result["room_url"] == "http://127.0.0.1:8879/room/custom-link-room"
+
+
+def _unused_localhost_port():
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.bind(("127.0.0.1", 0))
+        return sock.getsockname()[1]
+
+
+def test_room_create_can_check_and_warn_when_dashboard_link_is_unreachable(temp_idea_spark_db):
+    port = _unused_localhost_port()
+
+    result = call(
+        idea_spark_room_create,
+        {
+            "room_id": "dead-link-room",
+            "title": "dead link room",
+            "topic": "do not imply an unchecked URL is openable",
+            "created_by": "parent",
+            "dashboard_base_url": f"http://127.0.0.1:{port}",
+            "check_dashboard": True,
+        },
+    )
+
+    assert result["success"] is True
+    assert result["dashboard_checked"] is True
+    assert result["dashboard_reachable"] is False
+    assert "dashboard link is not reachable" in result["dashboard_warning"]
+
+
+def test_room_create_can_check_reachable_dashboard_link(temp_idea_spark_db):
+    from idea_spark import dashboard
+
+    server = dashboard.create_server("127.0.0.1", 0, db_path=temp_idea_spark_db)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    address = server.server_address
+    host = str(address[0])
+    port = int(address[1])
+    try:
+        result = call(
+            idea_spark_room_create,
+            {
+                "room_id": "live-link-room",
+                "title": "live link room",
+                "topic": "prove dashboard link is openable",
+                "created_by": "parent",
+                "dashboard_base_url": f"http://{host}:{port}",
+                "check_dashboard": True,
+            },
+        )
+    finally:
+        server.shutdown()
+        server.server_close()
+
+    assert result["success"] is True
+    assert result["dashboard_checked"] is True
+    assert result["dashboard_reachable"] is True
+    assert "dashboard_warning" not in result
 
 
 def test_room_create_join_post_read_round_trip(temp_idea_spark_db):
@@ -138,6 +199,60 @@ def test_round_wait_times_out_without_deadlock_and_returns_partial_state(temp_id
     assert waited["arrived_agents"] == ["agent-a"]
     assert waited["missing_agents"] == ["agent-b"]
     assert "continue with partial state" in waited["instruction"]
+
+
+def test_round_wait_allows_round_only_parent_barrier(temp_idea_spark_db):
+    room_id = make_room(["prior-art-breaker", "experiment-planner"])
+    call(
+        idea_spark_message_post,
+        {
+            "room_id": room_id,
+            "round_id": "r1",
+            "phase": "novelty_attack",
+            "agent_id": "prior-art-breaker",
+            "content": "prior art arrived",
+        },
+    )
+    call(
+        idea_spark_message_post,
+        {
+            "room_id": room_id,
+            "round_id": "r1",
+            "phase": "feasibility_attack",
+            "agent_id": "experiment-planner",
+            "content": "experiment plan arrived",
+        },
+    )
+
+    waited = call(
+        idea_spark_round_wait,
+        {"room_id": room_id, "round_id": "r1", "expected_agents": ["prior-art-breaker", "experiment-planner"], "timeout_s": 0.01},
+    )
+
+    assert waited["success"] is True
+    assert waited["status"] == "complete"
+    assert waited["arrived_agents"] == ["prior-art-breaker", "experiment-planner"]
+    assert waited["missing_agents"] == []
+    assert waited["phase_filter"] == "*"
+
+
+def test_round_wait_accepts_explicit_multi_phase_barrier(temp_idea_spark_db):
+    room_id = make_room(["prior", "planner", "author"])
+    for agent, phase in [("prior", "novelty_attack"), ("planner", "feasibility_attack")]:
+        call(
+            idea_spark_message_post,
+            {"room_id": room_id, "round_id": "r1", "phase": phase, "agent_id": agent, "content": f"{agent} arrived"},
+        )
+
+    waited = call(
+        idea_spark_round_wait,
+        {"room_id": room_id, "round_id": "r1", "phases": ["novelty_attack", "feasibility_attack"], "expected_agents": ["prior", "planner"], "timeout_s": 0.01},
+    )
+
+    assert waited["success"] is True
+    assert waited["status"] == "complete"
+    assert waited["arrived_agents"] == ["prior", "planner"]
+    assert waited["phase_filter"] == ["novelty_attack", "feasibility_attack"]
 
 
 def test_round_wait_uses_per_call_expected_agents_without_mutating_room_metadata(temp_idea_spark_db):
@@ -322,3 +437,46 @@ def test_room_status_reports_latest_gate_terminal_flag_open_need_summary_and_cur
     assert status["cursors"]["last_artifact_updated_at"]
     assert status["cursors"]["last_gate_created_at"]
     assert status["cursors"]["last_need_updated_at"]
+
+
+def test_room_status_counts_open_needs_as_unresolved_and_total_needs_as_all_rows(temp_idea_spark_db):
+    room_id = make_room()
+    open_need = call(
+        idea_spark_need_create,
+        {
+            "room_id": room_id,
+            "target_artifact_type": "PriorArtEvidence",
+            "query": "find close prior art",
+            "rationale": "novelty gap",
+        },
+    )
+    resolved_need = call(
+        idea_spark_need_create,
+        {
+            "room_id": room_id,
+            "target_artifact_type": "BenchmarkRequirement",
+            "query": "settled benchmark question",
+            "rationale": "baseline setup gap",
+        },
+    )
+    call(
+        idea_spark_need_update,
+        {"room_id": room_id, "need_id": resolved_need["need_id"], "status": "resolved", "updated_by": "planner"},
+    )
+
+    status = call(idea_spark_room_status, {"room_id": room_id})
+
+    assert status["success"] is True
+    assert status["counts"]["open_needs"] == 1
+    assert status["counts"]["total_needs"] == 2
+    assert status["open_need_summary"]["open"] == 1
+    assert status["open_need_summary"]["resolved"] == 1
+
+    call(
+        idea_spark_need_update,
+        {"room_id": room_id, "need_id": open_need["need_id"], "status": "resolved", "updated_by": "planner"},
+    )
+    resolved_status = call(idea_spark_room_status, {"room_id": room_id})
+
+    assert resolved_status["counts"]["open_needs"] == 0
+    assert resolved_status["counts"]["total_needs"] == 2

@@ -1,7 +1,12 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "idea-spark"
 version = "0.1.0"
 description = "Typed artifact swarm debate room for Hermes delegate_task child agents."
+readme = "README.md"
 requires-python = ">=3.10"
 dependencies = []
 
@@ -10,6 +15,19 @@ idea-spark = "idea_spark.cli:main"
 
 [project.optional-dependencies]
 dev = ["pytest>=8"]
+
+[tool.setuptools]
+packages = ["idea_spark", "idea_spark.migrations"]
+package-dir = {"idea_spark" = ".", "idea_spark.migrations" = "migrations"}
+include-package-data = true
+
+[tool.setuptools.package-data]
+idea_spark = [
+  "plugin.yaml",
+  "migrations/*.sql",
+  "resources/skills/idea-spark-usage/*.md",
+  "resources/skills/idea-spark-usage/references/*.md",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

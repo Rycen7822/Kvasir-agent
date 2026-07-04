@@ -4,11 +4,15 @@ idea-spark/local-test/
 idea-spark/tmp/
 idea-spark/*-version/local-test/
 idea-spark/*-version/tmp/
+ponder-forge/reference/
+.noemaloom/
+tmp/
 
 # Python transient files
 __pycache__/
 .pytest_cache/
 *.py[cod]
 
-# Local implementation plan
+# Local worknotes
 idea-spark/plan.md
+ponder-forge/worknotes/
