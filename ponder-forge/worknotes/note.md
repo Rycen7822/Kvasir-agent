@@ -76,6 +76,8 @@
 - Dispatched 8 live orchestrator subagents as delegation `deleg_edd050a1`. Each subagent was instructed to read `03_delegations.json`, extract its own `delegate_task_payload.tasks[index]`, and execute that exact Ponder-Forge generated task.
 - Current status after dispatch: run `planning`, `next_required_action=delegations`, swarm lane_count `8`, child_count `40`, queued_delegation_count `8`, finished counts `0`. This is expected while lane reports are pending.
 - Stability status: not complete; live lane results are pending. Do not submit lane reports, create reviewers, gate, finalize, or claim 100% stability until async results return and are validated.
+- Controller helper prepared at `live_round_01/collect_and_submit_lanes.py`. It scans Hermes delegation summaries for `pf_run_80cb097d3870`, validates exact lane task ids/child reports/evidence/artifact-array contract, saves clean lane JSON under `live_round_01/lane_results/`, and submits only through installed `submit-report` when `--submit` is used.
+- Helper dry-run result: expected lanes `8`, found lanes `0`, all_valid `false` because live subagents are still pending; quest signature unchanged (`file_count=175707`, latest `.ds/bash_exec/summary.json`). This confirms no old summary was accidentally accepted as a current live lane result.
 
 ### 2026-07-04T20:32:50+08:00 Continuation completion audit
 

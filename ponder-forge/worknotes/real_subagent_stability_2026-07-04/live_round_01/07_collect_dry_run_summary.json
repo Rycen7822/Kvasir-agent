@@ -1,0 +1,24 @@
+{
+  "all_found": false,
+  "all_valid": false,
+  "expected_lane_count": 8,
+  "found_lane_count": 0,
+  "missing_lane_task_ids": [
+    "pf_task_0d476d8d8e1a",
+    "pf_task_42b7b5057b13",
+    "pf_task_513452dc039d",
+    "pf_task_53e0ffad94a1",
+    "pf_task_58e12364159a",
+    "pf_task_847083d9f88e",
+    "pf_task_8e1d1df7c429",
+    "pf_task_ddf67df5fafc"
+  ],
+  "quest_signature": {
+    "file_count": 175707,
+    "latest_mtime_ns": 1782083849137958327,
+    "latest_path": ".ds/bash_exec/summary.json",
+    "total_size": 625172277988
+  },
+  "reports": {},
+  "run_id": "pf_run_80cb097d3870"
+}
