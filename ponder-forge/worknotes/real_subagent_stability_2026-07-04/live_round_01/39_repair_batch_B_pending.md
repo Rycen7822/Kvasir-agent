@@ -6,6 +6,8 @@
 - batch B delegation_id: `deleg_b92298f2`
 - batch B status: dispatched at `2026-07-05T00:30:59+0800`; pending async return
 - record policy: run `collect_and_submit_repairs.py --batch B --record` only after collector reaches `20/20 all_valid`
+- partial collection: reached `19/20` by `2026-07-05T00:56:46+0800`; missing `pf_task_93f3e65c8d0c`
+- targeted redispatch: `deleg_94109186` for missing `pf_task_93f3e65c8d0c`; existing batch-B watcher `watch_and_record_repair_batch.py --batch B` remains active and should record only at `20/20 all_valid`
 
 ## Batch B task ids
 - `pf_task_168ab133300e`

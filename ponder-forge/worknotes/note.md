@@ -141,6 +141,11 @@
 - Scoped watcher reached batch A `20/20 all_valid` on attempt 4 and then invoked installed `submit-report` for all 20 reports. Installed run counts advanced to reports `68`, assertions `107`, evidence items `390`; gate remains `blocked` with `next_required_action=delegations`, as expected because 43 repair tasks remain.
 - Dispatched repair batch B (20 leaf subagents) as `deleg_b92298f2`; each reads exact local payload `live_round_01/35_repair_batch_B_payload.json`. Batch B is pending async return and must be collected/recorded with `collect_and_submit_repairs.py --batch B --record` only after `20/20 all_valid`.
 
+### 2026-07-05T00:56:46+08:00 Repair batch B targeted redispatch
+
+- Batch B collector reached `19/20`; no malformed/session output was found for the remaining task `pf_task_93f3e65c8d0c` (`pf_assertion_12bc0abf20b1`).
+- Existing batch-B watcher process `502520` is still running and has not recorded partial state. Targeted redispatch `deleg_94109186` covers only the missing task id; leave watcher active so it records batch B once collector reaches `20/20 all_valid`.
+
 ### 2026-07-04T20:32:50+08:00 Continuation completion audit
 
 - Re-read the plan acceptance gates and current active worknote status before relying on prior context.
