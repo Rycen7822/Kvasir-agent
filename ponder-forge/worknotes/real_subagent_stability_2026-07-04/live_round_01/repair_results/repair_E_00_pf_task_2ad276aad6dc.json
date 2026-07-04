@@ -1,0 +1,79 @@
+{
+  "artifacts": [],
+  "assertions": [
+    {
+      "assertion_type": "data_result",
+      "confidence": 0.97,
+      "critical": true,
+      "evidence": [
+        {
+          "command": "python3 -c \"import csv,json,collections; rows=list(csv.DictReader(open('experiments/stage10/07_large_eval/TOKEN_WEIGHTED_EVAL.csv', newline='', encoding='utf-8'))); large=json.load(open('experiments/stage10/07_large_eval/LARGE_EVAL_SUMMARY.json', encoding='utf-8')); meta=json.load(open('experiments/stage10/08_meta/STAGE10_META_ANALYSIS.json', encoding='utf-8')); sc=collections.Counter(r['source_endpoint_type'] for r in rows); y=[r for r in rows if r['source_endpoint_type']=='Y_recover']; sp=[m.get('panel_rows') for m in meta.get('selector_metrics', [])]; out={'csv_rows':len(rows),'source_endpoint_type_counts':dict(sorted(sc.items())),'y_recover_rows':len(y),'y_recover_budget_counts':dict(sorted(collections.Counter(r['training_budget_tokens'] for r in y).items())),'large_eval_summary':{k:large.get(k) for k in ('status','evaluated_endpoint_rows','expected_formal_endpoint_rows','total_table_rows_including_original','hard_failures')},'meta_primary_target':meta.get('primary_target'),'meta_panel_N_by_model_sum':sum(meta.get('panel_N_by_model', {}).values()),'meta_selector_panel_rows_unique':sorted(set(sp)),'meta_gate_statuses':{k:meta.get('gate_results', {}).get(k) for k in ('large_eval_gate_passed','downstream_gate_status','oral_ready_gate_status')}}; assert len(rows)==366 and sc=={'original_reference':6,'Y_recover':360} and len(y)==360 and collections.Counter(r['training_budget_tokens'] for r in y)=={'100000000':360} and large.get('evaluated_endpoint_rows')==360 and large.get('expected_formal_endpoint_rows')==360 and large.get('total_table_rows_including_original')==366 and large.get('hard_failures')==[] and meta.get('primary_target')=='S10-12 large-eval 100M Y_recover token-weighted CE' and sum(meta.get('panel_N_by_model', {}).values())==360 and set(sp)=={360}; print(json.dumps(out, sort_keys=True))\"",
+          "directness": 1.0,
+          "evidence_type": "metric_output",
+          "exit_code": 0,
+          "freshness": 1.0,
+          "metric": {
+            "csv_rows": 366,
+            "large_eval_summary": {
+              "evaluated_endpoint_rows": 360,
+              "expected_formal_endpoint_rows": 360,
+              "hard_failures": [],
+              "status": "passed_S10-12_large_heldout_eval_alignment_audit",
+              "total_table_rows_including_original": 366
+            },
+            "meta_gate_statuses": {
+              "downstream_gate_status": "closed",
+              "large_eval_gate_passed": true,
+              "oral_ready_gate_status": "closed"
+            },
+            "meta_panel_N_by_model_sum": 360,
+            "meta_primary_target": "S10-12 large-eval 100M Y_recover token-weighted CE",
+            "meta_selector_panel_rows_unique": [
+              360
+            ],
+            "source_endpoint_type_counts": {
+              "Y_recover": 360,
+              "original_reference": 6
+            },
+            "y_recover_budget_counts": {
+              "100000000": 360
+            },
+            "y_recover_rows": 360
+          },
+          "quote_or_observation": "Exit 0 read-only counter audit output: csv_rows=366; source_endpoint_type_counts={Y_recover: 360, original_reference: 6}; y_recover_rows=360; y_recover_budget_counts={100000000: 360}; LARGE_EVAL_SUMMARY status=passed_S10-12_large_heldout_eval_alignment_audit with evaluated_endpoint_rows=360, expected_formal_endpoint_rows=360, total_table_rows_including_original=366, hard_failures=[]; STAGE10_META_ANALYSIS primary_target=S10-12 large-eval 100M Y_recover token-weighted CE, panel_N_by_model_sum=360, selector_panel_rows_unique=[360], downstream_gate_status=closed, oral_ready_gate_status=closed.",
+          "relevance": 1.0,
+          "reliability": 0.98,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001"
+        },
+        {
+          "directness": 0.93,
+          "evidence_type": "transform_script",
+          "freshness": 1.0,
+          "quote_or_observation": "The S10-12 script computes expected_formal_endpoint_rows from expected_ids, evaluated_endpoint_rows from completed expected ids, total_table_rows_including_original from len(rows), and hard_failures from failures. The S10-13 script filters target rows to status completed_s10_12_eval, source_endpoint_type Y_recover, and training_budget_tokens 100000000, then records primary_target, target_eval_rows, panel_N_by_model, selector_metrics, and write flags writes_Y_frozen=false/writes_Y_recover=false/writes_downstream=false.",
+          "relevance": 0.95,
+          "reliability": 0.95,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/scripts/stage10_large_eval.py:1240-1263; /home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/scripts/stage10_meta_analysis.py:148-155,518-598"
+        },
+        {
+          "directness": 0.98,
+          "evidence_type": "sanity_check",
+          "freshness": 1.0,
+          "quote_or_observation": "Static artifact sanity check: LARGE_EVAL_SUMMARY.json records the passed S10-12 alignment audit with hard_failures=[] and total_table_rows_including_original=366; STAGE10_META_ANALYSIS.json records status=passed_S10-13_meta_analysis_portfolio_gate_decision, target_eval_rows=360, six panel_N_by_model entries of 60 each, six selector_metrics entries all with panel_rows=360, and gate_results downstream_gate_status=closed/oral_ready_gate_status=closed.",
+          "relevance": 1.0,
+          "reliability": 0.97,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/07_large_eval/LARGE_EVAL_SUMMARY.json:1-59; /home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/08_meta/STAGE10_META_ANALYSIS.json:1-287"
+        }
+      ],
+      "importance": 0.92,
+      "supersedes_assertion_id": "pf_assertion_9462dd8c9806",
+      "target_assertion_id": "pf_assertion_9462dd8c9806",
+      "text": "Read-only Stage10 artifacts support only a row-count-bounded S10-12/S10-13 alignment claim: TOKEN_WEIGHTED_EVAL.csv has 366 data rows, exactly 6 original_reference rows and 360 100M Y_recover rows; LARGE_EVAL_SUMMARY.json records evaluated_endpoint_rows=360, expected_formal_endpoint_rows=360, total_table_rows_including_original=366, status=passed_S10-12_large_heldout_eval_alignment_audit, and hard_failures=[]; STAGE10_META_ANALYSIS.json records primary_target=S10-12 large-eval 100M Y_recover token-weighted CE, panel_N_by_model summing to 360, and every selector metric panel_rows value equal to 360. The same meta-analysis leaves downstream_gate_status and oral_ready_gate_status closed, so this evidence supports row-count consistency only, not a stronger downstream or oral-ready result claim."
+    }
+  ],
+  "role": "gate_gap_repairer",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Repaired pf_assertion_9462dd8c9806 by replacing it with a read-only, row-count-bounded Stage10 S10-12/S10-13 alignment assertion backed by metric_output, transform_script, and sanity_check evidence; no source quest files were modified.",
+  "target_assertion_id": "pf_assertion_9462dd8c9806",
+  "task_id": "pf_task_2ad276aad6dc",
+  "title": "Gate gap repair for pf_assertion_9462dd8c9806"
+}

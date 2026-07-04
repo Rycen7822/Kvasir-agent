@@ -1,0 +1,89 @@
+{
+  "artifacts": [],
+  "assertions": [
+    {
+      "assertion_type": "data_result",
+      "confidence": 0.96,
+      "critical": true,
+      "evidence": [
+        {
+          "command": "python3 - <<'PY_METRIC'\nfrom pathlib import Path\nimport hashlib, json\nroot = Path('/home/xu/project/loop/DeepScientist/quests/001')\naudit_path = root / 'experiments/stage10/12_paper_package/REPORT_AUDIT.json'\nstate_path = root / 'experiments/stage10/00_freeze/STAGE10_STATE.json'\nstage10_dir = root / 'experiments/stage10'\nplot_exts = {'.png', '.jpg', '.jpeg', '.svg', '.pdf'}\n\ndef sha256_path(path: Path) -> str:\n    h = hashlib.sha256()\n    with path.open('rb') as fh:\n        for chunk in iter(lambda: fh.read(1024 * 1024), b''):\n            h.update(chunk)\n    return h.hexdigest()\n\ndef line_count(path: Path) -> int:\n    with path.open('rb') as fh:\n        return sum(1 for _ in fh)\n\naudit = json.loads(audit_path.read_text(encoding='utf-8'))\nstate = json.loads(state_path.read_text(encoding='utf-8'))\nstate_record = next((r for r in audit.get('artifact_records', []) if r.get('path') == 'experiments/stage10/00_freeze/STAGE10_STATE.json'), None)\nstage10_plot_artifacts = sorted(\n    str(p.relative_to(root))\n    for p in stage10_dir.rglob('*')\n    if p.is_file() and p.suffix.lower() in plot_exts\n)\nresult = {\n    'quest_root': str(root),\n    'audit_path': str(audit_path.relative_to(root)),\n    'state_path': str(state_path.relative_to(root)),\n    'audit_status': audit.get('status'),\n    'audit_generated_at': audit.get('generated_at'),\n    'audit_artifact_hash_count': audit.get('artifact_hash_count'),\n    'audit_artifact_records_len': len(audit.get('artifact_records', [])),\n    'forbidden_claim_scan_passed': audit.get('forbidden_claim_scan_passed'),\n    'forbidden_claim_hit_count': len(audit.get('forbidden_claim_hits') or []),\n    'report_markers_passed': audit.get('report_markers_passed'),\n    'missing_report_marker_count': len(audit.get('missing_report_markers') or []),\n    'audit_next_required_substage': audit.get('next_required_substage'),\n    'state_active_substage': state.get('active_substage'),\n    'state_next_required_substage': state.get('next_required_substage'),\n    'state_status_compression_status': state.get('status_compression_status'),\n    'state_paper_package_status': state.get('paper_package_status'),\n    'recorded_state_sha256_in_report_audit': state_record.get('sha256') if state_record else None,\n    'recorded_state_bytes_in_report_audit': state_record.get('bytes') if state_record else None,\n    'recorded_state_lines_in_report_audit': state_record.get('lines') if state_record else None,\n    'live_state_sha256': sha256_path(state_path),\n    'live_state_bytes': state_path.stat().st_size,\n    'live_state_lines': line_count(state_path),\n    'state_hash_matches_report_audit': (state_record or {}).get('sha256') == sha256_path(state_path),\n    'stage10_plot_extensions_checked': sorted(plot_exts),\n    'stage10_plot_artifact_count': len(stage10_plot_artifacts),\n    'stage10_plot_artifacts': stage10_plot_artifacts,\n}\nprint(json.dumps(result, indent=2, sort_keys=True))\nPY_METRIC",
+          "directness": 1.0,
+          "evidence_type": "metric_output",
+          "exit_code": 0,
+          "freshness": 1.0,
+          "locator": "experiments/stage10/12_paper_package/REPORT_AUDIT.json; experiments/stage10/00_freeze/STAGE10_STATE.json; recursive scan under experiments/stage10",
+          "metric": {
+            "audit_artifact_hash_count": 29,
+            "audit_artifact_records_len": 29,
+            "audit_generated_at": "2026-06-21T22:54:00+00:00",
+            "audit_next_required_substage": "S10-15c_status_compression_index_update",
+            "audit_path": "experiments/stage10/12_paper_package/REPORT_AUDIT.json",
+            "audit_status": "passed_S10-15b_paper_package_final_report_handoff",
+            "forbidden_claim_hit_count": 0,
+            "forbidden_claim_scan_passed": true,
+            "live_state_bytes": 37714,
+            "live_state_lines": 887,
+            "live_state_sha256": "7ac2f0bebeab991fe01ce3fa07fc1ed16b796382bb8249bf4de93d587383feee",
+            "missing_report_marker_count": 0,
+            "quest_root": "/home/xu/project/loop/DeepScientist/quests/001",
+            "recorded_state_bytes_in_report_audit": 36868,
+            "recorded_state_lines_in_report_audit": 876,
+            "recorded_state_sha256_in_report_audit": "a1c66af5f4b672df76b5fe8d717f63cea297811bc7b7dd7ff057ad7469723a12",
+            "report_markers_passed": true,
+            "stage10_plot_artifact_count": 0,
+            "stage10_plot_artifacts": [],
+            "stage10_plot_extensions_checked": [
+              ".jpeg",
+              ".jpg",
+              ".pdf",
+              ".png",
+              ".svg"
+            ],
+            "state_active_substage": "Stage10_complete",
+            "state_hash_matches_report_audit": false,
+            "state_next_required_substage": "none",
+            "state_paper_package_status": "passed_S10-15b_paper_package_final_report_handoff",
+            "state_path": "experiments/stage10/00_freeze/STAGE10_STATE.json",
+            "state_status_compression_status": "passed_S10-15c_status_compression_index_update"
+          },
+          "quote_or_observation": "{\"audit_artifact_hash_count\":29,\"audit_artifact_records_len\":29,\"audit_generated_at\":\"2026-06-21T22:54:00+00:00\",\"audit_next_required_substage\":\"S10-15c_status_compression_index_update\",\"audit_path\":\"experiments/stage10/12_paper_package/REPORT_AUDIT.json\",\"audit_status\":\"passed_S10-15b_paper_package_final_report_handoff\",\"forbidden_claim_hit_count\":0,\"forbidden_claim_scan_passed\":true,\"live_state_bytes\":37714,\"live_state_lines\":887,\"live_state_sha256\":\"7ac2f0bebeab991fe01ce3fa07fc1ed16b796382bb8249bf4de93d587383feee\",\"missing_report_marker_count\":0,\"quest_root\":\"/home/xu/project/loop/DeepScientist/quests/001\",\"recorded_state_bytes_in_report_audit\":36868,\"recorded_state_lines_in_report_audit\":876,\"recorded_state_sha256_in_report_audit\":\"a1c66af5f4b672df76b5fe8d717f63cea297811bc7b7dd7ff057ad7469723a12\",\"report_markers_passed\":true,\"stage10_plot_artifact_count\":0,\"stage10_plot_artifacts\":[],\"stage10_plot_extensions_checked\":[\".jpeg\",\".jpg\",\".pdf\",\".png\",\".svg\"],\"state_active_substage\":\"Stage10_complete\",\"state_hash_matches_report_audit\":false,\"state_next_required_substage\":\"none\",\"state_paper_package_status\":\"passed_S10-15b_paper_package_final_report_handoff\",\"state_path\":\"experiments/stage10/00_freeze/STAGE10_STATE.json\",\"state_status_compression_status\":\"passed_S10-15c_status_compression_index_update\"}",
+          "relevance": 1.0,
+          "reliability": 0.96,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001",
+          "title": "Read-only Stage10 audit currency, hash, and plot-artifact metrics"
+        },
+        {
+          "directness": 0.96,
+          "evidence_type": "transform_script",
+          "freshness": 1.0,
+          "quote_or_observation": "The inline Python transform reads REPORT_AUDIT.json and STAGE10_STATE.json, locates the audit artifact record for experiments/stage10/00_freeze/STAGE10_STATE.json, computes the live state sha256/byte/line counts, compares the audit-recorded hash with the live hash, and recursively counts files under experiments/stage10 whose suffix is one of .jpeg, .jpg, .pdf, .png, or .svg. It performs filesystem reads only and writes no quest files.",
+          "relevance": 0.98,
+          "reliability": 0.94,
+          "source_ref": "metric_output.command",
+          "title": "Inline read-only transform used to compute the metrics"
+        },
+        {
+          "directness": 0.95,
+          "evidence_type": "sanity_check",
+          "freshness": 1.0,
+          "quote_or_observation": "REPORT_AUDIT.json reports passed_S10-15b_paper_package_final_report_handoff, generated_at 2026-06-21T22:54:00+00:00, audit_next_required_substage S10-15c_status_compression_index_update, 29 artifact records, report_markers_passed=true, forbidden_claim_scan_passed=true, and 0 forbidden-claim hits. The live state reports active_substage=Stage10_complete, next_required_substage=none, status_compression_status=passed_S10-15c_status_compression_index_update, and paper_package_status=passed_S10-15b_paper_package_final_report_handoff. This corroborates the narrow conclusion that the package is closed-gate/claim-safe within S10-15b boundaries but needs a refreshed audit table before being treated as current to the live S10-15c-compressed state; the empty Stage10 plot scan prevents implying existing Stage10-local visuals.",
+          "relevance": 0.98,
+          "reliability": 0.93,
+          "source_ref": "REPORT_AUDIT.json fields plus live STAGE10_STATE.json fields",
+          "title": "Cross-file sanity check for bounded claim-safety and stale audit-hash interpretation"
+        }
+      ],
+      "importance": 0.88,
+      "repairs_assertion_id": "pf_assertion_a3c2b86585c8",
+      "text": "The Stage10 final communication package remains claim-safe only inside its recorded S10-15b closed-gate boundary, not as a fully current live-state audit: REPORT_AUDIT.json records status passed_S10-15b_paper_package_final_report_handoff with 29 artifact hash records, forbidden_claim_scan_passed=true, 0 forbidden-claim hits, report_markers_passed=true, and 0 missing report markers, but its recorded STAGE10_STATE.json hash a1c66af5f4b672df76b5fe8d717f63cea297811bc7b7dd7ff057ad7469723a12 for 36,868 bytes/876 lines does not match the live STAGE10_STATE.json hash 7ac2f0bebeab991fe01ce3fa07fc1ed16b796382bb8249bf4de93d587383feee for 37,714 bytes/887 lines after the live state advanced to Stage10_complete with S10-15c status compression. A read-only Stage10 tree scan found 0 native .png/.svg/.pdf/.jpg/.jpeg plot artifacts, so any refreshed reporting should update the audit hash table and add Stage10-specific selector/failure visuals only if needed, without broadening the claim-ledger boundaries."
+    }
+  ],
+  "profile": "analysis",
+  "role": "gate_gap_repairer",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Repaired the missing analysis-profile evidence gap for pf_assertion_a3c2b86585c8 using read-only metric output with command/exit_code=0, transform-script provenance, and a sanity check. No quest source files or repository source files were modified; artifacts is empty.",
+  "target_assertion_id": "pf_assertion_a3c2b86585c8",
+  "task_id": "pf_task_74c337550cec",
+  "title": "Gate-gap repair: Stage10 report audit currency boundary evidence"
+}

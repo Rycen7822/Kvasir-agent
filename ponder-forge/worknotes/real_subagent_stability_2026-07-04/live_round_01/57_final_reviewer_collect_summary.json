@@ -1,0 +1,33 @@
+{
+  "all_found": false,
+  "all_valid": false,
+  "expected_reviewer_count": 4,
+  "found_reviewer_count": 1,
+  "missing_reviewer_task_ids": [
+    "pf_task_221109c20d4d",
+    "pf_task_722d9f443a59",
+    "pf_task_be3df06b61dd"
+  ],
+  "quest_signature": {
+    "file_count": 175707,
+    "latest_mtime_ns": 1782083849137958327,
+    "latest_path": ".ds/bash_exec/summary.json",
+    "total_size": 625172277988
+  },
+  "reviewers": {
+    "pf_task_ebeb8780fcc8": {
+      "confidence": 0.96,
+      "errors": [],
+      "index": 0,
+      "saved_path": "/home/xu/project/autosci-delphi/ponder-forge/worknotes/real_subagent_stability_2026-07-04/live_round_01/final_reviewer_results/final_reviewer_00_pf_task_ebeb8780fcc8.json",
+      "source_cache_path": "state_db:messages:383315:20260705_025906_72a016:assistant",
+      "target_id": "pf_assertion_038f67abc4c8",
+      "verdict": "accept"
+    }
+  },
+  "run_id": "pf_run_80cb097d3870",
+  "source_gate_output": "53_gate_after_final_repairs.json",
+  "verdict_counts": {
+    "accept": 1
+  }
+}

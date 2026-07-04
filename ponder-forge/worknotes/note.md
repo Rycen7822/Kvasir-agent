@@ -196,6 +196,12 @@
 - Dispatched final repair batch E as `deleg_6b3897e0` with 4 leaf `gate_gap_repairer` tasks for the remaining profile-evidence gaps.
 - Batch E must be recorded only after `collect_and_submit_repairs.py --batch E` reaches `4/4 all_valid`; then rerun installed verify/gate/reconcile/finalize.
 
+### 2026-07-05T02:59:17+08:00 Batch E recorded; final independent review dispatched
+
+- Batch E returned 4/4; `pf_task_2ad276aad6dc` lacked only a top-level `title`, so `collect_and_submit_repairs.py` now deterministically fills missing titles from task metadata before validation. Batch E then recorded through installed `submit-report`: reports 115, assertions 156, evidence_items 568.
+- Installed `gate` after batch E had no unsupported assertion/profile-evidence gaps, but remained blocked on 4 `missing_independent_verdict` gaps for the new replacement assertions: `pf_assertion_bd7d7f152ed8`, `pf_assertion_2a376a595990`, `pf_assertion_0f109738e077`, `pf_assertion_038f67abc4c8`.
+- Generated `56_final_review_payload.json`, `56_final_review_dispatch_manifest.json`, `collect_and_record_final_reviewers.py`, and `watch_and_record_final_reviewers.py`; dispatched 4 final `repro_reviewer` leaves as `deleg_0898c723`. Do not use generic reconcile repair payload for these gaps, because that would create another replacement-assertion layer instead of satisfying the independent-verdict gate.
+
 ### 2026-07-04T20:32:50+08:00 Continuation completion audit
 
 - Re-read the plan acceptance gates and current active worknote status before relying on prior context.

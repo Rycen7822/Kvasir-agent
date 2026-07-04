@@ -1,0 +1,86 @@
+{
+  "artifacts": [],
+  "assertions": [
+    {
+      "assertion_type": "data_result",
+      "confidence": 0.94,
+      "critical": true,
+      "evidence": [
+        {
+          "command": "python3 - <<'PY'\nimport json, hashlib\nfrom pathlib import Path\nroot = Path('/home/xu/project/loop/DeepScientist/quests/001')\naudit_path = root / 'experiments/stage10/12_paper_package/REPORT_AUDIT.json'\nledger_path = root / 'experiments/stage10/12_paper_package/STAGE10_CLAIM_LEDGER.md'\nstate_path = root / 'experiments/stage10/00_freeze/STAGE10_STATE.json'\naudit = json.loads(audit_path.read_text(encoding='utf-8'))\nledger_lines = ledger_path.read_text(encoding='utf-8').splitlines()\nclaim_rows = [line for line in ledger_lines if line.startswith('|') and not line.startswith('|---') and not line.startswith('| claim |')]\nstate_hash = hashlib.sha256(state_path.read_bytes()).hexdigest()\nstate_record = next(rec for rec in audit['artifact_records'] if rec['path'] == 'experiments/stage10/00_freeze/STAGE10_STATE.json')\nresult = {\n    'audit_path': str(audit_path.relative_to(root)),\n    'schema': audit.get('schema'),\n    'status': audit.get('status'),\n    'substage': audit.get('substage'),\n    'generated_at': audit.get('generated_at'),\n    'artifact_hash_count': audit.get('artifact_hash_count'),\n    'artifact_records_len': len(audit.get('artifact_records', [])),\n    'all_artifact_records_have_sha256': all(bool(rec.get('sha256')) for rec in audit.get('artifact_records', [])),\n    'claim_ledger_rows_recorded': audit.get('claim_ledger_rows'),\n    'claim_ledger_rows_current_counted': len(claim_rows),\n    'claim_ledger_row_names': [line.split('|')[1].strip() for line in claim_rows],\n    'report_markers_passed': audit.get('report_markers_passed'),\n    'missing_report_markers': audit.get('missing_report_markers'),\n    'forbidden_claim_scan_passed': audit.get('forbidden_claim_scan_passed'),\n    'forbidden_claim_hits': audit.get('forbidden_claim_hits'),\n    'uses_target': audit.get('uses_target'),\n    'writes_Y_frozen': audit.get('writes_Y_frozen'),\n    'writes_Y_recover': audit.get('writes_Y_recover'),\n    'writes_downstream': audit.get('writes_downstream'),\n    'state_recorded_sha256_in_report_audit': state_record.get('sha256'),\n    'state_current_sha256': state_hash,\n    'state_hash_current_matches_report_audit': state_hash == state_record.get('sha256'),\n}\nprint(json.dumps(result, ensure_ascii=False, sort_keys=True, indent=2))\nPY",
+          "directness": 0.98,
+          "evidence_type": "metric_output",
+          "exit_code": 0,
+          "freshness": 0.95,
+          "metric": {
+            "all_artifact_records_have_sha256": true,
+            "artifact_hash_count": 29,
+            "artifact_records_len": 29,
+            "audit_path": "experiments/stage10/12_paper_package/REPORT_AUDIT.json",
+            "claim_ledger_row_names": [
+              "model_family_gate",
+              "ce_selection_gate",
+              "large_eval_alignment",
+              "seed_robustness",
+              "component_ablation",
+              "downstream_utility",
+              "oral_gate",
+              "original_reference_improvement",
+              "theory_package"
+            ],
+            "claim_ledger_rows_current_counted": 9,
+            "claim_ledger_rows_recorded": 9,
+            "forbidden_claim_hits": [],
+            "forbidden_claim_scan_passed": true,
+            "generated_at": "2026-06-21T22:54:00+00:00",
+            "missing_report_markers": [],
+            "report_markers_passed": true,
+            "schema": "quest001.stage10.s10_15b_paper_package_report_audit.v1",
+            "state_current_sha256": "7ac2f0bebeab991fe01ce3fa07fc1ed16b796382bb8249bf4de93d587383feee",
+            "state_hash_current_matches_report_audit": false,
+            "state_recorded_sha256_in_report_audit": "a1c66af5f4b672df76b5fe8d717f63cea297811bc7b7dd7ff057ad7469723a12",
+            "status": "passed_S10-15b_paper_package_final_report_handoff",
+            "substage": "S10-15b_paper_package_final_report_handoff",
+            "uses_target": false,
+            "writes_Y_frozen": false,
+            "writes_Y_recover": false,
+            "writes_downstream": false
+          },
+          "quote_or_observation": "The command returned status=passed_S10-15b_paper_package_final_report_handoff, artifact_hash_count=29, artifact_records_len=29, all_artifact_records_have_sha256=true, claim_ledger_rows_recorded=9, claim_ledger_rows_current_counted=9, report_markers_passed=true, missing_report_markers=[], forbidden_claim_scan_passed=true, forbidden_claim_hits=[], uses_target=false, writes_Y_frozen=false, writes_Y_recover=false, writes_downstream=false, and state_hash_current_matches_report_audit=false.",
+          "relevance": 0.98,
+          "reliability": 0.97,
+          "source_ref": "read-only Python inspection of /home/xu/project/loop/DeepScientist/quests/001 Stage10 package files",
+          "title": "S10-15b REPORT_AUDIT and claim-ledger metric extraction"
+        },
+        {
+          "directness": 0.92,
+          "evidence_type": "reproduction_log",
+          "freshness": 0.95,
+          "quote_or_observation": "The metric extraction command read REPORT_AUDIT.json, STAGE10_CLAIM_LEDGER.md, and STAGE10_STATE.json using absolute paths under /home/xu/project/loop/DeepScientist/quests/001, printed the metric JSON, and exited with code 0. It performed no writes to the source quest.",
+          "relevance": 0.9,
+          "reliability": 0.95,
+          "source_ref": "terminal command executed by this repair agent",
+          "title": "Read-only reproduction command completed successfully"
+        },
+        {
+          "directness": 0.94,
+          "evidence_type": "sanity_check",
+          "freshness": 0.95,
+          "quote_or_observation": "REPORT_AUDIT records the S10-15b state file sha256 as a1c66af5f4b672df76b5fe8d717f63cea297811bc7b7dd7ff057ad7469723a12, while the live STAGE10_STATE.json sha256 computed during repair is 7ac2f0bebeab991fe01ce3fa07fc1ed16b796382bb8249bf4de93d587383feee. This mismatch supports narrowing the assertion to REPORT_AUDIT's recorded package-audit state rather than a current all-artifacts hash-validity claim.",
+          "relevance": 0.94,
+          "reliability": 0.95,
+          "source_ref": "experiments/stage10/12_paper_package/REPORT_AUDIT.json artifact_records plus live experiments/stage10/00_freeze/STAGE10_STATE.json hash",
+          "title": "Boundary check against post-audit hash freshness overclaim"
+        }
+      ],
+      "importance": 0.92,
+      "supersedes_assertion_id": "pf_assertion_ffcc3c70cf73",
+      "text": "Read-only inspection supports a bounded S10-15b Stage10 paper-package audit claim: experiments/stage10/12_paper_package/REPORT_AUDIT.json (schema quest001.stage10.s10_15b_paper_package_report_audit.v1, generated_at 2026-06-21T22:54:00+00:00) has status passed_S10-15b_paper_package_final_report_handoff, artifact_hash_count=29 with 29 artifact_records and sha256 values present, claim_ledger_rows=9; the live STAGE10_CLAIM_LEDGER.md table also contains 9 claim rows; report_markers_passed=true with missing_report_markers=[], forbidden_claim_scan_passed=true with forbidden_claim_hits=[], uses_target=false, and writes_Y_frozen=false, writes_Y_recover=false, writes_downstream=false. This is evidence for the recorded S10-15b report/package audit state only: a live sha256 check of STAGE10_STATE.json now yields 7ac2f0bebeab991fe01ce3fa07fc1ed16b796382bb8249bf4de93d587383feee, which does not match REPORT_AUDIT's recorded state sha256 a1c66af5f4b672df76b5fe8d717f63cea297811bc7b7dd7ff057ad7469723a12, so the claim must not be read as a fresh assertion that every archived hash still matches files after later S10-15c updates."
+    }
+  ],
+  "role": "gate_gap_repairer",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Read-only repair evidence for the bounded S10-15b Stage10 paper-package audit claim; no source quest files were modified.",
+  "task_id": "pf_task_014df39b4aa3",
+  "title": "Repair evidence for assertion pf_assertion_ffcc3c70cf73"
+}

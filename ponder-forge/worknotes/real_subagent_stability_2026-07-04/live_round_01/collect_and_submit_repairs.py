@@ -139,6 +139,21 @@ def validate_report(report: Json, expected: dict[str, Json]) -> list[str]:
     return errors
 
 
+def normalize_report(report: Json, expected_row: Json) -> tuple[Json, list[str]]:
+    clean = dict(report)
+    notes: list[str] = []
+    if not str(clean.get("title") or "").strip():
+        target = str(clean.get("target_assertion_id") or "")
+        if not target:
+            context = str(expected_row.get("context") or "")
+            marker = "target_assertion_id="
+            if marker in context:
+                target = context.split(marker, 1)[1].splitlines()[0].strip()
+        clean["title"] = f"Gate gap repair for {target or clean.get('task_id')}"
+        notes.append("filled missing title from task metadata")
+    return clean, notes
+
+
 def submit_report(path: Path) -> Json:
     env = os.environ.copy()
     env["HERMES_HOME"] = str(HERMES_HOME)
@@ -193,7 +208,7 @@ def main() -> None:
     }
     all_valid = True
     for task_id, report in sorted(candidates.items(), key=lambda kv: expected[kv[0]]["index"]):
-        clean = dict(report)
+        clean, normalization_notes = normalize_report(report, expected[task_id])
         source_ref = clean.pop("_source_ref", None)
         errors = validate_report(clean, expected)
         path = RESULT_DIR / f"repair_{args.batch}_{expected[task_id]['index']:02d}_{task_id}.json"
@@ -204,6 +219,7 @@ def main() -> None:
             "saved_path": str(path),
             "assertion_count": len(clean.get("assertions") or []),
             "errors": errors,
+            "normalization_notes": normalization_notes,
         }
         if errors:
             all_valid = False

@@ -1,0 +1,115 @@
+{
+  "artifacts": [],
+  "assertions": [
+    {
+      "assertion_type": "data_result",
+      "confidence": 0.95,
+      "critical": true,
+      "evidence": [
+        {
+          "command": "python - <<'PY'\nimport csv, json\nfrom collections import Counter\nfrom pathlib import Path\nroot = Path('/home/xu/project/loop/DeepScientist/quests/001')\npaths = {\n    'token_weighted': root/'experiments/stage10/07_large_eval/TOKEN_WEIGHTED_EVAL.csv',\n    'recovery_endpoints': root/'experiments/stage10/06_recovery/RECOVERY_ENDPOINTS.csv',\n    'seed_robustness': root/'experiments/stage10/06_recovery/SEED_ROBUSTNESS.csv',\n    'large_summary': root/'experiments/stage10/07_large_eval/LARGE_EVAL_SUMMARY.json',\n    'split_summary': root/'experiments/stage10/07_large_eval/D_EVAL_STAGE10_V1_SPLIT_SUMMARY.json',\n    'state': root/'experiments/stage10/00_freeze/STAGE10_STATE.json',\n}\nread_csv = lambda p: list(csv.DictReader(p.open(newline='')))\ntw = read_csv(paths['token_weighted'])\nrec = read_csv(paths['recovery_endpoints'])\nseed = read_csv(paths['seed_robustness'])\nlarge = json.loads(paths['large_summary'].read_text())\nsplit = json.loads(paths['split_summary'].read_text())\nstate = json.loads(paths['state'].read_text())\nactive_split_rows = split['split_summaries']\nresult = {\n    'token_weighted_eval_rows': len(tw),\n    'token_weighted_original_rows': sum(r['source_endpoint_type'] == 'original_reference' for r in tw),\n    'token_weighted_y_recover_100m_rows': sum(r['source_endpoint_type'] == 'Y_recover' and r['training_budget_tokens'] == '100000000' for r in tw),\n    'token_weighted_model_row_counts': dict(sorted(Counter(r['model_id'] for r in tw).items())),\n    'large_eval_summary_status': large['status'],\n    'large_eval_summary_evaluated_endpoint_rows': large['evaluated_endpoint_rows'],\n    'large_eval_summary_total_table_rows_including_original': large['total_table_rows_including_original'],\n    'large_eval_hard_failures': large['hard_failures'],\n    'recovery_endpoint_rows': len(rec),\n    'recovery_endpoint_status_counts': dict(sorted(Counter(r['status'] for r in rec).items())),\n    'recovery_endpoint_type_counts': dict(sorted(Counter(r['endpoint_type'] for r in rec).items())),\n    'recovery_endpoint_ledger_rows_state': state['target_write_ledger_rows'],\n    'seed_robustness_rows': len(seed),\n    'seed_robustness_status_counts': dict(sorted(Counter(r['status'] for r in seed).items())),\n    'split_summary_status': split['status'],\n    'split_count': split['split_count'],\n    'split_record_count': split['record_count'],\n    'split_document_count_sum': sum(r['document_count'] for r in active_split_rows),\n    'split_status_counts': dict(sorted(Counter(r['status'] for r in active_split_rows).items())),\n    'split_model_ids': sorted(r['model_id'] for r in active_split_rows),\n    'stage_state_recovery_status': state['recovery_status'],\n    'stage_state_large_eval_status': state['large_eval_status'],\n    'stage_state_active_substage': state['active_substage'],\n}\nassert result['token_weighted_eval_rows'] == 366\nassert result['token_weighted_original_rows'] == 6\nassert result['token_weighted_y_recover_100m_rows'] == 360\nassert result['large_eval_summary_total_table_rows_including_original'] == 366\nassert result['large_eval_summary_evaluated_endpoint_rows'] == 360\nassert result['large_eval_summary_status'] == 'passed_S10-12_large_heldout_eval_alignment_audit'\nassert result['large_eval_hard_failures'] == []\nassert result['recovery_endpoint_rows'] == 1380\nassert result['recovery_endpoint_ledger_rows_state'] == 1380\nassert result['seed_robustness_rows'] == 252\nassert result['split_count'] == 6\nassert result['split_record_count'] == 18789\nassert result['split_document_count_sum'] == 18789\nassert result['split_status_counts'] == {'passed': 6}\nassert result['stage_state_recovery_status'] == 'passed_S10-11_recovery_training_eval'\nassert result['stage_state_large_eval_status'] == 'passed_S10-12_large_heldout_eval_alignment_audit'\nprint(json.dumps(result, sort_keys=True))\nPY",
+          "directness": 1.0,
+          "evidence_type": "metric_output",
+          "exit_code": 0,
+          "freshness": 0.95,
+          "locator": "Command executed from /home/xu/project/autosci-delphi; all inputs are read-only existing Stage10 artifacts under /home/xu/project/loop/DeepScientist/quests/001",
+          "metric": {
+            "large_eval_hard_failures": [],
+            "large_eval_summary_evaluated_endpoint_rows": 360,
+            "large_eval_summary_status": "passed_S10-12_large_heldout_eval_alignment_audit",
+            "large_eval_summary_total_table_rows_including_original": 366,
+            "recovery_endpoint_ledger_rows_state": 1380,
+            "recovery_endpoint_rows": 1380,
+            "recovery_endpoint_status_counts": {
+              "completed_recovery_eval": 1380
+            },
+            "recovery_endpoint_type_counts": {
+              "Y_recover": 1380
+            },
+            "seed_robustness_rows": 252,
+            "seed_robustness_status_counts": {
+              "completed_seed_recovery_eval": 252
+            },
+            "split_count": 6,
+            "split_document_count_sum": 18789,
+            "split_model_ids": [
+              "llama-3.2-1b",
+              "olmo-2-1b",
+              "pythia-160m",
+              "pythia-1b",
+              "pythia-410m",
+              "qwen2.5-1.5b"
+            ],
+            "split_record_count": 18789,
+            "split_status_counts": {
+              "passed": 6
+            },
+            "split_summary_status": "passed",
+            "stage_state_active_substage": "Stage10_complete",
+            "stage_state_large_eval_status": "passed_S10-12_large_heldout_eval_alignment_audit",
+            "stage_state_recovery_status": "passed_S10-11_recovery_training_eval",
+            "token_weighted_eval_rows": 366,
+            "token_weighted_model_row_counts": {
+              "llama-3.2-1b": 61,
+              "olmo-2-1b": 61,
+              "pythia-160m": 61,
+              "pythia-1b": 61,
+              "pythia-410m": 61,
+              "qwen2.5-1.5b": 61
+            },
+            "token_weighted_original_rows": 6,
+            "token_weighted_y_recover_100m_rows": 360
+          },
+          "quote_or_observation": "Command output: {\"large_eval_hard_failures\": [], \"large_eval_summary_evaluated_endpoint_rows\": 360, \"large_eval_summary_status\": \"passed_S10-12_large_heldout_eval_alignment_audit\", \"large_eval_summary_total_table_rows_including_original\": 366, \"recovery_endpoint_ledger_rows_state\": 1380, \"recovery_endpoint_rows\": 1380, \"recovery_endpoint_status_counts\": {\"completed_recovery_eval\": 1380}, \"recovery_endpoint_type_counts\": {\"Y_recover\": 1380}, \"seed_robustness_rows\": 252, \"seed_robustness_status_counts\": {\"completed_seed_recovery_eval\": 252}, \"split_count\": 6, \"split_document_count_sum\": 18789, \"split_model_ids\": [\"llama-3.2-1b\", \"olmo-2-1b\", \"pythia-160m\", \"pythia-1b\", \"pythia-410m\", \"qwen2.5-1.5b\"], \"split_record_count\": 18789, \"split_status_counts\": {\"passed\": 6}, \"split_summary_status\": \"passed\", \"stage_state_active_substage\": \"Stage10_complete\", \"stage_state_large_eval_status\": \"passed_S10-12_large_heldout_eval_alignment_audit\", \"stage_state_recovery_status\": \"passed_S10-11_recovery_training_eval\", \"token_weighted_eval_rows\": 366, \"token_weighted_model_row_counts\": {\"llama-3.2-1b\": 61, \"olmo-2-1b\": 61, \"pythia-160m\": 61, \"pythia-1b\": 61, \"pythia-410m\": 61, \"qwen2.5-1.5b\": 61}, \"token_weighted_original_rows\": 6, \"token_weighted_y_recover_100m_rows\": 360}",
+          "relevance": 1.0,
+          "reliability": 0.98,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/{07_large_eval/TOKEN_WEIGHTED_EVAL.csv,07_large_eval/LARGE_EVAL_SUMMARY.json,07_large_eval/D_EVAL_STAGE10_V1_SPLIT_SUMMARY.json,06_recovery/RECOVERY_ENDPOINTS.csv,06_recovery/SEED_ROBUSTNESS.csv,00_freeze/STAGE10_STATE.json}",
+          "title": "Read-only recomputation of Stage10 table counts and split coverage"
+        },
+        {
+          "directness": 0.9,
+          "evidence_type": "reproduction_log",
+          "freshness": 0.9,
+          "locator": "lines 923-926 and 1001-1002",
+          "quote_or_observation": "The formal experiment log records the final S10-11 rank-ablation batch with endpoint/ledger rows 1380/1380 and S10-11 output grids complete; the S10-11 completion audit advanced recovery_status=passed_S10-11_recovery_training_eval with target_write_ledger_rows=1380; the S10-12 split refresh/audit recorded split_count=6 and record_count=18789; the final S10-12 aggregate/alignment audit recorded passed_S10-12_large_heldout_eval_alignment_audit with expected/evaluated formal endpoint rows 360/360 and table rows including originals 366 total, all six models row_count=61, and at least 2M heldout eval tokens per model.",
+          "relevance": 0.96,
+          "reliability": 0.92,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/正式实验命令.md",
+          "title": "Recorded Stage10 generation and audit provenance for the counted tables"
+        },
+        {
+          "directness": 0.92,
+          "evidence_type": "transform_script",
+          "freshness": 0.95,
+          "quote_or_observation": "The repair extractor opens existing CSV/JSON artifacts with csv.DictReader/json.loads, computes row counts and status/model/split counts, cross-checks them against LARGE_EVAL_SUMMARY.json and STAGE10_STATE.json, asserts the expected 366/1380/252/6/18789 counts, prints JSON, and performs no file writes.",
+          "relevance": 0.94,
+          "reliability": 0.94,
+          "source_ref": "metric_output.command inline Python extractor",
+          "title": "Inline read-only count extractor used for the repair"
+        },
+        {
+          "directness": 0.98,
+          "evidence_type": "sanity_check",
+          "freshness": 0.95,
+          "quote_or_observation": "Sanity checks from the successful command: 366 TOKEN_WEIGHTED_EVAL.csv rows equal LARGE_EVAL_SUMMARY total_table_rows_including_original=366; the 360 100M Y_recover rows equal LARGE_EVAL_SUMMARY evaluated_endpoint_rows=360; RECOVERY_ENDPOINTS.csv has 1380 completed_recovery_eval Y_recover rows and matches STAGE10_STATE target_write_ledger_rows=1380; SEED_ROBUSTNESS.csv has 252 completed_seed_recovery_eval rows; split_summaries has exactly six passed rows whose document_count sum equals record_count=18789.",
+          "relevance": 1.0,
+          "reliability": 0.96,
+          "source_ref": "TOKEN_WEIGHTED_EVAL.csv, RECOVERY_ENDPOINTS.csv, SEED_ROBUSTNESS.csv, LARGE_EVAL_SUMMARY.json, D_EVAL_STAGE10_V1_SPLIT_SUMMARY.json, STAGE10_STATE.json",
+          "title": "Cross-file count consistency checks"
+        }
+      ],
+      "importance": 0.94,
+      "repairs_assertion_id": "pf_assertion_ca9d2c34b028",
+      "supersedes_assertion_id": "pf_assertion_ca9d2c34b028",
+      "text": "Read-only recomputation confirms the Stage10 primary result-table counts and split coverage: TOKEN_WEIGHTED_EVAL.csv contains 366 token-weighted large-eval data rows (6 original references plus 360 100M Y_recover rows, 61 rows for each of six models), RECOVERY_ENDPOINTS.csv contains 1,380 completed Y_recover endpoint rows matching STAGE10_STATE target_write_ledger_rows=1380, SEED_ROBUSTNESS.csv contains 252 completed seed-robustness rows, and D_EVAL_STAGE10_V1_SPLIT_SUMMARY.json records six passed active model splits totaling 18,789 heldout records. This supports table presence and count consistency only, not any downstream or oral-ready claim."
+    }
+  ],
+  "confidence": 0.95,
+  "profile": "analysis",
+  "role": "gate_gap_repairer",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Repaired the missing analysis-profile evidence gap for pf_assertion_ca9d2c34b028 using read-only recomputation of Stage10 primary result tables. The attached metric_output command exited 0 and confirms 366 token-weighted large-eval rows, 1,380 recovery endpoint rows, 252 seed-robustness rows, and six passed active model splits totaling 18,789 heldout records. No artifacts were created and no source quest files were modified.",
+  "target_assertion_id": "pf_assertion_ca9d2c34b028",
+  "task_id": "pf_task_a5a15738b176",
+  "title": "Repair evidence for Stage10 primary result table counts"
+}
