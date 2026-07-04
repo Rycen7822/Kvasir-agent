@@ -1,0 +1,11 @@
+{
+  "confidence": 0.9,
+  "independent_from_task_id": "pf_task_7ec691757d6e",
+  "rationale": "The visible evidence directly supports each element of the assertion: evidence pf_evidence_a14318ebe305 reports an exit_code=0 read-only inspection with active_substage=Stage10_complete, completed_substages=24, all_required_inputs_present=true, candidate_universe_records=22888, panel_status=precommitted, target_rows_per_model=60, heldout_status=frozen_before_recovery, and primary_metric=final_ce_token_weighted. Evidence pf_evidence_9251d28c3887 independently supports the 22888-record candidate universe and recorded freeze manifest, and pf_evidence_0db6b8b83f60 supports that the panel was created before frozen/recovery target outputs and does not use or write target fields. No contradictory evidence is visible in the assigned context.",
+  "required_actions": [],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_032adc666fdd",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_90bc715cf3f4",
+  "verdict": "accept"
+}

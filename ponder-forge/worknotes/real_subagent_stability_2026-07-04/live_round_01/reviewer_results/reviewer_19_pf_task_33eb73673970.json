@@ -1,0 +1,14 @@
+{
+  "confidence": 0.78,
+  "independent_from_task_id": "pf_task_2b3d84e57650",
+  "rationale": "Visible evidence supports the main metric/gate claims: Stage10-related gates are closed where relevant (ce_selection_gate_passed=false, model_family_gate_met=false, downstream/oral closed), CFC-only is retained as baseline, LoopCert-only improves regret@3 versus CFC-only (0.03223671717595801 vs 0.044697468910847644) but has worse mean cost-to-contain (16.666666666666668 vs 13.833333333333334), and OrbitRepair-Proxy has the best visible regret and cost metrics. However, the provided evidence does not explicitly support the qualifiers that model-family coverage is 'resource-gated' or that OrbitRepair-Proxy is a 'demoted historical proxy baseline' rather than the primary LoopCert-GAAS claim. The assertion should be narrowed to the visible metric/gate evidence or those qualifiers should be backed by cited evidence.",
+  "required_actions": [
+    "Add visible evidence for the 'resource-gated' model-family coverage characterization, or remove that qualifier.",
+    "Add visible evidence that OrbitRepair-Proxy is demoted/historical/proxy-only and not the primary LoopCert-GAAS claim, or revise the assertion to state only that OrbitRepair-Proxy performs best on the reported metrics."
+  ],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_33eb73673970",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_a9e5cfa4703e",
+  "verdict": "revise"
+}

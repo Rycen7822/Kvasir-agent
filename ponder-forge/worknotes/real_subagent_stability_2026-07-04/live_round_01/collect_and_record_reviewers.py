@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import sqlite3
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -21,6 +22,7 @@ ROUND_DIR = ROOT / "worknotes/real_subagent_stability_2026-07-04/live_round_01"
 HERMES_HOME = ROOT / "worknotes/real_subagent_stability_2026-07-04/hermes_home_live_01"
 PF_CLI = Path("/home/xu/.hermes/plugins/ponder_forge/cli.py")
 CACHE_DIR = Path("/home/xu/.hermes/cache/delegation")
+STATE_DB = Path("/home/xu/.hermes/state.db")
 MANIFEST_PATH = ROUND_DIR / "16_reviewer_dispatch_manifest.json"
 RESULT_DIR = ROUND_DIR / "reviewer_results"
 RECORD_DIR = ROUND_DIR / "reviewer_record_outputs"
@@ -39,8 +41,9 @@ def load_json(path: Path) -> Any:
     return json.loads(path.read_text())
 
 
-def first_json_object(text: str) -> Json | None:
+def json_objects(text: str) -> list[Json]:
     decoder = json.JSONDecoder()
+    objects: list[Json] = []
     for index, char in enumerate(text):
         if char != "{":
             continue
@@ -49,8 +52,8 @@ def first_json_object(text: str) -> Json | None:
         except json.JSONDecodeError:
             continue
         if isinstance(obj, dict):
-            return obj
-    return None
+            objects.append(obj)
+    return objects
 
 
 def manifest_by_reviewer_task() -> dict[str, Json]:
@@ -68,14 +71,35 @@ def scan_candidate_verdicts(expected: dict[str, Json]) -> dict[str, Json]:
         text = path.read_text(errors="replace")
         if RUN_ID not in text or "reviewer_task_id" not in text:
             continue
-        obj = first_json_object(text)
-        if not obj:
-            continue
-        reviewer_task_id = str(obj.get("reviewer_task_id") or "")
-        if reviewer_task_id not in expected:
-            continue
-        obj["_source_cache_path"] = str(path)
-        candidates[reviewer_task_id] = obj
+        for obj in json_objects(text):
+            reviewer_task_id = str(obj.get("reviewer_task_id") or "")
+            if reviewer_task_id not in expected:
+                continue
+            obj["_source_ref"] = str(path)
+            candidates[reviewer_task_id] = obj
+    if STATE_DB.exists():
+        con = sqlite3.connect(str(STATE_DB))
+        try:
+            rows = con.execute(
+                """
+                select id, session_id, role, content
+                from messages
+                where content like ? and content like '%reviewer_task_id%' and content like '%verdict%'
+                order by id
+                """,
+                (f"%{RUN_ID}%",),
+            ).fetchall()
+        finally:
+            con.close()
+        for message_id, session_id, role, text in rows:
+            if not isinstance(text, str):
+                continue
+            for obj in json_objects(text):
+                reviewer_task_id = str(obj.get("reviewer_task_id") or "")
+                if reviewer_task_id not in expected:
+                    continue
+                obj["_source_ref"] = f"state_db:messages:{message_id}:{session_id}:{role}"
+                candidates[reviewer_task_id] = obj
     return candidates
 
 
@@ -182,7 +206,7 @@ def main() -> None:
     all_valid = True
     for reviewer_task_id, verdict in sorted(candidates.items(), key=lambda kv: expected[kv[0]]["index"]):
         clean = dict(verdict)
-        source_path = clean.pop("_source_cache_path", None)
+        source_path = clean.pop("_source_ref", None)
         errors = validate_verdict(clean, expected)
         path = RESULT_DIR / f"reviewer_{expected[reviewer_task_id]['index']:02d}_{reviewer_task_id}.json"
         path.write_text(json.dumps(clean, indent=2, ensure_ascii=False, sort_keys=True))

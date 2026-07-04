@@ -192,3 +192,52 @@ def test_independent_review_task_creation_is_idempotent(tmp_path, monkeypatch):
 
     assert first["reviewer_tasks"][0]["task_id"] == second["reviewer_tasks"][0]["task_id"]
     assert "Evidence visible to reviewer" in second["reviewer_tasks"][0]["context"]
+
+
+def test_revise_and_reject_verdicts_update_assertion_status(tmp_path, monkeypatch):
+    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    store, run_id, assertion_id, producer_task_id = _supported_coding_run(monkeypatch)
+    review = verify_run(store, run_id, {"run_id": run_id, "mode": "independent_review", "target_id": assertion_id})
+    reviewer_task = review["reviewer_tasks"][0]
+
+    revise = verify_run(
+        store,
+        run_id,
+        {
+            "run_id": run_id,
+            "mode": "independent_review",
+            "target_id": assertion_id,
+            "reviewer_task_id": reviewer_task["task_id"],
+            "reviewer_role": reviewer_task["role"],
+            "independent_from_task_id": producer_task_id,
+            "verdict": "revise",
+            "confidence": 0.8,
+            "rationale": "needs narrower claim",
+        },
+    )
+
+    assert revise["final_verdict"] is False
+    assert store.list_rows("assertions", run_id)[0]["status"] == "needs_revision"
+
+    store2, run_id2, assertion_id2, producer_task_id2 = _supported_coding_run(monkeypatch)
+    review2 = verify_run(store2, run_id2, {"run_id": run_id2, "mode": "independent_review", "target_id": assertion_id2})
+    reviewer_task2 = review2["reviewer_tasks"][0]
+
+    reject = verify_run(
+        store2,
+        run_id2,
+        {
+            "run_id": run_id2,
+            "mode": "independent_review",
+            "target_id": assertion_id2,
+            "reviewer_task_id": reviewer_task2["task_id"],
+            "reviewer_role": reviewer_task2["role"],
+            "independent_from_task_id": producer_task_id2,
+            "verdict": "reject",
+            "confidence": 0.8,
+            "rationale": "unsupported",
+        },
+    )
+
+    assert reject["final_verdict"] is False
+    assert store2.list_rows("assertions", run_id2)[0]["status"] == "rejected"

@@ -1,0 +1,11 @@
+{
+  "confidence": 0.88,
+  "independent_from_task_id": "pf_task_826a84568380",
+  "rationale": "The visible evidence supports the assertion: the gate decision reports downstream_gate_status=closed and oral_ready_gate_status=closed, with large_eval_gate_passed=true and seed_robustness_gate_passed=true but ce_selection_gate_passed=false and model_family_gate_met=false. The meta-analysis gate logic defines eligible CE contenders as LoopCert-only, Pareto-front, risk-calibrated blend, and family-balanced blend, requiring an eligible contender to beat CFC-only on both macro_normalized_regret_at3 and mean_cost_to_contain_winner. The reported metrics show LoopCert-only improves regret versus CFC-only but has worse cost, while OrbitRepair-Proxy beats CFC-only on both metrics yet is excluded from the eligible contender list, matching the claim that it is a demoted proxy baseline rather than a qualifying LoopCert contender. The producer report also characterizes model-family coverage as resource-gated, and the Stage10 tests passed.",
+  "required_actions": [],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_878ac3796288",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_0bfcdff7d0d1",
+  "verdict": "accept"
+}

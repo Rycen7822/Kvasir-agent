@@ -1,0 +1,11 @@
+{
+  "confidence": 0.9,
+  "independent_from_task_id": "pf_task_c80e382b002a",
+  "rationale": "The visible producer report and evidence support the assertion. Evidence [1] records six selector rows and the stated OrbitRepair-Proxy metrics: top3 containment 5/6, macro normalized regret@3=0.0058068827370489386, and mean cost-to-contain=4.833333333333333, while CFC-only is weaker on the same metrics with top3=3/6, regret@3=0.044697468910847644, and cost=13.833333333333334. The producer report summarizes OrbitRepair-Proxy as strongest by selector metrics. Evidence [2] and [3] support that formal CE/model-family/downstream gates remain closed, with ce_selection_gate_passed=false and model_family_gate_met=false.",
+  "required_actions": [],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_7f9d9b0be81c",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_5f38aac41805",
+  "verdict": "accept"
+}

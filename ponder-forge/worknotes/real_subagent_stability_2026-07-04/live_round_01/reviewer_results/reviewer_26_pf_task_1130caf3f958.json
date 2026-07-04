@@ -1,0 +1,11 @@
+{
+  "confidence": 0.89,
+  "independent_from_task_id": "pf_task_54b46b52daa9",
+  "rationale": "The visible producer report and evidence support the conservative-claim-boundary assertion. REPORT_AUDIT records forbidden_claim_hits=[] and forbidden_claim_scan_passed=true, report markers passing, oral_ready_gate_status=closed, downstream_run_executed=false, and no writes of downstream, Y_frozen, or Y_recover claims. The claim ledger marks downstream_utility and original_reference_improvement as not_evaluated, oral_gate as closed, and key model/CE gates as failed. The reproduction log further indicates the paper-package generation completed successfully and produced an audit payload with forbidden-claim scanning. Within the provided context, this supports that the package avoids downstream utility, venue/oral-readiness, pretrained-reference superiority, and universal recovery overclaims.",
+  "required_actions": [],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_1130caf3f958",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_c442779c0e25",
+  "verdict": "accept"
+}

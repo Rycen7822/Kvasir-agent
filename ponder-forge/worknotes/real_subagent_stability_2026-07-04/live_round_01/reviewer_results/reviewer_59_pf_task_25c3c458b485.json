@@ -1,0 +1,13 @@
+{
+  "confidence": 0.78,
+  "independent_from_task_id": "pf_task_5887e57900e4",
+  "rationale": "The visible evidence supports the core localized inconsistency: STAGE10_STATE.coverage.model_family_gate_met=true conflicts with state_model_family_gate_met=false, STAGE10_META_ANALYSIS gate_results.model_family_gate_met=false, FAMILY_BALANCE_AUDIT model_family_gate_met=false, and downstream_status=closed. However, the assertion specifically says gate decision, large-eval summary, and report package all use model_family_gate_met=false; the provided observations only summarize downstream gate artifacts/status and do not explicitly document those named artifacts' model_family_gate_met values. The claim should be narrowed to the explicitly evidenced artifacts or backed by additional explicit observations.",
+  "required_actions": [
+    "Revise the assertion to list only explicitly evidenced artifacts, or provide explicit evidence for gate decision, large-eval summary, and report package model_family_gate_met=false."
+  ],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_25c3c458b485",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_0d4ca97b06b4",
+  "verdict": "revise"
+}

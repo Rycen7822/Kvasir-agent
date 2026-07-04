@@ -28,6 +28,10 @@ def _critical(row: JsonDict, critical_types: tuple[str, ...]) -> bool:
     return bool(raw.get("critical")) or float(row.get("importance") or 0.0) >= 0.8 or row.get("assertion_type") in critical_types
 
 
+def _active_for_gate(row: JsonDict) -> bool:
+    return str(row.get("status") or "unverified") not in {"needs_revision", "rejected", "superseded"}
+
+
 def _evidence_by_assertion(store: PonderForgeStore, run_id: str) -> dict[str, list[JsonDict]]:
     grouped: dict[str, list[JsonDict]] = defaultdict(list)
     for evidence in store.list_rows("evidence_items", run_id):
@@ -107,6 +111,17 @@ def _artifacts_by_report(store: PonderForgeStore, run_id: str) -> dict[str, list
     return grouped
 
 
+def _incomplete_gate_gap_repair_task_ids(tasks: list[JsonDict]) -> list[str]:
+    incomplete: list[str] = []
+    for task in tasks:
+        raw = _raw(task)
+        if raw.get("reconcile_mode") != "gate_gap_repair":
+            continue
+        if task.get("status") != "finished":
+            incomplete.append(str(task["task_id"]))
+    return incomplete
+
+
 def _has_independent_accept_verdict(
     store: PonderForgeStore,
     run_id: str,
@@ -138,7 +153,7 @@ def evaluate_gate(store: PonderForgeStore, run_id: str) -> JsonDict:
     reports = _reports_by_id(store, run_id)
     artifacts_by_report = _artifacts_by_report(store, run_id)
 
-    critical = [row for row in assertions if _critical(row, profile.critical_assertion_types)]
+    critical = [row for row in assertions if _active_for_gate(row) and _critical(row, profile.critical_assertion_types)]
     accepted_count = 0
     supported_count = 0
     independent_accept_count = 0
@@ -190,7 +205,8 @@ def evaluate_gate(store: PonderForgeStore, run_id: str) -> JsonDict:
                 }
             )
 
-    swarm_topology = swarm_topology_status(store.list_rows("agent_tasks", run_id))
+    agent_tasks = store.list_rows("agent_tasks", run_id)
+    swarm_topology = swarm_topology_status(agent_tasks)
     if swarm_topology["is_swarm_run"] and not swarm_topology["complete"]:
         gaps.append(
             {
@@ -198,6 +214,16 @@ def evaluate_gate(store: PonderForgeStore, run_id: str) -> JsonDict:
                 "target_id": run_id,
                 "reason": "all lane coordinator and lane child tasks must finish before finalization",
                 "incomplete_task_ids": swarm_topology["incomplete_task_ids"],
+            }
+        )
+    incomplete_gate_gap_repairs = _incomplete_gate_gap_repair_task_ids(agent_tasks)
+    if incomplete_gate_gap_repairs:
+        gaps.append(
+            {
+                "gap_type": "incomplete_gate_gap_repairs",
+                "target_id": run_id,
+                "reason": "gate gap repair tasks must finish before finalization",
+                "incomplete_task_ids": incomplete_gate_gap_repairs,
             }
         )
 
@@ -237,5 +263,5 @@ def supported_critical_assertion_ids(store: PonderForgeStore, run_id: str) -> li
     return [
         row["assertion_id"]
         for row in store.list_rows("assertions", run_id)
-        if _critical(row, profile.critical_assertion_types)
+        if _active_for_gate(row) and _critical(row, profile.critical_assertion_types)
     ]

@@ -1,0 +1,14 @@
+{
+  "confidence": 0.82,
+  "independent_from_task_id": "pf_task_c1d5054a6b43",
+  "rationale": "Visible evidence supports Stage10_complete with next_required_substage=none, audited paper-package markers passing, downstream_gate_status=closed, and downstream_run_executed=false. However, the assertion also specifically claims model_family_gate_met=false and ce_selection_gate_passed=false, and those exact values are not present in the visible observations; the payload only shows a truncated command mentioning model_family_gate and no visible ce_selection observation. The S10-15c wording is supported mainly by the producer summary rather than a direct evidence observation. Revise to the directly evidenced closed gates, or add explicit evidence for the model-family and CE-selection gate fields.",
+  "required_actions": [
+    "Provide visible evidence observations for model_family_gate_met=false and ce_selection_gate_passed=false, or remove those specific claims from the assertion.",
+    "If retaining 'complete through S10-15c', include direct visible state/audit evidence tying the completion marker to S10-15c rather than relying only on producer summary wording."
+  ],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_b5d1a5eeee52",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_5dc04bb182dc",
+  "verdict": "revise"
+}

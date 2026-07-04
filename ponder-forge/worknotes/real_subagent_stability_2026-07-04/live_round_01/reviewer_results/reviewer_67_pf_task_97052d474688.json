@@ -1,0 +1,14 @@
+{
+  "confidence": 0.83,
+  "independent_from_task_id": "pf_task_3e85e64d2ba9",
+  "rationale": "Visible evidence supports the closed-gate framing: the meta-analysis reports ce_selection_gate_passed=false, model_family_gate_met=false, downstream_gate_status=closed, gate_verdict=closed, and oral_ready_gate_status=closed; downstream gate evidence also shows no downstream run, no result manifest, and no writes. However, the provided evidence does not directly substantiate the full claim that the CFC baseline is retained, and the 'resource-gated' characterization of the model-family gate is not explicitly evidenced beyond model_family_gate_met=false. The assertion should therefore be narrowed or supplemented.",
+  "required_actions": [
+    "Add visible evidence that the CFC baseline is retained, or remove that clause from the assertion.",
+    "Add evidence for the model-family gate being resource-gated, or restate that clause as model_family_gate_met=false / failed."
+  ],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_97052d474688",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_63e1398b5c8f",
+  "verdict": "revise"
+}

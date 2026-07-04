@@ -1,0 +1,11 @@
+{
+  "confidence": 0.86,
+  "independent_from_task_id": "pf_task_b09694afd44f",
+  "rationale": "The visible metric evidence directly supports the core numeric and gate-closure fields: status=passed_S10-13_meta_analysis_portfolio_gate_decision, selector_count=6, target_eval_rows=360, ce_selection_gate_passed=false, model_family_gate_met=false, and gate_verdict=closed. The producer report summary additionally states that large-eval and seed-robustness gates pass while downstream/oral gates remain closed, and the reproduction log plus gate decision note corroborate closure due to CE selection and model-family failures. No visible evidence contradicts the assertion.",
+  "required_actions": [],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_822c04382170",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_36c8709b571f",
+  "verdict": "accept"
+}

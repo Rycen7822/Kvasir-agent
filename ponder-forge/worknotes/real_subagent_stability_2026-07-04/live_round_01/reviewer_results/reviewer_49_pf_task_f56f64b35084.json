@@ -1,0 +1,11 @@
+{
+  "confidence": 0.86,
+  "independent_from_task_id": "pf_task_847083d9f88e",
+  "rationale": "The visible evidence directly supports the quantitative row-count portion: evidence [1] reports PANEL_ROWS.csv=360, RECOVERY_ENDPOINTS.csv=1380, TARGET_WRITE_LEDGER.jsonl=1380, TOKEN_WEIGHTED_EVAL.csv=366, SELECTOR_METRICS.csv=6, COMPONENT_ABLATION.csv=11, CAUSAL_PATCHING_RESULTS.csv=96, and STRESS_TESTS.csv=7. Evidence [2] independently aligns the large-eval surface with evaluated_endpoint_rows=360, expected_formal_endpoint_rows=360, and total_table_rows_including_original=366, supporting internal consistency for that slice. The metric-priority claim is also supported by evidence [3], which states CE gate logic requires beating CFC on both macro_normalized_regret_at3 and mean_cost_to_contain_winner, and evidence [4], which confirms CE selection remains closed while large-eval and seed gates passed. The producer summary is consistent with these priorities. Minor limitation: the context does not expose underlying raw tables, but the provided evidence observations are sufficient for accepting this assertion under the wrapper's review scope.",
+  "required_actions": [],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_f56f64b35084",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_414080ece9dd",
+  "verdict": "accept"
+}

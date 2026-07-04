@@ -451,3 +451,61 @@ def test_renderer_auto_statements_are_linked_to_accepted_assertions(tmp_path, mo
             "relation": "rendered_as",
         }
     ]
+
+
+def test_gate_excludes_revised_or_rejected_assertions_but_still_requires_active_critical(tmp_path, monkeypatch):
+    store = _store(tmp_path, monkeypatch)
+    run_id, revised_assertion_id = _run_with_report(
+        store,
+        "analysis",
+        "data_result",
+        [
+            {"evidence_type": "metric_output", "source_ref": "metrics.json", "command": "python eval.py", "exit_code": 0},
+            {"evidence_type": "transform_script", "source_ref": "eval.py"},
+            {"evidence_type": "sanity_check", "source_ref": "sanity.log"},
+        ],
+    )
+    store.update_assertion_status(revised_assertion_id, "needs_revision")
+
+    blocked = evaluate_gate(store, run_id)
+
+    assert blocked["status"] == "blocked"
+    assert blocked["metrics"]["critical_assertion_count"] == 0
+    assert blocked["gaps"] == [
+        {
+            "gap_type": "missing_critical_assertion",
+            "target_id": run_id,
+            "reason": "no critical assertions submitted for profile gate",
+            "required_assertion_types": ("data_result",),
+        }
+    ]
+
+    supported = ingest_report(
+        store,
+        {
+            "run_id": run_id,
+            "role": "gate_gap_repairer",
+            "summary": "replacement assertion",
+            "assertions": [
+                {
+                    "assertion_type": "data_result",
+                    "text": "replacement supported analysis assertion",
+                    "importance": 0.95,
+                    "critical": True,
+                    "evidence": [
+                        {"evidence_type": "metric_output", "source_ref": "metrics.json", "command": "python eval.py", "exit_code": 0},
+                        {"evidence_type": "transform_script", "source_ref": "eval.py"},
+                        {"evidence_type": "sanity_check", "source_ref": "sanity.log"},
+                    ],
+                }
+            ],
+            "artifacts": [],
+        },
+    )
+    replacement_assertion_id = supported["assertion_ids"][0]
+    _accept_with_independent_verdict(store, run_id, replacement_assertion_id)
+
+    resolved = evaluate_gate(store, run_id)
+
+    assert resolved["status"] == "passed"
+    assert resolved["metrics"]["critical_assertion_count"] == 1

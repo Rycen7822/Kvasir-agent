@@ -1,0 +1,11 @@
+{
+  "confidence": 0.87,
+  "independent_from_task_id": "pf_task_53e0ffad94a1",
+  "rationale": "The visible evidence supports the assertion: LoopCert-only improves macro regret@3 versus CFC-only (0.03223671717595801 vs 0.044697468910847644) but has worse mean cost-to-contain (16.666666666666668 vs 13.833333333333334). The cited transform script states the CE gate requires LoopCert-family contenders to beat CFC-only on both macro_normalized_regret_at3 and mean_cost_to_contain_winner, and the claim ledger records ce_selection_gate failed with downstream/oral gates closed or not evaluated. The producer report also identifies selector cost-to-contain improvement and downstream evaluation only after gates open as next priorities. This makes the assertion's priority framing adequately supported by the provided context.",
+  "required_actions": [],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_93c6e9bc3a49",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_b26c7804f9a2",
+  "verdict": "accept"
+}

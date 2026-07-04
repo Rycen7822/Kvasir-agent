@@ -1,0 +1,11 @@
+{
+  "confidence": 0.84,
+  "independent_from_task_id": "pf_task_32cee1287d7c",
+  "rationale": "The visible producer report and evidence support the assertion. Evidence [1] reports current extracted Stage10 large-eval/meta artifacts with exit_code=0 for the read-only extraction, evaluated_endpoint_rows=360, total_table_rows_including_original=366, and downstream_gate_status=closed. Evidence [2] states the prior large-eval aggregate command completed with exit_code=0 and reported 360 evaluated endpoint rows and 366 total rows including originals. Evidence [3] states the prior meta-analysis command completed with exit_code=0 and reported downstream_gate_status=closed and related gate fields. This matches the assertion's claimed row counts and closed gate result; scripts were not rerun due to read-only constraints, but the assertion is limited to available reproduction logs and current artifacts.",
+  "required_actions": [],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_1d9a368de7dc",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_7ad409340586",
+  "verdict": "accept"
+}

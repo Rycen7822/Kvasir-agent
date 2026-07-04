@@ -1,0 +1,11 @@
+{
+  "confidence": 0.84,
+  "independent_from_task_id": "pf_task_f6e845dd156f",
+  "rationale": "The provided evidence supports the assertion's core bounded reading. Negative recovered_fraction rows are directly documented in TOKEN_WEIGHTED_EVAL inspection, and the transform script explains why recovered_fraction can be negative rather than probability-like. Leakage/no-target controls are supported by NO_TARGET_AUDIT observations showing uses_target=false and no target/downstream writes on listed Stage10 surfaces. The claim ledger evidence supports the overclaiming-risk boundary: downstream utility and original-reference improvement are not evaluated, and mechanism status is diagnostic or mixed rather than universal. The producer report additionally states documented no-target/split controls and warns against downstream/oral-ready presentation. The split/oral parts are less directly evidenced than the recovered_fraction and claim-ledger boundaries, but they are sufficiently supported by the visible producer report and ledger framing to accept the assertion as a cautionary, bounded claim.",
+  "required_actions": [],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_8cffa8419fdf",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_01c4a374794c",
+  "verdict": "accept"
+}

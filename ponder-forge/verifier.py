@@ -122,6 +122,10 @@ def record_independent_verdict(store: PonderForgeStore, run_id: str, args: dict)
         store.update_task_status(reviewer_task_id, "finished")
     if verdict_value == "accept":
         store.update_assertion_status(target_id, "accepted")
+    elif verdict_value == "revise":
+        store.update_assertion_status(target_id, "needs_revision")
+    elif verdict_value == "reject":
+        store.update_assertion_status(target_id, "rejected")
     return {"run_id": run_id, "verifier_mode": "independent_review", "recorded_verdict": verdict, "final_verdict": verdict_value == "accept"}
 
 

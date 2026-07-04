@@ -1,0 +1,13 @@
+{
+  "confidence": 0.82,
+  "independent_from_task_id": "pf_task_78da49b06c3e",
+  "rationale": "The visible evidence supports Stage10_complete/completed packaging, large_eval_gate_passed=true, seed_robustness_gate_passed=true, ce_selection_gate_passed=false, model_family_gate_met=false/failed, downstream_gate_status=closed, downstream_run_executed=False, and result_manifest=None. However, the assertion's specific phrasing that the model-family gate is 'resource-gated/false' is only supported for the false/failed part; the provided evidence does not explicitly establish a resource-gated reason. The assertion should be narrowed to the evidenced failed/false model-family gate or cite resource-gating evidence.",
+  "required_actions": [
+    "Revise the model-family clause from 'resource-gated/false' to 'failed/false' unless explicit resource-gating evidence is added."
+  ],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_5fc4b059c80e",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_8011dfb8b596",
+  "verdict": "revise"
+}

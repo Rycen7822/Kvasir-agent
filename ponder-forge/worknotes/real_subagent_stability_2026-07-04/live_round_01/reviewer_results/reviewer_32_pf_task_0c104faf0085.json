@@ -1,0 +1,11 @@
+{
+  "confidence": 0.87,
+  "independent_from_task_id": "pf_task_bc3265e7932c",
+  "rationale": "The visible selector metrics directly support the comparative claims: OrbitRepair-Proxy has lower regret@3 and lower mean cost than CFC-only, while LoopCert-only has lower regret@3 but higher mean cost than CFC-only. The provided transform-script evidence states those metrics and beats-CFC flags are the relevant calculations. The gate-status claim is also supported by the producer summary plus sanity-check/log evidence reporting closed gate_results and false/closed Stage10 gate conditions.",
+  "required_actions": [],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_0c104faf0085",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_bc45641f23ab",
+  "verdict": "accept"
+}

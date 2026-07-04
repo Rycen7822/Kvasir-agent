@@ -1,0 +1,11 @@
+{
+  "confidence": 0.92,
+  "independent_from_task_id": "pf_task_32cee1287d7c",
+  "rationale": "Visible metric evidence pf_evidence_5c9b410f4324 directly supports every material part of the assertion: RECOVERY_TRAIN_EVAL_SUMMARY extraction exited 0 and reports total_endpoint_count=1380, target_write_ledger_rows=1380, target_write_ledger_matches_endpoint_rows=true, seed_robustness_row_count=252, and uses_training_batch_for_eval=false. The other visible evidence does not contradict the ledger-backed recovery-evidence claim; the downstream gate note only limits downstream-utility interpretation, which the assertion does not claim.",
+  "required_actions": [],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_60423ee82f25",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_eb0b6feb8a39",
+  "verdict": "accept"
+}

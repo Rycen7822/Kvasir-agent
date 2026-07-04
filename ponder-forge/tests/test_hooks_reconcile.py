@@ -4,6 +4,7 @@ import importlib.util
 from pathlib import Path
 
 import planner
+from gates import evaluate_gate
 from planner import plan_run
 from reconcile import reconcile_run
 from store import PonderForgeStore
@@ -100,3 +101,137 @@ def test_reconcile_rejects_unknown_run_id(tmp_path, monkeypatch):
         assert "unknown run_id: pf_run_missing" in str(exc)
     else:
         raise AssertionError("reconcile_run should reject unknown run ids")
+
+
+def test_reconcile_creates_gate_gap_repair_tasks(tmp_path, monkeypatch):
+    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    start = CLI.start_run("analyze experiment metrics", profile="analysis")
+    store = _store()
+    report = store.create_report(
+        run_id=start["run_id"],
+        task_id="producer-task",
+        role="metric_analyst",
+        title="thin report",
+        summary="unsupported claim",
+    )
+    assertion = store.create_assertion(
+        run_id=start["run_id"],
+        report_id=report["report_id"],
+        profile="analysis",
+        assertion_type="data_result",
+        text="Stage10 gates all pass",
+        importance=0.95,
+        raw={"critical": True},
+    )
+
+    result = reconcile_run(store, start["run_id"], stale_after_seconds=0)
+
+    assert result["marked_orphan"] == []
+    assert result["gate_status"] == "blocked"
+    assert result["gate_gap_task_count"] == 1
+    retry = result["delegate_task_payload_suggestion"]
+    assert len(retry["tasks"]) == 1
+    task = retry["tasks"][0]
+    assert task["role"] == "leaf"
+    assert assertion["assertion_id"] in task["goal"]
+    assert "missing_profile_evidence" in task["context"]
+    assert "metric_output.command" in task["context"]
+    assert "exit_code=0" in task["context"]
+    assert '"artifacts": []' in task["context"]
+    repair_tasks = [row for row in store.list_rows("agent_tasks", start["run_id"]) if row["role"] == "gate_gap_repairer"]
+    assert len(repair_tasks) == 1
+    stored_task = repair_tasks[0]
+    assert stored_task["task_id"] in task["goal"]
+    assert f"repair_task_id={stored_task['task_id']}" in task["context"]
+    assert set(task) == {"goal", "context", "role"}
+    assert stored_task["status"] == "queued"
+    fetched_task = store.get_task(stored_task["task_id"])
+    assert fetched_task is not None
+    assert fetched_task["role"] == "gate_gap_repairer"
+    assert store.list_rows("assertions", start["run_id"])[0]["status"] == "needs_revision"
+
+    second = reconcile_run(store, start["run_id"], stale_after_seconds=0)
+
+    assert second["gate_gap_task_count"] == 1
+    second_task = second["delegate_task_payload_suggestion"]["tasks"][0]
+    assert stored_task["task_id"] in second_task["goal"]
+
+
+def test_gate_gap_repair_tasks_block_finalize_until_finished(tmp_path, monkeypatch):
+    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    start = CLI.start_run("analyze experiment metrics", profile="analysis")
+    store = _store()
+    supported_report = store.create_report(
+        run_id=start["run_id"],
+        task_id="supported-producer",
+        role="metric_analyst",
+        title="supported report",
+        summary="supported claim",
+    )
+    supported_assertion = store.create_assertion(
+        run_id=start["run_id"],
+        report_id=supported_report["report_id"],
+        profile="analysis",
+        assertion_type="data_result",
+        text="supported Stage10 metric",
+        importance=0.95,
+        raw={"critical": True},
+    )
+    store.create_evidence(
+        run_id=start["run_id"],
+        report_id=supported_report["report_id"],
+        assertion_id=supported_assertion["assertion_id"],
+        evidence_type="metric_output",
+        source_ref="metrics.json",
+        command="python eval.py",
+        exit_code=0,
+    )
+    store.create_evidence(
+        run_id=start["run_id"],
+        report_id=supported_report["report_id"],
+        assertion_id=supported_assertion["assertion_id"],
+        evidence_type="transform_script",
+        source_ref="eval.py",
+    )
+    store.create_evidence(
+        run_id=start["run_id"],
+        report_id=supported_report["report_id"],
+        assertion_id=supported_assertion["assertion_id"],
+        evidence_type="sanity_check",
+        source_ref="sanity.log",
+    )
+    reviewer = store.create_task(start["run_id"], role="repro_reviewer", goal="review supported", parent_task_id="supported-producer")
+    store.create_verdict(
+        run_id=start["run_id"],
+        profile="analysis",
+        target_type="assertion",
+        target_id=supported_assertion["assertion_id"],
+        reviewer_role="repro_reviewer",
+        reviewer_task_id=reviewer["task_id"],
+        verifier_mode="independent_review",
+        independent_from_task_id="supported-producer",
+        verdict="accept",
+    )
+    store.update_assertion_status(supported_assertion["assertion_id"], "accepted")
+    thin_report = store.create_report(
+        run_id=start["run_id"],
+        task_id="thin-producer",
+        role="metric_analyst",
+        title="thin report",
+        summary="unsupported claim",
+    )
+    store.create_assertion(
+        run_id=start["run_id"],
+        report_id=thin_report["report_id"],
+        profile="analysis",
+        assertion_type="data_result",
+        text="unsupported Stage10 metric",
+        importance=0.95,
+        raw={"critical": True},
+    )
+
+    reconcile_run(store, start["run_id"], stale_after_seconds=0)
+    gate = evaluate_gate(store, start["run_id"])
+
+    assert gate["status"] == "blocked"
+    assert any(gap.get("gap_type") == "incomplete_gate_gap_repairs" for gap in gate["gaps"])

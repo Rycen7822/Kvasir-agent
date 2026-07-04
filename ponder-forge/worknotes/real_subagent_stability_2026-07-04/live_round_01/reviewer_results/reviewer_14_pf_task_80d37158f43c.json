@@ -1,0 +1,13 @@
+{
+  "confidence": 0.82,
+  "independent_from_task_id": "pf_task_513452dc039d",
+  "rationale": "Visible evidence supports several specific counts: evidence [1] reports 360 evaluated endpoint rows out of 360 expected formal endpoint rows, 366 total/token-weighted rows, and 252 seed rows; evidence [2] reports 18789 heldout split records across 6 splits and recovery_overlap_count=0. However, the assertion also claims 1380 recovery endpoint rows, and no visible evidence item in the extracted context reports or verifies that count. The broader phrase 'strongest verified positive evidence' is also somewhat interpretive, but the main blocker is the unsupported 1380 recovery endpoint row count.",
+  "required_actions": [
+    "Provide visible evidence for recovery endpoint rows=1380, or revise the assertion to remove that unsupported count."
+  ],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_80d37158f43c",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_8f1308132a97",
+  "verdict": "revise"
+}

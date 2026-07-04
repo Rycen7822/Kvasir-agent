@@ -1,0 +1,13 @@
+{
+  "confidence": 0.78,
+  "independent_from_task_id": "pf_task_3b215b28ade2",
+  "rationale": "Visible evidence supports most of the assertion: evidence [1] reports target_eval_rows=360, large_eval_rows=360, a passed large-eval status, min_model_eval_tokens=2006719, gate_verdict=closed, ce_selection_gate_passed=false, model_family_gate_met=false, and loopcert_only_cost_beats_cfc=false; evidence [3] also supports gate closure after meta-analysis. However, the claim that OrbitRepair-Proxy beats CFC-only on recorded selector metrics is not directly supported by the visible evidence, which reports OrbitRepair-Proxy top3=5/6 but does not provide the corresponding CFC-only selector metric/comparison.",
+  "required_actions": [
+    "Revise the assertion to state only the visible OrbitRepair-Proxy selector metric, or add evidence showing the recorded CFC-only selector metric and the comparison that OrbitRepair-Proxy beats it."
+  ],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_45dfef1d8eab",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_4f4d820dd3c3",
+  "verdict": "revise"
+}

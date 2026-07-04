@@ -1,0 +1,11 @@
+{
+  "confidence": 0.9,
+  "independent_from_task_id": "pf_task_d1d51b47b065",
+  "rationale": "The visible evidence supports the assertion: the component ablation audit reports mechanism_claim_status=diagnostic_or_mixed with 11 ablations and 96 patching results, reviewer evidence states the ablations are diagnostic ranking summaries rather than success claims, and the transform-script evidence shows the reused CFC-only label refers to different numerical surfaces in S10-14 raw CFC_norm variant scoring versus S10-13 selector rank-map metrics. This supports keeping the claim diagnostic/mixed and reconciling or renaming the CFC-only usage before stronger claim-making.",
+  "required_actions": [],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_09fcab9dc9c7",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_e91a9c725b93",
+  "verdict": "accept"
+}

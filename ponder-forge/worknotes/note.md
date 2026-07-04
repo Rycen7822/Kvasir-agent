@@ -105,6 +105,17 @@
 - Installed status remains `planning` / `next_required_action=delegations` because reviewer verdict delegation is pending; lane swarm remains complete with 8/8 lanes and 40/40 child reports.
 - Next action: wait for async reviewer batches to return, collect/validate all 83 verdict JSON objects, record through installed `verify`, then run gate/finalize/reconcile.
 
+### 2026-07-04T23:48:54+08:00 Live reviewers recorded; PF-REAL-023 fixed and installed
+
+- Collected all 83 live reviewer verdicts from Hermes `state.db` using the updated collector: `found=83`, `all_found=true`, `all_valid=true`, verdict counts `66 accept / 17 revise`, quest signature unchanged.
+- Recorded all verdicts through installed `verify --mode independent_review`. Installed `gate` correctly blocked finalization after reviewer results, with revise verdicts and evidence gaps requiring repair.
+- New real plugin issue PF-REAL-023: installed `reconcile` returned success but no repair payload for the blocked gate. Root cause was that `reconcile_run()` handled stale/orphan task recovery only and did not convert gate gaps into executable work.
+- PF-REAL-023 plan completed at `worknotes/2026-07-04-pf-real-023-reconcile-gate-gaps-plan.md`; it includes the installed false-green found during the first live smoke, where inactive failed assertions could make `gate` pass while repair tasks were still queued.
+- Implemented minimal owner-seam fix: `reconcile.py` creates/dedupes queued `gate_gap_repairer` tasks from assertion-targeted gaps; `verifier.py` marks `revise` as `needs_revision` and `reject` as `rejected`; `gates.py` ignores inactive assertions but blocks on unfinished `gate_gap_repairer` tasks.
+- Verification: focused RED/GREEN tests passed; related reconcile/gate/verifier suite `24 passed`; full source suite `75 passed`; copy install smoke refreshed `/home/xu/.hermes/plugins/ponder_forge` with command_count `1`, skill_count `1`, tool_count `0`, hook_count `0`.
+- Installed live smoke on `pf_run_80cb097d3870`: `reconcile` now emits 63 repair payload tasks using native `delegate_task` task keys (`goal/context/role`) with `repair_task_id=` in context, `status.next_required_action=delegations`, `gate.status=blocked`, `gate.finalize_allowed=false`, and direct `finalize` returns `status=blocked` with `profile_gate_failed`.
+- Current live round state: 63 queued `gate_gap_repairer` tasks are the next executable work. Stability is not complete and cannot be reported as 100%; next action is dispatch/collect those repair reports, then re-run verify/gate/finalize/reconcile.
+
 ### 2026-07-04T20:32:50+08:00 Continuation completion audit
 
 - Re-read the plan acceptance gates and current active worknote status before relying on prior context.

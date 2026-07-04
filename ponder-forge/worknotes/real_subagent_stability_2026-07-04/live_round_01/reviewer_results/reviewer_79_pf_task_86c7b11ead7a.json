@@ -1,0 +1,11 @@
+{
+  "confidence": 0.9,
+  "independent_from_task_id": "pf_task_42b7b5057b13",
+  "rationale": "The visible evidence supports the assertion: MODEL_AVAILABILITY reports active_entry_count=6, active_family_count=4, model_family_gate_met=false, status=resource_gated_family_gate_failed, and six resource-gated model IDs outside the active gate. PANEL_MANIFEST corroborates the six active panel models, and the archived Stage10 report records the same counts and model-family gate failure. The producer report also states CE selection, model-family, downstream, and oral-ready gates remain closed and lists resource-gated family expansion as a main next-step priority, supporting the claim that family-general and oral-ready claims remain unsupported.",
+  "required_actions": [],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_86c7b11ead7a",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_ae9c091c20b6",
+  "verdict": "accept"
+}

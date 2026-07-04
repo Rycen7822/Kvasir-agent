@@ -1,0 +1,15 @@
+{
+  "confidence": 0.78,
+  "independent_from_task_id": "pf_task_1f34f2fad409",
+  "rationale": "Visible evidence supports several parts of the assertion: D_eval_stage10_v1 reports 6 splits, 18,789 records, and zero recovery-overlap hashes; the reproduction log reports target_eval_rows=360 and large_eval_gate_passed=true; selector/gate evidence reports ce_selection_gate_passed=false and downstream/oral gates closed, with LoopCert/blend rows improving regret but not beating CFC-only on mean cost-to-contain. However, the visible evidence does not directly substantiate the full wording that S10-12 evaluated 360 of 360 expected recovery endpoints or that there were 366 token-weighted rows including original references, nor does it explicitly prove the 'frozen active panel' qualification. The claim should be narrowed or backed by additional visible evidence for those specific details.",
+  "required_actions": [
+    "Provide visible evidence for the 360-of-360 expected recovery endpoint denominator and coverage claim.",
+    "Provide visible evidence for the 366 token-weighted rows including original references.",
+    "Provide visible evidence or narrow the wording for the 'frozen active panel' qualification."
+  ],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_10f845e499f2",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_f7b8beb56dd0",
+  "verdict": "revise"
+}

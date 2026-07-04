@@ -1,0 +1,14 @@
+{
+  "confidence": 0.78,
+  "independent_from_task_id": "pf_task_4497883d81c0",
+  "rationale": "The visible evidence supports the core ordering: CE selection is closed because LoopCert/blend improve regret but not cost-to-contain, model-family coverage is resource-gated and unmet, and the downstream gate should open only after prerequisite gates pass; the no-plot scan also supports adding non-claim-expanding presentation artifacts. However, the assertion over-specifies details not directly backed by the provided evidence: the exact 'highest-priority' ranking is inferred rather than explicitly evidenced, and the requirements for a 'predeclared manifest' and plots/tables linked to 'hashed ledgers' are not shown in the listed observations or artifacts.",
+  "required_actions": [
+    "Revise the assertion to distinguish evidenced closed-gate next steps from inferred priority ordering.",
+    "Either cite visible evidence for the predeclared manifest and hashed-ledger linkage requirements or remove/soften those clauses."
+  ],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_d737ead8fb5c",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_f5e166f2e053",
+  "verdict": "revise"
+}

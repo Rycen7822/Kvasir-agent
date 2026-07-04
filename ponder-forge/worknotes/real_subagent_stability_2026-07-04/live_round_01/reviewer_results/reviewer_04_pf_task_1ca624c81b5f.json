@@ -1,0 +1,11 @@
+{
+  "confidence": 0.92,
+  "independent_from_task_id": "pf_task_f3f5e7ab6491",
+  "rationale": "The visible producer report and evidence support the assertion. The REPORT_AUDIT summary reports status passed with forbidden=true, markers=true, artifact_hash_count=29, downstream=closed, oral=closed, model_family=false, and ce_selection=false. The independent audit evidence reports forbidden_claim_hits=[], forbidden_claim_scan_passed=true, missing_report_markers=[], and report_markers_passed=true. Additional visible evidence states the package generator explicitly frames Stage10 as conservative evidence and excludes venue-readiness, downstream-utility, and pretrained-reference-superiority claims. No contradictory visible evidence or overclaim is present in the assigned context.",
+  "required_actions": [],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_1ca624c81b5f",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_e6883b0bd69c",
+  "verdict": "accept"
+}

@@ -1,0 +1,11 @@
+{
+  "confidence": 0.96,
+  "independent_from_task_id": "pf_task_42b7b5057b13",
+  "rationale": "Visible evidence directly supports the assertion: the component ablation audit reports status passed_S10-14, ablation_count=11, patching_result_count=96, mechanism_claim_status=diagnostic_or_mixed, and taxonomy counts including large-eval reversal=360 and training instability=1380. The theory audit reports status passed_S10-15a, stress_test_count=7, and the same diagnostic_or_mixed mechanism status. The counterexamples evidence also supports the diagnostic-only boundary by distinguishing diagnostic relations from conclusive recovery or universal mechanism claims.",
+  "required_actions": [],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_33c987dd85da",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_a945e99ef2a4",
+  "verdict": "accept"
+}
