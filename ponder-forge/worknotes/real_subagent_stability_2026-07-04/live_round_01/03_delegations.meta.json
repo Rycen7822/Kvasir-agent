@@ -1,0 +1,8 @@
+{
+  "returncode": 0,
+  "args": [
+    "delegations",
+    "--run-id",
+    "pf_run_80cb097d3870"
+  ]
+}

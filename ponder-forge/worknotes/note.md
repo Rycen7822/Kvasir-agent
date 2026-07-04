@@ -88,6 +88,23 @@
 - Evidence file: `worknotes/real_subagent_stability_2026-07-04/live_round_01/10_wait_timeout_analysis.md`.
 - Next action: start a longer bounded watchdog. If a lane report appears, validate and submit through installed `submit-report`; if none appears, treat PF-REAL-022 as a blocking live-subagent stability issue and write a focused repair plan before changing code.
 
+### 2026-07-04T23:09:00+08:00 Live lane reports returned and were submitted
+
+- Async delegation `deleg_edd050a1` returned all 8 live lane coordinator reports after ~22 minutes. PF-REAL-022 is not yet a blocking plugin bug; the symptom was delayed observability, not missing results.
+- Stopped watchdog `proc_cab01adca13a` to prevent concurrent collector writes after the async batch arrived.
+- Collector dry-run after async return: expected lanes `8`, found lanes `8`, all_found `true`, all_valid `true`, missing `[]`, quest signature unchanged.
+- Installed `submit-report` accepted all 8 live lane reports. Status after submit: `next_required_action=verify`, swarm lane_count `8`, finished_lane_count `8`, child_count `40`, finished_child_count `40`, incomplete_task_count `0`, queued_delegation_count `0`.
+- Created independent reviewer tasks with installed `verify --mode independent_review`: reviewer task count `83`, payload task count `83`; inspected payloads have rich evidence/artifact context and one profile marker.
+- Next action: dispatch 83 live reviewer leaf subagents in 5 batches (20/20/20/20/3), collect verdict JSON, then record verdicts through installed `verify`.
+
+### 2026-07-04T23:22:00+08:00 Live reviewers dispatched and collector prepared
+
+- Dispatched all 83 exact generated independent reviewer payloads as live Hermes leaf subagents in five batches: `deleg_4d982c1e` (0-19), `deleg_71e91194` (20-39), `deleg_3fce398b` (40-59), `deleg_29e195a3` (60-79), `deleg_15168a61` (80-82).
+- Added wrapper `live_round_01/17_reviewer_wrapper.md`, manifest `live_round_01/16_reviewer_dispatch_manifest.json`, and controller collector `live_round_01/collect_and_record_reviewers.py`.
+- Collector syntax check passed and dry-run result is expected pending state: reviewer expected `83`, found `0`, all_found `false`, all_valid `false`; no current reviewer summary files were present in Hermes delegation cache yet.
+- Installed status remains `planning` / `next_required_action=delegations` because reviewer verdict delegation is pending; lane swarm remains complete with 8/8 lanes and 40/40 child reports.
+- Next action: wait for async reviewer batches to return, collect/validate all 83 verdict JSON objects, record through installed `verify`, then run gate/finalize/reconcile.
+
 ### 2026-07-04T20:32:50+08:00 Continuation completion audit
 
 - Re-read the plan acceptance gates and current active worknote status before relying on prior context.
