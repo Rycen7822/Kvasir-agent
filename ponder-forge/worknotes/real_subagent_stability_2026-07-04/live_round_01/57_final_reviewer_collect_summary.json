@@ -1,13 +1,9 @@
 {
-  "all_found": false,
-  "all_valid": false,
+  "all_found": true,
+  "all_valid": true,
   "expected_reviewer_count": 4,
-  "found_reviewer_count": 1,
-  "missing_reviewer_task_ids": [
-    "pf_task_221109c20d4d",
-    "pf_task_722d9f443a59",
-    "pf_task_be3df06b61dd"
-  ],
+  "found_reviewer_count": 4,
+  "missing_reviewer_task_ids": [],
   "quest_signature": {
     "file_count": 175707,
     "latest_mtime_ns": 1782083849137958327,
@@ -15,6 +11,33 @@
     "total_size": 625172277988
   },
   "reviewers": {
+    "pf_task_221109c20d4d": {
+      "confidence": 0.96,
+      "errors": [],
+      "index": 3,
+      "saved_path": "/home/xu/project/autosci-delphi/ponder-forge/worknotes/real_subagent_stability_2026-07-04/live_round_01/final_reviewer_results/final_reviewer_03_pf_task_221109c20d4d.json",
+      "source_cache_path": "state_db:messages:383327:20260705_025908_cb7c8b:assistant",
+      "target_id": "pf_assertion_bd7d7f152ed8",
+      "verdict": "accept"
+    },
+    "pf_task_722d9f443a59": {
+      "confidence": 0.94,
+      "errors": [],
+      "index": 1,
+      "saved_path": "/home/xu/project/autosci-delphi/ponder-forge/worknotes/real_subagent_stability_2026-07-04/live_round_01/final_reviewer_results/final_reviewer_01_pf_task_722d9f443a59.json",
+      "source_cache_path": "state_db:messages:383332:20260705_025907_fe9cc3:assistant",
+      "target_id": "pf_assertion_0f109738e077",
+      "verdict": "accept"
+    },
+    "pf_task_be3df06b61dd": {
+      "confidence": 0.96,
+      "errors": [],
+      "index": 2,
+      "saved_path": "/home/xu/project/autosci-delphi/ponder-forge/worknotes/real_subagent_stability_2026-07-04/live_round_01/final_reviewer_results/final_reviewer_02_pf_task_be3df06b61dd.json",
+      "source_cache_path": "state_db:messages:383335:20260705_025907_fdc271:assistant",
+      "target_id": "pf_assertion_2a376a595990",
+      "verdict": "accept"
+    },
     "pf_task_ebeb8780fcc8": {
       "confidence": 0.96,
       "errors": [],
@@ -28,6 +51,6 @@
   "run_id": "pf_run_80cb097d3870",
   "source_gate_output": "53_gate_after_final_repairs.json",
   "verdict_counts": {
-    "accept": 1
+    "accept": 4
   }
 }

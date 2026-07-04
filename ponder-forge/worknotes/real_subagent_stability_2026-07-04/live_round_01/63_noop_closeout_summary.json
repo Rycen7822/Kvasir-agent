@@ -1,0 +1,49 @@
+{
+  "closeouts": [
+    {
+      "submit_result": {
+        "artifact_ids": [],
+        "assertion_ids": [],
+        "evidence_ids": [],
+        "report_id": "pf_report_3aa2bdd43e44",
+        "success": true
+      },
+      "target_assertion_id": "pf_assertion_038f67abc4c8",
+      "task_id": "pf_task_0fdea8ef9203"
+    },
+    {
+      "submit_result": {
+        "artifact_ids": [],
+        "assertion_ids": [],
+        "evidence_ids": [],
+        "report_id": "pf_report_573a309b4326",
+        "success": true
+      },
+      "target_assertion_id": "pf_assertion_bd7d7f152ed8",
+      "task_id": "pf_task_2044bcc4f5d1"
+    },
+    {
+      "submit_result": {
+        "artifact_ids": [],
+        "assertion_ids": [],
+        "evidence_ids": [],
+        "report_id": "pf_report_2ed7d1272cdb",
+        "success": true
+      },
+      "target_assertion_id": "pf_assertion_2a376a595990",
+      "task_id": "pf_task_56f7c8e4721f"
+    },
+    {
+      "submit_result": {
+        "artifact_ids": [],
+        "assertion_ids": [],
+        "evidence_ids": [],
+        "report_id": "pf_report_11d007ac1edd",
+        "success": true
+      },
+      "target_assertion_id": "pf_assertion_0f109738e077",
+      "task_id": "pf_task_eb5c7b43f48f"
+    }
+  ],
+  "run_id": "pf_run_80cb097d3870"
+}
