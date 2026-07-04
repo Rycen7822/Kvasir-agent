@@ -1,0 +1,121 @@
+{
+  "artifacts": [],
+  "assertions": [
+    {
+      "assertion_type": "independent_review_verdict",
+      "confidence": 0.93,
+      "critical": false,
+      "evidence": [
+        {
+          "directness": 0.95,
+          "evidence_type": "independent_verdict",
+          "freshness": 0.9,
+          "quote_or_observation": "Verdict=accept. The checked Stage10 artifacts consistently support the closed-gate framing and explicitly rule out oral-ready, downstream-utility, and pretrained-reference superiority claims.",
+          "relevance": 1.0,
+          "reliability": 0.93,
+          "source_ref": "pf_task_ea33211b2a9b read-only review",
+          "target_assertion_id": "pf_assertion_63e1398b5c8f",
+          "title": "Accepted independent verdict for pf_assertion_63e1398b5c8f",
+          "verdict": "accept",
+          "verifier_mode": "independent_review"
+        },
+        {
+          "command": "python3 - <<'PY'\nimport json, re\nfrom pathlib import Path\nroot=Path('/home/xu/project/loop/DeepScientist/quests/001')\ndown=json.loads((root/'experiments/stage10/10_downstream/DOWNSTREAM_GATE_STATUS.json').read_text())\naudit=json.loads((root/'experiments/stage10/12_paper_package/REPORT_AUDIT.json').read_text())\ngate=(root/'experiments/stage10/08_meta/GATE_DECISION.md').read_text()\noral=(root/'experiments/stage10/12_paper_package/STAGE10_ORAL_READY_GATE.md').read_text()\nprint(json.dumps({'downstream_gate_status':down['downstream_gate_status'],'downstream_run_executed':down['downstream_run_executed'],'downstream_result_manifest':down['result_manifest'],'downstream_closed_reasons':down['closed_reasons'],'ce_selection_gate_passed':re.search(r'ce_selection_gate_passed: `([^`]+)`', gate).group(1),'model_family_gate_met':re.search(r'model_family_gate_met: `([^`]+)`', gate).group(1),'cfc_baseline_retained':re.search(r'cfc_baseline_retained: `([^`]+)`', gate).group(1),'oral_ready_gate':re.search(r'oral ready gate: `([^`]+)`', gate).group(1),'report_audit_status':audit['status'],'report_audit_oral_ready_gate_status':audit['oral_ready_gate_status'],'report_audit_forbidden_claim_scan_passed':audit['forbidden_claim_scan_passed'],'oral_boundary':re.search(r'Boundary: (.*)', oral).group(1)}, sort_keys=True))\nPY",
+          "directness": 0.95,
+          "evidence_type": "metric_output",
+          "exit_code": 0,
+          "freshness": 0.9,
+          "metric": {
+            "ce_selection_gate_passed": "False",
+            "cfc_baseline_retained": "True",
+            "downstream_closed_reasons": [
+              "CE selection gate did not beat CFC-only on both macro regret@3 and cost-to-contain",
+              "Model-family gate is resource-gated"
+            ],
+            "downstream_gate_status": "closed",
+            "downstream_result_manifest": null,
+            "downstream_run_executed": false,
+            "model_family_gate_met": "False",
+            "oral_ready_gate": "closed",
+            "report_audit_forbidden_claim_scan_passed": true,
+            "report_audit_oral_ready_gate_status": "closed",
+            "report_audit_status": "passed_S10-15b_paper_package_final_report_handoff"
+          },
+          "quote_or_observation": "The read-only extraction returned closed downstream/oral status, downstream_run_executed=false, result_manifest=null, ce_selection_gate_passed=False, model_family_gate_met=False, cfc_baseline_retained=True, and a conservative oral-boundary statement.",
+          "relevance": 1.0,
+          "reliability": 0.95,
+          "source_ref": "read-only status extraction from Stage10 artifacts",
+          "title": "Gate/status extraction command completed successfully"
+        },
+        {
+          "directness": 0.95,
+          "evidence_type": "sanity_check",
+          "freshness": 0.9,
+          "locator": "lines 5-12 and 25-32",
+          "quote_or_observation": "GATE_DECISION.md states downstream gate=`closed`, oral ready gate=`closed`, gate verdict=`closed`, cfc_baseline_retained=`True`, ce_selection_gate_passed=`False`, and model_family_gate_met=`False`; its closed reasons are that CE selection did not beat CFC-only on both macro regret@3 and cost-to-contain, and that the model-family gate is resource-gated. The claim boundary says S10-13 does not run downstream tasks and does not open an oral-ready claim when the model-family gate is resource-gated.",
+          "relevance": 1.0,
+          "reliability": 0.95,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/08_meta/GATE_DECISION.md"
+        },
+        {
+          "directness": 0.95,
+          "evidence_type": "sanity_check",
+          "freshness": 0.9,
+          "locator": "lines 7-13",
+          "quote_or_observation": "The claim ledger records model_family_gate=failed with resource-gated family coverage, ce_selection_gate=failed with CFC baseline retained and no CE selection success claim, downstream_utility=not_evaluated with downstream_gate_status=closed and downstream_run_executed=False, and oral_gate=closed with no venue-readiness claim.",
+          "relevance": 1.0,
+          "reliability": 0.95,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/12_paper_package/STAGE10_CLAIM_LEDGER.md"
+        },
+        {
+          "directness": 0.95,
+          "evidence_type": "sanity_check",
+          "freshness": 0.9,
+          "locator": "lines 5-11",
+          "quote_or_observation": "STAGE10_ORAL_READY_GATE.md states Status=`closed`, cites the same CE-selection and model-family reasons, and sets the boundary that Stage10 may be analyzed as a conservative evidence package but does not carry venue-readiness, downstream utility, or pretrained-reference superiority claims.",
+          "relevance": 1.0,
+          "reliability": 0.95,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/12_paper_package/STAGE10_ORAL_READY_GATE.md"
+        },
+        {
+          "directness": 0.95,
+          "evidence_type": "sanity_check",
+          "freshness": 0.9,
+          "locator": "lines 2-7 and 22",
+          "quote_or_observation": "DOWNSTREAM_GATE_STATUS.json lists closed_reasons including CE selection not beating CFC-only and model-family gate resource-gated; it records downstream_gate_status=`closed`, downstream_run_executed=false, and result_manifest=null.",
+          "relevance": 1.0,
+          "reliability": 0.95,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/10_downstream/DOWNSTREAM_GATE_STATUS.json"
+        },
+        {
+          "directness": 0.9,
+          "evidence_type": "sanity_check",
+          "freshness": 0.9,
+          "locator": "lines 327-338 and 389-416",
+          "quote_or_observation": "REPORT_AUDIT.json records ce_selection_gate_passed=false, downstream_gate_status=`closed`, downstream_run_executed=false, model_family_gate_met=false, oral_ready_gate_status=`closed`, forbidden_claim_scan_passed=true, report_markers_passed=true, and status=`passed_S10-15b_paper_package_final_report_handoff`.",
+          "relevance": 1.0,
+          "reliability": 0.95,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/12_paper_package/REPORT_AUDIT.json"
+        }
+      ],
+      "importance": 0.79,
+      "target_assertion_id": "pf_assertion_63e1398b5c8f",
+      "text": "Independent read-only review accepts the original assertion when kept narrow: Stage10 should be reported as a closed-gate evidence package, not an oral-ready or downstream-utility result, because CE selection failed, model-family coverage is resource-gated/failed, the CFC baseline is retained, downstream evaluation did not execute, and oral/downstream gates are closed.",
+      "verdict": "accept"
+    }
+  ],
+  "profile": "analysis",
+  "reviewer_verdict": {
+    "confidence": 0.93,
+    "rationale": "The source artifacts independently inspected by this repairer directly state that CE selection failed, the model-family gate is resource-gated/failed, CFC baseline is retained, downstream execution did not run, and downstream/oral gates are closed; they also explicitly bound Stage10 to a conservative evidence package without venue-readiness or downstream-utility claims.",
+    "target_assertion_id": "pf_assertion_63e1398b5c8f",
+    "verdict": "accept",
+    "verifier_mode": "independent_review"
+  },
+  "role": "gate_gap_repairer",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Performed a read-only independent review of the Stage10 gate, claim-ledger, downstream-status, oral-ready, and report-audit artifacts for pf_assertion_63e1398b5c8f. The reviewed artifacts support the narrow assertion that Stage10 should be reported as a conservative closed-gate evidence package rather than as oral-ready or downstream-utility evidence. No source files were edited and no artifacts were created by this repair.",
+  "target_assertion_id": "pf_assertion_63e1398b5c8f",
+  "task_id": "pf_task_ea33211b2a9b",
+  "title": "Independent review accepts Stage10 closed-gate framing"
+}

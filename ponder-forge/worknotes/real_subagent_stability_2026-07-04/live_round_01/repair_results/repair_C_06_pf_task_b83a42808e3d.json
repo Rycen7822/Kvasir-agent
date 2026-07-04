@@ -1,0 +1,54 @@
+{
+  "artifacts": [],
+  "assertions": [
+    {
+      "assertion_type": "data_result",
+      "confidence": 0.9,
+      "critical": true,
+      "evidence": [
+        {
+          "command": "python - <<'PY'\nimport json\nfrom pathlib import Path\nroot = Path('/home/xu/project/loop/DeepScientist/quests/001')\nmeta = json.loads((root/'experiments/stage10/08_meta/STAGE10_META_ANALYSIS.json').read_text())\nstate = json.loads((root/'experiments/stage10/00_freeze/STAGE10_STATE.json').read_text())\ndown = json.loads((root/'experiments/stage10/10_downstream/DOWNSTREAM_GATE_STATUS.json').read_text())\naudit = json.loads((root/'experiments/stage10/12_paper_package/REPORT_AUDIT.json').read_text())\nselector_names = ['CFC-only','LoopCert-only','family-balanced blend','risk-calibrated blend','Pareto-front','OrbitRepair-Proxy']\nselectors = {m['selector_name']: {'macro_normalized_regret_at3': m['macro_normalized_regret_at3'], 'mean_cost_to_contain_winner': m['mean_cost_to_contain_winner'], 'delta_regret3_vs_cfc': m['delta_macro_normalized_regret_at3_vs_cfc_only'], 'delta_cost_vs_cfc': m['delta_mean_cost_to_contain_winner_vs_cfc_only'], 'beats_cfc_regret3': m['beats_cfc_only_on_macro_normalized_regret_at3'], 'beats_cfc_cost': m['beats_cfc_only_on_mean_cost_to_contain_winner']} for m in meta['selector_metrics'] if m['selector_name'] in selector_names}\nsummary = {'ce_selection_gate_passed': meta['gate_results']['ce_selection_gate_passed'], 'cfc_baseline_retained': meta['gate_results']['cfc_baseline_retained'], 'closed_reasons': meta['gate_results']['closed_reasons'], 'downstream_gate_status': down['downstream_gate_status'], 'downstream_run_executed': down['downstream_run_executed'], 'model_family_gate_met': meta['gate_results']['model_family_gate_met'], 'model_family_gate_status': state['model_family_gate_status'], 'active_entry_count': state['active_entry_count'], 'active_family_count': state['active_family_count'], 'candidate_entry_count': state['candidate_entry_count'], 'candidate_family_count': state['candidate_family_count'], 'resource_gated_model_ids': state['resource_gated_model_ids'], 'artifact_hash_count': audit['artifact_hash_count'], 'forbidden_claim_scan_passed': audit['forbidden_claim_scan_passed'], 'report_markers_passed': audit['report_markers_passed'], 'oral_ready_gate_status': audit['oral_ready_gate_status'], 'selectors': selectors}\nprint(json.dumps(summary, sort_keys=True))\nPY",
+          "directness": 0.95,
+          "evidence_type": "metric_output",
+          "exit_code": 0,
+          "locator": "read-only Python extraction from quest root",
+          "metric": "stage10_closed_gate_priority_summary",
+          "quote_or_observation": "Command exited 0 and extracted: ce_selection_gate_passed=false; cfc_baseline_retained=true; closed_reasons=['CE selection gate did not beat CFC-only on both macro regret@3 and cost-to-contain','Model-family gate is resource-gated']; CFC-only regret@3=0.044697468910847644 and cost=13.833333333333334; LoopCert-only/family-balanced/risk-calibrated regret@3=0.03223671717595801 with delta_regret3_vs_cfc=-0.012460751734889634 but cost=16.666666666666668 with delta_cost_vs_cfc=+2.833333333333334 and beats_cfc_cost=false; Pareto-front regret@3=0.03313607480648891 with delta_regret3_vs_cfc=-0.011561394104358733 but cost=16.5 with delta_cost_vs_cfc=+2.666666666666666 and beats_cfc_cost=false; model_family_gate_met=false with model_family_gate_status=resource_gated_family_gate_failed, active_entry_count=6, active_family_count=4, candidate_entry_count=12, candidate_family_count=10, and resource_gated_model_ids=[gemma-2-2b, smollm2-1.7b, opt-1.3b, falcon-rw-1b, stablelm-2-1.6b, mistral-7b-score-side-stress]; downstream_gate_status=closed and downstream_run_executed=false; REPORT_AUDIT has artifact_hash_count=29, report_markers_passed=true, forbidden_claim_scan_passed=true, and oral_ready_gate_status=closed.",
+          "relevance": 0.95,
+          "reliability": 0.95,
+          "source_ref": "experiments/stage10/08_meta/STAGE10_META_ANALYSIS.json; experiments/stage10/00_freeze/STAGE10_STATE.json; experiments/stage10/10_downstream/DOWNSTREAM_GATE_STATUS.json; experiments/stage10/12_paper_package/REPORT_AUDIT.json",
+          "title": "Read-only Stage10 selector, family-gate, downstream, and audit extraction"
+        },
+        {
+          "directness": 0.85,
+          "evidence_type": "reproduction_log",
+          "locator": "AGENTS.md line 22; GATE_DECISION.md lines 3-32; REPORT_AUDIT.json lines 409-416",
+          "quote_or_observation": "AGENTS.md records Stage10 as complete through S10-15c, with S10-13 meta-analysis passed via bash-9f40a7ab, downstream closed-status passed via bash-4555e82f, S10-15b paper package/final report passed via bash-7eaf338b, independent final-report audit bash-e6da214f passed, and formal regression bash-37f6371e passed with Pytest: 75 passed. GATE_DECISION.md records gate verdict=closed, ce_selection_gate_passed=False, model_family_gate_met=False, downstream gate=closed, oral ready gate=closed, and the closed reasons matching the metric extraction. REPORT_AUDIT status is passed_S10-15b_paper_package_final_report_handoff and writes_downstream=false.",
+          "relevance": 0.9,
+          "reliability": 0.9,
+          "source_ref": "AGENTS.md; experiments/stage10/08_meta/GATE_DECISION.md; experiments/stage10/12_paper_package/REPORT_AUDIT.json",
+          "title": "Recorded Stage10 command provenance"
+        },
+        {
+          "directness": 0.9,
+          "evidence_type": "sanity_check",
+          "locator": "CLAIM_LEDGER.md lines 7-17; ORAL_READY_GATE.md lines 5-11; STAGE10_RESULTS_REPORT.md lines 93-103",
+          "quote_or_observation": "The claim ledger marks model_family_gate=failed, ce_selection_gate=failed, downstream_utility=not_evaluated with downstream_gate_status=closed/downstream_run_executed=False, and oral_gate=closed. ORAL_READY_GATE.md reports Status: closed with the same CE-selection and model-family reasons and states that Stage10 does not carry venue-readiness, downstream utility, or pretrained-reference superiority claims. The final report repeats that downstream gate status is closed, downstream run executed is False, model-family and CE gates failed, and forbidden claims are not made. This supports narrowing the assertion to recommendations rather than success or downstream-utility claims.",
+          "relevance": 0.95,
+          "reliability": 0.95,
+          "source_ref": "experiments/stage10/12_paper_package/STAGE10_CLAIM_LEDGER.md; experiments/stage10/12_paper_package/STAGE10_ORAL_READY_GATE.md; experiments/report_archive/STAGE10_RESULTS_REPORT.md",
+          "title": "Claim-boundary sanity check prevents overclaiming"
+        }
+      ],
+      "importance": 0.92,
+      "replaces_assertion_id": "pf_assertion_808d9184c8bc",
+      "text": "Recommended next-step priorities should be treated as closed-gate, evidence-backed work items: first improve LoopCert/blend/Pareto cost-to-contain while preserving their current regret@3 gains versus CFC-only; second resolve the resource-gated model-family coverage before regenerating the frozen evaluation chain for added families; third keep downstream evaluation closed until the CE-selection and model-family gates reopen; fourth keep any reader-facing plots or tables tied to the audited hash table and claim ledger without expanding claims."
+    }
+  ],
+  "role": "gate_gap_repairer",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Read-only repair for pf_assertion_808d9184c8bc. The original next-step recommendation was narrowed into a closed-gate priority statement and backed with metric_output, reproduction_log, and sanity_check evidence. No source quest files were edited and no artifacts were created.",
+  "target_assertion_id": "pf_assertion_808d9184c8bc",
+  "task_id": "pf_task_b83a42808e3d",
+  "title": "Closed-gate Stage10 priority repair for pf_assertion_808d9184c8bc"
+}

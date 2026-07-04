@@ -1,0 +1,60 @@
+{
+  "artifacts": [],
+  "assertions": [
+    {
+      "assertion_type": "data_result",
+      "evidence": [
+        {
+          "command": "python3 -c 'import json, pathlib, re; root=pathlib.Path(\"/home/xu/project/loop/DeepScientist/quests/001\"); audit=json.loads((root/\"experiments/stage10/12_paper_package/REPORT_AUDIT.json\").read_text()); down=json.loads((root/\"experiments/stage10/10_downstream/DOWNSTREAM_GATE_STATUS.json\").read_text()); oral=(root/\"experiments/stage10/12_paper_package/STAGE10_ORAL_READY_GATE.md\").read_text(); ledger=(root/\"experiments/stage10/12_paper_package/STAGE10_CLAIM_LEDGER.md\").read_text(); report=(root/\"experiments/report_archive/STAGE10_RESULTS_REPORT.md\").read_text(); out={\"report_audit_status\": audit.get(\"status\"), \"report_markers_passed\": audit.get(\"report_markers_passed\"), \"forbidden_claim_scan_passed\": audit.get(\"forbidden_claim_scan_passed\"), \"forbidden_claim_hits_count\": len(audit.get(\"forbidden_claim_hits\", [])), \"audit_downstream_gate_status\": audit.get(\"downstream_gate_status\"), \"audit_downstream_run_executed\": audit.get(\"downstream_run_executed\"), \"audit_oral_ready_gate_status\": audit.get(\"oral_ready_gate_status\"), \"downstream_gate_status_file_status\": down.get(\"downstream_gate_status\"), \"downstream_result_manifest_is_null\": down.get(\"result_manifest\") is None, \"downstream_writes_downstream\": down.get(\"writes_downstream\"), \"oral_gate_closed_line_present\": \"Status: `closed`\" in oral, \"oral_boundary_no_utility_claims_present\": \"does not carry venue-readiness, downstream utility, or pretrained-reference superiority claims\" in oral, \"claim_ledger_downstream_not_evaluated\": \"| downstream_utility | not_evaluated | downstream_gate_status=closed; downstream_run_executed=False |\" in ledger, \"claim_ledger_oral_gate_closed\": \"| oral_gate | closed |\" in ledger, \"final_report_forbidden_claims_boundary_present\": \"does not claim downstream utility evidence, venue-readiness, pretrained-reference superiority, or universal recovery certainty\" in report}; print(json.dumps(out, sort_keys=True))'",
+          "evidence_type": "metric_output",
+          "exit_code": 0,
+          "output": {
+            "audit_downstream_gate_status": "closed",
+            "audit_downstream_run_executed": false,
+            "audit_oral_ready_gate_status": "closed",
+            "claim_ledger_downstream_not_evaluated": true,
+            "claim_ledger_oral_gate_closed": true,
+            "downstream_gate_status_file_status": "closed",
+            "downstream_result_manifest_is_null": true,
+            "downstream_writes_downstream": false,
+            "final_report_forbidden_claims_boundary_present": true,
+            "forbidden_claim_hits_count": 0,
+            "forbidden_claim_scan_passed": true,
+            "oral_boundary_no_utility_claims_present": true,
+            "oral_gate_closed_line_present": true,
+            "report_audit_status": "passed_S10-15b_paper_package_final_report_handoff",
+            "report_markers_passed": true
+          },
+          "profile": "analysis"
+        },
+        {
+          "evidence_type": "file_inspection",
+          "path": "experiments/stage10/12_paper_package/REPORT_AUDIT.json",
+          "text": "REPORT_AUDIT records status=passed_S10-15b_paper_package_final_report_handoff, report_markers_passed=true, forbidden_claim_scan_passed=true, forbidden_claim_hits=[], downstream_gate_status=closed, downstream_run_executed=false, and oral_ready_gate_status=closed."
+        },
+        {
+          "evidence_type": "file_inspection",
+          "path": "experiments/stage10/12_paper_package/STAGE10_CLAIM_LEDGER.md",
+          "text": "Claim ledger marks downstream_utility as not_evaluated with downstream_gate_status=closed and downstream_run_executed=False, marks oral_gate as closed, and states no venue-readiness claim is made."
+        },
+        {
+          "evidence_type": "file_inspection",
+          "path": "experiments/stage10/12_paper_package/STAGE10_ORAL_READY_GATE.md",
+          "text": "Oral-ready gate status is closed; boundary states Stage10 may be analyzed as a conservative evidence package but does not carry venue-readiness, downstream utility, or pretrained-reference superiority claims."
+        },
+        {
+          "evidence_type": "file_inspection",
+          "path": "experiments/report_archive/STAGE10_RESULTS_REPORT.md",
+          "text": "Final report forbidden-claims section states it does not claim downstream utility evidence, venue-readiness, pretrained-reference superiority, or universal recovery certainty, and that closed/not-evaluated gates remain closed or not evaluated."
+        }
+      ],
+      "text": "The Stage10 narrative package is internally framed as conservative and closed-gate: REPORT_AUDIT status is passed, report markers passed, forbidden_claim_scan_passed=true with zero forbidden hits, downstream_gate_status=closed with downstream_run_executed=false, oral_ready_gate_status=closed, and the claim ledger/final report explicitly avoid downstream utility, venue-readiness, pretrained-reference superiority, and universal recovery-certainty claims."
+    }
+  ],
+  "role": "gate_gap_repairer",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Read-only inspection of /home/xu/project/loop/DeepScientist/quests/001 found direct metric evidence that the Stage10 report package is claim-bounded: REPORT_AUDIT passed, forbidden-claim scan passed with zero hits, downstream and oral gates are closed, downstream execution did not run, and the claim ledger/final report explicitly avoid downstream utility and venue-readiness claims. No files were created or modified; no issues encountered.",
+  "target_assertion_id": "pf_assertion_04ff37682939",
+  "task_id": "pf_task_e5d5c717b377",
+  "title": "Stage10 conservative narrative package gate-gap repair"
+}

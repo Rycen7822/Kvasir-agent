@@ -6,6 +6,7 @@
 - batch C delegation_id: `deleg_8f7fcad4`
 - batch C status: dispatched at `2026-07-05T01:18:59+0800`; pending async return
 - record policy: run `collect_and_submit_repairs.py --batch C --record` only after collector reaches `20/20 all_valid`
+- batch C final record: watcher reached `20/20 all_valid` at `2026-07-05T01:31:47+0800` and installed `submit-report` recorded all 20 repair reports; installed run counts advanced to reports `108`, assertions `149`, evidence items `544`
 
 ## Batch C task ids
 - `pf_task_c7869f2e4ed4`

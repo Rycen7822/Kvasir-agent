@@ -1,0 +1,91 @@
+{
+  "artifacts": [],
+  "assertions": [
+    {
+      "assertion_type": "data_result",
+      "confidence": 0.88,
+      "critical": true,
+      "evidence": [
+        {
+          "command": "python3 -c \"import json,csv,pathlib as P; r=P.Path('/home/xu/project/loop/DeepScientist/quests/001'); L=lambda x: json.loads((r/x).read_text()); R=lambda x: sum(1 for _ in csv.DictReader((r/x).open())); large=L('experiments/stage10/07_large_eval/LARGE_EVAL_SUMMARY.json'); rec=L('experiments/stage10/06_recovery/RECOVERY_TRAIN_EVAL_SUMMARY.json'); meta=L('experiments/stage10/08_meta/STAGE10_META_ANALYSIS.json'); abl=L('experiments/stage10/09_ablation_patching/STAGE10_COMPONENT_ABLATION_AUDIT.json'); th=L('experiments/stage10/11_theory/STAGE10_THEORY_AUDIT.json'); aud=L('experiments/stage10/12_paper_package/REPORT_AUDIT.json'); print(json.dumps({'large_eval_rows':large['evaluated_endpoint_rows'],'large_eval_expected_rows':large['expected_formal_endpoint_rows'],'token_weighted_rows':R('experiments/stage10/07_large_eval/TOKEN_WEIGHTED_EVAL.csv'),'recovery_endpoint_rows':rec['total_endpoint_count'],'target_write_ledger_rows':rec['target_write_ledger_rows'],'target_ledger_matches_endpoints':rec['target_write_ledger_matches_endpoint_rows'],'seed_robustness_rows':rec['seed_robustness_row_count'],'meta_selector_count':meta['selector_count'],'large_eval_gate_passed':meta['gate_results']['large_eval_gate_passed'],'seed_robustness_gate_passed':meta['gate_results']['seed_robustness_gate_passed'],'ce_selection_gate_passed':meta['gate_results']['ce_selection_gate_passed'],'model_family_gate_met':meta['gate_results']['model_family_gate_met'],'ablation_count':abl['ablation_count'],'patching_result_count':abl['patching_result_count'],'mechanism_claim_status':abl['mechanism_claim_status'],'stress_test_count':th['stress_test_count'],'theory_forbidden_claim_scan_passed':th['forbidden_claim_scan_passed'],'artifact_hash_count':aud['artifact_hash_count'],'all_artifact_records_exist':all(i.get('exists') for i in aud['artifact_records']),'report_forbidden_claim_scan_passed':aud['forbidden_claim_scan_passed'],'report_markers_passed':aud['report_markers_passed'],'paper_status':aud['status'],'claim_ledger_rows':aud['claim_ledger_rows']}, sort_keys=True))\"",
+          "directness": 0.98,
+          "evidence_type": "metric_output",
+          "exit_code": 0,
+          "freshness": 0.9,
+          "metric": {
+            "ablation_count": 11,
+            "all_artifact_records_exist": true,
+            "artifact_hash_count": 29,
+            "ce_selection_gate_passed": false,
+            "claim_ledger_rows": 9,
+            "large_eval_expected_rows": 360,
+            "large_eval_gate_passed": true,
+            "large_eval_rows": 360,
+            "mechanism_claim_status": "diagnostic_or_mixed",
+            "meta_selector_count": 6,
+            "model_family_gate_met": false,
+            "paper_status": "passed_S10-15b_paper_package_final_report_handoff",
+            "patching_result_count": 96,
+            "recovery_endpoint_rows": 1380,
+            "report_forbidden_claim_scan_passed": true,
+            "report_markers_passed": true,
+            "seed_robustness_gate_passed": true,
+            "seed_robustness_rows": 252,
+            "stress_test_count": 7,
+            "target_ledger_matches_endpoints": true,
+            "target_write_ledger_rows": 1380,
+            "theory_forbidden_claim_scan_passed": true,
+            "token_weighted_rows": 366
+          },
+          "quote_or_observation": "Read-only metric extraction returned large_eval_rows=360, large_eval_expected_rows=360, token_weighted_rows=366, recovery_endpoint_rows=1380, target_write_ledger_rows=1380 with target_ledger_matches_endpoints=true, seed_robustness_rows=252, meta_selector_count=6, ablation_count=11, patching_result_count=96, stress_test_count=7, artifact_hash_count=29, all_artifact_records_exist=true, report_forbidden_claim_scan_passed=true, report_markers_passed=true, ce_selection_gate_passed=false, model_family_gate_met=false.",
+          "relevance": 0.98,
+          "reliability": 0.95,
+          "source_ref": "experiments/stage10/07_large_eval/LARGE_EVAL_SUMMARY.json; experiments/stage10/06_recovery/RECOVERY_TRAIN_EVAL_SUMMARY.json; experiments/stage10/08_meta/STAGE10_META_ANALYSIS.json; experiments/stage10/09_ablation_patching/STAGE10_COMPONENT_ABLATION_AUDIT.json; experiments/stage10/11_theory/STAGE10_THEORY_AUDIT.json; experiments/stage10/12_paper_package/REPORT_AUDIT.json"
+        },
+        {
+          "directness": 0.85,
+          "evidence_type": "transform_script",
+          "freshness": 0.9,
+          "quote_or_observation": "The metric command only parsed existing JSON and CSV files under /home/xu/project/loop/DeepScientist/quests/001 and printed a JSON summary; it did not import quest code, write files, call Ponder-Forge submit/verify/finalize, or mutate the quest.",
+          "relevance": 0.9,
+          "reliability": 0.9,
+          "source_ref": "read-only Python stdlib json/csv/pathlib extraction over fixed quest Stage10 artifact paths"
+        },
+        {
+          "directness": 0.92,
+          "evidence_type": "sanity_check",
+          "freshness": 0.9,
+          "quote_or_observation": "Claim ledger bounds the package: large_eval_alignment is passed for evaluated_endpoint_rows=360, seed_robustness is bounded to 252 rows, component_ablation is diagnostic/mixed with 11 ablation rows and 96 patching rows, downstream_utility is not_evaluated with downstream_gate_status=closed and downstream_run_executed=False, oral_gate is closed, and theory_package is bounded to stress_test_count=7. REPORT_AUDIT has forbidden_claim_hits=[] and forbidden_claim_scan_passed=true; downstream status is closed due to CE-selection and model-family gates.",
+          "relevance": 0.95,
+          "reliability": 0.93,
+          "source_ref": "experiments/stage10/12_paper_package/STAGE10_CLAIM_LEDGER.md; experiments/stage10/12_paper_package/REPORT_AUDIT.json; experiments/stage10/10_downstream/DOWNSTREAM_GATE_STATUS.json"
+        },
+        {
+          "command": "python3 -c \"import json,csv,pathlib as P; r=P.Path('/home/xu/project/loop/DeepScientist/quests/001'); L=lambda x: json.loads((r/x).read_text()); R=lambda x: sum(1 for _ in csv.DictReader((r/x).open())); large=L('experiments/stage10/07_large_eval/LARGE_EVAL_SUMMARY.json'); rec=L('experiments/stage10/06_recovery/RECOVERY_TRAIN_EVAL_SUMMARY.json'); meta=L('experiments/stage10/08_meta/STAGE10_META_ANALYSIS.json'); abl=L('experiments/stage10/09_ablation_patching/STAGE10_COMPONENT_ABLATION_AUDIT.json'); th=L('experiments/stage10/11_theory/STAGE10_THEORY_AUDIT.json'); aud=L('experiments/stage10/12_paper_package/REPORT_AUDIT.json'); print(json.dumps({'large_eval_rows':large['evaluated_endpoint_rows'],'large_eval_expected_rows':large['expected_formal_endpoint_rows'],'token_weighted_rows':R('experiments/stage10/07_large_eval/TOKEN_WEIGHTED_EVAL.csv'),'recovery_endpoint_rows':rec['total_endpoint_count'],'target_write_ledger_rows':rec['target_write_ledger_rows'],'target_ledger_matches_endpoints':rec['target_write_ledger_matches_endpoint_rows'],'seed_robustness_rows':rec['seed_robustness_row_count'],'meta_selector_count':meta['selector_count'],'large_eval_gate_passed':meta['gate_results']['large_eval_gate_passed'],'seed_robustness_gate_passed':meta['gate_results']['seed_robustness_gate_passed'],'ce_selection_gate_passed':meta['gate_results']['ce_selection_gate_passed'],'model_family_gate_met':meta['gate_results']['model_family_gate_met'],'ablation_count':abl['ablation_count'],'patching_result_count':abl['patching_result_count'],'mechanism_claim_status':abl['mechanism_claim_status'],'stress_test_count':th['stress_test_count'],'theory_forbidden_claim_scan_passed':th['forbidden_claim_scan_passed'],'artifact_hash_count':aud['artifact_hash_count'],'all_artifact_records_exist':all(i.get('exists') for i in aud['artifact_records']),'report_forbidden_claim_scan_passed':aud['forbidden_claim_scan_passed'],'report_markers_passed':aud['report_markers_passed'],'paper_status':aud['status'],'claim_ledger_rows':aud['claim_ledger_rows']}, sort_keys=True))\"",
+          "directness": 0.88,
+          "evidence_type": "reproduction_log",
+          "exit_code": 0,
+          "freshness": 0.9,
+          "quote_or_observation": "Command completed with exit_code=0 and emitted the JSON metric summary captured in the metric_output evidence; no artifact files were produced.",
+          "relevance": 0.9,
+          "reliability": 0.92,
+          "source_ref": "terminal output from the metric extraction command in this repair session"
+        }
+      ],
+      "importance": 0.93,
+      "text": "Bounded Stage10 evidence substrate is supported by read-only artifacts: S10-12 large heldout eval covers 360/360 formal endpoint rows and 366 token-weighted rows; recovery records 1,380 endpoint rows with a matching 1,380-row target write ledger and 252 seed-robustness rows; meta/ablation/theory artifacts are present with 6 selector summaries, 11 ablations, 96 patching rows, and 7 theory stress tests; the S10-15b paper package audit reports 29 existing artifact hashes with report marker and forbidden-claim scans passing. This claim does not reopen CE-selection, model-family, downstream, oral-ready, or universal mechanism gates."
+    }
+  ],
+  "independent_review_recommendation": {
+    "confidence": 0.86,
+    "rationale": "On read-only inspection, the narrowed replacement assertion is directly supported by successful metric output plus transform/reproduction and sanity-check evidence. If the controller requires a Ponder-Forge verification_verdict row, this recommendation should be recorded through the normal independent_review verify path rather than by this report mutating state.",
+    "target_assertion_id": "pf_assertion_5dc0cf494653",
+    "verdict": "accept_narrowed_replacement"
+  },
+  "role": "gate_gap_repairer",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Read the assigned batch-C payload, inspected the quest read-only, and repaired the missing analysis-profile evidence by recomputing Stage10 substrate counts with a command that exited 0. No source files or report artifacts were created or modified. The narrowed replacement claim is bounded to existing Stage10 artifacts and explicitly preserves closed CE/model-family/downstream/oral gates.",
+  "target_assertion_id": "pf_assertion_5dc0cf494653",
+  "task_id": "pf_task_29dd72a78f3e",
+  "title": "Gate-gap repair for Stage10 bounded evidence substrate assertion"
+}

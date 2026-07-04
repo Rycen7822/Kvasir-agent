@@ -1,0 +1,73 @@
+{
+  "artifacts": [],
+  "assertions": [
+    {
+      "assertion_type": "data_result",
+      "confidence": 0.91,
+      "evidence": [
+        {
+          "artifact_path": "experiments/stage10/00_freeze/STAGE10_STATE.json; experiments/stage10/12_paper_package/REPORT_AUDIT.json",
+          "command": "python -c 'import json,hashlib,pathlib; root=pathlib.Path(\"/home/xu/project/loop/DeepScientist/quests/001\"); sp=root/\"experiments/stage10/00_freeze/STAGE10_STATE.json\"; ap=root/\"experiments/stage10/12_paper_package/REPORT_AUDIT.json\"; sb=sp.read_bytes(); state=json.loads(sb); audit=json.loads(ap.read_text()); rec=next(r for r in audit[\"artifact_records\"] if r.get(\"path\")==\"experiments/stage10/00_freeze/STAGE10_STATE.json\"); out={\"current_state_sha256\":hashlib.sha256(sb).hexdigest(),\"current_state_bytes\":len(sb),\"current_state_lines\":sb.count(b\"\\n\")+(0 if sb.endswith(b\"\\n\") else 1),\"audit_state_sha256\":rec.get(\"sha256\"),\"audit_state_bytes\":rec.get(\"bytes\"),\"audit_state_lines\":rec.get(\"lines\"),\"stale_state_hash\":hashlib.sha256(sb).hexdigest()!=rec.get(\"sha256\"),\"active_substage\":state.get(\"active_substage\"),\"next_required_substage\":state.get(\"next_required_substage\"),\"large_eval_status\":state.get(\"large_eval_status\"),\"meta_analysis_status\":state.get(\"meta_analysis_status\"),\"paper_package_status\":state.get(\"paper_package_status\"),\"status_compression_status\":state.get(\"status_compression_status\"),\"report_audit_status\":audit.get(\"status\"),\"artifact_hash_count\":audit.get(\"artifact_hash_count\"),\"report_markers_passed\":audit.get(\"report_markers_passed\"),\"forbidden_claim_scan_passed\":audit.get(\"forbidden_claim_scan_passed\")}; print(json.dumps(out,sort_keys=True))'",
+          "directness": 1.0,
+          "evidence_type": "metric_output",
+          "exit_code": 0,
+          "freshness": 1.0,
+          "metric": {
+            "active_substage": "Stage10_complete",
+            "audit_state_bytes": 36868,
+            "audit_state_lines": 876,
+            "audit_state_sha256": "a1c66af5f4b672df76b5fe8d717f63cea297811bc7b7dd7ff057ad7469723a12",
+            "current_state_bytes": 37714,
+            "current_state_lines": 887,
+            "current_state_sha256": "7ac2f0bebeab991fe01ce3fa07fc1ed16b796382bb8249bf4de93d587383feee",
+            "forbidden_claim_scan_passed": true,
+            "large_eval_status": "passed_S10-12_large_heldout_eval_alignment_audit",
+            "meta_analysis_status": "passed_S10-13_meta_analysis_portfolio_gate_decision",
+            "next_required_substage": "none",
+            "paper_package_status": "passed_S10-15b_paper_package_final_report_handoff",
+            "report_audit_artifact_hash_count": 29,
+            "report_audit_status": "passed_S10-15b_paper_package_final_report_handoff",
+            "report_markers_passed": true,
+            "stale_state_hash": true,
+            "status_compression_status": "passed_S10-15c_status_compression_index_update"
+          },
+          "quote_or_observation": "The command exited 0 and printed stale_state_hash=true. It measured current STAGE10_STATE.json sha256=7ac2f0bebeab991fe01ce3fa07fc1ed16b796382bb8249bf4de93d587383feee, bytes=37714, lines=887, while REPORT_AUDIT.json artifact_records still list sha256=a1c66af5f4b672df76b5fe8d717f63cea297811bc7b7dd7ff057ad7469723a12, bytes=36868, lines=876. The same metric output reported active_substage=Stage10_complete, next_required_substage=none, large_eval_status=passed_S10-12_large_heldout_eval_alignment_audit, meta_analysis_status=passed_S10-13_meta_analysis_portfolio_gate_decision, paper_package_status=passed_S10-15b_paper_package_final_report_handoff, and status_compression_status=passed_S10-15c_status_compression_index_update.",
+          "relevance": 1.0,
+          "reliability": 0.96,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001",
+          "title": "Read-only hash/status check for Stage10 state versus report audit"
+        },
+        {
+          "directness": 0.92,
+          "evidence_type": "reproduction_log",
+          "freshness": 0.9,
+          "locator": "lines 1002-1014",
+          "quote_or_observation": "The ledger records: bash-f76a85c1 ran stage10_large_eval.py --mode aggregate and passed S10-12 with expected/evaluated formal endpoint rows 360/360 and TOKEN_WEIGHTED_EVAL 366 rows; bash-9f40a7ab ran stage10_meta_analysis.py and passed S10-13, writing STAGE10_META_ANALYSIS.json, SELECTOR_METRICS.csv, FAMILY_BOOTSTRAP.csv, RECOVERY_AUC_METRICS.csv, and GATE_DECISION.md; bash-7eaf338b ran stage10_paper_package.py and passed S10-15b with report_markers_passed=true, forbidden_claim_scan_passed=true, artifact_hash_count=29; bash-e6da214f independently audited the final report with status=passed; bash-6d051ba0 formally validated STAGE10_STATE.json, structure.json, REPORT_AUDIT.json, compact line limits, and index entries for S10-15c.",
+          "relevance": 0.95,
+          "reliability": 0.9,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/正式实验命令.md",
+          "title": "Formal Stage10 command ledger entries for metric-producing and audit-producing steps"
+        },
+        {
+          "directness": 0.9,
+          "evidence_type": "sanity_check",
+          "freshness": 0.88,
+          "locator": "lines 2-14 and 327-416",
+          "quote_or_observation": "REPORT_AUDIT.json lists artifact_hash_count=29 and a state artifact record for experiments/stage10/00_freeze/STAGE10_STATE.json with sha256=a1c66af5f4b672df76b5fe8d717f63cea297811bc7b7dd7ff057ad7469723a12, bytes=36868, lines=876. The audit flags remain status=passed_S10-15b_paper_package_final_report_handoff, report_markers_passed=true, forbidden_claim_scan_passed=true, model_family_gate_met=false, ce_selection_gate_passed=false, downstream_gate_status=closed, and oral_ready_gate_status=closed.",
+          "relevance": 0.93,
+          "reliability": 0.92,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/12_paper_package/REPORT_AUDIT.json",
+          "title": "Report audit contains older state hash and passed conservative claim flags"
+        }
+      ],
+      "importance": 0.96,
+      "text": "Read-only evidence supports a narrowed Stage10 claim: the formal command ledger reports passed S10-12 large-eval, S10-13 meta-analysis, S10-15b paper-package/final-report audit, and S10-15c status-compression validation steps, and a fresh metric check shows REPORT_AUDIT.json is stale for STAGE10_STATE.json because it records sha256 a1c66af5f4b672df76b5fe8d717f63cea297811bc7b7dd7ff057ad7469723a12 (36868 bytes, 876 lines) while the current state file is sha256 7ac2f0bebeab991fe01ce3fa07fc1ed16b796382bb8249bf4de93d587383feee (37714 bytes, 887 lines)."
+    }
+  ],
+  "role": "gate_gap_repairer",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Read-only inspection of quest 001 repaired the analysis-profile gate gap by adding metric_output evidence with command and exit_code=0. The evidence narrows the original assertion: logs record passed Stage10 metric/audit steps, and a fresh hash check shows REPORT_AUDIT.json still lists the older S10-15b STAGE10_STATE.json hash while the current state file has the S10-15c hash/size/line count.",
+  "target_assertion_id": "pf_assertion_93b6b4b7867f",
+  "task_id": "pf_task_4b8e2e2ab6a5",
+  "title": "Stage10 reproduction-log and stale audit-hash evidence repair"
+}

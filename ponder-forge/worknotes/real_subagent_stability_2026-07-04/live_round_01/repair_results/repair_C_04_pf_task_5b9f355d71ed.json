@@ -1,0 +1,119 @@
+{
+  "artifacts": [],
+  "assertions": [
+    {
+      "assertion_type": "data_result",
+      "confidence": 0.94,
+      "critical": true,
+      "evidence": [
+        {
+          "command": "PYTHONDONTWRITEBYTECODE=1 python - <<'PY'\nimport json\nfrom pathlib import Path\nq = Path('/home/xu/project/loop/DeepScientist/quests/001')\nJ = lambda rel: json.loads((q/rel).read_text(encoding='utf-8'))\nT = lambda rel: (q/rel).read_text(encoding='utf-8')\nstate = J('experiments/stage10/00_freeze/STAGE10_STATE.json')\nmodel_avail = J('experiments/stage10/00_freeze/MODEL_AVAILABILITY.json')\nmeta = J('experiments/stage10/08_meta/STAGE10_META_ANALYSIS.json')\nlarge = J('experiments/stage10/07_large_eval/LARGE_EVAL_SUMMARY.json')\ndownstream = J('experiments/stage10/10_downstream/DOWNSTREAM_GATE_STATUS.json')\nreport_audit = J('experiments/stage10/12_paper_package/REPORT_AUDIT.json')\nfamily_balance = T('experiments/stage10/05_panel_precommit/FAMILY_BALANCE_AUDIT.md')\ngate_decision = T('experiments/stage10/08_meta/GATE_DECISION.md')\nfinal_report = T('experiments/report_archive/STAGE10_RESULTS_REPORT.md')\nclaim_ledger = T('experiments/stage10/12_paper_package/STAGE10_CLAIM_LEDGER.md')\nkeys = {\n    'state_coverage_model_family_gate_met': state['coverage']['model_family_gate_met'],\n    'state_top_level_model_family_gate_met': state['model_family_gate_met'],\n    'state_model_family_gate_status': state['model_family_gate_status'],\n    'state_completion_status': state['stage10_completion_status'],\n    'model_availability_model_family_gate_met': model_avail['model_family_gate_met'],\n    'model_availability_status': model_avail['status'],\n    'model_availability_resource_gated_count': len(model_avail['resource_gated_model_ids']),\n    'meta_gate_model_family_gate_met': meta['gate_results']['model_family_gate_met'],\n    'meta_model_availability_model_family_gate_met': meta['model_availability']['model_family_gate_met'],\n    'meta_gate_verdict': meta['gate_results']['gate_verdict'],\n    'large_eval_model_family_gate_met': large['model_availability']['model_family_gate_met'],\n    'downstream_gate_status': downstream['downstream_gate_status'],\n    'downstream_closed_reasons': downstream['closed_reasons'],\n    'report_audit_model_family_gate_met': report_audit['model_family_gate_met'],\n    'report_audit_status': report_audit['status'],\n    'claim_ledger_model_family_failed': '| model_family_gate | failed | 4 active families and 6 active entries |' in claim_ledger,\n    'family_balance_false_line': '- model_family_gate_met: `false`' in family_balance,\n    'gate_decision_false_line': '- model_family_gate_met: `False`' in gate_decision,\n    'final_report_false_line': 'Model-family gate met: `False`' in final_report,\n    'final_report_failed_line': 'Model-family gate: `failed`' in final_report,\n}\nprint(json.dumps(keys, sort_keys=True))\nPY",
+          "directness": 1.0,
+          "evidence_type": "metric_output",
+          "exit_code": 0,
+          "freshness": 1.0,
+          "locator": "experiments/stage10/{00_freeze/STAGE10_STATE.json,00_freeze/MODEL_AVAILABILITY.json,08_meta/STAGE10_META_ANALYSIS.json,07_large_eval/LARGE_EVAL_SUMMARY.json,10_downstream/DOWNSTREAM_GATE_STATUS.json,12_paper_package/REPORT_AUDIT.json,05_panel_precommit/FAMILY_BALANCE_AUDIT.md,08_meta/GATE_DECISION.md,12_paper_package/STAGE10_CLAIM_LEDGER.md}; experiments/report_archive/STAGE10_RESULTS_REPORT.md",
+          "metric": {
+            "claim_ledger_model_family_failed": true,
+            "downstream_closed_reasons": [
+              "CE selection gate did not beat CFC-only on both macro regret@3 and cost-to-contain",
+              "Model-family gate is resource-gated"
+            ],
+            "downstream_gate_status": "closed",
+            "family_balance_false_line": true,
+            "final_report_failed_line": true,
+            "final_report_false_line": true,
+            "gate_decision_false_line": true,
+            "large_eval_model_family_gate_met": false,
+            "meta_gate_model_family_gate_met": false,
+            "meta_gate_verdict": "closed",
+            "meta_model_availability_model_family_gate_met": false,
+            "model_availability_model_family_gate_met": false,
+            "model_availability_resource_gated_count": 6,
+            "model_availability_status": "resource_gated_family_gate_failed",
+            "report_audit_model_family_gate_met": false,
+            "report_audit_status": "passed_S10-15b_paper_package_final_report_handoff",
+            "state_completion_status": "complete_with_failed_model_family_gate_and_closed_downstream_oral_gates",
+            "state_coverage_model_family_gate_met": true,
+            "state_model_family_gate_status": "resource_gated_family_gate_failed",
+            "state_top_level_model_family_gate_met": false
+          },
+          "quote_or_observation": "Command exited 0 and printed state_coverage_model_family_gate_met=true, while state_top_level_model_family_gate_met=false, state_model_family_gate_status=resource_gated_family_gate_failed, model_availability_model_family_gate_met=false, meta_gate_model_family_gate_met=false, meta_model_availability_model_family_gate_met=false, large_eval_model_family_gate_met=false, report_audit_model_family_gate_met=false, and text checks for family-balance/gate-decision/claim-ledger/final-report false-or-failed lines all returned true.",
+          "relevance": 1.0,
+          "reliability": 0.97,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001",
+          "title": "Read-only cross-surface model-family gate digest"
+        },
+        {
+          "directness": 0.92,
+          "evidence_type": "reproduction_log",
+          "exit_code": 0,
+          "freshness": 0.9,
+          "locator": "meta.json lines 14-19 and 32-39; terminal.log lines 1-5",
+          "quote_or_observation": "The existing bash-fea5dc5f final no-edit completion audit completed with exit_code=0. Its command asserted STAGE10_STATE active_substage=Stage10_complete, next_required_substage=none, status_compression_status=passed_S10-15c_status_compression_index_update, stage10_completion_status=complete_with_failed_model_family_gate_and_closed_downstream_oral_gates, model_family_gate_met=false, downstream_gate_status=closed, oral_ready_gate_status=closed, target_write_ledger_rows=1380, and presence of S10-15c completion; terminal.log printed true, true, and Pytest: 75 passed before completion.",
+          "relevance": 0.96,
+          "reliability": 0.94,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/.ds/bash_exec/bash-fea5dc5f/{meta.json,terminal.log}",
+          "title": "Existing final no-edit completion audit validates closed/failed Stage10 state"
+        },
+        {
+          "directness": 0.86,
+          "evidence_type": "transform_script",
+          "freshness": 0.9,
+          "locator": "stage10_model_family_expansion.py lines 207-210, 241-244, 277-286, 318-326; stage10_large_eval.py lines 392-402 and 1312-1315; stage10_paper_package.py lines 326-329, 513-516, 563-565",
+          "quote_or_observation": "The Stage10 model-family expansion script computes gate_met from active family/entry thresholds, writes model_family_gate_met and status into MODEL_AVAILABILITY/model_entries/FAMILY_BALANCE_AUDIT/STAGE10_STATE, and the large-eval, meta-analysis, paper-package, and final-audit scripts consume that availability/gate state for downstream decision and report surfaces. This provenance supports treating the coverage subfield true as localized rather than overriding the decision-bearing false gate.",
+          "relevance": 0.93,
+          "reliability": 0.9,
+          "source_ref": "experiments/stage10/scripts/stage10_model_family_expansion.py; experiments/stage10/scripts/stage10_large_eval.py; experiments/stage10/scripts/stage10_meta_analysis.py; experiments/stage10/scripts/stage10_paper_package.py; experiments/stage10/scripts/stage10_final_report_audit.py",
+          "title": "Producer scripts write/propagate the false model-family gate to decision surfaces"
+        },
+        {
+          "directness": 0.98,
+          "evidence_type": "sanity_check",
+          "freshness": 1.0,
+          "locator": "STAGE10_STATE.json lines 67-75 and 680-691/839-840; MODEL_AVAILABILITY.json lines 360-371; STAGE10_META_ANALYSIS.json lines 2-14 and 18-31; LARGE_EVAL_SUMMARY.json lines 8-19; DOWNSTREAM_GATE_STATUS.json lines 1-7; FAMILY_BALANCE_AUDIT.md lines 3-9 and 21-28; GATE_DECISION.md lines 3-12 and 25-32; REPORT_AUDIT.json lines 330-337 and 409-416; STAGE10_CLAIM_LEDGER.md lines 5-14; STAGE10_RESULTS_REPORT.md lines 47-49 and 97-99",
+          "quote_or_observation": "Line reads show STAGE10_STATE.coverage.model_family_gate_met=true, but STAGE10_STATE top-level model_family_gate_met=false and model_family_gate_status=resource_gated_family_gate_failed; STAGE10_STATE completion is complete_with_failed_model_family_gate_and_closed_downstream_oral_gates. MODEL_AVAILABILITY, meta-analysis, large-eval summary, family-balance audit, gate decision, report audit, claim ledger, and final report all agree that model-family coverage is false/failed/resource-gated and oral/downstream gates remain closed.",
+          "relevance": 1.0,
+          "reliability": 0.96,
+          "source_ref": "STAGE10_STATE.json; MODEL_AVAILABILITY.json; STAGE10_META_ANALYSIS.json; LARGE_EVAL_SUMMARY.json; DOWNSTREAM_GATE_STATUS.json; FAMILY_BALANCE_AUDIT.md; GATE_DECISION.md; REPORT_AUDIT.json; STAGE10_CLAIM_LEDGER.md; STAGE10_RESULTS_REPORT.md",
+          "title": "Line-number cross-check of false/failed gate surfaces"
+        },
+        {
+          "confidence": 0.88,
+          "directness": 0.9,
+          "evidence_type": "independent_verdict",
+          "freshness": 1.0,
+          "independent_from_task_id": "original_assertion_producer_unknown",
+          "locator": "This report; target_assertion_id=pf_assertion_0d4ca97b06b4",
+          "quote_or_observation": "accept: the narrowed assertion is directly supported by the successful metric digest, existing final no-edit reproduction log, transform provenance, and line-number sanity checks. The verdict accepts only the conservative state-hygiene interpretation: coverage.model_family_gate_met is a localized inconsistent/stale true value, while all decision-bearing Stage10 gate/report surfaces keep model_family_gate_met false or model_family_gate failed/resource-gated.",
+          "relevance": 0.95,
+          "reliability": 0.84,
+          "required_actions": [],
+          "reviewer_role": "repro_reviewer",
+          "source_ref": "gate_gap_repairer pf_task_5b9f355d71ed read-only review",
+          "target_assertion_id": "pf_assertion_0d4ca97b06b4",
+          "target_id": "pf_assertion_0d4ca97b06b4",
+          "target_type": "assertion",
+          "title": "Accepted independent read-only repair verdict",
+          "verdict": "accept",
+          "verifier_mode": "independent_review"
+        }
+      ],
+      "importance": 0.86,
+      "repairs_assertion_id": "pf_assertion_0d4ca97b06b4",
+      "target_assertion_id": "pf_assertion_0d4ca97b06b4",
+      "text": "A conservative state-hygiene repair is supported: the only observed true model-family value is the localized STAGE10_STATE.coverage.model_family_gate_met field, while the decision-bearing Stage10 surfaces record the model-family gate as failed/resource-gated. Specifically, STAGE10_STATE top-level model_family_gate_met=false with status resource_gated_family_gate_failed and completion complete_with_failed_model_family_gate_and_closed_downstream_oral_gates; MODEL_AVAILABILITY, STAGE10_META_ANALYSIS gate_results and model_availability, LARGE_EVAL_SUMMARY model_availability, FAMILY_BALANCE_AUDIT, GATE_DECISION, REPORT_AUDIT, STAGE10_CLAIM_LEDGER, and STAGE10_RESULTS_REPORT all keep model_family_gate_met false or model_family_gate failed. Therefore Stage10 should be treated as closed/failed for model-family coverage, not as a passed family gate."
+    }
+  ],
+  "confidence": 0.94,
+  "files_created": [],
+  "files_modified": [],
+  "issues_encountered": [],
+  "profile": "analysis",
+  "role": "gate_gap_repairer",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Read-only repair for pf_assertion_0d4ca97b06b4: the supported conservative interpretation is that STAGE10_STATE.coverage.model_family_gate_met is a localized stale/coverage-only true value, while the decision-bearing state, model availability, meta-analysis, family audit, gate decision, large-eval summary, downstream status, report audit, claim ledger, and final report all keep the model-family gate failed/resource-gated/closed. Added analysis-profile metric_output, reproduction_log, transform_script, sanity_check, and independent accept-verdict evidence. No files were created or modified.",
+  "target_assertion_id": "pf_assertion_0d4ca97b06b4",
+  "task_id": "pf_task_5b9f355d71ed",
+  "title": "Stage10 model-family state-hygiene gate-gap repair"
+}

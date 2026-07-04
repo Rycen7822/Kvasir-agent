@@ -156,6 +156,11 @@
 - Committed and pushed batch B record evidence as `c798041`. Dispatched repair batch C (20 leaf subagents) as `deleg_8f7fcad4`; each reads exact local payload `live_round_01/35_repair_batch_C_payload.json`.
 - Current repair progress: batch A/B `40/40` recorded; batch C pending; batch D (3 tasks) not yet dispatched. Gate remains blocked until all repair batches are recorded and a fresh gate/reconcile/finalize cycle is run.
 
+### 2026-07-05T01:42:20+08:00 Repair batch C recorded; batch D prepared
+
+- Batch C watcher finished cleanly: attempt 6, `20/20 all_valid`, installed `submit-report` recorded all 20 repair reports. Installed run counts advanced to reports `108`, assertions `149`, evidence items `544`; gate remains `blocked` with `next_required_action=delegations` because batch D is still pending.
+- Prepared final repair batch D checkpoint `live_round_01/41_repair_batch_D_pending.md` from `35_repair_batch_D_payload.json` (3 tasks). Next action after committing/pushing batch C evidence is dispatch batch D.
+
 ### 2026-07-04T20:32:50+08:00 Continuation completion audit
 
 - Re-read the plan acceptance gates and current active worknote status before relying on prior context.

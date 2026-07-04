@@ -1,0 +1,63 @@
+{
+  "artifacts": [],
+  "assertions": [
+    {
+      "assertion_type": "data_result",
+      "confidence": 0.96,
+      "evidence": [
+        {
+          "command": "cd /home/xu/project/loop/DeepScientist/quests/001 && python3 - <<'PY'\nimport csv, json\nfrom pathlib import Path\nroot = Path('experiments/stage10')\n\ndef count_csv_rows(path):\n    with path.open(newline='') as f:\n        return sum(1 for _ in csv.DictReader(f))\n\npaths = {\n    'token_weighted_eval': root / '07_large_eval' / 'TOKEN_WEIGHTED_EVAL.csv',\n    'recovery_endpoints': root / '06_recovery' / 'RECOVERY_ENDPOINTS.csv',\n    'seed_robustness': root / '06_recovery' / 'SEED_ROBUSTNESS.csv',\n    'split_summary': root / '07_large_eval' / 'D_EVAL_STAGE10_V1_SPLIT_SUMMARY.json',\n}\nwith paths['split_summary'].open() as f:\n    split_summary = json.load(f)\nmodel_rows = split_summary['split_boundary_audit']['model_rows']\npassed_models = [row for row in model_rows if row.get('status') == 'passed']\nmetrics = {\n    'token_weighted_large_eval_rows': count_csv_rows(paths['token_weighted_eval']),\n    'recovery_endpoint_rows': count_csv_rows(paths['recovery_endpoints']),\n    'seed_robustness_rows': count_csv_rows(paths['seed_robustness']),\n    'split_summary_record_count': split_summary.get('record_count'),\n    'active_model_split_count': len(passed_models),\n    'active_model_document_count_sum': sum(int(row['document_count']) for row in passed_models),\n    'active_model_ids': [row['model_id'] for row in passed_models],\n    'split_summary_hard_failures': len(split_summary.get('hard_failures', [])),\n    'split_boundary_status': split_summary['split_boundary_audit'].get('status'),\n    'split_boundary_recovery_overlap_count': split_summary['split_boundary_audit'].get('recovery_overlap_count'),\n}\nprint(json.dumps(metrics, sort_keys=True))\nassert metrics['token_weighted_large_eval_rows'] == 366\nassert metrics['recovery_endpoint_rows'] == 1380\nassert metrics['seed_robustness_rows'] == 252\nassert metrics['split_summary_record_count'] == 18789\nassert metrics['active_model_split_count'] == 6\nassert metrics['active_model_document_count_sum'] == 18789\nPY",
+          "directness": 1.0,
+          "evidence_type": "metric_output",
+          "exit_code": 0,
+          "freshness": 1.0,
+          "locator": "experiments/stage10/07_large_eval/TOKEN_WEIGHTED_EVAL.csv; experiments/stage10/06_recovery/RECOVERY_ENDPOINTS.csv; experiments/stage10/06_recovery/SEED_ROBUSTNESS.csv; experiments/stage10/07_large_eval/D_EVAL_STAGE10_V1_SPLIT_SUMMARY.json",
+          "metric": {
+            "active_model_document_count_sum": 18789,
+            "active_model_ids": [
+              "pythia-160m",
+              "pythia-410m",
+              "pythia-1b",
+              "llama-3.2-1b",
+              "olmo-2-1b",
+              "qwen2.5-1.5b"
+            ],
+            "active_model_split_count": 6,
+            "recovery_endpoint_rows": 1380,
+            "seed_robustness_rows": 252,
+            "split_boundary_recovery_overlap_count": 0,
+            "split_boundary_status": "passed",
+            "split_summary_hard_failures": 0,
+            "split_summary_record_count": 18789,
+            "token_weighted_large_eval_rows": 366
+          },
+          "quote_or_observation": "Command output: {\"active_model_document_count_sum\": 18789, \"active_model_ids\": [\"pythia-160m\", \"pythia-410m\", \"pythia-1b\", \"llama-3.2-1b\", \"olmo-2-1b\", \"qwen2.5-1.5b\"], \"active_model_split_count\": 6, \"recovery_endpoint_rows\": 1380, \"seed_robustness_rows\": 252, \"split_boundary_recovery_overlap_count\": 0, \"split_boundary_status\": \"passed\", \"split_summary_hard_failures\": 0, \"split_summary_record_count\": 18789, \"token_weighted_large_eval_rows\": 366}. The command asserted each expected count before exiting.",
+          "relevance": 1.0,
+          "reliability": 0.96,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001",
+          "title": "Read-only Stage10 count recomputation"
+        },
+        {
+          "directness": 0.9,
+          "evidence_type": "sanity_check",
+          "freshness": 1.0,
+          "quote_or_observation": "The JSON split summary reports record_count=18,789 and six passed model_rows. Summing the six passed document_count values from those rows also yields 18,789, matching the stated heldout-record total.",
+          "relevance": 0.94,
+          "reliability": 0.94,
+          "source_ref": "experiments/stage10/07_large_eval/D_EVAL_STAGE10_V1_SPLIT_SUMMARY.json",
+          "title": "Internal consistency of active split total"
+        }
+      ],
+      "importance": 0.94,
+      "repairs_assertion_id": "pf_assertion_b12f4019a4b4",
+      "text": "Read-only recomputation confirms Stage10's primary result tables are present and count-consistent: 366 token-weighted large-eval rows, 1,380 recovery endpoint rows, 252 seed-robustness rows, and six passed active model splits totaling 18,789 heldout records."
+    }
+  ],
+  "confidence": 0.96,
+  "role": "gate_gap_repairer",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Recomputed the Stage10 primary table counts in the read-only quest path and confirmed the assertion: TOKEN_WEIGHTED_EVAL.csv has 366 data rows, RECOVERY_ENDPOINTS.csv has 1,380 data rows, SEED_ROBUSTNESS.csv has 252 data rows, and the split summary records six passed active model splits totaling 18,789 heldout records. No files were created or modified; no issues encountered.",
+  "target_assertion_id": "pf_assertion_b12f4019a4b4",
+  "task_id": "pf_task_b2cf392df305",
+  "title": "Stage10 primary table row-count evidence repair"
+}

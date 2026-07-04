@@ -1,0 +1,93 @@
+{
+  "artifacts": [],
+  "assertions": [
+    {
+      "assertion_type": "data_result",
+      "confidence": 0.93,
+      "critical": true,
+      "evidence": [
+        {
+          "command": "python - <<'PY2'\nimport json\nfrom pathlib import Path\nroot = Path('/home/xu/project/loop/DeepScientist/quests/001')\ndef load(rel):\n    return json.loads((root / rel).read_text())\navail = load('experiments/stage10/00_freeze/MODEL_AVAILABILITY.json')\nlarge = load('experiments/stage10/07_large_eval/LARGE_EVAL_SUMMARY.json')\nmeta = load('experiments/stage10/08_meta/STAGE10_META_ANALYSIS.json')\nentries_cfg = load('experiments/stage10/configs/model_entries_stage10.json')\nfg = entries_cfg['family_gate']\nactive_entries = [e for e in avail['entries'] if e.get('active_panel')]\nresource_entries = [e for e in avail['entries'] if not e.get('active_panel')]\nresult = {\n    'active_entry_count': len(active_entries),\n    'active_family_count': len({e['family'] for e in active_entries}),\n    'active_families': sorted({e['family'] for e in active_entries}),\n    'active_model_ids': [e['model_id'] for e in active_entries],\n    'candidate_entry_count': avail['candidate_entry_count'],\n    'candidate_family_count': avail['candidate_family_count'],\n    'minimum_active_model_entries': fg['minimum_active_model_entries'],\n    'minimum_active_families': fg['minimum_active_families'],\n    'minimum_score_side_stress_billion': fg['minimum_score_side_stress_billion'],\n    'score_side_stress_ready_model_ids': fg['score_side_stress_ready_model_ids'],\n    'resource_gated_count': len(resource_entries),\n    'resource_gated_model_ids': [e['model_id'] for e in resource_entries],\n    'model_family_gate_met__availability': avail['model_family_gate_met'],\n    'model_family_gate_met__large_eval': large['model_availability']['model_family_gate_met'],\n    'model_family_gate_met__meta': meta['model_availability']['model_family_gate_met'],\n    'meta_gate_verdict': meta['gate_results']['gate_verdict'],\n    'oral_ready_gate_status': meta['gate_results']['oral_ready_gate_status'],\n    'closed_reasons': meta['gate_results']['closed_reasons'],\n    'large_eval_evaluated_endpoint_rows': large['evaluated_endpoint_rows'],\n    'large_eval_status': large['status'],\n}\nprint(json.dumps(result, sort_keys=True))\nPY2",
+          "directness": 0.98,
+          "evidence_type": "metric_output",
+          "exit_code": 0,
+          "freshness": 0.9,
+          "metric": {
+            "active_entry_count": 6,
+            "active_families": [
+              "llama",
+              "olmo",
+              "pythia",
+              "qwen"
+            ],
+            "active_family_count": 4,
+            "active_model_ids": [
+              "pythia-160m",
+              "pythia-410m",
+              "pythia-1b",
+              "qwen2.5-1.5b",
+              "olmo-2-1b",
+              "llama-3.2-1b"
+            ],
+            "candidate_entry_count": 12,
+            "candidate_family_count": 10,
+            "large_eval_evaluated_endpoint_rows": 360,
+            "large_eval_status": "passed_S10-12_large_heldout_eval_alignment_audit",
+            "meta_gate_verdict": "closed",
+            "minimum_active_families": 6,
+            "minimum_active_model_entries": 8,
+            "minimum_score_side_stress_billion": 3.0,
+            "model_family_gate_met__availability": false,
+            "model_family_gate_met__large_eval": false,
+            "model_family_gate_met__meta": false,
+            "oral_ready_gate_status": "closed",
+            "resource_gated_count": 6,
+            "resource_gated_model_ids": [
+              "gemma-2-2b",
+              "smollm2-1.7b",
+              "opt-1.3b",
+              "falcon-rw-1b",
+              "stablelm-2-1.6b",
+              "mistral-7b-score-side-stress"
+            ],
+            "score_side_stress_ready_model_ids": []
+          },
+          "quote_or_observation": "Computed output: active_entry_count=6; active_family_count=4; active_families=[llama, olmo, pythia, qwen]; candidate_entry_count=12; candidate_family_count=10; resource_gated_count=6; resource_gated_model_ids=[gemma-2-2b, smollm2-1.7b, opt-1.3b, falcon-rw-1b, stablelm-2-1.6b, mistral-7b-score-side-stress]; model_family_gate_met is false in availability, large-eval summary, and meta-analysis; oral_ready_gate_status=closed.",
+          "relevance": 0.98,
+          "reliability": 0.95,
+          "source_ref": "experiments/stage10/00_freeze/MODEL_AVAILABILITY.json; experiments/stage10/07_large_eval/LARGE_EVAL_SUMMARY.json; experiments/stage10/08_meta/STAGE10_META_ANALYSIS.json; experiments/stage10/configs/model_entries_stage10.json",
+          "title": "Read-only computed model-family gate summary"
+        },
+        {
+          "directness": 0.95,
+          "evidence_type": "reproduction_log",
+          "freshness": 0.85,
+          "quote_or_observation": "The audit records status=resource_gated_family_gate_failed, model_family_gate_met=false, active_family_count=4/6, active_entry_count=6/8, resource_gated_count=6; entries list six active panel-ready models and six resource-gated models, with the boundary that resource-gated entries are not counted as active family evidence.",
+          "relevance": 0.95,
+          "reliability": 0.9,
+          "source_ref": "experiments/stage10/05_panel_precommit/FAMILY_BALANCE_AUDIT.md:4-10,15-28",
+          "title": "S10-10 family balance audit records the failed family gate"
+        },
+        {
+          "directness": 0.93,
+          "evidence_type": "sanity_check",
+          "freshness": 0.85,
+          "quote_or_observation": "Claim ledger marks model_family_gate as failed with evidence '4 active families and 6 active entries' and oral_gate as closed; oral-ready gate status is closed because the model-family gate is resource-gated, and the gate decision states Stage10 does not open an oral-ready claim when the model-family gate is resource-gated.",
+          "relevance": 0.95,
+          "reliability": 0.9,
+          "source_ref": "experiments/stage10/12_paper_package/STAGE10_CLAIM_LEDGER.md:7,13,17; experiments/stage10/12_paper_package/STAGE10_ORAL_READY_GATE.md:5-11; experiments/stage10/08_meta/GATE_DECISION.md:25-32",
+          "title": "Claim ledger and gate decision preserve the closed oral-ready boundary"
+        }
+      ],
+      "importance": 0.9,
+      "repairs_assertion_id": "pf_assertion_ae9c091c20b6",
+      "text": "Stage10 model-family expansion remains an unmet next priority: the active panel covers six active model entries across four active families (pythia, qwen, olmo, llama), while six candidate/resource-gated model IDs remain outside the active gate; the configured minima require at least eight active entries, six active families, and score-side stress coverage, so model_family_gate_met=false and oral-ready/family-general claims remain unsupported."
+    }
+  ],
+  "role": "gate_gap_repairer",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Read-only repair for pf_assertion_ae9c091c20b6: the claim is retained but narrowed to the recorded Stage10 family-gate evidence. No files were created or modified. Evidence adds analysis-profile metric_output with command/exit_code=0 plus reproduction_log and sanity_check support.",
+  "target_assertion_id": "pf_assertion_ae9c091c20b6",
+  "task_id": "pf_task_6677153b99a8",
+  "title": "Repair evidence for Stage10 model-family expansion gate"
+}

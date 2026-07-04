@@ -1,0 +1,66 @@
+{
+  "artifacts": [],
+  "assertions": [
+    {
+      "assertion_type": "data_result",
+      "confidence": 0.94,
+      "critical": true,
+      "evidence": [
+        {
+          "command": "python - <<'PY2'\nimport json\nfrom pathlib import Path\nroot=Path('/home/xu/project/loop/DeepScientist/quests/001')\nmeta=json.loads((root/'experiments/stage10/08_meta/STAGE10_META_ANALYSIS.json').read_text())\ndown=json.loads((root/'experiments/stage10/10_downstream/DOWNSTREAM_GATE_STATUS.json').read_text())\naudit=json.loads((root/'experiments/stage10/12_paper_package/REPORT_AUDIT.json').read_text())\nresult={\n  'meta_gate_results': meta['gate_results'],\n  'downstream_status': {\n    'downstream_gate_status': down['downstream_gate_status'],\n    'downstream_run_executed': down['downstream_run_executed'],\n    'gate_inputs': down['gate_inputs'],\n    'closed_reasons': down.get('closed_reasons') or down.get('reasons'),\n  },\n  'report_audit_gate_summary': {\n    'ce_selection_gate_passed': audit['ce_selection_gate_passed'],\n    'model_family_gate_met': audit['model_family_gate_met'],\n    'downstream_gate_status': audit['downstream_gate_status'],\n    'oral_ready_gate_status': audit['oral_ready_gate_status'],\n    'downstream_run_executed': audit['downstream_run_executed'],\n  },\n}\nprint(json.dumps(result, sort_keys=True))\nPY2",
+          "directness": 1.0,
+          "evidence_type": "metric_output",
+          "exit_code": 0,
+          "freshness": 0.9,
+          "metric": {
+            "ce_selection_gate_passed": false,
+            "downstream_gate_status": "closed",
+            "downstream_run_executed": false,
+            "large_eval_gate_passed": true,
+            "model_family_gate_met": false,
+            "oral_ready_gate_status": "closed",
+            "seed_robustness_gate_passed": true
+          },
+          "quote_or_observation": "Command output: meta_gate_results={ce_selection_gate_passed:false, large_eval_gate_passed:true, seed_robustness_gate_passed:true, model_family_gate_met:false, downstream_gate_status:'closed', oral_ready_gate_status:'closed'}; downstream_status also reports downstream_gate_status='closed', downstream_run_executed=false, and gate_inputs large_eval_gate_passed=true, seed_robustness_gate_passed=true, ce_selection_gate_passed=false; report_audit_gate_summary repeats ce_selection_gate_passed=false, model_family_gate_met=false, downstream_gate_status='closed', oral_ready_gate_status='closed'.",
+          "relevance": 1.0,
+          "reliability": 0.96,
+          "source_ref": "workdir=/home/xu/project/loop/DeepScientist/quests/001; extracted from experiments/stage10/08_meta/STAGE10_META_ANALYSIS.json, experiments/stage10/10_downstream/DOWNSTREAM_GATE_STATUS.json, and experiments/stage10/12_paper_package/REPORT_AUDIT.json"
+        },
+        {
+          "directness": 0.94,
+          "evidence_type": "transform_script",
+          "freshness": 0.9,
+          "quote_or_observation": "The generating script defines seed_robustness_gate_passed from completed seed rows with zero failures, sets large_eval_gate_passed from passed large-eval status plus target rows, defines ce_selection_gate_passed as CFC baseline retained and a LoopCert/Pareto/blend contender beating CFC on both macro regret@3 and mean cost-to-contain, sets model_family_gate_met from model availability, then emits downstream_gate_status='open' only when CE, large-eval, and seed gates all pass and oral_ready_gate_status='open' only when downstream is open and the model-family gate is met. Closed reasons include failed CE selection and resource-gated model-family coverage.",
+          "relevance": 0.96,
+          "reliability": 0.93,
+          "source_ref": "experiments/stage10/scripts/stage10_meta_analysis.py:383-446,449-488"
+        },
+        {
+          "command": "python - <<'PY2'\nimport json\nfrom pathlib import Path\nroot=Path('/home/xu/project/loop/DeepScientist/quests/001')\nmeta=json.loads((root/'experiments/stage10/08_meta/STAGE10_META_ANALYSIS.json').read_text())\ndown=json.loads((root/'experiments/stage10/10_downstream/DOWNSTREAM_GATE_STATUS.json').read_text())\naudit=json.loads((root/'experiments/stage10/12_paper_package/REPORT_AUDIT.json').read_text())\noral=(root/'experiments/stage10/12_paper_package/STAGE10_ORAL_READY_GATE.md').read_text()\nchecks={\n 'meta_large_eval_gate_passed_is_true': meta['gate_results']['large_eval_gate_passed'] is True,\n 'meta_seed_robustness_gate_passed_is_true': meta['gate_results']['seed_robustness_gate_passed'] is True,\n 'meta_ce_selection_gate_passed_is_false': meta['gate_results']['ce_selection_gate_passed'] is False,\n 'meta_model_family_gate_met_is_false': meta['gate_results']['model_family_gate_met'] is False,\n 'meta_downstream_gate_closed': meta['gate_results']['downstream_gate_status']=='closed',\n 'meta_oral_ready_gate_closed': meta['gate_results']['oral_ready_gate_status']=='closed',\n 'downstream_gate_closed_and_not_executed': down['downstream_gate_status']=='closed' and down['downstream_run_executed'] is False,\n 'downstream_inputs_match_meta_large_seed_ce': down['gate_inputs']['large_eval_gate_passed'] is True and down['gate_inputs']['seed_robustness_gate_passed'] is True and down['gate_inputs']['ce_selection_gate_passed'] is False,\n 'audit_matches_closed_boundaries': audit['ce_selection_gate_passed'] is False and audit['model_family_gate_met'] is False and audit['downstream_gate_status']=='closed' and audit['oral_ready_gate_status']=='closed',\n 'oral_gate_md_closed': 'Status: `closed`' in oral and 'Model-family gate is resource-gated' in oral,\n}\nprint(json.dumps({'sanity_ok': all(checks.values()), 'checks': checks}, sort_keys=True))\nPY2",
+          "directness": 0.95,
+          "evidence_type": "sanity_check",
+          "exit_code": 0,
+          "freshness": 0.9,
+          "metric": {
+            "checks_failed": 0,
+            "checks_passed": 10,
+            "sanity_ok": true
+          },
+          "quote_or_observation": "Sanity check output: sanity_ok=true. GATE_DECISION.md lists downstream gate closed, oral ready gate closed, ce_selection_gate_passed=False, large_eval_gate_passed=True, seed_robustness_gate_passed=True, model_family_gate_met=False; DOWNSTREAM_GATE_STATUS.json lists closed reasons, downstream_gate_status='closed', downstream_run_executed=false, and matching large/seed/CE inputs; STAGE10_ORAL_READY_GATE.md states Status: closed with the same CE and model-family reasons; REPORT_AUDIT.json repeats ce_selection_gate_passed=false, model_family_gate_met=false, downstream_gate_status='closed', oral_ready_gate_status='closed'.",
+          "relevance": 1.0,
+          "reliability": 0.94,
+          "source_ref": "GATE_DECISION.md:3-12,25-32; DOWNSTREAM_GATE_STATUS.json:2-16; STAGE10_ORAL_READY_GATE.md:5-11; REPORT_AUDIT.json:327-338"
+        }
+      ],
+      "importance": 0.98,
+      "repairs_assertion_id": "pf_assertion_873db74c242c",
+      "text": "Stage10's metric decision boundary is closed in the S10-13/S10-15 gate artifacts: STAGE10_META_ANALYSIS reports large_eval_gate_passed=true and seed_robustness_gate_passed=true while ce_selection_gate_passed=false and model_family_gate_met=false; downstream_gate_status and oral_ready_gate_status are both closed."
+    }
+  ],
+  "role": "gate_gap_repairer",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Read-only repair for pf_assertion_873db74c242c: recomputed/extracted the S10-13/S10-15 gate fields from Stage10 JSON and report artifacts. The supported revised assertion preserves the closed-boundary claim while grounding it in metric_output evidence with command and exit_code=0 plus transform-script and sanity-check evidence. No source files were modified.",
+  "target_assertion_id": "pf_assertion_873db74c242c",
+  "task_id": "pf_task_1df50d97a8d3",
+  "title": "Repair evidence for closed Stage10 metric decision boundary"
+}

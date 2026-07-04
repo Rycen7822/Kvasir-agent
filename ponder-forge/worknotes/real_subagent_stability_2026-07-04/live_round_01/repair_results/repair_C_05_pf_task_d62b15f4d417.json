@@ -1,0 +1,124 @@
+{
+  "artifacts": [],
+  "assertions": [
+    {
+      "assertion_type": "data_result",
+      "confidence": 0.9,
+      "critical": true,
+      "evidence": [
+        {
+          "command": "python -c \"import json,pathlib; root=pathlib.Path('/home/xu/project/loop/DeepScientist/quests/001'); meta=json.loads((root/'experiments/stage10/08_meta/STAGE10_META_ANALYSIS.json').read_text()); down=json.loads((root/'experiments/stage10/10_downstream/DOWNSTREAM_GATE_STATUS.json').read_text()); audit=json.loads((root/'experiments/stage10/12_paper_package/REPORT_AUDIT.json').read_text()); names=['LoopCert-only','family-balanced blend','risk-calibrated blend','Pareto-front','CFC-only']; imgs=[p for p in (root/'experiments/stage10').rglob('*') if p.is_file() and p.suffix.lower() in {'.png','.svg','.pdf','.jpg','.jpeg'}]; print(json.dumps({'gate':meta['gate_results'],'selectors':{s['selector_name']:{'regret3':s['macro_normalized_regret_at3'],'cost':s['mean_cost_to_contain_winner'],'beats_regret3':s['beats_cfc_only_on_macro_normalized_regret_at3'],'beats_cost':s['beats_cfc_only_on_mean_cost_to_contain_winner']} for s in meta['selector_metrics'] if s['selector_name'] in names},'model_availability':meta['model_availability'],'downstream':{'status':down['downstream_gate_status'],'run_executed':down['downstream_run_executed'],'result_manifest':down['result_manifest']},'report_hashes':audit['artifact_hash_count'],'forbidden_claim_scan_passed':audit['forbidden_claim_scan_passed'],'native_plot_artifacts':len(imgs)}, sort_keys=True))\"",
+          "directness": 0.97,
+          "evidence_type": "metric_output",
+          "exit_code": 0,
+          "freshness": 0.9,
+          "metric": {
+            "downstream": {
+              "result_manifest": null,
+              "run_executed": false,
+              "status": "closed"
+            },
+            "gate": {
+              "ce_selection_gate_passed": false,
+              "downstream_gate_status": "closed",
+              "large_eval_gate_passed": true,
+              "model_family_gate_met": false,
+              "oral_ready_gate_status": "closed",
+              "seed_robustness_gate_passed": true
+            },
+            "model_availability": {
+              "active_entry_count": 6,
+              "active_family_count": 4,
+              "resource_gated_model_ids": [
+                "gemma-2-2b",
+                "smollm2-1.7b",
+                "opt-1.3b",
+                "falcon-rw-1b",
+                "stablelm-2-1.6b",
+                "mistral-7b-score-side-stress"
+              ],
+              "status": "resource_gated_family_gate_failed"
+            },
+            "report_audit": {
+              "artifact_hash_count": 29,
+              "forbidden_claim_scan_passed": true,
+              "native_plot_artifacts": 0
+            },
+            "selector_cost_failure": {
+              "CFC-only": {
+                "beats_cost": false,
+                "beats_regret3": false,
+                "cost": 13.833333333333334,
+                "regret3": 0.044697468910847644
+              },
+              "LoopCert-only": {
+                "beats_cost": false,
+                "beats_regret3": true,
+                "cost": 16.666666666666668,
+                "regret3": 0.03223671717595801
+              },
+              "Pareto-front": {
+                "beats_cost": false,
+                "beats_regret3": true,
+                "cost": 16.5,
+                "regret3": 0.03313607480648891
+              },
+              "family-balanced blend": {
+                "beats_cost": false,
+                "beats_regret3": true,
+                "cost": 16.666666666666668,
+                "regret3": 0.03223671717595801
+              },
+              "risk-calibrated blend": {
+                "beats_cost": false,
+                "beats_regret3": true,
+                "cost": 16.666666666666668,
+                "regret3": 0.03223671717595801
+              }
+            }
+          },
+          "quote_or_observation": "Read-only extraction returned ce_selection_gate_passed=false, model_family_gate_met=false, downstream_gate_status=closed, downstream_run_executed=false, result_manifest=null, report_hashes=29, forbidden_claim_scan_passed=true, native_plot_artifacts=0. LoopCert-only, family-balanced blend, risk-calibrated blend, and Pareto-front all beat CFC-only on macro regret@3 but have beats_cost=false with costs 16.67/16.67/16.67/16.5 versus CFC-only cost 13.83.",
+          "relevance": 0.98,
+          "reliability": 0.95,
+          "source_ref": "experiments/stage10/08_meta/STAGE10_META_ANALYSIS.json; experiments/stage10/10_downstream/DOWNSTREAM_GATE_STATUS.json; experiments/stage10/12_paper_package/REPORT_AUDIT.json"
+        },
+        {
+          "directness": 0.94,
+          "evidence_type": "reproduction_log",
+          "freshness": 0.88,
+          "quote_or_observation": "GATE_DECISION lists LoopCert-only/family-balanced/risk-calibrated/Pareto with beats CFC regret@3=true but beats CFC cost=false, and closed reasons are CE selection did not beat CFC-only on both macro regret@3 and cost-to-contain plus resource-gated model-family gate. The claim ledger marks downstream_utility not_evaluated with downstream_run_executed=False and no downstream result manifest under a closed gate; the oral-ready gate is closed and forbids venue-readiness/downstream-utility/pretrained-reference superiority claims.",
+          "relevance": 0.96,
+          "reliability": 0.92,
+          "source_ref": "experiments/stage10/08_meta/GATE_DECISION.md lines 16-32; experiments/stage10/12_paper_package/STAGE10_CLAIM_LEDGER.md lines 7-17; experiments/stage10/12_paper_package/STAGE10_ORAL_READY_GATE.md lines 5-11"
+        },
+        {
+          "directness": 0.92,
+          "evidence_type": "sanity_check",
+          "freshness": 0.9,
+          "quote_or_observation": "The repaired assertion is intentionally a next-step priority, not a success claim. It preserves the closed gate boundaries: no CE-selector success, no model-family coverage success, no downstream utility result, and no claim-expanding visuals. The presentation recommendation is limited to adding plots/tables that merely expose already-hashed ledgers/artifacts.",
+          "relevance": 0.95,
+          "reliability": 0.9,
+          "source_ref": "read-only gate-gap review for pf_assertion_f5e166f2e053"
+        }
+      ],
+      "importance": 0.91,
+      "text": "Highest-priority Stage10 next steps should be stated conservatively: fix CE-selector cost-to-contain for the LoopCert/blend/Pareto contender set before claiming selector success; resolve resource-gated model-family coverage before any oral-ready or family-general claim; run downstream sanity evaluation only after the closed gates reopen with a predeclared manifest; and keep presentation improvements to non-claim-expanding plots/tables tied to hashed Stage10 ledgers and artifacts."
+    }
+  ],
+  "independent_verdict": {
+    "confidence": 0.86,
+    "rationale": "Independent read-only recheck accepts the narrowed conservative assertion as evidence-backed. It does not record a database verdict by itself; it is included for the parent/controller to convert into the Ponder-Forge independent verdict if required.",
+    "reviewer_role": "repro_reviewer",
+    "reviewer_task_id": "pf_task_d62b15f4d417",
+    "target_assertion_id": "pf_assertion_f5e166f2e053",
+    "verdict": "accept",
+    "verifier_mode": "independent_review"
+  },
+  "profile": "analysis",
+  "role": "gate_gap_repairer",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Read the assigned payload object and performed read-only inspection of /home/xu/project/loop/DeepScientist/quests/001. No files were created or modified. The repaired/narrowed assertion is supported by metric_output, reproduction_log, and sanity_check evidence: LoopCert/blend/Pareto contenders beat CFC-only on regret@3 but not cost-to-contain; model-family coverage remains resource-gated; downstream execution is closed with no result manifest; presentation work should stay non-claim-expanding and tied to the hashed ledgers/artifacts.",
+  "target_assertion_id": "pf_assertion_f5e166f2e053",
+  "task_id": "pf_task_d62b15f4d417",
+  "title": "Gate-gap repair for pf_assertion_f5e166f2e053 Stage10 next-step priorities"
+}
