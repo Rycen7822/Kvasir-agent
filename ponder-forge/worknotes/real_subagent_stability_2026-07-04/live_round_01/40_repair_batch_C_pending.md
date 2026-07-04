@@ -3,7 +3,8 @@
 - run_id: `pf_run_80cb097d3870`
 - source: installed `reconcile` output `33_reconcile_after_payload_schema_guard.json`
 - batch payload: `35_repair_batch_C_payload.json`
-- batch C status: prepared for dispatch; pending delegation id
+- batch C delegation_id: `deleg_8f7fcad4`
+- batch C status: dispatched at `2026-07-05T01:18:59+0800`; pending async return
 - record policy: run `collect_and_submit_repairs.py --batch C --record` only after collector reaches `20/20 all_valid`
 
 ## Batch C task ids

@@ -151,6 +151,11 @@
 - After network interruption, controller verification found batch B already recorded rather than partially lost: collector `20/20 all_valid`, submit count `20`, installed DB has one report per batch-B task, and installed run counts are reports `88`, assertions `128`, evidence items `470`.
 - Prepared batch C checkpoint `live_round_01/40_repair_batch_C_pending.md` from `35_repair_batch_C_payload.json` (20 tasks). Next action is dispatch batch C only after the batch-B evidence checkpoint is committed/pushed.
 
+### 2026-07-05T01:18:59+08:00 Repair batch C dispatched
+
+- Committed and pushed batch B record evidence as `c798041`. Dispatched repair batch C (20 leaf subagents) as `deleg_8f7fcad4`; each reads exact local payload `live_round_01/35_repair_batch_C_payload.json`.
+- Current repair progress: batch A/B `40/40` recorded; batch C pending; batch D (3 tasks) not yet dispatched. Gate remains blocked until all repair batches are recorded and a fresh gate/reconcile/finalize cycle is run.
+
 ### 2026-07-04T20:32:50+08:00 Continuation completion audit
 
 - Re-read the plan acceptance gates and current active worknote status before relying on prior context.
