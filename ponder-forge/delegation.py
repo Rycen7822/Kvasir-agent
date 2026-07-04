@@ -5,9 +5,11 @@ import json
 try:
     from .profiles import get_profile
     from .store import PonderForgeStore
+    from .swarm import normalize_swarm_budget, task_kind, task_swarm
 except ImportError:
     from profiles import get_profile
     from store import PonderForgeStore
+    from swarm import normalize_swarm_budget, task_kind, task_swarm
 
 
 def _required_evidence_line(profile) -> str:
@@ -139,25 +141,116 @@ def build_child_context(run: dict, profile, task: dict, *, retry: bool = False) 
     )
 
 
+def _queued_tasks_for_payload(store: PonderForgeStore, run_id: str, budget) -> list[dict]:
+    queued = [task for task in store.list_rows("agent_tasks", run_id) if task.get("status") == "queued"]
+
+    def sort_key(task: dict) -> tuple[int, int, str]:
+        swarm = task_swarm(task)
+        is_lane = 0 if swarm.get("kind") == "lane_coordinator" else 1
+        lane_index = int(swarm.get("lane_index") or 0)
+        return (is_lane, lane_index, str(task.get("task_id") or ""))
+
+    return sorted(queued, key=sort_key)[: budget.delegate_batch_size]
+
+
+def lane_child_tasks(store: PonderForgeStore, run_id: str, lane_task: dict) -> list[dict]:
+    lane_task_id = lane_task.get("task_id")
+    children = [
+        task
+        for task in store.list_rows("agent_tasks", run_id)
+        if task.get("parent_task_id") == lane_task_id and task.get("status") == "planned" and task_kind(task) == "lane_child"
+    ]
+    return sorted(children, key=lambda task: int(task_swarm(task).get("child_index") or 0))
+
+
+def _lane_report_contract(profile) -> list[str]:
+    child_shape = {
+        "task_id": "pf_task_child",
+        "role": "child role",
+        "summary": "child evidence summary",
+        "assertions": [
+            {
+                "assertion_type": _critical_assertion_type(profile),
+                "text": "evidence-backed claim",
+                "importance": 0.9,
+                "critical": True,
+                "confidence": 0.8,
+                "evidence": _example_evidence(profile),
+            }
+        ],
+        "artifacts": [],
+    }
+    return [
+        "Lane report JSON contract:",
+        "Final lane response must contain a single valid JSON object with no Markdown wrapper.",
+        'Required top-level keys: "run_id", "task_id", "role", "summary", "child_reports", "assertions", "artifacts".',
+        f"Each child_reports[] item should match this shape: {json.dumps(child_shape, ensure_ascii=False)}",
+    ]
+
+
+def build_lane_context(run: dict, profile, lane_task: dict, child_tasks: list[dict], *, retry: bool = False) -> str:
+    swarm = task_swarm(lane_task)
+    child_limit = int(swarm.get("child_concurrency_limit") or 1)
+    retry_lines = ["Retry context: this lane coordinator was orphaned or stale; return a fresh lane report for the same assigned lane."] if retry else []
+    child_manifest = [
+        {
+            "task_id": child["task_id"],
+            "role": child["role"],
+            "goal": child["goal"],
+            "required_evidence_types": list(profile.required_evidence_types),
+        }
+        for child in child_tasks
+    ]
+    return "\n".join(
+        [
+            f"[PONDER_FORGE_PROFILE={profile.profile_id}]",
+            f"Ponder-Forge run goal: {run['user_goal']}",
+            *_constraint_lines(run),
+            *retry_lines,
+            "You are a Ponder-Forge lane coordinator. Work only on the assigned lane.",
+            "Immediately call native delegate_task for the child tasks in this lane.",
+            f"Run repeated child waves with at most {child_limit} child subagents in flight; this is a simultaneous concurrency cap, not a total child limit.",
+            "After each wave returns JSON, launch the next wave until every planned child task in the manifest has returned.",
+            "Do not call the Ponder-Forge CLI, mutate Ponder-Forge state, submit reports, gate, or finalize.",
+            _required_evidence_line(profile),
+            *_profile_gate_guidance(profile),
+            f"Child task manifest: {json.dumps(child_manifest, ensure_ascii=False)}",
+            *_lane_report_contract(profile),
+            *_task_context_lines(lane_task.get("context"), _required_evidence_line(profile)),
+        ]
+    )
+
+
+def _payload_role(task: dict) -> str:
+    return "orchestrator" if task_kind(task) == "lane_coordinator" else "leaf"
+
+
 def prepare_delegations(store: PonderForgeStore, run_id: str) -> dict:
     run = store.get_run(run_id)
     if not run:
         raise ValueError(f"unknown run_id: {run_id}")
     profile = get_profile(str(run["profile"]))
-    tasks = [task for task in store.list_rows("agent_tasks", run_id) if task.get("status") == "queued"]
+    budget = normalize_swarm_budget(json.loads(run.get("budget_json") or "{}"))
+    queued_tasks = [task for task in store.list_rows("agent_tasks", run_id) if task.get("status") == "queued"]
+    tasks = _queued_tasks_for_payload(store, run_id, budget)
     payload_tasks = []
     for task in tasks:
         marker = f"[PONDER_FORGE_RUN_ID={run_id}] [PONDER_FORGE_TASK_ID={task['task_id']}] [PONDER_FORGE_ROLE={task['role']}]"
+        if task_kind(task) == "lane_coordinator":
+            context = build_lane_context(run, profile, task, lane_child_tasks(store, run_id, task))
+        else:
+            context = build_child_context(run, profile, task)
         payload_tasks.append(
             {
                 "goal": f"{marker} {task['goal']}",
-                "context": build_child_context(run, profile, task),
-                "role": "leaf",
+                "context": context,
+                "role": _payload_role(task),
             }
         )
     return {
         "run_id": run_id,
         "native_tool_to_call_next": "delegate_task",
         "delegate_task_payload": {"tasks": payload_tasks},
+        "remaining_queued_tasks": max(0, len(queued_tasks) - len(tasks)),
         "instruction": "Immediately call native delegate_task with delegate_task_payload. Do not answer finally before CLI finalize returns a final report.",
     }

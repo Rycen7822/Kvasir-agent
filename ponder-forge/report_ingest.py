@@ -4,8 +4,10 @@ from typing import Any
 
 try:
     from .store import PonderForgeStore
+    from .swarm import task_kind
 except ImportError:
     from store import PonderForgeStore
+    from swarm import task_kind
 
 JsonDict = dict[str, Any]
 
@@ -108,7 +110,7 @@ def _edge_relation_for_evidence(item: JsonDict) -> str:
     return "refutes" if item.get("counterevidence") else "supports"
 
 
-def ingest_report(store: PonderForgeStore, payload: JsonDict) -> JsonDict:
+def _ingest_single_report(store: PonderForgeStore, payload: JsonDict) -> JsonDict:
     payload = _normalize_payload(payload)
     run_id = str(payload["run_id"])
     task_id = payload.get("task_id")
@@ -216,3 +218,68 @@ def ingest_report(store: PonderForgeStore, payload: JsonDict) -> JsonDict:
         "evidence_ids": evidence_ids,
         "artifact_ids": artifact_ids,
     }
+
+
+def _expected_lane_children(store: PonderForgeStore, run_id: str, lane_task_id: str) -> dict[str, JsonDict]:
+    children = {}
+    for task in store.list_rows("agent_tasks", run_id):
+        if task.get("parent_task_id") == lane_task_id and task.get("status") == "planned" and task_kind(task) == "lane_child":
+            children[str(task["task_id"])] = task
+    return children
+
+
+def _validate_child_report_ids(child_reports: list[JsonDict]) -> set[str]:
+    seen: set[str] = set()
+    for report in child_reports:
+        task_id = str(report.get("task_id") or "")
+        if not task_id:
+            raise ValueError("child report is missing task_id")
+        if task_id in seen:
+            raise ValueError(f"duplicate child report task_id: {task_id}")
+        seen.add(task_id)
+    return seen
+
+
+def _ingest_lane_report(store: PonderForgeStore, payload: JsonDict, child_reports: list[JsonDict]) -> JsonDict:
+    run_id = str(payload["run_id"])
+    lane_task_id = str(payload.get("task_id") or "")
+    lane_task = store.get_task(lane_task_id) if lane_task_id else None
+    if not lane_task or task_kind(lane_task) != "lane_coordinator":
+        raise ValueError("child_reports require a lane coordinator task_id")
+
+    expected_children = _expected_lane_children(store, run_id, lane_task_id)
+    reported_ids = _validate_child_report_ids(child_reports)
+    for child_id in reported_ids:
+        child_task = store.get_task(child_id)
+        if not child_task:
+            raise ValueError(f"unknown child report task_id: {child_id}")
+        if task_kind(child_task) != "lane_child" or child_task.get("parent_task_id") != lane_task_id:
+            raise ValueError(f"child report task_id does not belong to lane: {child_id}")
+
+    missing = sorted(set(expected_children) - reported_ids)
+    if missing:
+        raise ValueError(f"missing child_reports: {missing}")
+
+    child_report_ids: list[str] = []
+    for child_report in child_reports:
+        child_payload = dict(child_report)
+        child_task_id = str(child_payload["task_id"])
+        child_task = expected_children[child_task_id]
+        child_payload["run_id"] = run_id
+        child_payload.setdefault("role", child_task["role"])
+        child_result = _ingest_single_report(store, child_payload)
+        child_report_ids.append(child_result["report_id"])
+        store.update_task_status(child_task_id, "finished")
+
+    lane_payload = dict(payload)
+    lane_payload["child_report_ids"] = child_report_ids
+    lane_result = _ingest_single_report(store, lane_payload)
+    store.update_task_status(lane_task_id, "finished")
+    return {**lane_result, "child_report_ids": child_report_ids}
+
+
+def ingest_report(store: PonderForgeStore, payload: JsonDict) -> JsonDict:
+    child_reports = payload.get("child_reports") or []
+    if child_reports:
+        return _ingest_lane_report(store, payload, [dict(report) for report in child_reports])
+    return _ingest_single_report(store, payload)

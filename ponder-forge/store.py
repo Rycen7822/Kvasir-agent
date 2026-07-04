@@ -149,6 +149,7 @@ class PonderForgeStore:
         node_id: str | None = None,
         parent_task_id: str | None = None,
         priority: int = 0,
+        status: str = "queued",
         raw: JsonDict | None = None,
         task_id: str | None = None,
     ) -> JsonDict:
@@ -162,7 +163,7 @@ class PonderForgeStore:
             "role": role,
             "goal": goal,
             "context": context,
-            "status": "queued",
+            "status": status,
             "priority": priority,
             "delegation_id": None,
             "started_at": None,

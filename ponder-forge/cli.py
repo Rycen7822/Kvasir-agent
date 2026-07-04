@@ -15,6 +15,7 @@ try:
     from .renderer import render_final_report
     from .report_ingest import ingest_report
     from .store import PonderForgeStore
+    from .swarm import normalize_swarm_budget, swarm_progress_status
     from .verifier import verify_run
 except ImportError:
     from delegation import prepare_delegations
@@ -25,6 +26,7 @@ except ImportError:
     from renderer import render_final_report
     from report_ingest import ingest_report
     from store import PonderForgeStore
+    from swarm import normalize_swarm_budget, swarm_progress_status
     from verifier import verify_run
 
 JsonDict = dict[str, Any]
@@ -80,6 +82,8 @@ def _hint_for_error(message: str) -> str:
         return "Pass integer seconds, e.g. `--stale-after-seconds 1800`."
     if "unknown Ponder-Forge profile" in message:
         return f"Use `--profile` one of: {profiles}."
+    if "budget" in message or "max_tasks_per_wave" in message or "subagents_per_run" in message:
+        return "Use --budget-json with positive integer top_level_runs and child_concurrency_per_lane, e.g. '{\"top_level_runs\": 8, \"child_concurrency_per_lane\": 4}'."
     if "--budget-json" in message:
         return "Pass a JSON object, e.g. `--budget-json '{\"max_rounds\": 2}'`, or omit it."
     if "JSON report file was not found" in message:
@@ -156,10 +160,11 @@ def start_run(
     parent_session_id: str | None = None,
 ) -> JsonDict:
     selected = select_profile(goal, requested=profile or "auto")
+    normalized_budget = normalize_swarm_budget(budget).as_dict()
     run = _store().create_run(
         goal=goal,
         profile=selected,
-        budget=budget or {},
+        budget=normalized_budget,
         config={"constraints": constraints or []},
         parent_session_id=parent_session_id,
     )
@@ -211,13 +216,24 @@ def cmd_submit_report(args: argparse.Namespace) -> JsonDict:
 
 def cmd_status(args: argparse.Namespace) -> JsonDict:
     store = _store()
-    counts = {table: len(store.list_rows(table, args.run_id)) for table in ("agent_tasks", "reports", "assertions", "evidence_items", "artifacts")}
+    tasks = store.list_rows("agent_tasks", args.run_id)
+    counts = {
+        "agent_tasks": len(tasks),
+        **{table: len(store.list_rows(table, args.run_id)) for table in ("reports", "assertions", "evidence_items", "artifacts")},
+    }
     gate = evaluate_gate(store, args.run_id)
     run = store.get_run(args.run_id)
     run_status = str(run.get("status") or "unknown") if run else "unknown"
     final_report_present = bool(run and run.get("final_report_md"))
+    budget = json.loads(run.get("budget_json") or "{}") if run else {}
+    swarm = swarm_progress_status(tasks, budget)
+    queued_tasks = [task for task in tasks if task.get("status") == "queued"]
     if run_status == "completed" and final_report_present:
         next_action = "complete"
+    elif queued_tasks:
+        next_action = "delegations"
+    elif swarm["is_swarm_run"] and swarm["incomplete_task_count"]:
+        next_action = "submit-report"
     else:
         next_action = "finalize" if gate["finalize_allowed"] else "verify"
     return _ok(
@@ -225,6 +241,7 @@ def cmd_status(args: argparse.Namespace) -> JsonDict:
             "run_id": args.run_id,
             "run_status": run_status,
             "counts": counts,
+            "swarm": swarm,
             "gate_status": gate["status"],
             "next_required_action": next_action,
         }

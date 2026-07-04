@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import planner
 from gates import evaluate_gate
 from renderer import render_final_report
 from report_ingest import ingest_report
@@ -58,6 +59,97 @@ def _accept_with_independent_verdict(store, run_id: str, assertion_id: str):
         rationale="fixture independent review",
     )
     store.update_assertion_status(assertion_id, "accepted")
+
+
+def _swarm_child_report(task: dict) -> dict:
+    return {
+        "task_id": task["task_id"],
+        "role": task["role"],
+        "summary": f"finished {task['role']}",
+        "assertions": [
+            {
+                "assertion_type": "factual_claim",
+                "text": f"supported child claim {task['task_id']}",
+                "importance": 0.95,
+                "critical": True,
+                "confidence": 0.8,
+                "evidence": [
+                    {
+                        "evidence_type": "source_quote",
+                        "source_ref": "source.md",
+                        "quote_or_observation": "quoted fact",
+                    }
+                ],
+            }
+        ],
+        "artifacts": [],
+    }
+
+
+def _two_lane_swarm(store, monkeypatch):
+    def _one_child(*_args, **_kwargs):
+        return [{"role": "researcher", "goal": "child work"}]
+
+    monkeypatch.setattr(planner, "derive_lane_child_specs", _one_child)
+    run = store.create_run(
+        goal="research source notes",
+        profile="research",
+        budget={"top_level_runs": 2, "child_concurrency_per_lane": 1},
+    )
+    plan = planner.plan_run(store, run["run_id"])
+    lanes = [task for task in plan["tasks"] if task["role"] == "swarm_lane_coordinator"]
+    return run, lanes, plan["tasks"]
+
+
+def _submit_lane_report(store, run_id: str, lane: dict, tasks: list[dict]) -> list[str]:
+    children = [task for task in tasks if task["parent_task_id"] == lane["task_id"]]
+    result = ingest_report(
+        store,
+        {
+            "run_id": run_id,
+            "task_id": lane["task_id"],
+            "role": "swarm_lane_coordinator",
+            "summary": "lane complete",
+            "child_reports": [_swarm_child_report(child) for child in children],
+            "assertions": [],
+            "artifacts": [],
+        },
+    )
+    child_report_ids = set(result["child_report_ids"])
+    return [
+        assertion["assertion_id"]
+        for assertion in store.list_rows("assertions", run_id)
+        if assertion["report_id"] in child_report_ids
+    ]
+
+
+def test_swarm_gate_blocks_until_all_lane_and_child_tasks_finish(tmp_path, monkeypatch):
+    store = _store(tmp_path, monkeypatch)
+    run, lanes, tasks = _two_lane_swarm(store, monkeypatch)
+    assertion_ids = _submit_lane_report(store, run["run_id"], lanes[0], tasks)
+    for assertion_id in assertion_ids:
+        _accept_with_independent_verdict(store, run["run_id"], assertion_id)
+
+    gate = evaluate_gate(store, run["run_id"])
+
+    assert gate["status"] == "blocked"
+    assert any(gap.get("gap_type") == "incomplete_swarm_topology" for gap in gate["gaps"])
+    assert gate["finalize_allowed"] is False
+
+
+def test_swarm_gate_passes_after_all_lane_and_child_tasks_finish(tmp_path, monkeypatch):
+    store = _store(tmp_path, monkeypatch)
+    run, lanes, tasks = _two_lane_swarm(store, monkeypatch)
+    assertion_ids: list[str] = []
+    for lane in lanes:
+        assertion_ids.extend(_submit_lane_report(store, run["run_id"], lane, tasks))
+    for assertion_id in assertion_ids:
+        _accept_with_independent_verdict(store, run["run_id"], assertion_id)
+
+    gate = evaluate_gate(store, run["run_id"])
+
+    assert gate["status"] == "passed"
+    assert gate["finalize_allowed"] is True
 
 
 def test_profile_gates_block_missing_required_evidence(tmp_path, monkeypatch):

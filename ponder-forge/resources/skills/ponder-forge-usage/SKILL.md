@@ -23,10 +23,10 @@ For source-tree development only, use the repository-local `cli.py`.
 
 ## Core workflow
 
-1. Start a run:
+1. Start a run. Omit `--budget-json` for the default 8x4 swarm, or pass positive integer budget keys explicitly:
 
    ```bash
-   python3 "$PF_CLI" start --goal "<complex problem>" --profile auto
+   python3 "$PF_CLI" start --goal "<complex problem>" --profile auto --budget-json '{"top_level_runs": 8, "child_concurrency_per_lane": 4}'
    ```
 
 2. Plan tasks:
@@ -35,58 +35,79 @@ For source-tree development only, use the repository-local `cli.py`.
    python3 "$PF_CLI" plan --run-id <run_id>
    ```
 
-3. Produce native delegation payload:
+   `plan` creates queued lane coordinator tasks plus planned lane-child backlog rows. `top_level_runs` controls the number of top-level lane coordinators. `child_concurrency_per_lane` is the maximum number of child subagents a lane coordinator may have in flight at once; it does not cap the total planned child backlog.
+
+3. Produce native delegation payloads for lane coordinators:
 
    ```bash
    python3 "$PF_CLI" delegations --run-id <run_id>
    ```
 
-4. Call native Hermes `delegate_task` with the returned `delegate_task_payload`.
+4. The parent/controller calls native Hermes `delegate_task` with the returned `delegate_task_payload`. Lane coordinator payloads use native `role="orchestrator"`.
 
-5. Collect each child agent's structured JSON report. The parent/controller submits each report through the CLI:
+5. Each lane coordinator calls native `delegate_task` for only the child tasks in its manifest. Run repeated child waves with at most `child_concurrency_per_lane` child subagents in flight at once. The lane coordinator then returns one lane report JSON with `child_reports`.
+
+6. The parent/controller submits each lane report through the CLI:
 
    ```bash
    python3 "$PF_CLI" submit-report --file <report.json>
    ```
 
-   The report JSON must include `run_id`, `role`, `summary`, and profile-appropriate assertions/evidence. Include `task_id` when the report belongs to a planned task. Prefer the exact child report contract embedded in `delegations` output; it contains the active profile's critical assertion type and gate-required evidence groups.
+   The lane report JSON must include `run_id`, the lane coordinator `task_id`, `role`, `summary`, `child_reports`, `assertions`, and `artifacts`. Prefer the exact lane report contract embedded in `delegations` output; it contains the active profile's critical assertion type and gate-required evidence groups.
 
-   Child report contract for manual delegations:
+   Lane report contract for manual delegations:
 
    ```json
    {
      "run_id": "<run id>",
-     "task_id": "<planned task id>",
-     "role": "<planned role>",
-     "summary": "short evidence-backed summary",
-     "assertions": [
+     "task_id": "<lane coordinator task id>",
+     "role": "swarm_lane_coordinator",
+     "summary": "lane-level synthesis",
+     "child_reports": [
        {
-         "assertion_type": "<profile critical assertion type; never leave this placeholder literal>",
-         "text": "claim to preserve in final reasoning",
-         "importance": 0.9,
-         "critical": true,
-         "confidence": 0.8,
-         "evidence": [
+         "task_id": "<planned child task id>",
+         "role": "<planned child role>",
+         "summary": "short evidence-backed child summary",
+         "assertions": [
            {
-             "evidence_type": "<profile evidence type>",
-             "source_ref": "path or command source",
-             "quote_or_observation": "observed value or output",
-             "command": "exact command if applicable",
-             "exit_code": 0
-           },
-           {"evidence_type": "<another required profile evidence type>", "source_ref": "path", "quote_or_observation": "consistency check"}
+             "assertion_type": "<profile critical assertion type; never leave this placeholder literal>",
+             "text": "claim to preserve in final reasoning",
+             "importance": 0.9,
+             "critical": true,
+             "confidence": 0.8,
+             "evidence": [
+               {
+                 "evidence_type": "<profile evidence type>",
+                 "source_ref": "path or command source",
+                 "quote_or_observation": "observed value or output",
+                 "command": "exact command if applicable",
+                 "exit_code": 0
+               },
+               {"evidence_type": "<another required profile evidence type>", "source_ref": "path", "quote_or_observation": "consistency check"}
+             ]
+           }
+         ],
+         "artifacts": [
+           {"artifact_type": "report", "path": "path/to/report.md", "summary": "what it contains"}
          ]
        }
      ],
-     "artifacts": [
-       {"artifact_type": "report", "path": "path/to/report.md", "summary": "what it contains"}
-     ]
+     "assertions": [],
+     "artifacts": []
    }
    ```
 
-   Children should return this JSON to the parent/controller. Children must not call the CLI themselves; the parent/controller submits reports and records verdicts. Profile anchors: `research` uses `factual_claim`; `coding` uses `code_claim` with `root_cause_trace` plus successful `passing_test` or `execution_log` with `exit_code=0`; `design` uses `design_decision`; `analysis` uses `data_result` with `metric_output.command` and `exit_code=0`; `math` uses `proof_step` plus `critique` or `proof_check` and only positive/unresolved counterexample evidence blocks.
+   Children return child JSON to their lane coordinator. Lane coordinators return one lane report to the parent/controller. Neither child agents nor lane coordinators call the Ponder-Forge CLI; the parent/controller submits reports and records verdicts. Profile anchors: `research` uses `factual_claim`; `coding` uses `code_claim` with `root_cause_trace` plus successful `passing_test` or `execution_log` with `exit_code=0`; `design` uses `design_decision`; `analysis` uses `data_result` with `metric_output.command` and `exit_code=0`; `math` uses `proof_step` plus `critique` or `proof_check` and only positive/unresolved counterexample evidence blocks.
 
-6. Run independent review or record a verdict:
+7. Inspect status until the swarm topology is complete:
+
+   ```bash
+   python3 "$PF_CLI" status --run-id <run_id>
+   ```
+
+   `status.swarm` reports lane count, child backlog count, finished lane/child counts, queued delegation count, and incomplete task count. If `next_required_action` is `delegations`, call `delegations` and native `delegate_task`; if it is `submit-report`, submit missing lane reports.
+
+8. Run independent review or record a verdict after lane and child reports are submitted:
 
    ```bash
    python3 "$PF_CLI" verify --run-id <run_id> --mode independent_review --target-id <assertion_id>
@@ -95,22 +116,21 @@ For source-tree development only, use the repository-local `cli.py`.
 
    The first command creates reviewer tasks and may return a `delegate_task_payload_suggestion`; call native `delegate_task` with that payload, then record each reviewer verdict with the returned reviewer task id and the original producer task id.
 
-7. Check the gate:
+9. Check the gate:
 
    ```bash
    python3 "$PF_CLI" gate --run-id <run_id>
    ```
 
-8. Finalize only when the gate allows it:
+10. Finalize only when the gate allows it:
 
    ```bash
    python3 "$PF_CLI" finalize --run-id <run_id>
    ```
 
-9. Inspect status and reconcile only stale running/orphan work:
+11. Reconcile only stale running/orphan work:
 
    ```bash
-   python3 "$PF_CLI" status --run-id <run_id>
    python3 "$PF_CLI" reconcile --run-id <run_id>
    ```
 

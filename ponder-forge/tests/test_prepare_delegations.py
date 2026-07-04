@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 from pathlib import Path
 
 from delegation import prepare_delegations
@@ -28,19 +29,28 @@ def _store() -> PonderForgeStore:
     return store
 
 
-def _start_and_plan(goal: str, profile: str = "auto", *, max_tasks_per_wave: int | None = None, constraints: list[str] | None = None):
-    budget = {"max_tasks_per_wave": max_tasks_per_wave} if max_tasks_per_wave is not None else {}
-    start = start_run(goal, profile=profile, budget=budget, constraints=constraints or [])
+def _start_and_plan(
+    goal: str,
+    profile: str = "auto",
+    *,
+    budget: dict | None = None,
+    constraints: list[str] | None = None,
+):
+    start = start_run(goal, profile=profile, budget=budget or {}, constraints=constraints or [])
     store = _store()
     plan = plan_run(store, start["run_id"])
     return store, start, plan
 
 
-def test_prepare_delegations_returns_native_delegate_task_payload(tmp_path, monkeypatch):
+def _kind(task: dict) -> str:
+    return json.loads(task.get("raw_json") or "{}").get("swarm", {}).get("kind", "")
+
+
+def test_prepare_delegations_returns_lane_orchestrator_payload(tmp_path, monkeypatch):
     monkeypatch.setenv("HERMES_HOME", str(tmp_path))
     store, start, plan = _start_and_plan(
         "fix failing pytest in store.py using project alpha context",
-        max_tasks_per_wave=2,
+        budget={"top_level_runs": 2, "child_concurrency_per_lane": 3},
         constraints=["do not modify external fixture alpha"],
     )
 
@@ -48,26 +58,36 @@ def test_prepare_delegations_returns_native_delegate_task_payload(tmp_path, monk
 
     assert prepared["native_tool_to_call_next"] == "delegate_task"
     payload = prepared["delegate_task_payload"]
+    payload_tasks = payload["tasks"]
+    lanes = [task for task in plan["tasks"] if _kind(task) == "lane_coordinator"]
+    children = [task for task in plan["tasks"] if _kind(task) == "lane_child"]
     assert set(payload) == {"tasks"}
-    assert len(payload["tasks"]) == len(plan["tasks"]) == 2
-    for task in payload["tasks"]:
+    assert len(payload_tasks) == len(lanes) == 2
+    assert children
+    for task in payload_tasks:
         assert set(task) == {"goal", "context", "role"}
-        assert task["role"] == "leaf"
+        assert task["role"] == "orchestrator"
         assert "toolsets" not in task
         assert "[PONDER_FORGE_RUN_ID=" in task["goal"]
         assert "[PONDER_FORGE_TASK_ID=" in task["goal"]
-        assert "[PONDER_FORGE_ROLE=" in task["goal"]
+        assert "[PONDER_FORGE_ROLE=swarm_lane_coordinator]" in task["goal"]
         assert "[PONDER_FORGE_PROFILE=coding]" in task["context"]
+        assert "You are a Ponder-Forge lane coordinator" in task["context"]
+        assert "Immediately call native delegate_task" in task["context"]
+        assert "at most 3 child subagents in flight" in task["context"]
+        assert "child_reports" in task["context"]
+        assert "Do not call the Ponder-Forge CLI" in task["context"]
         assert "project alpha context" in task["context"]
         assert "do not modify external fixture alpha" in task["context"]
-        assert "Return a structured JSON report to the parent/controller" in task["context"]
-        assert "parent/controller submits your JSON report" in task["context"]
         assert "ponder_forge_" not in task["context"]
 
 
-def test_prepare_delegations_is_idempotent_for_queued_tasks(tmp_path, monkeypatch):
+def test_prepare_delegations_is_idempotent_for_queued_lane_tasks(tmp_path, monkeypatch):
     monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-    store, start, _plan = _start_and_plan("analyze csv metrics", max_tasks_per_wave=1)
+    store, start, _plan = _start_and_plan(
+        "analyze csv metrics",
+        budget={"top_level_runs": 1, "child_concurrency_per_lane": 2},
+    )
 
     first = prepare_delegations(store, start["run_id"])
     second = prepare_delegations(store, start["run_id"])
@@ -75,57 +95,38 @@ def test_prepare_delegations_is_idempotent_for_queued_tasks(tmp_path, monkeypatc
     assert first["delegate_task_payload"] == second["delegate_task_payload"]
 
 
-def test_prepare_delegations_exposes_analysis_metric_command_requirement(tmp_path, monkeypatch):
+def test_prepare_delegations_includes_lane_child_manifest_and_profile_contract(tmp_path, monkeypatch):
     monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-    store, start, _plan = _start_and_plan("analyze csv metrics", profile="analysis")
-
-    prepared = prepare_delegations(store, start["run_id"])
-
-    contexts = [task["context"] for task in prepared["delegate_task_payload"]["tasks"]]
-    assert contexts
-    assert all("metric_output" in context and "command" in context for context in contexts)
-
-
-def test_prepare_delegations_includes_child_report_contract_and_role_guidance(tmp_path, monkeypatch):
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-    store, start, _plan = _start_and_plan("analyze csv metrics", profile="analysis", max_tasks_per_wave=5)
-
-    prepared = prepare_delegations(store, start["run_id"])
-
-    payload_tasks = prepared["delegate_task_payload"]["tasks"]
-    contexts_by_role = {
-        task["goal"].split("[PONDER_FORGE_ROLE=")[1].split("]")[0]: task["context"]
-        for task in payload_tasks
-    }
-    assert {"data_inspector", "metric_analyst"} <= set(contexts_by_role)
-    for context in contexts_by_role.values():
-        assert context.count("Required evidence types:") == 1
-        assert "Child report JSON contract:" in context
-        assert '"assertions"' in context
-        assert '"evidence"' in context
-        assert '"artifacts"' in context
-        assert "assertion_type" in context
-        assert "data_result" in context
-        assert "critical" in context
-        assert "metric_output" in context
-        assert "command" in context
-        assert "exit_code" in context
-        assert "reproduction_log" in context or "transform_script" in context
-        assert "Final response must contain a single valid JSON object" in context
-    assert "Role duty: inventory datasets" in contexts_by_role["data_inspector"]
-    assert "Role duty: recompute or extract key metrics" in contexts_by_role["metric_analyst"]
-
-
-def test_prepare_delegations_uses_profile_specific_report_contract_for_coding(tmp_path, monkeypatch):
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-    store, start, _plan = _start_and_plan("fix failing pytest in store.py", profile="coding", max_tasks_per_wave=1)
+    store, start, plan = _start_and_plan(
+        "analyze csv metrics",
+        profile="analysis",
+        budget={"top_level_runs": 1, "child_concurrency_per_lane": 4},
+    )
 
     prepared = prepare_delegations(store, start["run_id"])
 
     context = prepared["delegate_task_payload"]["tasks"][0]["context"]
-    assert "code_claim" in context
-    assert "root_cause_trace" in context
-    assert "passing_test" in context or "execution_log" in context
-    assert "<profile_assertion_type>" not in context
-    assert "metric_output" not in context
-    assert "data_result" not in context
+    child_ids = [task["task_id"] for task in plan["tasks"] if _kind(task) == "lane_child"]
+    assert child_ids
+    for child_id in child_ids:
+        assert child_id in context
+    assert "Child task manifest:" in context
+    assert "Required evidence types:" in context
+    assert "metric_output" in context
+    assert "command" in context
+    assert "exit_code" in context
+    assert "Final lane response must contain a single valid JSON object" in context
+
+
+def test_prepare_delegations_limits_parent_payload_to_delegate_batch_size(tmp_path, monkeypatch):
+    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    store, start, _plan = _start_and_plan(
+        "research source notes",
+        profile="research",
+        budget={"top_level_runs": 5, "child_concurrency_per_lane": 1, "delegate_batch_size": 2},
+    )
+
+    prepared = prepare_delegations(store, start["run_id"])
+
+    assert len(prepared["delegate_task_payload"]["tasks"]) == 2
+    assert prepared["remaining_queued_tasks"] == 3

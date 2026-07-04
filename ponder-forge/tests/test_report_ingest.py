@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import planner
 from graph import build_graph
 from report_ingest import ingest_report
 from store import PonderForgeStore
@@ -190,3 +191,145 @@ def test_ingest_report_rejects_missing_evidence_ref(tmp_path, monkeypatch):
     assert store.count_rows("reports") == 0
     assert store.count_rows("assertions") == 0
     assert store.count_rows("evidence_items") == 0
+
+
+def _child_report(task: dict) -> dict:
+    return {
+        "task_id": task["task_id"],
+        "role": task["role"],
+        "summary": f"completed {task['role']}",
+        "assertions": [
+            {
+                "assertion_type": "factual_claim",
+                "text": f"claim from {task['task_id']}",
+                "importance": 0.9,
+                "critical": True,
+                "confidence": 0.8,
+                "evidence": [
+                    {
+                        "evidence_type": "source_quote",
+                        "source_ref": "source.md",
+                        "quote_or_observation": "observed claim",
+                    }
+                ],
+            }
+        ],
+        "artifacts": [],
+    }
+
+
+def _planned_lane_run(tmp_path, monkeypatch, *, top_level_runs: int = 1, child_count: int = 2):
+    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+
+    def _child_specs(*_args, **_kwargs):
+        return [{"role": "researcher", "goal": f"child work {index}"} for index in range(1, child_count + 1)]
+
+    monkeypatch.setattr(planner, "derive_lane_child_specs", _child_specs)
+    store = PonderForgeStore()
+    store.initialize()
+    run = store.create_run(
+        goal="research source notes",
+        profile="research",
+        budget={"top_level_runs": top_level_runs, "child_concurrency_per_lane": 2},
+    )
+    plan = planner.plan_run(store, run["run_id"])
+    lanes = [task for task in plan["tasks"] if task["role"] == "swarm_lane_coordinator"]
+    return store, run, plan, lanes
+
+
+def test_ingest_lane_report_expands_child_reports_and_finishes_tasks(tmp_path, monkeypatch):
+    store, run, plan, lanes = _planned_lane_run(tmp_path, monkeypatch)
+    lane = lanes[0]
+    children = [task for task in plan["tasks"] if task["parent_task_id"] == lane["task_id"]]
+
+    result = ingest_report(
+        store,
+        {
+            "run_id": run["run_id"],
+            "task_id": lane["task_id"],
+            "role": "swarm_lane_coordinator",
+            "summary": "lane complete",
+            "child_reports": [_child_report(child) for child in children],
+            "assertions": [],
+            "artifacts": [],
+        },
+    )
+
+    assert len(result["child_report_ids"]) == 2
+    assert store.get_task(lane["task_id"])["status"] == "finished"
+    assert {store.get_task(child["task_id"])["status"] for child in children} == {"finished"}
+    assert store.count_rows("reports") == 3
+    assert store.count_rows("assertions") == 2
+
+
+def test_ingest_lane_report_rejects_duplicate_child_report_ids(tmp_path, monkeypatch):
+    store, run, plan, lanes = _planned_lane_run(tmp_path, monkeypatch)
+    lane = lanes[0]
+    child = next(task for task in plan["tasks"] if task["parent_task_id"] == lane["task_id"])
+
+    try:
+        ingest_report(
+            store,
+            {
+                "run_id": run["run_id"],
+                "task_id": lane["task_id"],
+                "role": "swarm_lane_coordinator",
+                "summary": "bad lane",
+                "child_reports": [_child_report(child), _child_report(child)],
+            },
+        )
+    except ValueError as exc:
+        assert "duplicate child report task_id" in str(exc)
+    else:
+        raise AssertionError("expected duplicate child report task_id error")
+
+    assert store.count_rows("reports") == 0
+
+
+def test_ingest_lane_report_rejects_missing_assigned_child_report(tmp_path, monkeypatch):
+    store, run, plan, lanes = _planned_lane_run(tmp_path, monkeypatch)
+    lane = lanes[0]
+    child = next(task for task in plan["tasks"] if task["parent_task_id"] == lane["task_id"])
+
+    try:
+        ingest_report(
+            store,
+            {
+                "run_id": run["run_id"],
+                "task_id": lane["task_id"],
+                "role": "swarm_lane_coordinator",
+                "summary": "bad lane",
+                "child_reports": [_child_report(child)],
+            },
+        )
+    except ValueError as exc:
+        assert "missing child_reports" in str(exc)
+    else:
+        raise AssertionError("expected missing child_reports error")
+
+    assert store.count_rows("reports") == 0
+
+
+def test_ingest_lane_report_rejects_child_report_from_other_lane(tmp_path, monkeypatch):
+    store, run, plan, lanes = _planned_lane_run(tmp_path, monkeypatch, top_level_runs=2, child_count=1)
+    lane = lanes[0]
+    other_lane = lanes[1]
+    other_child = next(task for task in plan["tasks"] if task["parent_task_id"] == other_lane["task_id"])
+
+    try:
+        ingest_report(
+            store,
+            {
+                "run_id": run["run_id"],
+                "task_id": lane["task_id"],
+                "role": "swarm_lane_coordinator",
+                "summary": "bad lane",
+                "child_reports": [_child_report(other_child)],
+            },
+        )
+    except ValueError as exc:
+        assert "does not belong to lane" in str(exc)
+    else:
+        raise AssertionError("expected does not belong to lane error")
+
+    assert store.count_rows("reports") == 0

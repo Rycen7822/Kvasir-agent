@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from gates import evaluate_gate
+import planner
 from planner import plan_run
 from report_ingest import ingest_report
 from store import PonderForgeStore
@@ -33,49 +34,78 @@ def _store() -> PonderForgeStore:
     return store
 
 
-def _supported_coding_run() -> tuple[PonderForgeStore, str, str, str]:
-    start = CLI.start_run("fix failing pytest", profile="coding")
+def _supported_coding_run(monkeypatch: pytest.MonkeyPatch) -> tuple[PonderForgeStore, str, str, str]:
+    monkeypatch.setattr(
+        planner,
+        "derive_lane_child_specs",
+        lambda _run, _profile, _lane_index: [
+            {"role": "developer", "goal": "fix failing pytest", "context": "make the causal code change"}
+        ],
+    )
+    start = CLI.start_run(
+        "fix failing pytest",
+        profile="coding",
+        budget={"top_level_runs": 1, "child_concurrency_per_lane": 1},
+    )
     store = _store()
     plan = plan_run(store, start["run_id"])
-    producer_task = plan["tasks"][0]
+    lane_task = next(task for task in plan["tasks"] if task["role"] == "swarm_lane_coordinator")
+    child_tasks = [task for task in plan["tasks"] if task["parent_task_id"] == lane_task["task_id"]]
+    assert len(child_tasks) == 1
+    producer_task = child_tasks[0]
     report = ingest_report(
         store,
         {
             "run_id": start["run_id"],
-            "task_id": producer_task["task_id"],
-            "role": producer_task["role"],
-            "summary": "fixed root cause with tests",
-            "assertions": [
+            "task_id": lane_task["task_id"],
+            "role": lane_task["role"],
+            "summary": "lane completed the coding fix",
+            "child_reports": [
                 {
-                    "assertion_type": "code_change_claim",
-                    "text": "The failing pytest is fixed by a causal code change",
-                    "importance": 0.95,
-                    "critical": True,
-                    "evidence": [
+                    "task_id": producer_task["task_id"],
+                    "role": producer_task["role"],
+                    "summary": "fixed root cause with tests",
+                    "assertions": [
                         {
-                            "evidence_type": "passing_test",
-                            "source_ref": "pytest",
-                            "quote_or_observation": "1 passed",
-                            "exit_code": 0,
-                            "directness": 0.9,
-                        },
-                        {
-                            "evidence_type": "root_cause_trace",
-                            "source_ref": "store.py",
-                            "quote_or_observation": "causal patch",
-                            "directness": 0.9,
-                        },
+                            "assertion_type": "code_change_claim",
+                            "text": "The failing pytest is fixed by a causal code change",
+                            "importance": 0.95,
+                            "critical": True,
+                            "evidence": [
+                                {
+                                    "evidence_type": "passing_test",
+                                    "source_ref": "pytest",
+                                    "quote_or_observation": "1 passed",
+                                    "exit_code": 0,
+                                    "directness": 0.9,
+                                },
+                                {
+                                    "evidence_type": "root_cause_trace",
+                                    "source_ref": "store.py",
+                                    "quote_or_observation": "causal patch",
+                                    "directness": 0.9,
+                                },
+                            ],
+                        }
                     ],
                 }
             ],
+            "assertions": [],
         },
     )
-    return store, start["run_id"], report["assertion_ids"][0], producer_task["task_id"]
+    child_report_id = report["child_report_ids"][0]
+    child_assertions = [
+        assertion
+        for assertion in store.list_rows("assertions", start["run_id"])
+        if assertion["report_id"] == child_report_id
+    ]
+    assert len(child_assertions) == 1
+    return store, start["run_id"], child_assertions[0]["assertion_id"], producer_task["task_id"]
 
 
 def test_precheck_cannot_satisfy_critical_verdict_or_finalize(tmp_path, monkeypatch):
     monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-    store, run_id, assertion_id, _producer_task_id = _supported_coding_run()
+    store, run_id, assertion_id, _producer_task_id = _supported_coding_run(monkeypatch)
 
     precheck = verify_run(store, run_id, {"run_id": run_id, "mode": "precheck", "target_id": assertion_id})
     gate = evaluate_gate(store, run_id)
@@ -90,14 +120,17 @@ def test_precheck_cannot_satisfy_critical_verdict_or_finalize(tmp_path, monkeypa
 
 def test_independent_review_task_and_verdict_allow_finalize(tmp_path, monkeypatch):
     monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-    store, run_id, assertion_id, producer_task_id = _supported_coding_run()
+    store, run_id, assertion_id, producer_task_id = _supported_coding_run(monkeypatch)
 
     review = verify_run(store, run_id, {"run_id": run_id, "mode": "independent_review", "target_id": assertion_id})
     assert review["reviewer_tasks"]
     reviewer_task = review["reviewer_tasks"][0]
     assert reviewer_task["role"] == "causality_reviewer"
+    assert reviewer_task["parent_task_id"] == producer_task_id
     assert producer_task_id != reviewer_task["task_id"]
     assert producer_task_id in reviewer_task["context"]
+    payload = review["delegate_task_payload_suggestion"]
+    assert payload["tasks"][0]["role"] == "leaf"
 
     verdict = verify_run(
         store,
@@ -125,7 +158,7 @@ def test_independent_review_task_and_verdict_allow_finalize(tmp_path, monkeypatc
 
 def test_non_independent_verdict_is_rejected(tmp_path, monkeypatch):
     monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-    store, run_id, assertion_id, producer_task_id = _supported_coding_run()
+    store, run_id, assertion_id, producer_task_id = _supported_coding_run(monkeypatch)
 
     with pytest.raises(ValueError, match="not independent"):
         verify_run(
@@ -145,7 +178,7 @@ def test_non_independent_verdict_is_rejected(tmp_path, monkeypatch):
 
 def test_independent_review_task_creation_is_idempotent(tmp_path, monkeypatch):
     monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-    store, run_id, assertion_id, _producer_task_id = _supported_coding_run()
+    store, run_id, assertion_id, _producer_task_id = _supported_coding_run(monkeypatch)
 
     first = verify_run(store, run_id, {"run_id": run_id, "mode": "independent_review", "target_id": assertion_id})
     second = verify_run(store, run_id, {"run_id": run_id, "mode": "independent_review", "target_id": assertion_id})

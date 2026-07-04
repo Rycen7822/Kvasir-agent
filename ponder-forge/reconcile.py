@@ -3,13 +3,15 @@ from __future__ import annotations
 import time
 
 try:
-    from .delegation import build_child_context
+    from .delegation import build_child_context, build_lane_context, lane_child_tasks
     from .profiles import get_profile
     from .store import PonderForgeStore
+    from .swarm import task_kind
 except ImportError:
-    from delegation import build_child_context
+    from delegation import build_child_context, build_lane_context, lane_child_tasks
     from profiles import get_profile
     from store import PonderForgeStore
+    from swarm import task_kind
 
 
 def reconcile_run(store: PonderForgeStore, run_id: str, *, stale_after_seconds: int = 1800) -> dict:
@@ -29,7 +31,7 @@ def reconcile_run(store: PonderForgeStore, run_id: str, *, stale_after_seconds: 
             store.append_event(run_id, "task_orphaned", {"reason": "stale_running", "age_seconds": age}, task_id=task["task_id"])
             marked_orphan.append(task["task_id"])
     retry_tasks = [task for task in store.list_rows("agent_tasks", run_id) if task.get("status") == "orphan"]
-    payload = _retry_payload(run_id, retry_tasks, run)
+    payload = _retry_payload(store, run_id, retry_tasks, run)
     return {
         "run_id": run_id,
         "repaired": repaired,
@@ -47,18 +49,24 @@ def _age_seconds(started_at: str | None, now: float) -> int:
         return 10**9
 
 
-def _retry_payload(run_id: str, tasks: list[dict], run: dict) -> dict:
+def _retry_payload(store: PonderForgeStore, run_id: str, tasks: list[dict], run: dict) -> dict:
     if not tasks:
         return {"tasks": []}
     payload_tasks = []
     profile = get_profile(str(run["profile"]))
     for task in tasks:
         marker = f"[PONDER_FORGE_RUN_ID={run_id}] [PONDER_FORGE_TASK_ID={task['task_id']}] [PONDER_FORGE_ROLE={task['role']}]"
+        if task_kind(task) == "lane_coordinator":
+            context = build_lane_context(run, profile, task, lane_child_tasks(store, run_id, task), retry=True)
+            role = "orchestrator"
+        else:
+            context = build_child_context(run, profile, task, retry=True)
+            role = "leaf"
         payload_tasks.append(
             {
                 "goal": f"{marker} Retry orphaned task: {task['goal']}",
-                "context": build_child_context(run, profile, task, retry=True),
-                "role": "leaf",
+                "context": context,
+                "role": role,
             }
         )
     return {"tasks": payload_tasks}

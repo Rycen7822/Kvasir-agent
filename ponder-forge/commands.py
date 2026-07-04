@@ -27,6 +27,7 @@ def start_ponder_forge_command(ctx, raw_args: str) -> str:
     result["instruction"] = (
         f"Use terminal: python3 {INSTALLED_CLI} plan --run-id {run_id}; "
         f"then python3 {INSTALLED_CLI} delegations --run-id {run_id}. "
-        "Continue with native delegate_task and submit child JSON reports through the CLI."
+        "Call native delegate_task with the lane coordinator role=\"orchestrator\" payloads; "
+        "each lane returns one JSON report with child_reports, then submit-report through the CLI."
     )
     return json.dumps(result, ensure_ascii=False)

@@ -67,6 +67,19 @@ def test_store_creates_run_task_report_and_jsonl_event(tmp_path, monkeypatch):
     assert [line["event_type"] for line in lines] == ["run_created", "task_created", "test_event"]
 
 
+def test_store_creates_task_with_explicit_initial_status(tmp_path, monkeypatch):
+    store_module = _import_store(monkeypatch, tmp_path)
+    store = store_module.PonderForgeStore()
+    store.initialize()
+    run = store.create_run(goal="swarm task", profile="research")
+
+    task = store.create_task(run["run_id"], role="researcher", goal="child work", status="planned")
+
+    fetched = store.get_task(task["task_id"])
+    assert fetched["status"] == "planned"
+    assert fetched["finished_at"] is None
+
+
 def test_store_records_report_assertion_evidence_and_edges(tmp_path, monkeypatch):
     store_module = _import_store(monkeypatch, tmp_path)
     store = store_module.PonderForgeStore()

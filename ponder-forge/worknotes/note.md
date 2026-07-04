@@ -1,5 +1,147 @@
 # Ponder-Forge Worknotes Index
 
+- active_at_beijing: 2026-07-04T21:13:10+08:00
+- timestamp_policy: all new progress notes use Beijing time (Asia/Shanghai, UTC+8).
+- active_plan: `worknotes/2026-07-04-8x4-swarm-upgrade-plan.md`
+- active_goal: execute the 8x4 swarm concurrency upgrade.
+
+## Active 8x4 swarm upgrade status
+
+- Completion audit result: complete. Tasks 1-12 are implemented, the budget key was renamed to `child_concurrency_per_lane`, and all source plus installed-copy checkpoints pass.
+- Next required action: none for this plan; the copied default-profile install at `~/.hermes/plugins/ponder_forge` has been refreshed after explicit user authorization.
+- Confidence: high. Landing gates passed, installed smoke passed, and no generated `/tmp` artifacts are tracked.
+- Guardrail: do not read or modify sibling project `idea-spark`; keep temporary notes and drafts under `ponder-forge/worknotes/`.
+
+### 2026-07-04T20:32:50+08:00 Continuation completion audit
+
+- Re-read the plan acceptance gates and current active worknote status before relying on prior context.
+- Re-verified implementation anchors for default 8/4 budget, retired `max_tasks_per_wave` rejection, lane `child_reports`, `incomplete_swarm_topology`, `status.swarm`, and empty plugin tools/hooks.
+- Landing verification rerun: `rtk pytest -q` -> 69 passed; `python3 scripts/run_mini_benchmark.py --output /tmp/ponder_forge_mini_summary.json` -> `{"blocked": 0, "final": 5, "total": 5}`; `python3 scripts/copy_install_smoke.py --target /tmp/ponder_forge_install_smoke` -> installed true, `tool_count=0`, `hook_count=0`, `command_count=1`, `skill_count=1`.
+- Git status for the planned scope shows only intentional `ponder-forge` source/test/skill/worknote changes plus new swarm tests/helpers; no generated `/tmp` artifact is tracked and no promotion to `~/.hermes/plugins/ponder_forge` was performed.
+- Plan status remains complete.
+
+### 2026-07-04T21:13:10+08:00 Field rename and installed promotion
+
+- User requested replacing the ambiguous `subagents_per_run` budget key with a clearer name.
+- Added RED coverage proving the new `child_concurrency_per_lane` key is canonical and the old `subagents_per_run` key is retired with a compact hint.
+- Updated source, tests, CLI hints, bundled skill text, and installed copy so public budget payloads use `child_concurrency_per_lane` while task raw metadata keeps the existing `child_concurrency_limit` runtime field.
+- Verification: targeted RED failed as expected before code changes; targeted GREEN `PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -q tests/test_swarm_budget.py tests/test_swarm_planning.py tests/test_prepare_delegations.py tests/test_mini_cases_static.py -p no:cacheprovider` -> 21 passed; source full suite `PYTHONDONTWRITEBYTECODE=1 python3 -m pytest -q -p no:cacheprovider` -> 70 passed; `python3 scripts/copy_install_smoke.py` refreshed `~/.hermes/plugins/ponder_forge`; installed full suite -> 70 passed; installed CLI smoke accepted `child_concurrency_per_lane`, rejected `subagents_per_run`, and confirmed plan raw metadata has no old key.
+- Active installed state: `hermes plugins list` reports `ponder-forge` enabled; source and installed key files are byte-identical; cache directories were cleaned after verification.
+
+### 2026-07-04T20:02:24+08:00 Task 1 progress
+
+- Added RED test `tests/test_swarm_budget.py`; initial raw pytest failed with `ModuleNotFoundError: No module named 'swarm'`.
+- Added `swarm.py` as the canonical budget helper owner and wired `cli.start_run()` to store normalized `top_level_runs`, child-concurrency-per-lane, and `delegate_batch_size`.
+- Retired `max_tasks_per_wave` now fails at `start` with a compact JSON hint naming `top_level_runs` and the child-concurrency budget key.
+- Verification: `rtk pytest tests/test_swarm_budget.py -q` -> 8 passed; `rtk pytest tests/test_cli_contract.py::test_cli_argument_errors_use_json_error_envelope tests/test_swarm_budget.py -q` -> 9 passed.
+- Reflection: no redundant compatibility path was added. `task_raw`, `task_swarm`, and `task_kind` are currently unused but are part of the planned shared topology seam for later tasks, so keep them.
+- Next required action: Task 2, allow planned child tasks without a schema migration.
+
+### 2026-07-04T20:03:38+08:00 Task 2 progress
+
+- Added RED test `tests/test_store.py::test_store_creates_task_with_explicit_initial_status`; initial run failed with `TypeError: PonderForgeStore.create_task() got an unexpected keyword argument 'status'`.
+- Updated `PonderForgeStore.create_task()` to accept `status: str = "queued"` and write that value to the existing `agent_tasks.status` column.
+- Verification: `rtk pytest tests/test_store.py -q` -> 4 passed; `rtk pytest tests/test_store.py tests/test_hooks_reconcile.py -q` -> 7 passed.
+- Reflection: no schema migration, new table, or redundant state path was added. The change is the minimum needed to allow planned lane-child rows through the existing task owner seam.
+- Next required action: Task 3, update planning to create 8 queued lane coordinators and planned lane-child backlog.
+
+### 2026-07-04T20:06:29+08:00 Task 3 progress
+
+- Added RED test `tests/test_swarm_planning.py`; initial run failed because no lane coordinator tasks existed and `derive_lane_child_specs` did not exist.
+- Replaced flat `max_tasks_per_wave` role slicing in `planner.py` with deterministic swarm topology: queued `lane_coordinator` tasks plus planned `lane_child` backlog rows under the existing `parent_task_id` seam.
+- Default planner output now uses 8 top-level lanes, child concurrency cap 4, and stores normalized `swarm_budget`.
+- Explicit budget controls lane count and child concurrency; test fixture proves planned child count can exceed the child-concurrency cap.
+- Verification: `rtk pytest tests/test_swarm_planning.py -q` -> 4 passed; `rtk pytest tests/test_swarm_budget.py tests/test_swarm_planning.py tests/test_store.py -q` -> 16 passed after removing a one-use helper abstraction.
+- Reflection: one small redundant helper was removed. Remaining helper seams are justified: lane id formatting, child role fallback, and child spec derivation are the minimal shared points needed for later delegation/report/gate work.
+- Next required action: Task 4, update parent delegation payloads so only queued lane coordinators are emitted as `role="orchestrator"` and planned child rows are embedded in lane context.
+
+### 2026-07-04T20:08:47+08:00 Task 4 progress
+
+- Replaced old flat delegation tests with lane coordinator payload tests.
+- Initial RED: payload tasks were still `role="leaf"`, lane child manifest was missing, and parent payload ignored `delegate_batch_size`.
+- Updated `prepare_delegations()` to emit queued lane coordinators as `role="orchestrator"`, include lane-local planned child task manifests in context, and cap parent payload size with `delegate_batch_size`.
+- Lane context instructs native child `delegate_task` waves with at most the child-concurrency cap in flight; it explicitly treats the value as simultaneous concurrency, not a total child count.
+- Verification: `rtk pytest tests/test_prepare_delegations.py tests/test_swarm_planning.py -q` -> 8 passed; `rtk pytest tests/test_prepare_delegations.py tests/test_hooks_reconcile.py -q` -> 7 passed.
+- Reflection: no new CLI path, table, hook, or direct tool surface was added. The new helper functions are localized to the existing delegation owner seam and separate parent batching from lane-child concurrency.
+- Next required action: Task 5, make `submit-report` expand lane `child_reports` into normal child reports/assertions/evidence and mark lane plus child tasks finished.
+
+### 2026-07-04T20:11:07+08:00 Task 5 progress
+
+- Added RED tests for lane report expansion, duplicate child report task ids, missing assigned child reports, and cross-lane child report rejection.
+- Initial RED: `child_reports` were ignored and no `child_report_ids` were returned.
+- Split report ingest into `_ingest_single_report()` plus lane-aware wrapper; lane reports now validate all child ids before writing, expand each child report through the existing report/assertion/evidence pipeline, mark child tasks finished, then store the lane summary and mark the lane task finished.
+- Verification: `rtk pytest tests/test_report_ingest.py -q` -> 8 passed; `rtk pytest tests/test_report_ingest.py tests/test_cli_contract.py -q` -> 13 passed.
+- Reflection: no separate lane-result storage was added. Validation happens before report writes for duplicate/missing/wrong-lane child ids, avoiding partial writes for the tested rejection paths.
+- Next required action: Task 6, make gate/finalize block on incomplete swarm topology.
+
+### 2026-07-04T20:16:07+08:00 Task 6 progress
+
+- Added RED gate tests for incomplete and complete swarm topology.
+- Initial RED: gate passed after one lane report because only assertion/verdict coverage was checked.
+- Added `swarm_topology_status()` and wired `evaluate_gate()` to block with `gap_type="incomplete_swarm_topology"` until every lane coordinator and every planned child task is finished.
+- Updated the CLI workflow contract test to submit a lane coordinator report with complete `child_reports`, matching the new default swarm topology instead of the retired flat first-task fixture.
+- Verification: `rtk pytest tests/test_gates_profiles.py -q` -> 12 passed; `rtk pytest tests/test_gates_profiles.py tests/test_cli_contract.py -q` -> 17 passed.
+- Reflection: topology completion uses existing `agent_tasks` rows and existing gate payloads. No finalize-specific duplicate logic or extra state table was added.
+- Next required action: Task 7, expose lane/child progress and swarm-aware `next_required_action` in `status`.
+
+### 2026-07-04T20:19:43+08:00 Task 7 progress
+
+- Added RED CLI status tests for initial swarm counts plus `delegations`, and for completed lane reports routing to `verify` before reviewer verdicts.
+- Initial RED: `status` had no `swarm` object.
+- Added `swarm_progress_status()` in `swarm.py` and wired `cmd_status()` to expose lane count, lane child concurrency cap, child count, finished counts, queued lane delegation count, and incomplete task count.
+- Updated `next_required_action` routing: completed final report -> `complete`; queued tasks -> `delegations`; incomplete swarm topology without queued tasks -> `submit-report`; passing gate -> `finalize`; otherwise -> `verify`.
+- Verification: `rtk pytest tests/test_cli_contract.py -q` -> 7 passed; `rtk pytest tests/test_cli_contract.py tests/test_prepare_delegations.py tests/test_gates_profiles.py -q` -> 23 passed.
+- Reflection: status now reuses one topology/progress helper and does not duplicate profile gate decisions. No redundant state path was added.
+- Next required action: Task 8, reconcile lane and child task states.
+
+### 2026-07-04T20:21:36+08:00 Task 8 progress
+
+- Updated reconcile tests so stale lane coordinator retry must emit native `role="orchestrator"` and preserve the lane child manifest plus retry context.
+- Added coverage that non-lane orphan retry still emits native `role="leaf"`.
+- Initial RED: stale lane retry was emitted as `leaf`.
+- Exposed `lane_child_tasks()` from `delegation.py`, added retry support to `build_lane_context()`, and reused those helpers from `reconcile.py`.
+- Verification: `rtk pytest tests/test_hooks_reconcile.py -q` -> 4 passed; `rtk pytest tests/test_hooks_reconcile.py tests/test_prepare_delegations.py -q` -> 8 passed.
+- Reflection: an initial redundant temporary store instance was removed before checkpoint. Retry payloads now reuse the current store and existing context builders.
+- Next required action: Task 9, preserve independent reviewer leaf-only behavior with lane-child producers.
+
+### 2026-07-04T20:24:34+08:00 Task 9 progress
+
+- Updated verifier independence fixture to create a one-lane coding swarm with one planned child producer, then submit the coding assertion through a lane `child_reports` entry.
+- Added assertions that independent reviewer tasks use the child producer task as `parent_task_id` and that reviewer delegation payloads remain native `role="leaf"`.
+- Verification: `rtk pytest tests/test_verifier_independence.py -q` -> 4 passed; `rtk pytest tests/test_verifier_independence.py tests/test_gates_profiles.py -q` -> 16 passed.
+- Reflection: `verifier.py` was not modified. The existing `report.task_id` producer lookup remains the single source of reviewer independence.
+- Next required action: Task 10, update remaining fixtures and mini benchmark to use lane reports.
+
+### 2026-07-04T20:27:11+08:00 Task 10 progress
+
+- Updated the full CLI workflow fixture so the critical assertion is produced by a lane child report, not the lane parent report.
+- The workflow test now reads the temporary CLI state DB to verify the assertion's producer report points to the child task, then records the independent verdict against that child producer.
+- Updated `scripts/run_mini_benchmark.py` to start 1x1 swarm runs, constrain mini fixture decomposition to one planned child in-process, wrap each case report in a lane report, and verify the child assertion.
+- Verification: `rtk pytest tests/test_cli_contract.py tests/test_mini_cases_static.py -q` -> 11 passed; `python3 scripts/run_mini_benchmark.py --output /tmp/ponder_forge_mini_summary.json` -> `{"blocked": 0, "final": 5, "total": 5}`.
+- Reflection: no new budget key or hidden child-count semantics were added. The one-child constraint belongs only to the benchmark fixture.
+- Next required action: Task 11, update bundled operator instructions to the 8x4 lane workflow.
+
+### 2026-07-04T20:29:09+08:00 Task 11 progress
+
+- Added bundled skill assertions for `top_level_runs`, the child-concurrency budget key, `child_reports`, native `role="orchestrator"`, and no retired `max_tasks_per_wave`.
+- Initial RED: bundled skill did not mention `top_level_runs`.
+- Rewrote the skill core workflow around lane coordinator orchestrator payloads, lane-local child waves, lane reports with `child_reports`, `status.swarm`, and topology completion before verify/gate/finalize.
+- Updated slash command instruction text to name `plan`, `delegations`, lane orchestrators, `child_reports`, and `submit-report`.
+- Verification: `rtk pytest tests/test_mini_cases_static.py tests/test_plugin_registration.py -q` -> 7 passed; `rtk pytest tests/test_plugin_registration.py tests/test_copy_install_smoke.py -q` -> 4 passed.
+- Reflection: plugin registration shape stayed command + skill only. No new tool, hook, or installer path was added.
+- Next required action: Task 12, run final landing gates and install smoke.
+
+### 2026-07-04T20:30:08+08:00 Task 12 progress
+
+- Ran the full source suite: `rtk pytest -q` -> 69 passed.
+- Ran mini benchmark: `python3 scripts/run_mini_benchmark.py --output /tmp/ponder_forge_mini_summary.json` -> `{"blocked": 0, "final": 5, "total": 5}`.
+- Ran temp copy-install smoke: `python3 scripts/copy_install_smoke.py --target /tmp/ponder_forge_install_smoke` -> installed true, `tool_count=0`, `hook_count=0`, `command_count=1`, `skill_count=1`, not a symlink.
+- Git status check shows only intentional `ponder-forge` source/test/skill/worknote changes plus `CODEX_STATE.md`; `/tmp` outputs are untracked outside the repo.
+- Reflection: no promotion to `~/.hermes/plugins/ponder_forge` was performed during Codex's plan execution; promotion was later performed only after explicit user authorization.
+- Plan status: complete.
+
+## Previous compressed state
+
 - compressed_at: 2026-07-04T08:05:15+08:00
 - source_dir: `/home/xu/project/autosci-delphi/ponder-forge`
 - installed_dir: `/home/xu/.hermes/plugins/ponder_forge`

@@ -57,4 +57,9 @@ def test_bundled_skill_is_cli_first_and_has_no_direct_tool_guidance():
     assert "exit_code=0" in text
     assert "next_required_action=\"complete\"" in text
     assert "delegate_task_payload_suggestion" in text
+    assert "top_level_runs" in text
+    assert "child_concurrency_per_lane" in text
+    assert "child_reports" in text
+    assert 'role="orchestrator"' in text
+    assert "max_tasks_per_wave" not in text
     assert "ponder_forge_" not in text

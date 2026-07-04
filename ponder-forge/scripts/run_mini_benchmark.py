@@ -16,6 +16,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from gates import evaluate_gate
+import planner
 from planner import plan_run
 from report_ingest import ingest_report
 from store import PonderForgeStore
@@ -45,14 +46,43 @@ def run_case(case: dict) -> dict:
         old_home = os.environ.get("HERMES_HOME")
         os.environ["HERMES_HOME"] = home
         try:
-            start = CLI.start_run(case["goal"], profile=case["profile"])
+            start = CLI.start_run(
+                case["goal"],
+                profile=case["profile"],
+                budget={"top_level_runs": 1, "child_concurrency_per_lane": 1},
+            )
             store = _store()
-            plan = plan_run(store, start["run_id"])
-            producer_task = plan["tasks"][0]
+            original_child_specs = planner.derive_lane_child_specs
+            planner.derive_lane_child_specs = lambda _run, _profile, _lane_index: [
+                {"role": f"{case['profile']}_mini_worker", "goal": case["goal"], "context": "mini benchmark fixture"}
+            ]
+            try:
+                plan = plan_run(store, start["run_id"])
+            finally:
+                planner.derive_lane_child_specs = original_child_specs
+            lane_task = next(task for task in plan["tasks"] if task["role"] == "swarm_lane_coordinator")
+            child_tasks = [task for task in plan["tasks"] if task["parent_task_id"] == lane_task["task_id"]]
+            if len(child_tasks) != 1:
+                raise RuntimeError(f"mini benchmark expected one planned child, got {len(child_tasks)}")
+            producer_task = child_tasks[0]
             report_payload = dict(case["report"])
             report_payload.update({"run_id": start["run_id"], "task_id": producer_task["task_id"], "role": producer_task["role"]})
-            report = ingest_report(store, report_payload)
-            assertion_id = report["assertion_ids"][0]
+            lane_report = {
+                "run_id": start["run_id"],
+                "task_id": lane_task["task_id"],
+                "role": lane_task["role"],
+                "summary": f"mini benchmark lane report for {case['profile']}",
+                "child_reports": [report_payload],
+                "assertions": [],
+                "artifacts": [],
+            }
+            report = ingest_report(store, lane_report)
+            child_report_id = report["child_report_ids"][0]
+            assertion_id = next(
+                assertion["assertion_id"]
+                for assertion in store.list_rows("assertions", start["run_id"])
+                if assertion["report_id"] == child_report_id
+            )
             review = verify_run(store, start["run_id"], {"run_id": start["run_id"], "mode": "independent_review", "target_id": assertion_id})
             reviewer_task = review["reviewer_tasks"][0]
             verify_run(

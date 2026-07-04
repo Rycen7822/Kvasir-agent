@@ -7,9 +7,11 @@ from typing import Any
 try:
     from .profiles import get_profile
     from .store import PonderForgeStore
+    from .swarm import swarm_topology_status
 except ImportError:
     from profiles import get_profile
     from store import PonderForgeStore
+    from swarm import swarm_topology_status
 
 JsonDict = dict[str, Any]
 
@@ -188,6 +190,17 @@ def evaluate_gate(store: PonderForgeStore, run_id: str) -> JsonDict:
                 }
             )
 
+    swarm_topology = swarm_topology_status(store.list_rows("agent_tasks", run_id))
+    if swarm_topology["is_swarm_run"] and not swarm_topology["complete"]:
+        gaps.append(
+            {
+                "gap_type": "incomplete_swarm_topology",
+                "target_id": run_id,
+                "reason": "all lane coordinator and lane child tasks must finish before finalization",
+                "incomplete_task_ids": swarm_topology["incomplete_task_ids"],
+            }
+        )
+
     critical_count = len(critical)
     coverage_denominator = float(critical_count) if critical_count else 1.0
     metrics = {
@@ -208,6 +221,7 @@ def evaluate_gate(store: PonderForgeStore, run_id: str) -> JsonDict:
         "profile": profile.profile_id,
         "finalize_allowed": status == "passed",
         "metrics": metrics,
+        "swarm_topology": swarm_topology,
         "gaps": gaps,
     }
 
