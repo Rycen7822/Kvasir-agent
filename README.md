@@ -1,5 +1,5 @@
 <h1 align="center">
-  CodexScientist × Codex MCP Control Plane
+  Kvasir-agent × Codex MCP Control Plane
 </h1>
 
 <p align="center">
@@ -19,7 +19,7 @@
 
 ---
 
-CodexScientist-codex presents a DeepScientist-derived research runtime as a Codex CLI plugin. The default research control plane is MCP-only: Codex uses compact `cs_*` MCP tools for research semantics, while Codex-native file/search/edit/shell/Git/test/build/process capabilities handle ordinary mechanical work.
+Kvasir-agent-codex presents a DeepScientist-derived research runtime as a Codex CLI plugin. The default research control plane is MCP-only: Codex uses compact `cs_*` MCP tools for research semantics, while Codex-native file/search/edit/shell/Git/test/build/process capabilities handle ordinary mechanical work.
 
 `/goal` is Codex-native. CodexScientist does not implement, register, intercept, or simulate slash commands. After Codex has entered goal context, CodexScientist provides curated MCP tools for root-bound research state, durable requirements, memory, artifacts, baselines, experiments, analysis, paper/reliability work, checkpoint/resume anchors, manual diagnostics, novelty support, and claim gates.
 
@@ -136,6 +136,6 @@ This adapter preserves business-workflow effects rather than MCP protocol shape:
 
 ## Codex-Native Operation Boundary
 
-Use CodexScientist-codex for the research semantic layer: root-bound research state, durable requirements, memory, artifacts, baselines, formal experiment records, analysis campaign state, paper/reliability workflows, manual diagnostics, checkpoint/resume, claim gate, and `cs_bash_exec` provenance for formal evidence commands.
+Use Kvasir-agent-codex for the research semantic layer: root-bound research state, durable requirements, memory, artifacts, baselines, formal experiment records, analysis campaign state, paper/reliability workflows, manual diagnostics, checkpoint/resume, claim gate, and `cs_bash_exec` provenance for formal evidence commands.
 
 Use Codex-native capabilities for routine operation-layer work: file/search/edit, ordinary shell, Git/GitHub mechanics, tests/builds/lint, process monitoring, and local prose editing.
