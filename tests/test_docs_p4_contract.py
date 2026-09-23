@@ -21,7 +21,6 @@ P4_TARGETED_TESTS = (
     "tests/test_goal_quest_layout.py",
     "tests/test_goal_layout_migrates_legacy_state.py",
     "tests/test_goal_context_active_only.py",
-    "tests/test_goal_stage_router.py",
     "tests/test_goal_compaction_resume.py",
     "tests/test_method_improvement_loop.py",
     "tests/test_claim_evidence_gate.py",
@@ -111,18 +110,18 @@ def test_default_docs_are_mcp_only_and_admin_cli_is_isolated():
 def test_mcp_doc_lists_current_profiles_and_goal_tools():
     text = _read("docs/MCP.md")
     for phrase in [
-        "`core`: default tools",
+        "`core`: research reads",
         "`evidence`",
         "`formal_run`",
         "`literature`",
         "`paper_write`",
-        "`stage` argument is a context label",
+        "`stage` label does not filter",
         "ka_log_digest",
-        "ka_update_method_scoreboard",
+        "ka_method_record",
         "ka_claim_gate",
-        "ka_create_analysis_campaign",
-        "ka_record_analysis_slice",
-        "fail closed",
+        "ka_analysis",
+        "ka_analysis",
+        "Invalid arguments are rejected",
     ]:
         assert phrase in text
     for obsolete in ["core profile: 14 tools", "goal profile: 47 tools", "active stage subset"]:
@@ -135,7 +134,7 @@ def test_long_run_doc_spells_out_watchdog_checkpoint_resume_contract():
         "admin-only watchdog diagnostics",
         "without writing goal gates",
         "ka_checkpoint",
-        "ka_resume_brief",
+        "ka_research_read",
         "runner_stuck",
         "recovery_anchor",
         "active_run_id",

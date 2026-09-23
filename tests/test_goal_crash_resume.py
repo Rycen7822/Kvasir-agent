@@ -41,4 +41,4 @@ def test_goal_watchdog_reports_stuck_runner_without_writing_goal_gate(tmp_path: 
     assert resume["active_run_id"] == run_id
     assert resume["blocker"] != "runner_stuck"
     assert "next_required_mcp_tool" not in resume
-    assert any(ref["kind"] == "goal_state" and ref["path"] == str(goal_state_path) for ref in resume["source_refs"])
+    assert not any(ref["kind"] == "goal_state" for ref in resume["source_refs"])

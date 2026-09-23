@@ -28,13 +28,13 @@ def test_mcp_tool_registry_is_curated_ka_only():
     core_names = [tool.name for tool in core_tools]
     evidence_names = [tool.name for tool in list_tool_specs("evidence")]
     goal_names = [tool.name for tool in list_tool_specs("goal")]
-    assert "ka_doctor" in core_names
-    assert "ka_tool_schema" in core_names
-    assert "ka_manifest_validate" not in core_names
+    assert "ka_research_read" in core_names
+    assert "ka_tool_schema" not in core_names
+    assert "ka_environment" not in core_names
     assert "ka_queue_status" not in core_names
     assert "ka_goal_state" not in core_names
     assert "ka_goal_next_action" not in core_names
-    assert "ka_manifest_validate" in evidence_names
+    assert "ka_environment" in evidence_names
     assert "ka_queue_status" not in evidence_names
     assert set(goal_names) == set(evidence_names)
     assert all(name.startswith("ka_") for name in evidence_names)
@@ -50,8 +50,8 @@ def test_mcp_stdio_smoke_initialize_list_and_call_doctor():
 
     listed = smoke("tools/list")
     names = [tool["name"] for tool in listed["tools"]]
-    assert "ka_doctor" in names
-    assert "ka_tool_schema" in names
+    assert "ka_research_read" in names
+    assert "ka_tool_schema" not in names
     assert all(name.startswith("ka_") for name in names)
 
     doctor = smoke("call", "ka_doctor", "{}")
@@ -60,11 +60,11 @@ def test_mcp_stdio_smoke_initialize_list_and_call_doctor():
     assert doctor["tool"] == "ka_doctor"
 
 
-def test_mcp_stdio_jsonrpc_initialize_list_and_call_status():
+def test_mcp_stdio_jsonrpc_initialize_list_and_call_status(tmp_path):
     messages = [
         {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}},
         {"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}},
-        {"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {"name": "ka_status", "arguments": {}}},
+        {"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {"name": "ka_research_read", "arguments": {"project": str(tmp_path), "operation": "status"}}},
     ]
     completed = subprocess.run(
         [PYTHON, str(PLUGIN_ROOT / "scripts" / "ka_mcp.py")],
@@ -83,10 +83,10 @@ def test_mcp_stdio_jsonrpc_initialize_list_and_call_status():
     assert responses[0]["result"]["serverInfo"]["name"] == "ka_mcp"
     assert "tools" in responses[0]["result"]["capabilities"]
     tools = responses[1]["result"]["tools"]
-    assert "ka_status" in [tool["name"] for tool in tools]
+    assert "ka_research_read" in [tool["name"] for tool in tools]
     assert all("inputSchema" in tool for tool in tools)
     assert responses[2]["result"]["ok"] is True
-    assert responses[2]["result"]["tool"] == "ka_status"
+    assert responses[2]["result"]["tool"] == "ka_research_read"
     assert responses[2]["result"]["structuredContent"]["ok"] is True
     assert responses[2]["result"]["isError"] is False
     assert responses[2]["result"]["content"][0]["type"] == "text"

@@ -1,34 +1,15 @@
 ---
-name: kvasir-agent-paper-reliability-verifier
-description: Compact Kvasir-agent router for kvasir-agent-paper-reliability-verifier; use for its research stage while keeping Codex-native operations outside the plugin runtime.
-version: 2.0.0
+name: ka-paper-reliability
+description: Verify paper identity, publication acceptance and source reliability using official evidence, then record a traceable paper evidence card.
 ---
 
-# kvasir-agent-paper-reliability-verifier compact router
+# Paper reliability
 
-This active skill is intentionally compact. The historical long playbook was moved to `references/legacy-playbook.md` and is reference-only.
+1. Establish title, authors, identifier and version. Prefer the publisher, proceedings, official venue or paper repository over search snippets.
+2. Verify acceptance separately from citation counts, venue rank and preprint availability. Label missing or conflicting evidence explicitly.
+3. Use the relevant venue guide only when needed: [OpenReview](subskills/openreview-accepted-venue/GUIDE.md), [ACL Anthology](subskills/acl-anthology-accepted-venue/GUIDE.md), or [DBLP](subskills/dblp-accepted-venue/GUIDE.md). Supporting scripts live beside these guides.
+4. Record the official URLs, checked date, claims supported and unresolved fields. Treat citation counts as dated observations, not proof of quality.
+5. Use `ka_paper_reliability_verify` with bounded inputs and timeout controls from its advertised schema. A dry run validates the planned operation only. Fetch needed paper artifacts with `ka_paper_fetch` and record actual reading with `ka_record_literature_reading_note`.
+6. Return a concise reliability assessment with sources and uncertainty. This process does not establish that the paper's scientific conclusions are true.
 
-## Operating contract
-
-- Kvasir-agent is a Codex CLI plugin, not a standalone autonomous framework.
-- Default mode is `copilot`; do not invent, improve, or expand ideas automatically unless the user or project manifest explicitly enables autonomous idea improvement.
-- Use Codex-native file search, edits, shell, tests, and git for ordinary development work.
-- Use MCP `ka_*` tools only when visible in the selected profile; prefer public families for root-bound research state, memory, artifacts, baselines, experiments, analysis, literature, paper, method/frontier, claim gates, checkpoint/resume, and compact evidence.
-- Keep outputs compact. Return paths, ids, hashes, metric values, short tails, and next action; do not paste full logs, full background notes, or full historical playbooks into context.
-- Do not execute old API names directly. Translate historical playbook wording to current MCP `ka_*` tool calls.
-
-## Current MCP tool surface
-
-Use the relevant bounded MCP `ka_*` tools exposed by `tools/list` and `ka_tool_schema` for this stage. Hidden admin/debug CLI examples live only in `docs/ADMIN_CLI.md`.
-
-## Stage workflow
-
-1. Read `Kvasir-agent/research.yaml` and `Kvasir-agent/summaries/context_pack.md` when present.
-2. Identify the single next bounded research action for this stage.
-3. If stage-specific nuance is needed, read only the relevant section of `references/legacy-playbook.md` and translate it to the current MCP `ka_*` tool surface.
-4. Apply manifest, baseline, metric, readonly, budget, and autonomy gates before any experiment/run changes.
-5. Record durable outcomes through MCP `ka_*` tools and keep ordinary code edits in Codex-native operations.
-
-## Legacy reference
-
-`references/legacy-playbook.md` preserves the pre-upgrade detailed playbook for audit and migration. It may contain old names and long procedures. Treat it as source material, not executable instructions.
+[Detailed evidence conventions](references/legacy-playbook.md) are reference material; current MCP schemas define the APIs.

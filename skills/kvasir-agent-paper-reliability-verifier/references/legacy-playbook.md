@@ -1,3 +1,5 @@
+> Historical API names below are not current MCP calls. Use the [tool migration map](../../../docs/TOOL_MIGRATION.md) and advertised schemas.
+
 # Legacy playbook
 
 Do not execute old API names directly. This file preserves the pre-upgrade long playbook for audit and migration only. When using it, translate any historical tool or state API names to the current public MCP `ka_*` tool surface and obey the default copilot autonomy gate.
@@ -11,7 +13,7 @@ version: 0.1.0
 last_updated: 2026-04-30
 ---
 
-> Codex adapter note: this stage skill is bundled for Kvasir-agent. Prefer public MCP `ka_*` tools visible in `tools/list`/`ka_tool_schema` for repeated Kvasir-agent state/status/context workflows. Load this support skill only when its stage is relevant. Runtime state lives under `<project>/Kvasir-agent/`.
+> Codex adapter note: this stage skill is bundled for Kvasir-agent. Prefer public MCP `ka_*` tools visible in `tools/list` for repeated Kvasir-agent state/status/context workflows. Load this support skill only when its stage is relevant. Runtime state lives under `<project>/Kvasir-agent/`.
 
 # Paper Reliability Verifier Skill
 
@@ -151,7 +153,7 @@ OpenReview is the specialized route for OpenReview-hosted venues such as ICLR, T
 Embedded subskill:
 
 ```text
-subskills/openreview-accepted-venue/SKILL.md
+subskills/openreview-accepted-venue/GUIDE.md
 ```
 
 Primary documentation:
@@ -185,7 +187,7 @@ ACL Anthology is the first specialized automatic route for NLP / computational-l
 Embedded subskill:
 
 ```text
-subskills/acl-anthology-accepted-venue/SKILL.md
+subskills/acl-anthology-accepted-venue/GUIDE.md
 ```
 
 Python package documentation:
@@ -221,7 +223,7 @@ DBLP is the broad CS automatic route for the question “has this CS paper been 
 Embedded subskill:
 
 ```text
-subskills/dblp-accepted-venue/SKILL.md
+subskills/dblp-accepted-venue/GUIDE.md
 ```
 
 DBLP API documentation:

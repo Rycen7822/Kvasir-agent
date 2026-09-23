@@ -19,16 +19,9 @@ class ToolProfile:
 DEFAULT_PROFILE_NAME = "core"
 
 CORE_TOOLS = (
-    "ka_doctor",
-    "ka_status",
-    "ka_tool_schema",
+    "ka_research_read",
     "ka_record_user_requirement",
-    "ka_context_pack",
-    "ka_resume_brief",
     "ka_checkpoint",
-    "ka_pack_delta",
-    "ka_skill_search",
-    "ka_skill_load",
 )
 
 LEGACY_REGISTRY_ADMIN_TOOLS = (
@@ -38,24 +31,13 @@ LEGACY_REGISTRY_ADMIN_TOOLS = (
     "ka_manifest_init",
 )
 
-QUEST_MEMORY_TOOLS = (
-    "ka_memory_search",
-    "ka_memory_read",
-    "ka_memory_list_recent",
-    "ka_memory_write",
-)
+QUEST_MEMORY_TOOLS = ("ka_memory_query", "ka_memory_write")
 
 PHASE1_TOOLS = (
-    "ka_environment_register",
-    "ka_environment_validate",
-    "ka_environment_show",
-    "ka_feedback_ingest",
-    "ka_trajectory_record",
-    "ka_trajectory_search",
-    "ka_trajectory_show",
+    "ka_environment", "ka_feedback_ingest", "ka_trajectory_record", "ka_trajectory_query",
 )
-PHASE1_EVIDENCE_TOOLS = ("ka_feedback_ingest", "ka_trajectory_search", "ka_trajectory_show")
-PHASE3_PLANNING_TOOLS = ("ka_evolutionary_plan_round",)
+PHASE1_EVIDENCE_TOOLS = ("ka_feedback_ingest", "ka_trajectory_query")
+PHASE3_PLANNING_TOOLS = ()
 
 EXECUTOR_LOCAL_TOOLS = (
     "ka_variant_create",
@@ -75,62 +57,26 @@ EXECUTOR_LOCAL_TOOLS = (
 
 EVIDENCE_ADDITIONS = (
     *QUEST_MEMORY_TOOLS,
-    "ka_manifest_record_baseline",
-    "ka_manifest_validate",
-    "ka_create_local_baseline",
-    "ka_confirm_baseline",
-    "ka_artifact_record",
-    "ka_artifact_index",
-    "ka_log_digest",
+    "ka_baseline", "ka_environment", "ka_artifact_record", "ka_artifact_index", "ka_log_digest",
     *PHASE1_EVIDENCE_TOOLS,
-    "ka_record_main_experiment",
-    "ka_create_analysis_campaign",
-    "ka_get_analysis_campaign",
-    "ka_record_analysis_slice",
-    "ka_claim_gate",
-    "ka_submit_idea",
-    "ka_get_method_scoreboard",
-    "ka_get_optimization_frontier",
-    "ka_record_negative_result",
-    "ka_update_method_scoreboard",
+    "ka_record_main_experiment", "ka_analysis", "ka_claim_gate", "ka_method_record",
 )
 EVIDENCE_TOOLS = tuple(dict.fromkeys((*CORE_TOOLS, *EVIDENCE_ADDITIONS)))
-EXECUTION_PLANNING_TOOLS = tuple(dict.fromkeys((*CORE_TOOLS, *PHASE1_TOOLS, *PHASE3_PLANNING_TOOLS)))
-
+EXECUTION_PLANNING_TOOLS = tuple(dict.fromkeys((*CORE_TOOLS, *PHASE1_TOOLS)))
 FORMAL_RUN_TOOLS = tuple(dict.fromkeys((*EVIDENCE_TOOLS, "ka_bash_exec")))
 
 LITERATURE_ADDITIONS = (
     *QUEST_MEMORY_TOOLS,
-    "ka_strict_research_prepare",
-    "ka_strict_research_record_candidate",
-    "ka_strict_research_upsert_candidate",
-    "ka_paper_fetch",
-    "ka_record_literature_reading_note",
-    "ka_strict_research_init_bibliography",
-    "ka_paper_reliability_verify",
-    "ka_arxiv",
+    "ka_literature_setup", "ka_strict_research_upsert_candidate", "ka_paper_fetch",
+    "ka_record_literature_reading_note", "ka_paper_reliability_verify",
 )
 LITERATURE_TOOLS = tuple(dict.fromkeys((*CORE_TOOLS, *LITERATURE_ADDITIONS)))
-
-PAPER_WRITE_TOOLS = tuple(
-    dict.fromkeys(
-        (
-            *LITERATURE_TOOLS,
-            "ka_submit_paper_outline",
-            "ka_submit_paper_bundle",
-            "ka_refresh_summary",
-            "ka_review_status",
-        )
-    )
-)
+PAPER_WRITE_TOOLS = tuple(dict.fromkeys((*LITERATURE_TOOLS, "ka_paper_record")))
 
 AUTONOMOUS_TOOLS = tuple(
     dict.fromkeys(
         (
             *EVIDENCE_TOOLS,
-            "ka_goal_context",
-            "ka_goal_state",
-            "ka_goal_next_action",
             "ka_goal_watchdog",
             "ka_queue_submit",
             "ka_queue_start_attempt",
@@ -153,6 +99,8 @@ ADMIN_TOOLS = tuple(
     dict.fromkeys(
         (
             *AUTONOMOUS_TOOLS,
+            "ka_context_pack",
+            "ka_doctor", "ka_tool_schema", "ka_status", "ka_resume_brief", "ka_pack_delta",
             *PAPER_WRITE_TOOLS,
             "ka_cost_status",
             "ka_soak_accelerated",

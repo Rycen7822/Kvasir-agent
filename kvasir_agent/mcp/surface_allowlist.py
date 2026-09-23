@@ -27,7 +27,6 @@ _AGENT_FACING_FILES = (
     "docs/MCP.md",
     "docs/LONG_RUN.md",
     "kvasir_agent/mcp/tool_registry.py",
-    "kvasir_agent/mcp/skill_index.py",
 )
 _ALLOWED_CLI_REFERENCE_PATHS = (
     "scripts/kactl.py",

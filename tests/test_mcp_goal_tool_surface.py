@@ -7,20 +7,8 @@ from kvasir_agent.mcp.tool_registry import call_tool, tools_list_payload
 from kvasir_agent.profiles import DEFAULT_PROFILE_NAME, PROFILES
 
 REQUIRED_EVIDENCE_TOOLS = {
-    "ka_tool_schema",
-    "ka_skill_search",
-    "ka_skill_load",
-    "ka_record_user_requirement",
-    "ka_create_local_baseline",
-    "ka_confirm_baseline",
-    "ka_submit_idea",
-    "ka_record_main_experiment",
-    "ka_record_analysis_slice",
-    "ka_get_method_scoreboard",
-    "ka_get_optimization_frontier",
-    "ka_checkpoint",
-    "ka_resume_brief",
-    "ka_manifest_validate",
+    "ka_research_read", "ka_record_user_requirement", "ka_baseline", "ka_method_record",
+    "ka_record_main_experiment", "ka_analysis", "ka_checkpoint", "ka_environment",
 }
 
 FORBIDDEN = ("scripts/kactl.py", "CLI fallback")
@@ -72,8 +60,7 @@ def test_goal_profile_is_deprecated_evidence_alias_and_cli_free():
     assert any("profile_deprecated" in warning for warning in payload["warnings"])
     for tool in payload["tools"]:
         assert tool["name"].startswith("ka_")
-        assert tool["group"]
-        assert isinstance(tool["required_context_keys"], list)
+        assert tool["description"]
         assert set(tool["annotations"]) == {
             "readOnlyHint",
             "destructiveHint",
@@ -85,18 +72,21 @@ def test_goal_profile_is_deprecated_evidence_alias_and_cli_free():
             assert forbidden not in combined
 
 
-def test_tools_list_is_compact_and_schema_is_lazy():
+def test_tools_list_supplies_callable_schema_without_lazy_lookup():
+    from jsonschema import Draft202012Validator
+
     listed = tools_list_payload({"profile": "goal"})
-    submit_card = next(tool for tool in listed["tools"] if tool["name"] == "ka_submit_idea")
-
-    assert submit_card["inputSchema"] == {"type": "object", "additionalProperties": True}
-    assert "properties" not in submit_card["inputSchema"]
-
-    schema = call_tool("ka_tool_schema", {"name": "ka_submit_idea"})
-    assert schema["ok"] is True
-    assert schema["schema"]["name"] == "ka_submit_idea"
-    assert "properties" in schema["schema"]["input_schema"]
-    assert "title" in schema["schema"]["input_schema"]["properties"]
+    card = next(tool for tool in listed["tools"] if tool["name"] == "ka_method_record")
+    schema = card["inputSchema"]
+    assert "quest_id" not in schema["properties"]
+    validator = Draft202012Validator(schema)
+    missing_contract = {"project": "/research", "operation": "idea", "title": "Idea"}
+    assert not validator.is_valid(missing_contract)
+    assert validator.is_valid({**missing_contract, "novelty_contract": {
+        "mechanism": "Mechanism", "related_work_refs": ["paper"], "expected_difference": "Difference",
+    }})
+    # Offline schema inspection agrees with the advertised aggregate schema.
+    assert call_tool("ka_tool_schema", {"name": "ka_method_record"})["schema"]["input_schema"] == schema
 
 
 def test_goal_stage_label_does_not_filter_tools():

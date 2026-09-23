@@ -56,7 +56,7 @@ Kvasir-agent semantic/provenance layer:
 - durable user requirements;
 - memory and artifact records;
 - baseline, experiment, analysis, paper, reliability, and evidence ledgers;
-- method scoreboard/frontier, novelty scoring, duplicate block, related-work gate, claim gate, manual diagnostics, checkpoint, and resume anchors;
+- method scoreboard/frontier, novelty input records, duplicate block, related-work gate, claim gate, manual diagnostics, checkpoint, and resume anchors;
 - formal commands whose logs must become project-local research provenance.
 
 Codex does the mechanical action; Kvasir-agent records the research meaning.
@@ -69,13 +69,13 @@ Automatic idea search, variant implementation, experiment scheduling, or executo
 
 ## MCP boundary
 
-The MCP boundary uses explicit profiles:
+Default standard MCP discovery advertises all 24 public research tools with parameter schemas. Explicit profiles are optional filters:
 
-- `core`: default tools for doctor/status, schema lookup, passive context/resume/checkpoint/delta, and root-bound research anchoring.
+- `core`: three tools for bounded research reads, durable user requirements, and checkpoints.
 - `evidence`: root-bound memory, manifest, baseline, artifact, experiment, analysis, method, and claim-gate workflows.
 - `formal_run`: evidence plus formal `ka_bash_exec` provenance-gated execution.
 - `literature`: strict literature, paper fetch, reliability, bibliography, and reading-note workflows.
-- `paper_write`: literature plus paper outline/bundle/summary/review work.
+- `paper_write`: literature plus outline/bundle recording; review status is available through research reads.
 - `admin`, `autonomous`, and `legacy_compat`: not registered as default MCP surfaces.
 
 The `stage` argument is a label for context and records. It does not select a smaller tool subset.
@@ -83,3 +83,7 @@ The `stage` argument is a label for context and records. It does not select a sm
 Long procedures stay in Codex plugin skills and reference files. Load them through the Codex skill mechanism when the current subtask needs a procedure, then record durable state through visible MCP tools.
 
 Context recovery should preserve enough structure to continue correctly: normal resume uses 4K-8K chars, incident/debug/audit may use 12K-24K chars, and full raw log/artifact/reference reads require explicit opt-in.
+
+## Native ownership and retained references
+
+Codex owns goal continuation, native skill discovery and ordinary execution. Kvasir-agent keeps domain evidence and passive recovery. Custom skill retrieval and the duplicate goal controller were removed. Seven native skills cover distinct research workflows; historical domain detail is retained under `docs/research-playbooks/`. Context-pack export remains an admin/legacy service. The plugin manifest bundles `.mcp.json`, and installation delegates to the native Codex plugin CLI.

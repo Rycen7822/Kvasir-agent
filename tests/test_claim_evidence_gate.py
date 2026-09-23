@@ -52,7 +52,9 @@ def test_claim_gate_allows_evidence_backed_claim(tmp_path: Path):
         },
     )
     assert allowed["ok"] is True, allowed
-    assert allowed["claim_gate"]["claimable"] is True
+    assert allowed["claim_gate"]["evidence_complete"] is True
+    assert allowed["claim_gate"]["scientific_validity"] == "not_assessed"
+    assert "claimable" not in allowed["claim_gate"]
     assert allowed["claim_gate"]["claim_id"] == "C2"
 
 
@@ -78,5 +80,5 @@ def test_claim_gate_blocks_unknown_analysis_slice_ids(tmp_path: Path):
     assert blocked["ok"] is False
     assert blocked["error_type"] == "claim_gate_blocked"
     assert "analysis_slice_not_found:missing-slice" in blocked["blocking_reasons"]
-    assert blocked["claim_gate"]["claimable"] is False
+    assert blocked["claim_gate"]["evidence_complete"] is False
     assert blocked["retry_template"]["name"] == "ka_claim_gate"

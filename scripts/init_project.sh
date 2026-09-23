@@ -12,7 +12,7 @@ Use this project with the Kvasir-agent Codex MCP control plane.
 - MCP server entrypoint: ${ROOT}/scripts/ka_mcp.py
 - Routine file, shell, Git, test, build, and process work remains Codex-native.
 - Use Kvasir-agent MCP \`ka_*\` tools only for durable research semantics: quest state, requirements, memory, artifacts, baselines, experiments, analysis, paper/reliability, checkpoint, resume, and formal evidence provenance.
-- Bundled support skills include kvasir-agent-experiment-execution, kvasir-agent-quest-handoffs, kvasir-agent-writing-plans, ka-paper-reliability, and kvasir-agent-review.
+- Bundled support skills include kvasir-agent-experiment, kvasir-agent-quest-handoffs, kvasir-agent-write, ka-paper-reliability, kvasir-agent-strict-research, and kvasir-agent-figure-polish.
 
 MCP smoke checks:
 
@@ -26,8 +26,7 @@ python "${ROOT}/scripts/ka_mcp.py" --stdio-smoke call ka_doctor '{"project":"${P
 If Codex cannot see the tools, verify the MCP registration:
 
 \`\`\`bash
-codex mcp list
-codex mcp get kvasir-agent
+codex plugin list
 \`\`\`
 EOF
 PYTHONDONTWRITEBYTECODE=1 python "${ROOT}/scripts/ka_mcp.py" --stdio-smoke initialize >/dev/null

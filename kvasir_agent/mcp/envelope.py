@@ -46,10 +46,8 @@ def _default_next_call(tool_name: str | None, payload: dict[str, Any]) -> dict[s
     if not payload.get("ok", True):
         reason = str(payload.get("suggested_next_action") or "recover from MCP error")
         return {"tool": "tools/list", "reason": reason}
-    if tool_name == "ka_skill_search":
-        return {"tool": "ka_skill_load", "reason": "load one bounded skill view from a returned handle"}
     if tool_name in {"ka_status", "ka_queue_status", "ka_runner_status"}:
-        return {"tool": "ka_context_pack", "reason": "build a bounded state pack before long-running reasoning"}
+        return {"tool": "ka_resume_brief", "reason": "read durable research state before continuing"}
     return None
 
 

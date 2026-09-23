@@ -107,21 +107,11 @@ def test_mcp_call_round_trip_for_environment_trajectory_and_feedback(tmp_path: P
 
 def test_phase1_mcp_schema_and_missing_argument_contracts_are_bounded():
     names = {tool["name"] for tool in tools_list_payload({"profile": "execution_planning"})["tools"]}
-    assert "ka_environment_register" in names
+    assert "ka_environment" in names
     assert "ka_feedback_ingest" in names
 
-    schema_response = handle_jsonrpc_message(
-        {
-            "jsonrpc": "2.0",
-            "id": 1,
-            "method": "tools/call",
-            "params": {"name": "ka_tool_schema", "arguments": {"name": "ka_feedback_ingest"}},
-        }
-    )
-    assert schema_response is not None
-    payload = schema_response["result"]["structuredContent"]
-    assert payload.get("ok") is True, payload
-    schema = payload["schema"]["input_schema"]
+    card = next(t for t in tools_list_payload()["tools"] if t["name"] == "ka_feedback_ingest")
+    schema = card["inputSchema"]
     assert {"env_id", "trajectory_id", "run_id", "source_kind"} <= set(schema.get("required", []))
     assert "quest_id" not in set(schema.get("required", []))
 

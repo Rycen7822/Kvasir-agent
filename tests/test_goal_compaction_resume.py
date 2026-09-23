@@ -12,25 +12,17 @@ def test_legacy_goal_state_is_ignored_by_resume_and_context_pack(tmp_path: Path)
         "ka_manifest_init",
         {"project": str(tmp_path), "name": "demo", "goal": "resume goal", "overwrite": True},
     )
-    state = call_tool(
-        "ka_goal_state",
-        {
-            "project": str(tmp_path),
-            "quest_id": quest_id,
-            "active_stage": "analysis-campaign",
-            "current_gate": {"stage": "analysis-campaign", "required_tool": "ka_record_analysis_slice"},
-            "next_action": {"action_type": "record_analysis", "required_tool": "ka_record_analysis_slice"},
-        },
-    )
-    assert state["ok"] is True
-    state_path = Path(state["path"])
-    assert state_path.exists()
+    state_path = tmp_path / "Kvasir-agent/runtime/goal_state.json"
+    state_path.parent.mkdir(parents=True, exist_ok=True)
+    legacy_state = {"next_action": {"required_tool": "ka_record_analysis_slice"}}
+    state_path.write_text(json.dumps(legacy_state))
 
     resume = call_tool("ka_resume_brief", {"project": str(tmp_path), "quest_id": quest_id, "max_chars": 4000})
     assert resume["ok"] is True
     assert "goal_loop_state" not in resume
     assert "next_required_mcp_tool" not in resume
-    assert any(ref["kind"] == "goal_state" for ref in resume["source_refs"])
+    assert not any(ref["kind"] == "goal_state" for ref in resume["source_refs"])
+    assert json.loads(state_path.read_text()) == legacy_state
     assert not any(ref["kind"] == "legacy_goal_state_ignored" for ref in resume["source_refs"])
 
     pack = call_tool("ka_context_pack", {"project": str(tmp_path), "quest_id": quest_id, "max_chars": 4000})

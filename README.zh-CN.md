@@ -54,41 +54,31 @@ Kvasir-agent 是基于 DeepScientist 二次开发、给 Codex CLI 使用的 Kvas
 | --- | --- |
 | 控制面 | 默认通过 `scripts/ka_mcp.py` 走 MCP-only default；管理员终端命令隔离在 `docs/ADMIN_CLI.md`。 |
 | 公开工具面 | 精选的 `ka_*` 工具。 |
-| MCP profile | 默认 core profile 暴露 bounded root-bound recovery 工具；更宽的显式 profile 是 `evidence`、`formal_run`、`literature` 和 `paper_write`；`stage` 是 label，不过滤工具列表。 |
-| 长程恢复 | `ka_status`、`ka_resume_brief`、`ka_pack_delta` 和 `ka_checkpoint` 提供被动恢复锚点；watchdog 风格诊断在默认 Codex MCP 面中保持 hidden/admin-only。 |
-| 方法改进 | `ka_update_method_scoreboard`、`ka_get_optimization_frontier` 和 `ka_claim_gate` 等 public 工具闭合 experiment -> novelty -> evidence loop；自动 idea selection 不暴露在默认 MCP 面。 |
+| MCP profile | 默认发现 24 个公开研究工具和参数定义；显式 profile 仅用于筛选，执行器仍需通过权限门槛。 |
+| 长程恢复 | `ka_research_read(operation="status")`、`ka_research_read(operation="resume")`、`ka_research_read(operation="delta")` 和 `ka_checkpoint` 提供被动恢复锚点；watchdog 风格诊断在默认 Codex MCP 面中保持 hidden/admin-only。 |
+| 方法改进 | `ka_method_record(operation="result")`、`ka_research_read(operation="methods")` 和 `ka_claim_gate` 等 public 工具闭合 experiment -> novelty -> evidence loop；自动 idea selection 不暴露在默认 MCP 面。 |
 | 研究状态 | 项目本地 root-bound manifest、memory、artifact、baseline、experiment、paper bundle、analysis campaign 和有界 event/delta 摘要。 |
-| Codex skills | `kvasir-agent` 以及 experiment、handoff、writing plan、paper reliability、review 等 adapted support skills。 |
+| Codex skills | 7 个入口：研究工作区、实验、写作审稿、严格文献研究、论文可靠性、图表和交接。 |
 
 ## 快速开始
 
-在 `Kvasir-agent` 目录内检查：
+需要 Python 3.10+、PyYAML、jsonschema 和支持插件的 Codex CLI。按照 [安装指南](docs/INSTALL.md) 把源目录加入 marketplace，然后安装：
 
 ```bash
-python scripts/ka_mcp.py --stdio-smoke initialize
-python scripts/ka_mcp.py --stdio-smoke tools/list
-python scripts/p4_acceptance.py
+bash scripts/install.sh kvasir-agent@local-personal
+codex plugin list
 ```
 
-安装到 Codex：
+开启新对话后，Codex 会发现 7 个原生技能和随插件声明的 MCP。默认工具列表包含 24 个研究工具及其参数定义；不需要切换 profile 来解锁常规研究工具。
+
+本地检查和可选的项目说明文件：
 
 ```bash
-bash scripts/install.sh
+python3 scripts/ka_mcp.py --stdio-smoke tools/list
+bash scripts/init_project.sh /path/to/project
 ```
 
-安装脚本会复制插件、启用 `[plugins."kvasir-agent@local-personal"]`，并在 Codex config 中注册 MCP server。若需要手动注册，使用同一个 stdio 入口：
-
-```bash
-codex mcp add kvasir-agent -- python -B ~/.codex/plugins/kvasir-agent/scripts/ka_mcp.py
-```
-
-安装后在研究项目根目录初始化提示文件：
-
-```bash
-bash ~/.codex/plugins/kvasir-agent/scripts/init_project.sh /path/to/project
-```
-
-之后通过 MCP `ka_*` 工具执行：`ka_status`、`ka_record_user_requirement`、`ka_create_local_baseline`、`ka_confirm_baseline`、`ka_submit_idea`、`ka_record_main_experiment`、`ka_create_analysis_campaign`、`ka_record_analysis_slice`、`ka_resume_brief`、`ka_checkpoint` 等。首次 durable write 会 lazy-create `<project>/Kvasir-agent/research.yaml`；不需要单独的 lifecycle 初始化步骤。
+每次研究 MCP 调用都用 `project` 明确传入项目绝对路径，从 `ka_research_read(operation="status")` 和 `ka_research_read(operation="resume")` 开始，通过 `ka_record_user_requirement` 保存约束，首次写入会初始化研究状态。
 
 ## 项目本地 runtime
 
@@ -100,20 +90,13 @@ bash ~/.codex/plugins/kvasir-agent/scripts/init_project.sh /path/to/project
 
 这会把 root-bound `research.yaml`、artifacts、memory、bash provenance、manual diagnostic records、checkpoints、analysis slices、claim decisions 和 paper bundles 留在研究项目里，而不是散落到全局 Codex 状态中。`Kvasir-agent/quests/` 仅作为 legacy migration 输入保留，新写入不会创建该路径。
 
-## 安装细节
+## 安装与升级
 
-`scripts/install.sh` 执行 local-personal Codex 插件安装：
+`.codex-plugin/plugin.json` 声明技能目录和 `.mcp.json`。`scripts/install.sh` 调用 `codex plugin add`，由 Codex 管理缓存、启用状态和 MCP 生命周期。升级时更新源版本后重新安装，并开启新对话。旧版全局 MCP 注册的迁移步骤见 [安装指南](docs/INSTALL.md)。
 
-1. 复制本目录到 `~/.codex/plugins/kvasir-agent`。
-2. 如果目标目录已存在，先备份为 `~/.codex/plugins/kvasir-agent.backup-<timestamp>`。
-3. 注册 `~/.agents/plugins/marketplace.json`。
-4. 在 `~/.codex/config.toml` 中启用 `[plugins."kvasir-agent@local-personal"]`。
-5. 在 `~/.codex/config.toml` 中注册 `[mcp_servers.kvasir-agent]`。
-6. 运行 `scripts/doctor.py`，且不在安装副本中保留 Python bytecode。
+## 研究能力的边界
 
-常规 Codex 使用建议保持 `CODEX_HOME` 和 `AGENTS_HOME` 默认值；这两个环境变量主要用于隔离 smoke test 或明确的非默认安装。
-
-更多细节见 [docs/INSTALL.md](docs/INSTALL.md)、[docs/USAGE.md](docs/USAGE.md)、[docs/MCP.md](docs/MCP.md) 和 [docs/REPOSITORY_LAYOUT.md](docs/REPOSITORY_LAYOUT.md)。
+保留基线、保护文件哈希、实验谱系、正式日志、反馈对账和研究交接。目标推进、技能发现、普通命令和 Git 使用 Codex 原生能力。创新性契约保存待验证假设，不生成自动分数；`ka_record_main_experiment` 仅记录数据；`ka_claim_gate` 检查材料完整性，科学有效性需要结合证据判断。
 
 ## 原 Kvasir-agent MCP 等价关系
 
@@ -121,11 +104,11 @@ bash ~/.codex/plugins/kvasir-agent/scripts/init_project.sh /path/to/project
 
 | 原 Kvasir-agent surface | Codex-native equivalent |
 | --- | --- |
-| `memory.write/read/search/list_recent` | `ka_memory_write`, `ka_memory_read`, `ka_memory_search`, `ka_memory_list_recent` |
+| `memory.write/read/search/list_recent` | `ka_memory_write`, `ka_memory_query` |
 | `artifact.record` 和旧 artifact flows | `ka_artifact_record` 以及 `ka_artifact_index` 等 public artifact tools |
-| event reads | `ka_status`、`ka_pack_delta` 和 compact root-bound summaries |
+| event reads | `ka_research_read(operation="status")`、`ka_research_read(operation="delta")` 和 compact root-bound summaries |
 | `bash_exec` | `ka_bash_exec`，在需要 formal provenance 时保留 project-local execution state 和 logs |
-| artifact convenience/introspection helpers | `ka_status`、`ka_get_method_scoreboard`、`ka_refresh_summary`、`ka_arxiv` 等 public `ka_*` wrappers |
+| artifact convenience/introspection helpers | `ka_research_read(operation="status")`, `ka_research_read(operation="methods")`; update summaries through Codex file editing. |
 
 ## 不提供的内容
 
@@ -139,3 +122,5 @@ bash ~/.codex/plugins/kvasir-agent/scripts/init_project.sh /path/to/project
 Kvasir-agent 负责研究语义层：root-bound research state、持久用户需求、memory、artifact、baseline、正式实验记录、analysis campaign 状态、paper/reliability 流程、manual diagnostics、checkpoint/resume、claim gate，以及正式证据命令的 `ka_bash_exec` provenance。
 
 常规操作层继续使用 Codex 原生能力：文件读写搜索、普通 shell、Git/GitHub、测试/构建/lint、进程监控和本地文档编辑。
+
+See [public tool migration](docs/TOOL_MIGRATION.md) for the 24-tool API and retired entries.

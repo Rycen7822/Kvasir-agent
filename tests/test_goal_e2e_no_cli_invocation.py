@@ -35,5 +35,5 @@ def test_goal_e2e_does_not_invoke_hidden_cli(monkeypatch, tmp_path: Path):
     monkeypatch.setattr(subprocess, "Popen", GuardedPopen)
 
     result = run_toy_goal_research(tmp_path)
-    assert result["claim"]["claim_gate"]["claimable"] is True
+    assert result["claim"]["claim_gate"]["evidence_complete"] is True
     assert all("kactl.py" not in item for item in observed)

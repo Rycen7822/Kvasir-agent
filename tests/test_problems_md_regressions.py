@@ -53,11 +53,11 @@ def test_usage_doc_matches_upgrade6_profile_contract() -> None:
     for phrase in stale_phrases:
         assert phrase not in usage
 
-    assert "core profile exposes curated" in usage or "core profile exposes bounded root-bound recovery tools" in usage
+    assert "24 public research tools" in usage and "parameter schemas" in usage
     assert "goal profile is deprecated" in usage
-    assert "stage is a label" in usage
-    assert "manual watchdog diagnostic" in usage
-    assert "MCP registry-only" in usage
+    assert "stage labels do not filter" in usage
+    assert "ADMIN_CLI.md" in usage
+    assert "Do not pass `project_root` or `quest_id`" in usage
 
 
 def test_project_root_alias_is_honored_and_does_not_write_to_cwd(tmp_path: Path, monkeypatch) -> None:
@@ -121,7 +121,7 @@ def _jsonrpc_tool_call(name: str, arguments: dict) -> dict:
 def test_jsonrpc_tools_call_enforces_public_mcp_profile_boundary(tmp_path: Path) -> None:
     quest_id = _new_quest(tmp_path)
 
-    public_payload = _jsonrpc_tool_call("ka_status", {"project": str(tmp_path)})
+    public_payload = _jsonrpc_tool_call("ka_research_read", {"project": str(tmp_path), "operation": "status"})
     assert public_payload["ok"] is True, public_payload
 
     for hidden_name, args in [

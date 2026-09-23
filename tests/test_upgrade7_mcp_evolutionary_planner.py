@@ -56,10 +56,10 @@ def _register_env(tmp_path: Path) -> ProjectLayout:
     return layout
 
 
-def test_execution_planning_profile_exposes_plan_only_evolutionary_tool():
+def test_execution_planning_profile_hides_internal_evolutionary_planner():
     listed = tools_list_payload({"profile": "execution_planning"})
     tool_names = {tool["name"] for tool in listed["tools"]}
-    assert "ka_evolutionary_plan_round" in tool_names
+    assert "ka_evolutionary_plan_round" not in tool_names
     assert "ka_evolutionary_round_submit" not in tool_names
 
 

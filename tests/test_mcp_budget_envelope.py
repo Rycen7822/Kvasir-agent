@@ -39,41 +39,12 @@ def _assert_budget_envelope(payload: dict[str, Any]) -> None:
     assert isinstance(payload["omitted_fields"], list)
 
 
-def test_core_status_search_and_load_tools_use_uniform_budget_envelope(tmp_path: Path):
-    search = call_tool(
-        "ka_skill_search",
-        {
-            "project": str(tmp_path),
-            "raw_user_request": "恢复长期任务时只加载必要 skill",
-            "description_query": "resume checkpoint skill retrieval",
-            "workflow_query": "bounded skill search then load preview",
-            "limit": 3,
-            "max_chars": 1200,
-        },
-    )
-    assert search["ok"] is True
-    assert search["candidates"]
-    for candidate in search["candidates"]:
-        assert isinstance(candidate["tokens_estimate"], int)
-        assert isinstance(candidate["source_hash"], str)
-
-    load = call_tool(
-        "ka_skill_load",
-        {
-            "project": str(tmp_path),
-            "handle": search["candidates"][0]["handle"],
-            "view": "preview",
-            "max_chars": 500,
-        },
-    )
-    assert load["ok"] is True
-
+def test_status_and_recovery_tools_use_uniform_budget_envelope(tmp_path: Path):
     payloads = [
         call_tool("ka_status", {"project": str(tmp_path)}),
         call_tool("ka_queue_status", {"project": str(tmp_path), "limit": 5}),
         call_tool("ka_runner_status", {"project": str(tmp_path)}),
-        search,
-        load,
+        call_tool("ka_resume_brief", {"project": str(tmp_path)}),
     ]
     for payload in payloads:
         _assert_budget_envelope(payload)

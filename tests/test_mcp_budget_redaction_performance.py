@@ -18,20 +18,6 @@ def test_mcp_tool_descriptions_and_outputs_are_bounded(tmp_path: Path):
     assert context["chars"] <= 240
     assert len(context["content"]) <= 240
 
-    search = call_tool(
-        "ka_skill_search",
-        {
-            "raw_user_request": "请检查 manifest 和 queue 状态",
-            "description_query": "manifest queue status",
-            "workflow_query": "validate manifest queue status context",
-            "limit": 5,
-            "max_chars": 900,
-        },
-    )
-    assert search["ok"] is True
-    assert search["tokens_estimate"] <= 900
-    assert all("content" not in item for item in search["candidates"])
-
 
 def test_mcp_normalized_payload_redacts_secret_like_values():
     private_key = "-----BEGIN " + "OPENSSH PRIVATE KEY-----\nabc123\n-----END OPENSSH PRIVATE KEY-----"
@@ -70,19 +56,9 @@ def test_mcp_normalized_payload_redacts_secret_like_values():
 def test_mcp_readonly_calls_are_fast_enough_for_context_budget():
     start = perf_counter()
     listed = [spec.as_dict() for spec in list_tool_specs()]
-    search = call_tool(
-        "ka_skill_search",
-        {
-            "raw_user_request": "use Kvasir-agent MCP status",
-            "description_query": "mcp status skill retrieval",
-            "workflow_query": "doctor status skill load",
-            "limit": 5,
-        },
-    )
     elapsed = perf_counter() - start
 
     assert listed
-    assert search["ok"] is True
     assert elapsed < 2.0
 
 

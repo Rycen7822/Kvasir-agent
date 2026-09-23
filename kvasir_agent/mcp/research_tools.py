@@ -13,7 +13,6 @@ from typing import Any, Callable, Iterator
 
 from kvasir_agent.adapters.cli import normalize_envelope
 from kvasir_agent.mcp.context import KvasirAgentMcpContext
-from kvasir_agent.profiles import get_profile_tool_names
 from kvasir_agent.runtime import schemas as native_schemas
 from kvasir_agent.runtime import tools as native_tools
 from kvasir_agent.services.manifest import ManifestService
@@ -106,25 +105,6 @@ def tool_schema(args: dict[str, Any]) -> dict[str, Any]:
     return {"ok": True, "schema": schema}
 
 
-def goal_context(args: dict[str, Any]) -> dict[str, Any]:
-    stage = str(args.get("active_stage") or args.get("stage") or os.environ.get("KA_ACTIVE_STAGE") or "scout").strip() or "scout"
-    tools = list(get_profile_tool_names("goal", stage=stage))
-    context = KvasirAgentMcpContext.from_env(args)
-    return {
-        "ok": True,
-        "profile": "goal",
-        "active_stage": stage,
-        "allowed_tools_for_stage": tools,
-        "context": {
-            "project_root": str(context.require_project_root()),
-            "quest_id": context.quest_id,
-            "quest_root": str(context.quest_root) if context.quest_root else None,
-            "run_id": context.run_id,
-            "conversation_id": context.conversation_id,
-        },
-    }
-
-
 def _novelty_contract_retry_payload(payload: dict[str, Any]) -> dict[str, Any]:
     current = dict(payload)
     current.setdefault("recoverable", True)
@@ -163,10 +143,11 @@ def submit_idea(args: dict[str, Any]) -> dict[str, Any]:
         }
     call_args = dict(args)
     call_args.setdefault("mechanism", contract.get("mechanism"))
-    call_args["selection_scores"] = contract["selection_scores"]
+    call_args.pop("selection_scores", None)
+    call_args["novelty_contract"] = contract
     payload = native_tool_call("ka_submit_idea", call_args)
     payload["novelty_contract"] = contract
-    payload["method_scores"] = contract["selection_scores"]
+    payload["assessment_status"] = "not_assessed"
     return payload
 
 

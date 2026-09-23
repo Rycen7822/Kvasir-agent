@@ -54,41 +54,31 @@ The design and implementation also reference or draw inspiration from:
 | --- | --- |
 | Control plane | MCP-only default through `scripts/ka_mcp.py`; admin terminal commands are isolated in `docs/ADMIN_CLI.md`. |
 | Public tool surface | Curated `ka_*` tools. |
-| MCP profiles | Default core profile exposes 11 tools. Wider explicit profiles are `evidence`, `formal_run`, `literature`, and `paper_write`; `stage` is a label, not a tool-list filter. |
-| Long-run recovery | `ka_status`, `ka_resume_brief`, `ka_pack_delta`, and `ka_checkpoint` provide passive recovery anchors; watchdog-style diagnostics remain hidden/admin-only in the default Codex MCP surface. |
-| Method improvement | Public tools such as `ka_update_method_scoreboard`, `ka_get_optimization_frontier`, and `ka_claim_gate` close the experiment -> novelty -> evidence loop; autonomous idea selection remains hidden from default MCP. |
+| MCP profiles | Default discovery exposes 24 public research tools with parameter schemas; explicit profiles are optional filters. Executor tools remain gated. |
+| Long-run recovery | `ka_research_read(operation="status")`, `ka_research_read(operation="resume")`, `ka_research_read(operation="delta")`, and `ka_checkpoint` provide passive recovery anchors; watchdog-style diagnostics remain hidden/admin-only in the default Codex MCP surface. |
+| Method improvement | Public tools such as `ka_method_record(operation="result")`, `ka_research_read(operation="methods")`, and `ka_claim_gate` close the experiment -> novelty -> evidence loop; autonomous idea selection remains hidden from default MCP. |
 | Research state | A project-local `Kvasir-agent/` research root with memory, artifacts, baselines, experiments, paper bundles, analysis campaigns, and bounded event/delta summaries. |
-| Codex skills | `kvasir-agent` plus adapted support skills for experiments, handoffs, writing plans, paper reliability, and review. |
+| Codex skills | Seven workflows: research workspace, experiments, writing/review, strict research, paper reliability, figures and handoffs. |
 
 ## Quick Start
 
-From this `Kvasir-agent` directory:
+Requires Python 3.10+, PyYAML, jsonschema and a Codex CLI with plugin support. Follow the [installation guide](docs/INSTALL.md) to register the source in a marketplace, then install:
 
 ```bash
-python scripts/ka_mcp.py --stdio-smoke initialize
-python scripts/ka_mcp.py --stdio-smoke tools/list
-python scripts/p4_acceptance.py
+bash scripts/install.sh kvasir-agent@local-personal
+codex plugin list
 ```
 
-Install into your normal Codex home:
+Open a new thread. Codex discovers seven native skills and the bundled MCP server. Default discovery advertises 24 research tools with parameter schemas; ordinary research tools need no profile switching.
+
+Local discovery check and optional project note:
 
 ```bash
-bash scripts/install.sh
+python3 scripts/ka_mcp.py --stdio-smoke tools/list
+bash scripts/init_project.sh /path/to/project
 ```
 
-The installer copies the plugin, enables `[plugins."kvasir-agent@local-personal"]`, and registers the MCP server in Codex config. If you need to register manually, use the same stdio entrypoint:
-
-```bash
-codex mcp add kvasir-agent -- python -B ~/.codex/plugins/kvasir-agent/scripts/ka_mcp.py
-```
-
-Initialize a research project with the project helper:
-
-```bash
-bash ~/.codex/plugins/kvasir-agent/scripts/init_project.sh /path/to/project
-```
-
-Then operate through MCP `ka_*` tools such as `ka_status`, `ka_record_user_requirement`, `ka_create_local_baseline`, `ka_confirm_baseline`, `ka_submit_idea`, `ka_record_main_experiment`, `ka_create_analysis_campaign`, `ka_record_analysis_slice`, `ka_resume_brief`, and `ka_checkpoint`. The first durable write lazily creates `<project>/Kvasir-agent/research.yaml`; no separate lifecycle initialization step is required.
+Pass the absolute research root as `project` on every MCP research call, starting with `ka_research_read(operation="status")` and `ka_research_read(operation="resume")`. Record constraints with `ka_record_user_requirement`; the first durable write initializes research state.
 
 ## Project-Local Runtime
 
@@ -100,20 +90,13 @@ When commands run from a research project root, Kvasir-agent state is stored in:
 
 This keeps root-bound research state, artifacts, memory, bash provenance, manual diagnostic records, checkpoints, analysis slices, claim decisions, and paper bundles with the research project rather than in global Codex state. `Kvasir-agent/quests/` is only a legacy migration input, not a new-write target.
 
-## Install Details
+## Installation and Updates
 
-`scripts/install.sh` performs a local-personal Codex plugin install:
+`.codex-plugin/plugin.json` declares skills and `.mcp.json`. `scripts/install.sh` delegates to `codex plugin add`; Codex owns cache, enablement and MCP lifecycle. Update the source version before reinstalling, then open a fresh thread. See [installation and migration](docs/INSTALL.md) for old global MCP registrations.
 
-1. Copies this directory to `~/.codex/plugins/kvasir-agent`.
-2. If an installed copy already exists, moves it to `~/.codex/plugins/kvasir-agent.backup-<timestamp>`.
-3. Registers the local marketplace entry in `~/.agents/plugins/marketplace.json`.
-4. Enables `[plugins."kvasir-agent@local-personal"]` in `~/.codex/config.toml`.
-5. Registers `[mcp_servers.kvasir-agent]` in `~/.codex/config.toml`.
-6. Runs `scripts/doctor.py` without leaving Python bytecode in the installed copy.
+## Research Contracts
 
-For normal Codex use, leave `CODEX_HOME` and `AGENTS_HOME` unset. They are honored for isolated smoke tests or deliberate non-default installs.
-
-See [docs/INSTALL.md](docs/INSTALL.md), [docs/USAGE.md](docs/USAGE.md), [docs/MCP.md](docs/MCP.md), and [docs/REPOSITORY_LAYOUT.md](docs/REPOSITORY_LAYOUT.md) for install, usage, MCP, and repository organization details.
+Retain baselines, protected-file hashes, experiment lineage, formal logs, feedback reconciliation and research handoffs. Codex owns task continuation, skill discovery, ordinary commands and Git. Novelty contracts preserve unassessed hypotheses without automatic scores. `ka_record_main_experiment` records data; `ka_claim_gate` checks evidence completeness. Scientific validity requires reviewing the evidence.
 
 ## Original Kvasir-agent MCP Equivalence
 
@@ -121,11 +104,11 @@ This adapter preserves business-workflow effects rather than MCP protocol shape:
 
 | Original Kvasir-agent surface | Codex-native equivalent |
 | --- | --- |
-| `memory.write/read/search/list_recent` | `ka_memory_write`, `ka_memory_read`, `ka_memory_search`, `ka_memory_list_recent` |
+| `memory.write/read/search/list_recent` | `ka_memory_write`, `ka_memory_query` |
 | `artifact.record` and research artifact flows | `ka_artifact_record` plus specialized public `ka_*` artifact tools such as `ka_artifact_index` |
-| event reads | `ka_status`, `ka_pack_delta`, and compact `ka_get_quest_state` summaries |
+| event reads | `ka_research_read(operation="status")`, `ka_research_read(operation="delta")`, and `ka_research_read(operation="resume")` summaries |
 | `bash_exec` | `ka_bash_exec`, retaining project-local execution state and logs when formal provenance is required |
-| artifact convenience/introspection helpers | Public `ka_*` wrappers such as `ka_status`, `ka_get_method_scoreboard`, `ka_refresh_summary`, and `ka_arxiv` |
+| artifact convenience/introspection helpers | `ka_research_read(operation="status")`, `ka_research_read(operation="methods")`; update summaries through Codex file editing. |
 
 ## What It Deliberately Does Not Provide
 
@@ -139,3 +122,5 @@ This adapter preserves business-workflow effects rather than MCP protocol shape:
 Use Kvasir-agent for the research semantic layer: root-bound research state, durable requirements, memory, artifacts, baselines, formal experiment records, analysis campaign state, paper/reliability workflows, manual diagnostics, checkpoint/resume, claim gate, and `ka_bash_exec` provenance for formal evidence commands.
 
 Use Codex-native capabilities for routine operation-layer work: file/search/edit, ordinary shell, Git/GitHub mechanics, tests/builds/lint, process monitoring, and local prose editing.
+
+See [public tool migration](docs/TOOL_MIGRATION.md) for the 24-tool API and retired entries.

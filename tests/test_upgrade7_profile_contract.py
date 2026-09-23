@@ -3,16 +3,16 @@ from __future__ import annotations
 from kvasir_agent.mcp.tool_registry import tools_list_payload
 
 PHASE1_TOOLS = {
-    "ka_environment_register",
-    "ka_environment_validate",
-    "ka_environment_show",
+    "ka_environment",
+    "ka_environment",
+    "ka_environment",
     "ka_feedback_ingest",
     "ka_trajectory_record",
-    "ka_trajectory_search",
-    "ka_trajectory_show",
+    "ka_trajectory_query",
+    "ka_trajectory_query",
 }
 PLANNING_TOOLS = {"ka_evolutionary_plan_round"}
-EVIDENCE_PHASE1_TOOLS = {"ka_feedback_ingest", "ka_trajectory_search", "ka_trajectory_show"}
+EVIDENCE_PHASE1_TOOLS = {"ka_environment", "ka_feedback_ingest", "ka_trajectory_query", "ka_trajectory_query"}
 EXECUTOR_TOOLS = {
     "ka_variant_create",
     "ka_variant_apply_patch",
@@ -32,7 +32,7 @@ def _names(payload: dict) -> set[str]:
 
 
 def test_core_profile_excludes_phase1_and_executor_tools():
-    names = _names(tools_list_payload({}))
+    names = _names(tools_list_payload({"profile": "core"}))
     assert names.isdisjoint(PHASE1_TOOLS | PLANNING_TOOLS), sorted(names & (PHASE1_TOOLS | PLANNING_TOOLS))
     assert names.isdisjoint(EXECUTOR_TOOLS), sorted(names & EXECUTOR_TOOLS)
 
@@ -50,7 +50,7 @@ def test_execution_planning_profile_exposes_all_phase1_tools_without_executor_to
     names = _names(payload)
     assert payload.get("profile") == "execution_planning"
     assert PHASE1_TOOLS <= names, sorted(PHASE1_TOOLS - names)
-    assert PLANNING_TOOLS <= names, sorted(PLANNING_TOOLS - names)
+    assert names.isdisjoint(PLANNING_TOOLS), sorted(names & PLANNING_TOOLS)
     assert names.isdisjoint(EXECUTOR_TOOLS), sorted(names & EXECUTOR_TOOLS)
 
 

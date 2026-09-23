@@ -4,13 +4,14 @@ This repository is intentionally organized as a small Codex plugin plus a packag
 
 ## Canonical source trees
 
-- `kvasir_agent/services/` — business logic and project-local state primitives: manifest, trial, runner, queue, wiki, review, cost, migration, soak, goal loop, stage router, method improvement, progress watchdog, checkpoint, resume, and context-pack services.
-- `kvasir_agent/mcp/` — MCP stdio server, tool registry, goal context helpers, research tool wrappers, surface allowlist, and bounded skill retrieval. MCP handlers call services directly and do not shell out to terminal compatibility entrypoints.
+- `kvasir_agent/services/` — business logic and project-local state primitives: manifest, trial, runner, queue, wiki, review, cost, migration, soak, method improvement, progress watchdog, checkpoint, resume, and context-pack services.
+- `kvasir_agent/mcp/` — MCP stdio server, tool registry, research tool wrappers, and surface allowlist. MCP handlers call services directly and do not shell out to terminal compatibility entrypoints.
 - `kvasir_agent/adapters/` — compatibility and envelope helpers shared by CLI/MCP surfaces.
 - `kvasir_agent/runtime/` — packaged native runtime surface used by the plugin.
 - `kvasir_agent/runtime/vendor/` — vendored upstream-style runtime code. Avoid feature work here unless the change is explicitly a vendor/runtime compatibility patch.
 - `kvasir_agent/runtime/resources/` — packaged prompts, templates, and skill snapshots installed into generated projects.
-- `skills/` — active Codex plugin skills loaded directly from this repository.
+- `skills/` — seven active Codex plugin workflows; Codex handles native skill discovery.
+- `docs/research-playbooks/` — preserved specialist references from consolidated skill entrypoints.
 - `scripts/` — human/CI entrypoints. `scripts/ka_mcp.py` is the MCP stdio entrypoint; `scripts/p4_acceptance.py` is the P4 local/CI acceptance gate; hidden admin/debug CLI files are documented only in `docs/ADMIN_CLI.md`.
 - `docs/` — human-facing architecture, installation, usage, migration, MCP, long-run, admin, and maintenance notes.
 - `tests/` — contract and regression tests. Keep new behavior covered by tests before changing implementation.
@@ -50,4 +51,4 @@ This avoids a premature sync generator while still making the current duplicatio
 
 - Do not move core packages into `src/` without first updating plugin install scripts and smoke tests.
 - Do not collapse `kvasir_agent/runtime/` into `kvasir_agent/services/`; runtime/vendor/resources and service-layer orchestration serve different maintenance roles.
-- Do not expand MCP into an all-tools runtime surface. Keep the MCP default compact and stage-gated.
+- Do not expand MCP into an all-tools runtime surface. Advertise the public research catalog with parameter schemas; keep executor authorization and admin boundaries.

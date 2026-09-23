@@ -32,9 +32,9 @@ def _run_kactl(project: Path, *args: str) -> dict:
 
 
 def test_p3_resume_checkpoint_delta_tools_are_registered_in_default_core():
-    names = {tool["name"] for tool in tools_list_payload()["tools"]}
+    names = {tool["name"] for tool in tools_list_payload({"profile": "core"})["tools"]}
 
-    assert {"ka_resume_brief", "ka_checkpoint", "ka_pack_delta"} <= names
+    assert {"ka_research_read", "ka_checkpoint", "ka_research_read"} <= names
     assert len(names) <= 14
     assert "ka_goal_state" not in names
     assert "ka_goal_next_action" not in names

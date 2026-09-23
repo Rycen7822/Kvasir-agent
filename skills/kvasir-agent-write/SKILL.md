@@ -1,34 +1,23 @@
 ---
 name: kvasir-agent-write
-description: Compact Kvasir-agent router for kvasir-agent-write; use for its research stage while keeping Codex-native operations outside the plugin runtime.
-version: 2.0.0
+description: Draft and revise research papers from recorded evidence, connect claims to analysis, and prepare review responses and final paper bundles.
 ---
 
-# kvasir-agent-write compact router
+# Research writing and review
 
-This active skill is intentionally compact. The historical long playbook was moved to `references/legacy-playbook.md` and is reference-only.
+1. Read `ka_research_read(operation="resume")`, relevant analysis records and source evidence. Identify the contribution, measured results, limitations and intended venue. Use native Codex planning for the writing task.
+2. Prepare or revise an outline with `ka_paper_record(operation="outline")`. Map each proposed claim to baseline, metric, experiment and completed analysis slices. Use `ka_claim_gate` to find missing material; review scientific validity separately.
+3. Use strict literature research and paper reliability workflows where sources need qualification. Cite the actual paper and distinguish accepted venue evidence from preprint status or citation popularity.
+4. Draft with Codex-native file tools. Keep measurements and uncertainty faithful to the recorded results; never invent missing experiments, reviewer feedback or citations.
+5. For review or rebuttal, make a compact issue-to-evidence list. State which response needs new analysis or a new experiment and honor the user's authorization before execution. Use `ka_research_read(operation="review")` to locate current review artifacts.
+6. Render and inspect figures and the final document. Use figure-polish only for figure work. Check references, claim wording, tables and unresolved limitations.
+7. Record the paper manifest with `ka_paper_record(operation="bundle")`, update the research summary with native file editing where useful, and checkpoint reviewed artifacts and open issues. Bundle creation does not publish or submit the paper.
 
-## Operating contract
+## Supporting material
 
-- Kvasir-agent is a Codex CLI plugin, not a standalone autonomous framework.
-- Default mode is `copilot`; do not invent, improve, or expand ideas automatically unless the user or project manifest explicitly enables autonomous idea improvement.
-- Use Codex-native file search, edits, shell, tests, and git for ordinary development work.
-- Use MCP `ka_*` tools only when visible in the selected profile; prefer public families for root-bound research state, memory, artifacts, baselines, experiments, analysis, literature, paper, method/frontier, claim gates, checkpoint/resume, and compact evidence.
-- Keep outputs compact. Return paths, ids, hashes, metric values, short tails, and next action; do not paste full logs, full background notes, or full historical playbooks into context.
-- Do not execute old API names directly. Translate historical playbook wording to current MCP `ka_*` tool calls.
+Consult only the relevant historical section; current tool schemas define callable APIs:
 
-## Current MCP tool surface
-
-Use the relevant bounded MCP `ka_*` tools exposed by `tools/list` and `ka_tool_schema` for this stage. Hidden admin/debug CLI examples live only in `docs/ADMIN_CLI.md`.
-
-## Stage workflow
-
-1. Read `Kvasir-agent/research.yaml` and `Kvasir-agent/summaries/context_pack.md` when present.
-2. Identify the single next bounded research action for this stage.
-3. If stage-specific nuance is needed, read only the relevant section of `references/legacy-playbook.md` and translate it to the current MCP `ka_*` tool surface.
-4. Apply manifest, baseline, metric, readonly, budget, and autonomy gates before any experiment/run changes.
-5. Record durable outcomes through MCP `ka_*` tools and keep ordinary code edits in Codex-native operations.
-
-## Legacy reference
-
-`references/legacy-playbook.md` preserves the pre-upgrade detailed playbook for audit and migration. It may contain old names and long procedures. Treat it as source material, not executable instructions.
+- [Writing](references/legacy-playbook.md)
+- [Review](../../docs/research-playbooks/kvasir-agent-review/references/legacy-playbook.md)
+- [Rebuttal](../../docs/research-playbooks/kvasir-agent-rebuttal/references/legacy-playbook.md)
+- [Finalization](../../docs/research-playbooks/kvasir-agent-finalize/references/legacy-playbook.md)

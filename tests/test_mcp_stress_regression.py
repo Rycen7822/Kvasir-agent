@@ -65,17 +65,17 @@ def test_stdio_jsonrpc_stress_subset_has_stable_protocol_responses():
 
 
 def test_profile_stage_and_schema_stress_subset_matches_upgrade6_contract():
-    core = tools_list_payload()
+    core = tools_list_payload({"profile": "core"})
     goal = tools_list_payload({"profile": "goal"})
     unknown_stage = tools_list_payload({"profile": "goal", "stage": "unknown-stage"})
     admin = tools_list_payload({"profile": "admin"})
 
     core_names = {tool["name"] for tool in core["tools"]}
     goal_names = {tool["name"] for tool in goal["tools"]}
-    assert len(list_tool_specs()) == 10
-    assert len(core["tools"]) == 10
-    assert {"ka_feedback_ingest", "ka_trajectory_search", "ka_trajectory_show"} <= goal_names
-    assert core_names.isdisjoint({"ka_feedback_ingest", "ka_trajectory_search", "ka_trajectory_show"})
+    assert len(list_tool_specs()) == 3
+    assert len(core["tools"]) == 3
+    assert {"ka_feedback_ingest", "ka_trajectory_query"} <= goal_names
+    assert core_names.isdisjoint({"ka_feedback_ingest", "ka_trajectory_query"})
     assert unknown_stage["ok"] is True
     assert unknown_stage["stage_label"] == "unknown-stage"
     assert {tool["name"] for tool in unknown_stage["tools"]} == {tool["name"] for tool in goal["tools"]}

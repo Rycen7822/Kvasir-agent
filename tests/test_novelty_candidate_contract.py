@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from kvasir_agent.mcp.tool_registry import call_tool
@@ -33,7 +34,7 @@ def test_submit_idea_requires_novelty_contract(tmp_path: Path):
     assert "novelty_contract" in missing["required_fields"]
 
 
-def test_submit_idea_accepts_complete_novelty_contract_and_scores(tmp_path: Path):
+def test_submit_idea_persists_contract_without_fabricated_scores(tmp_path: Path):
     quest = _ok(call_tool("ka_new_quest", {"project": str(tmp_path), "goal": "novelty gate", "title": "Novelty Gate"}))
     quest_id = quest["quest"]["quest_id"]
     _confirm_baseline(tmp_path, quest_id)
@@ -51,10 +52,15 @@ def test_submit_idea_accepts_complete_novelty_contract_and_scores(tmp_path: Path
                 "related_work_refs": ["paper-a"],
                 "expected_difference": "routes evidence before paper claims",
                 "risk_notes": ["small toy validation"],
+                "selection_scores": {"novelty": 0.99},
             },
         },
     )
     assert payload["ok"] is True, payload
-    scores = payload["novelty_contract"]["selection_scores"]
-    assert set(scores) >= {"novelty", "feasibility", "evidence", "risk", "diversity"}
-    assert all(0.0 <= float(value) <= 1.0 for value in scores.values())
+    assert payload["assessment_status"] == "not_assessed"
+    assert "method_scores" not in payload
+    assert "selection_scores" not in payload["novelty_contract"]
+    stored = json.loads(Path(payload["path"]).read_text())
+    assert stored["novelty_contract"] == payload["novelty_contract"]
+    assert stored["assessment_status"] == "not_assessed"
+    assert "selection_scores" not in stored

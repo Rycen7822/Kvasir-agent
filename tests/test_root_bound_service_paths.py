@@ -6,7 +6,6 @@ from pathlib import Path
 
 from kvasir_agent.services.environment import EnvironmentService
 from kvasir_agent.services.feedback_ingest import FeedbackIngestService
-from kvasir_agent.services.goal_loop import GoalLoopService
 from kvasir_agent.services.journal import JournalService
 from kvasir_agent.services.method_improvement import MethodImprovementService
 from kvasir_agent.services.project_state import ProjectLayout
@@ -65,11 +64,6 @@ def test_core_services_write_root_bound_paths_without_quest_detail_copy(tmp_path
     assert trial["quest_root"] == str(tmp_path / "Kvasir-agent")
     assert "detail_path" not in trial
     assert (tmp_path / "Kvasir-agent" / "trials" / trial["trial_id"] / "trial.json").exists()
-
-    goal = GoalLoopService(layout).write_state(QUEST_ID, active_stage="experiment")
-    assert Path(goal["path"]) == tmp_path / "Kvasir-agent" / "runtime" / "goal_state.json"
-    assert goal["state"]["quest_root"] == str(tmp_path / "Kvasir-agent")
-    assert "quest_id" not in goal["state"]["next_action"].get("required_inputs", [])
 
     queued = QueueService(layout).submit(job_id="job1", command="echo ok", quest_id=QUEST_ID)
     job = queued["job"]

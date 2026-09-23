@@ -132,7 +132,6 @@ class ResumeService:
                 {"path": str(self.layout.state_root), "kind": "state_root"},
                 {"path": str(self.checkpoints.latest_path), "kind": "latest_checkpoint"},
                 {"path": str(self.layout.event_log_path), "kind": "event_log"},
-                {"path": str(self.layout.state_root / "runtime" / "goal_state.json"), "kind": "goal_state"},
             ],
             "warnings": warnings,
         }

@@ -47,3 +47,6 @@ temp/
 Thumbs.db
 .idea/
 .vscode/
+
+CODEX_STATE.md
+.work/

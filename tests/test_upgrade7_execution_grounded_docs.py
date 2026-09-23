@@ -23,18 +23,17 @@ def test_mcp_documents_execution_planning_and_executor_profiles():
     assert "execution_planning" in text
     assert "executor_local" in text
     assert "KVASIR_AGENT_ENABLE_EXECUTOR_MCP=1" in text
-    assert "ka_evolutionary_round_plan" in text
+    assert "ka_evolutionary_plan_round" in (ROOT / "docs/TOOL_MIGRATION.md").read_text()
     assert "ka_variant_create" in text
     assert "not registered by default" in text
 
 
 def test_codex_router_documents_execution_grounded_gate():
     text = ROUTER.read_text(encoding="utf-8")
-    assert "execution-grounded" in text
-    assert "automatic idea search" in text
-    assert "manifest" in text
-    assert "do not submit experiments" in text
-    assert "executor_local" in text
+    assert "Autonomous idea improvement" in text
+    assert "explicit user request" in text
+    assert "Executor tools require explicit authorization" in text
+    assert "environment/manifest gates" in text
 
 
 def test_execution_grounded_research_doc_exists_and_lists_forbidden_aar_patterns():

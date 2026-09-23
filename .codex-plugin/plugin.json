@@ -8,7 +8,7 @@
   "skills": "./skills",
   "interface": {
     "displayName": "Kvasir-agent Codex MCP",
-    "shortDescription": "MCP-only default for Kvasir-agent research state.",
+    "shortDescription": "Research evidence, experiments and recovery for Codex.",
     "longDescription": "A self-contained Codex CLI plugin exposing project-local research state through scripts/ka_mcp.py as the MCP-only default research control plane. Ordinary file editing/search, shell, Git, tests, builds, and process management remain Codex-native responsibilities. `/goal` is Codex-native; Kvasir-agent does not implement slash commands.",
     "developerName": "Kvasir-agent Codex MCP",
     "category": "Productivity",
@@ -17,10 +17,11 @@
       "Write"
     ],
     "defaultPrompt": [
-      "MCP-only default: use scripts/ka_mcp.py and curated ka_* tools for project-local research state.",
-      "`/goal` is Codex-native; Kvasir-agent does not implement slash commands.",
-      "Use Codex-native file/shell/Git/test/build for routine work; ka_bash_exec is formal provenance only."
+      "Use Kvasir-agent MCP for durable research evidence, baselines and experiment records.",
+      "Recover with ka_research_read(operation=resume, project=absolute_path). Codex owns /goal, skills and coding.",
+      "Treat recorded results and evidence completeness separately from scientific verification."
     ],
     "brandColor": "#4D6A7A"
-  }
+  },
+  "mcpServers": "./.mcp.json"
 }

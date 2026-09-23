@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import hashlib
 import json
 from datetime import UTC, datetime
 from pathlib import Path
@@ -15,12 +14,6 @@ def _utc_now() -> str:
     return datetime.now(UTC).replace(microsecond=0).isoformat()
 
 
-def _stable_score(seed: str, *, low: float = 0.35, high: float = 0.95) -> float:
-    digest = hashlib.sha256(seed.encode("utf-8")).hexdigest()
-    raw = int(digest[:8], 16) / 0xFFFFFFFF
-    return round(low + (high - low) * raw, 4)
-
-
 class MethodImprovementService:
     """Root-bound method improvement, novelty, and claim gates."""
 
@@ -33,6 +26,26 @@ class MethodImprovementService:
 
     def frontier_path(self, quest_id: str) -> Path:
         return self.layout.state_root / "method_memory" / "frontier" / "frontier.json"
+
+    def read_summary(self, *, limit: int = 20) -> dict[str, Any]:
+        """Read the same files update_scoreboard writes, without creating state."""
+        limit = max(1, min(int(limit), 100))
+        scoreboard = self._read_json(self.scoreboard_path(""), {"ideas": {}})
+        frontier = self._read_json(self.frontier_path(""), {})
+        ideas = list((scoreboard.get("ideas") or {}).values())
+        bounded_frontier = {
+            key: value[:limit] if isinstance(value, list) else value
+            for key, value in frontier.items()
+        }
+        return {
+            "ok": True, "scoreboard": {**scoreboard, "ideas": ideas[:limit]},
+            "method_count": len(ideas), "frontier": bounded_frontier,
+            "scoreboard_path": str(self.scoreboard_path("")),
+            "frontier_path": str(self.frontier_path("")),
+            "truncated": len(ideas) > limit or any(
+                isinstance(value, list) and len(value) > limit for value in frontier.values()
+            ),
+        }
 
     def claim_gate_path(self, quest_id: str, claim_id: str) -> Path:
         safe = "".join(ch if ch.isalnum() or ch in "-_" else "_" for ch in str(claim_id or "claim")) or "claim"
@@ -78,22 +91,6 @@ class MethodImprovementService:
         tmp.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         tmp.replace(path)
 
-    def score_novelty_contract(self, contract: dict[str, Any]) -> dict[str, float]:
-        mechanism = str(contract.get("mechanism") or "").strip().casefold()
-        related = "|".join(sorted(str(item).strip().casefold() for item in contract.get("related_work_refs") or [] if str(item).strip()))
-        difference = str(contract.get("expected_difference") or "").strip().casefold()
-        risks = "|".join(sorted(str(item).strip().casefold() for item in contract.get("risk_notes") or [] if str(item).strip()))
-        base = f"{mechanism}\n{related}\n{difference}\n{risks}"
-        evidence = min(1.0, 0.45 + 0.18 * len([item for item in contract.get("related_work_refs") or [] if str(item).strip()]))
-        risk_penalty = min(0.35, 0.08 * len([item for item in contract.get("risk_notes") or [] if str(item).strip()]))
-        return {
-            "novelty": _stable_score("novelty:" + base),
-            "feasibility": round(max(0.0, _stable_score("feasibility:" + base, low=0.45, high=0.9) - risk_penalty), 4),
-            "evidence": round(evidence, 4),
-            "risk": round(max(0.0, 1.0 - risk_penalty), 4),
-            "diversity": _stable_score("diversity:" + base),
-        }
-
     def validate_novelty_contract(self, contract: Any) -> dict[str, Any]:
         if not isinstance(contract, dict):
             return {
@@ -112,7 +109,8 @@ class MethodImprovementService:
             return {"ok": False, "error": "novelty_contract.expected_difference is required", "error_type": "missing_expected_difference", "recoverable": True}
         normalized = dict(contract)
         normalized["related_work_refs"] = related
-        normalized["selection_scores"] = self.score_novelty_contract(normalized)
+        normalized.pop("selection_scores", None)
+        normalized["assessment_status"] = "not_assessed"
         return {"ok": True, "novelty_contract": normalized}
 
     def duplicate_check(self, *, quest_id: str, mechanism: str) -> dict[str, Any]:
@@ -252,7 +250,9 @@ class MethodImprovementService:
             "claim_id": claim_id,
             "claim_text": claim_text,
             "quest_id": quest_id,
-            "claimable": not blockers,
+            "evidence_complete": not blockers,
+            "verification_scope": "evidence_completeness",
+            "scientific_validity": "not_assessed",
             "blocking_reasons": blockers,
             "baseline_id": baseline_id,
             "metric_contract": metric_contract,

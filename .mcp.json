@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "kvasir-agent": {
+      "command": "python3",
+      "args": [
+        "scripts/ka_mcp.py"
+      ],
+      "env": {
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "cwd": "."
+    }
+  }
+}

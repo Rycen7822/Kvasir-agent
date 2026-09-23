@@ -1,34 +1,26 @@
 ---
 name: kvasir-agent-experiment
-description: Compact Kvasir-agent router for kvasir-agent-experiment; use for its research stage while keeping Codex-native operations outside the plugin runtime.
-version: 2.0.0
+description: Establish research baselines, record testable ideas and experiments, and connect measured outcomes to analysis and negative-result memory.
 ---
 
-# kvasir-agent-experiment compact router
+# Evidence-backed experiments
 
-This active skill is intentionally compact. The historical long playbook was moved to `references/legacy-playbook.md` and is reference-only.
+Use for the research lifecycle from baseline to analysis. Use Codex-native tools for code, tests and routine commands; preserve research meaning with MCP.
 
-## Operating contract
+1. Recover constraints with `ka_research_read(operation="resume")`. Identify the baseline, metric definition and direction, evaluation data, protected evaluator files, resource limits and existing run evidence.
+2. Register and validate an environment when execution needs protected-file hashes, dataset identity, or trajectory lineage. Otherwise use `ka_baseline(operation="create")` and `ka_baseline(operation="confirm")` for the local baseline contract. A stub or waiver is not a measured baseline; record that limitation.
+3. Record an idea with `ka_method_record(operation="idea")`: mechanism, specific related-work references and expected difference are required. Check recorded negative results before repeating a failed mechanism. The contract is an unverified research hypothesis; the plugin supplies no novelty score.
+4. Form a small experiment plan with its hypothesis, comparison, metric, seeds, expected evidence and stopping condition. Respect existing authorization. Use `ka_bash_exec` only for formal provenance; executor scheduling additionally requires the explicit executor gates.
+5. Inspect actual logs and metric files. Use `ka_feedback_ingest` for environment-linked feedback and trajectories. Record outcomes and evidence paths with `ka_record_main_experiment`; `recorded_only` does not establish execution success or validity.
+6. Record failures with `ka_method_record(operation="negative")` and measured changes with `ka_method_record(operation="result")`. Do not convert missing measurements into improvement claims.
+7. Create an analysis campaign with writing targets and required slices, record each slice, and run `ka_claim_gate` before using a conclusion in a paper. A complete material set still needs scientific review, appropriate controls and uncertainty analysis.
+8. Checkpoint the decision, evidence and next step.
 
-- Kvasir-agent is a Codex CLI plugin, not a standalone autonomous framework.
-- Default mode is `copilot`; do not invent, improve, or expand ideas automatically unless the user or project manifest explicitly enables autonomous idea improvement.
-- Use Codex-native file search, edits, shell, tests, and git for ordinary development work.
-- Use MCP `ka_*` tools only when visible in the selected profile; prefer public families for root-bound research state, memory, artifacts, baselines, experiments, analysis, literature, paper, method/frontier, claim gates, checkpoint/resume, and compact evidence.
-- Keep outputs compact. Return paths, ids, hashes, metric values, short tails, and next action; do not paste full logs, full background notes, or full historical playbooks into context.
-- Do not execute old API names directly. Translate historical playbook wording to current MCP `ka_*` tool calls.
+## Supporting material
 
-## Current MCP tool surface
+Read a relevant section only when needed. These historical playbooks preserve domain detail; use current MCP schemas for APIs:
 
-Use the relevant bounded MCP `ka_*` tools exposed by `tools/list` and `ka_tool_schema` for this stage. Hidden admin/debug CLI examples live only in `docs/ADMIN_CLI.md`.
-
-## Stage workflow
-
-1. Read `Kvasir-agent/research.yaml` and `Kvasir-agent/summaries/context_pack.md` when present.
-2. Identify the single next bounded research action for this stage.
-3. If stage-specific nuance is needed, read only the relevant section of `references/legacy-playbook.md` and translate it to the current MCP `ka_*` tool surface.
-4. Apply manifest, baseline, metric, readonly, budget, and autonomy gates before any experiment/run changes.
-5. Record durable outcomes through MCP `ka_*` tools and keep ordinary code edits in Codex-native operations.
-
-## Legacy reference
-
-`references/legacy-playbook.md` preserves the pre-upgrade detailed playbook for audit and migration. It may contain old names and long procedures. Treat it as source material, not executable instructions.
+- [Experiment details](references/legacy-playbook.md)
+- [Baseline considerations](../../docs/research-playbooks/kvasir-agent-baseline/references/legacy-playbook.md)
+- [Analysis considerations](../../docs/research-playbooks/kvasir-agent-analysis-campaign/references/legacy-playbook.md)
+- [Execution evidence](../../docs/research-playbooks/kvasir-agent-experiment-execution/references/legacy-playbook.md)

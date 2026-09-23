@@ -1,93 +1,55 @@
-# Kvasir-agent MCP
+# MCP research tools
 
-Kvasir-agent provides an MCP-only default research control plane for Codex. It exposes compact `ka_*` tool profiles for repeated research-control workflows while Codex-native file/search/edit/shell/Git/test/build/process capabilities remain the normal mechanical operation layer.
+Kvasir-agent exposes 24 public research tools through standard `tools/list`. Codex handles ordinary file/search/edit/shell/Git/test/build/process work. The bundled `.mcp.json` launches the server from the plugin directory.
 
-`/goal` is Codex-native. Kvasir-agent does not implement slash commands; after Codex has entered goal context, this plugin supplies MCP tools for project-local research state, bounded context views, passive checkpoint/resume anchors, manual diagnostics, novelty support, and claim gates.
+Every public tool requires the absolute research directory as `project`. The server derives quest identity from that project's manifest; `project_root` and caller-supplied `quest_id` are not public parameters. Invalid arguments are rejected before invoking services. Install runtime dependencies with `python3 -m pip install -e .`.
 
-## Goals
+## Domain operations
 
-- Keep the default Codex research surface MCP-only and fail closed when a tool or server is unavailable.
-- Expose compact tool cards through `tools/list`; load detailed schemas lazily through `ka_tool_schema`.
-- Keep the hidden admin/debug CLI isolated in `docs/ADMIN_CLI.md` for human/admin/debug/CI/recovery compatibility.
-- Reuse `kvasir_agent/services` directly rather than shelling out to terminal compatibility commands.
+| Tool | Operations |
+|---|---|
+| `ka_research_read` | `status`, `resume`, `delta`, `review`, `methods` |
+| `ka_memory_query` | `search`, `read`, `recent` |
+| `ka_baseline` | `create`, `confirm`, `record` |
+| `ka_environment` | `register`, `validate`, `show`, `validate_manifest` |
+| `ka_trajectory_query` | `search`, `show` |
+| `ka_method_record` | `idea`, `negative`, `result` |
+| `ka_analysis` | `create`, `read`, `record_slice` |
+| `ka_literature_setup` | `prepare`, `bibliography` |
+| `ka_paper_record` | `outline`, `bundle` |
 
-## Smoke commands
+Pass `operation` along with that operation's fields. Do not combine fields from unrelated operations. A baseline `record` updates manifest readiness; it does not perform `confirm` validation. Mixed read/write tools have conservative write annotations.
 
-```bash
-python scripts/ka_mcp.py --stdio-smoke initialize
-python scripts/ka_mcp.py --stdio-smoke tools/list
-python scripts/ka_mcp.py --stdio-smoke tools/list '{"profile":"evidence"}'
-python scripts/ka_mcp.py --stdio-smoke call ka_doctor '{}'
+## Independent tools
+
+`ka_record_user_requirement`, `ka_checkpoint`, `ka_memory_write`, `ka_artifact_record`, `ka_artifact_index`, `ka_bash_exec`, `ka_log_digest`, `ka_trajectory_record`, `ka_feedback_ingest`, `ka_record_main_experiment`, `ka_claim_gate`, `ka_strict_research_upsert_candidate`, `ka_record_literature_reading_note`, `ka_paper_fetch`, `ka_paper_reliability_verify`.
+
+Formal commands through `ka_bash_exec` require command class, provenance reason, experiment/artifact identity, working-directory policy and expected outputs or evidence paths. Baseline protection, environment validation, feedback reconciliation, novelty input checks and evidence completeness gates remain in the service layer. `ka_record_main_experiment` only records supplied results; `ka_claim_gate` checks completeness, not scientific validity.
+
+## Discovery and profiles
+
+Standard discovery returns all 24 definitions. Optional profiles are filtered views, not additional capabilities:
+
+- `core`: research reads, user requirements, checkpoints (3 tools).
+- `evidence`: core plus research memory, baseline/environment, artifacts, feedback, methods, analysis and claims.
+- `formal_run`: evidence plus formal command execution.
+- `execution_planning`: environment and trajectory records/queries, feedback; Codex plans the next experiment.
+- `literature`: literature setup, candidates, PDF retrieval, notes and reliability.
+- `paper_write`: literature plus paper recording.
+- `goal`: deprecated alias for evidence; it does not control Codex goals.
+- `admin`, `autonomous`, `legacy_compat`: internal/offline profiles, not registered for default MCP.
+- `executor_local`: tools such as `ka_variant_create` are not registered by default; hidden unless `KVASIR_AGENT_ENABLE_EXECUTOR_MCP=1` and explicit executor environment and manifest gates pass; budget and protected-file checks still apply.
+
+The `stage` label does not filter tool discovery. Skills are loaded by Codex when relevant. There is no all-tools/full-runtime public MCP and no custom skill search.
+
+## Protocol example
+
+Send this newline-delimited request to `python3 scripts/ka_mcp.py` (replace the example path):
+
+```json
+{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"ka_research_read","arguments":{"project":"/absolute/research/project","operation":"resume","max_chars":6000}}}
 ```
 
-## Current MCP profiles
+Offline diagnostics remain available through `python3 scripts/doctor.py` and the internal smoke helper. Internal primitive names accepted by a local diagnostic helper are not public MCP aliases.
 
-- `core`: default tools for doctor/status, root-bound research anchoring, schema lookup, passive context/resume/checkpoint/delta.
-- `evidence`: evidence recording profile for root-bound memory, manifest, baseline, artifact, experiment, analysis, method, and claim-gate workflows.
-- `formal_run`: evidence plus `ka_bash_exec` for formal provenance-gated commands.
-- `literature`: strict literature, paper fetch, paper reliability, bibliography, and project-local reading notes.
-- `paper_write`: literature plus outline, paper bundle, summary refresh, and review status.
-- `goal`: deprecated compatibility alias for `evidence`; prefer `evidence` for Codex-native goal work.
-- `admin`, `autonomous`, and `legacy_compat`: not registered as default MCP surfaces; use only for explicit human/admin/debug/CI/recovery compatibility.
-
-Planned execution-grounded profiles are fail-closed until their services and tests exist:
-
-- `execution_planning`: plan-only profile for environment summaries, feedback ingestion, trajectory lookup, and `ka_evolutionary_round_plan`; it records or proposes research state but does not run jobs or apply patches.
-- `executor_local`: local executor profile for gated variant and run tools such as `ka_variant_create`; it is not registered by default and remains blocked unless `KVASIR_AGENT_ENABLE_EXECUTOR_MCP=1`, manifest authorization, budget, and environment validation all pass.
-
-The default profile must not expose executor tools. Missing execution-grounded tools fail closed; do not replace them with hidden admin/debug commands.
-
-The `stage` argument is a context label for records and prompts. It does not filter `tools/list` output.
-
-Important evidence/formal tools include:
-
-```text
-ka_status
-ka_record_user_requirement
-ka_create_local_baseline
-ka_confirm_baseline
-ka_submit_idea
-ka_record_main_experiment
-ka_create_analysis_campaign
-ka_get_analysis_campaign
-ka_record_analysis_slice
-ka_claim_gate
-ka_checkpoint
-ka_resume_brief
-ka_pack_delta
-ka_log_digest
-ka_artifact_index
-```
-
-## Method improvement and claim gate
-
-After experiment or analysis evidence, `ka_record_main_experiment` and related tools record evidence only; Codex remains the planner. The safe loop is:
-
-1. record evidence and negative memory where applicable;
-2. call `ka_update_method_scoreboard` when the method ledger should record an outcome;
-3. let Codex decide any next idea or follow-up action;
-4. call `ka_claim_gate` before making any external-facing claim.
-
-Evidence-poor or duplicate candidates fail closed with structured evidence gaps rather than encouraging an ungrounded claim.
-
-## Manual diagnostics, checkpoint, and resume
-
-Long-running goal work should keep recovery anchors fresh:
-
-1. state-changing MCP tools do not auto-inject checkpoint/manual-diagnostic gate metadata;
-2. public recovery uses `ka_status`, `ka_resume_brief`, `ka_pack_delta`, `ka_log_digest`, and `ka_artifact_index`; hidden/admin-only watchdog diagnostics stay outside the default MCP surface;
-3. `ka_checkpoint` records completed phase boundaries, decisions, validation, and artifact refs;
-4. `ka_resume_brief` returns current root-bound research state, active run id, passive recovery anchor, source refs, and bounded text for compaction recovery.
-
-## Skills and support procedures
-
-Bundled support skills are loaded by the Codex plugin skill mechanism, not by the default MCP profile. Use them when a subtask needs a procedure, then use visible MCP tools from the selected profile to record durable research state.
-
-## Safety
-
-- No all-tools/full-runtime MCP.
-- Tool annotations expose read-only/destructive/idempotent/open-world hints.
-- State-changing tools with declared required context keys fail closed on missing arguments before handlers create default resources.
-- Outputs must be bounded and redacted.
-- Errors return `ok=false`, stable `error_type`, `recoverable`, and a suggested next MCP action when useful; known recoverable missing-resource cases should not leak raw `FileNotFoundError` / `ValueError` class names.
-- Missing tools fail closed: fix MCP/doctor/config or implement the missing MCP tool; do not switch the default research flow to terminal compatibility commands.
+Responses preserve `tokens_estimate`, `chars`, `truncated`, `source_refs`, `next_call`, and `warnings`. Prefer log digests, artifact indexes and bounded resume reads over full files. See [context budget](MCP_CONTEXT_BUDGET.md) and [tool migration](TOOL_MIGRATION.md).

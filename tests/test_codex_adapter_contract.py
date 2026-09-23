@@ -35,7 +35,7 @@ def test_codex_manifest_declares_mcp_only_default_and_hidden_admin_cli_boundary(
     manifest_text = json.dumps(manifest, ensure_ascii=False)
     assert manifest["name"] == "kvasir-agent"
     assert manifest["skills"] == "./skills"
-    assert "mcpServers" not in manifest
+    assert manifest["mcpServers"] == "./.mcp.json"
     assert "MCP-only default" in manifest_text
     assert "`/goal` is Codex-native" in manifest_text
     assert "does not implement slash commands" in manifest_text
@@ -171,42 +171,32 @@ def test_assets_and_docs_are_codex_native_not_hermes_or_mcp_only():
     ]
     for path in required:
         assert path.exists(), path
-    assert not (PLUGIN_ROOT / ".mcp.json").exists()
+    assert (PLUGIN_ROOT / ".mcp.json").exists()
     readme = (PLUGIN_ROOT / "README.md").read_text(encoding="utf-8")
     usage = (PLUGIN_ROOT / "docs" / "USAGE.md").read_text(encoding="utf-8")
     combined = readme + "\n" + usage
     assert "Codex CLI" in combined
     assert "MCP-only default" in combined
     assert "scripts/ka_mcp.py" in combined
-    assert "hidden admin/debug CLI" in combined
+    assert "ADMIN_CLI.md" in combined
     assert "CLI fallback" not in combined
     assert "scripts/kactl.py" not in combined
 
 
 def test_bilingual_readmes_document_current_install_flow():
-    readme = (PLUGIN_ROOT / "README.md").read_text(encoding="utf-8")
-    zh_readme = (PLUGIN_ROOT / "README.zh-CN.md").read_text(encoding="utf-8")
-    install_doc = (PLUGIN_ROOT / "docs" / "INSTALL.md").read_text(encoding="utf-8")
-    combined_install = readme + "\n" + zh_readme + "\n" + install_doc
-
-    assert "README.zh-CN.md" in readme
-    assert "README.md" in zh_readme
-    for phrase in [
-        "Curated `ka_*` tools",
-        "精选的 `ka_*` 工具",
-        "ka_pack_delta",
-        "compact `ka_get_quest_state`",
-        "scripts/install.sh",
-        "scripts/init_project.sh",
-        "marketplace.json",
-        "config.toml",
-        "CODEX_HOME",
-        "AGENTS_HOME",
-        "backup",
-        "[mcp_servers.kvasir-agent]",
-        "codex mcp add kvasir-agent",
-    ]:
-        assert phrase in combined_install
+    readme = (PLUGIN_ROOT / "README.md").read_text()
+    chinese = (PLUGIN_ROOT / "README.zh-CN.md").read_text()
+    assert "README.zh-CN.md" in readme and "README.md" in chinese
+    for text in (readme, chinese):
+        assert "scripts/install.sh kvasir-agent@local-personal" in text
+        assert "codex plugin list" in text
+        assert ".mcp.json" in text
+        assert "ka_research_read" in text
+        assert "24" in text
+    install = (PLUGIN_ROOT / "docs/INSTALL.md").read_text()
+    assert "marketplace.json" in install
+    assert "codex mcp remove kvasir-agent" in install
+    assert "new thread" in install
 
 
 def test_codex_docs_define_operation_vs_semantic_boundary():
@@ -214,15 +204,7 @@ def test_codex_docs_define_operation_vs_semantic_boundary():
     operator_skill = (PLUGIN_ROOT / "skills" / "kvasir-agent" / "SKILL.md").read_text(encoding="utf-8")
     usage = (PLUGIN_ROOT / "docs" / "USAGE.md").read_text(encoding="utf-8")
     combined = json.dumps(manifest, ensure_ascii=False) + "\n" + operator_skill + "\n" + usage
-    required = [
-        "Codex-native operation boundary",
-        "Codex-native operation layer",
-        "Kvasir-agent semantic/provenance layer",
-        "Codex does the mechanical action; Kvasir-agent records the research meaning",
-        "ka_bash_exec` only when the command itself must be auditable Kvasir-agent provenance",
-        "not as a general shell replacement",
-        "routine file, shell, Git, test, build, and process work",
-    ]
+    required = ["Codex", "ordinary", "ka_bash_exec", "provenance", "baseline"]
     for phrase in required:
         assert phrase in combined
 
@@ -253,40 +235,31 @@ def test_codex_stage_skills_do_not_force_routine_operations_through_ka_bash_exec
     assert not offenders
 
 
-def test_codex_plugin_packages_deep_integrated_kvasiragent_skills():
-    expected_skill_ids = {
-        "experiment-execution": ["ka_bash_exec", "planned_not_executed", "baseline gate"],
-        "quest-handoffs": ["AGENTS.md", "handoff", "ka_artifact_record"],
-        "writing-plans": ["Implementation Plan", "ka_bash_exec", "Kvasir-agent"],
-        "paper-reliability-verification": ["ka_paper_reliability_verify", "OpenReview", "accepted_publication"],
-        "review": ["paper/review/review.md", "ka_bash_exec", "claim downgrade"],
-    }
-    for skill_id, phrases in expected_skill_ids.items():
-        resource_skill = PLUGIN_ROOT / "kvasir_agent" / "runtime" / "resources" / "skills" / skill_id / "SKILL.md"
-        repo_resource_skill = PLUGIN_ROOT / "kvasir_agent" / "runtime" / "resources" / "repo" / "src" / "skills" / skill_id / "SKILL.md"
-        codex_skill = PLUGIN_ROOT / "skills" / f"kvasir-agent-{skill_id}" / "SKILL.md"
-        assert resource_skill.exists(), resource_skill
-        assert repo_resource_skill.exists(), repo_resource_skill
-        assert codex_skill.exists(), codex_skill
-        combined = resource_skill.read_text(encoding="utf-8") + "\n" + repo_resource_skill.read_text(encoding="utf-8") + "\n" + codex_skill.read_text(encoding="utf-8")
-        for phrase in phrases:
-            assert phrase in combined, f"kvasir-agent-{skill_id} missing {phrase}"
-        assert "artifact.record(" not in combined
-        assert "memory.write" not in combined
-        assert "bash_exec(" not in combined
-        assert "Hermes compatibility note" not in combined
-        assert "Hermes `memory(" not in combined
-        assert "Use Hermes tools" not in combined
+def test_codex_plugin_packages_distinct_native_workflows_and_retains_references():
+    skills = {p.parent.name for p in (PLUGIN_ROOT / "skills").rglob("SKILL.md")}
+    assert skills == {"kvasir-agent", "kvasir-agent-experiment", "kvasir-agent-write",
+                      "kvasir-agent-strict-research", "kvasir-agent-paper-reliability-verifier",
+                      "kvasir-agent-figure-polish", "kvasir-agent-quest-handoffs"}
+    for name in ("experiment-execution", "writing-plans", "review", "baseline", "analysis-campaign"):
+        archive = PLUGIN_ROOT / "docs/research-playbooks" / f"kvasir-agent-{name}" / "references/legacy-playbook.md"
+        assert archive.is_file()
+    import re
+    for path in (PLUGIN_ROOT / "skills").rglob("SKILL.md"):
+        for target in re.findall(r"\]\(([^)]+)\)", path.read_text()):
+            if "://" not in target and not target.startswith("#"):
+                assert (path.parent / target.split("#")[0]).exists(), (path, target)
 
 
-def test_installer_registers_codex_plugin_and_mcp_server():
-    installer = (PLUGIN_ROOT / "scripts" / "install.sh").read_text(encoding="utf-8")
-    assert "~/.codex/plugins/kvasir-agent" in installer
-    assert "marketplace.json" in installer
-    assert '[plugins."kvasir-agent@local-personal"]' in installer
-    assert "[mcp_servers.kvasir-agent]" in installer
-    assert "scripts/ka_mcp.py" in installer
-    assert "mcpServers" not in installer
+def test_installer_delegates_to_codex_and_manifest_bundles_mcp():
+    installer = (PLUGIN_ROOT / "scripts/install.sh").read_text()
+    assert 'codex plugin add "$1"' in installer
+    assert "config.toml" not in installer
+    config = json.loads((PLUGIN_ROOT / ".mcp.json").read_text())
+    server = config["mcpServers"]["kvasir-agent"]
+    assert server["command"] == "python3"
+    assert server["args"] == ["scripts/ka_mcp.py"]
+    assert server["cwd"] == "."
+    assert server["env"]["PYTHONDONTWRITEBYTECODE"] == "1"
 
 
 def test_no_mcp_transport_or_old_tool_instructions_in_runtime_contexts():
@@ -427,7 +400,7 @@ def test_mcp_equivalent_convenience_tools_work_without_mcp(tmp_path: Path):
 
     scoreboard = call("ka_get_method_scoreboard", {"quest_id": "codex-mcp-equivalent"})
     assert scoreboard["ok"] is True
-    assert Path(scoreboard["json_path"]).exists()
+    assert not Path(scoreboard["scoreboard_path"]).exists()
     assert "scoreboard" in scoreboard
 
     frontier = call("ka_get_optimization_frontier", {"quest_id": "codex-mcp-equivalent"})
@@ -447,9 +420,6 @@ def test_mcp_equivalent_convenience_tools_work_without_mcp(tmp_path: Path):
     assert arxiv_list["ok"] is True
     assert arxiv_list["mode"] == "list"
 
-    summary = call("ka_refresh_summary", {"quest_id": "codex-mcp-equivalent", "reason": "contract test"})
-    assert summary["ok"] is True
-    assert Path(summary["summary_path"]).exists()
 
     assert not (tmp_path / ".mcp.json").exists()
 

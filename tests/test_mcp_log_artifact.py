@@ -32,7 +32,7 @@ def _run_kactl(project: Path, *args: str) -> dict:
 
 
 def test_p3_log_and_artifact_tools_are_registered_in_explicit_goal_profile():
-    default_names = {tool["name"] for tool in tools_list_payload()["tools"]}
+    default_names = {tool["name"] for tool in tools_list_payload({"profile": "core"})["tools"]}
     goal_names = {tool["name"] for tool in tools_list_payload({"profile": "goal"})["tools"]}
 
     assert {"ka_log_digest", "ka_artifact_index"}.isdisjoint(default_names)

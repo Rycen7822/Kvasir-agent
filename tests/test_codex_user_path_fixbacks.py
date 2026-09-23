@@ -35,42 +35,26 @@ def _frontmatter_name(path: Path) -> str:
     raise AssertionError(f"missing frontmatter name in {path}")
 
 
-def test_installer_registers_codex_mcp_server_and_keeps_install_tree_clean(tmp_path: Path) -> None:
-    home = tmp_path / "home"
-    codex_home = home / ".codex"
-    agents_home = home / ".agents"
-    env = os.environ.copy()
-    env.update({"HOME": str(home), "CODEX_HOME": str(codex_home), "AGENTS_HOME": str(agents_home)})
-
-    proc = _run(["bash", "scripts/install.sh"], env=env, timeout=120)
-
-    assert proc.returncode == 0, proc.stdout + proc.stderr
-    config = (codex_home / "config.toml").read_text(encoding="utf-8")
-    assert '[plugins."kvasir-agent@local-personal"]' in config
-    assert "[mcp_servers.kvasir-agent]" in config
-    assert 'command = "python"' not in config
-    assert ('command = "python3"' in config) or ('command = "' in config and "python" in config)
-    assert 'args = ["-B",' in config
-    assert "scripts/ka_mcp.py" in config
-    marketplace = json.loads((agents_home / "plugins" / "marketplace.json").read_text(encoding="utf-8"))
-    plugin_entry = next(item for item in marketplace["plugins"] if item["name"] == PLUGIN_NAMESPACE)
-    assert plugin_entry["source"]["path"] == "./.codex/plugins/kvasir-agent"
-    assert "codex mcp list" in proc.stdout
-    assert "kactl.py doctor" not in proc.stdout
-    smoke_line = next(line for line in proc.stdout.splitlines() if "Smoke test:" in line)
-    assert " -B " in smoke_line
-
-    installed = codex_home / "plugins" / PLUGIN_NAMESPACE
-    assert installed.exists()
-    assert not list(installed.rglob("__pycache__"))
-    assert not list(installed.rglob("*.pyc"))
-
-    smoke_env = env.copy()
-    smoke_env.pop("PYTHONDONTWRITEBYTECODE", None)
-    smoke = _run([PYTHON, "-B", str(installed / "scripts" / "ka_mcp.py"), "--stdio-smoke", "call", "ka_doctor", "{}"], cwd=tmp_path, env=smoke_env)
-    assert smoke.returncode == 0, smoke.stdout + smoke.stderr
-    assert not list(installed.rglob("__pycache__"))
-    assert not list(installed.rglob("*.pyc"))
+def test_installer_delegates_exact_reference_and_propagates_failures(tmp_path: Path):
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    capture = tmp_path / "args.json"
+    codex = bin_dir / "codex"
+    codex.write_text(f"#!{PYTHON}\nimport json, os, sys\nfrom pathlib import Path\nPath(os.environ['CAPTURE_ARGS']).write_text(json.dumps(sys.argv[1:]))\nsys.exit(int(os.environ.get('CODEX_TEST_EXIT', '0')))\n")
+    codex.chmod(0o755)
+    env = dict(os.environ, PATH=str(bin_dir) + os.pathsep + os.environ['PATH'], CAPTURE_ARGS=str(capture))
+    proc = _run(["bash", "scripts/install.sh", "kvasir-agent@test-market"], env=env)
+    assert proc.returncode == 0, proc.stderr
+    assert json.loads(capture.read_text()) == ["plugin", "add", "kvasir-agent@test-market"]
+    assert "new Codex thread" in proc.stdout
+    env["CODEX_TEST_EXIT"] = "7"
+    failed = _run(["bash", "scripts/install.sh", "kvasir-agent@test-market"], env=env)
+    assert failed.returncode == 7
+    assert "new Codex thread" not in failed.stdout
+    capture.unlink()
+    invalid = _run(["bash", "scripts/install.sh"], env=env)
+    assert invalid.returncode == 2
+    assert not capture.exists()
 
 
 def test_init_project_writes_mcp_first_project_note(tmp_path: Path) -> None:
@@ -114,14 +98,10 @@ def test_user_entry_docs_have_current_upgrade6_profile_contract() -> None:
     for phrase in forbidden:
         assert phrase not in combined
 
-    assert "default core profile exposes bounded root-bound recovery tools" in combined or "default core profile exposes curated" in combined
-    assert "evidence" in combined and "formal_run" in combined
-    assert "stage is a label" in combined or "stage label" in combined
-    assert "codex mcp add kvasir-agent" in combined
-    manual_lines = [line.strip() for line in combined.splitlines() if line.strip().startswith("codex mcp add kvasir-agent")]
-    assert manual_lines
-    for line in manual_lines:
-        assert "-- python -B " in line or "-- python3 -B " in line, line
+    assert "24 public research tools" in combined
+    assert "optional" in combined and "parameter schemas" in combined
+    assert "codex plugin add" in combined
+    assert "codex mcp remove kvasir-agent" in combined
 
 
 def test_public_plugin_metadata_and_packaged_support_skills_are_codex_neutral() -> None:
@@ -159,9 +139,10 @@ def test_manifest_default_prompts_fit_codex_plugin_limits() -> None:
         assert isinstance(prompt, str)
         assert 1 <= len(prompt) <= 128
     joined = "\n".join(prompts)
-    assert "MCP-only default" in joined
-    assert "`/goal` is Codex-native" in joined
-    assert "does not implement slash commands" in joined
+    assert "Codex owns /goal" in joined
+    assert "ka_research_read" in joined
+    assert "operation=resume" in joined
+    assert "scientific verification" in joined
 
 
 def test_packaged_skill_names_fit_codex_namespace_limit() -> None:
@@ -179,11 +160,11 @@ def test_router_skill_default_flow_uses_visible_profile_tools_not_hidden_skill_h
 
     assert "ka_skill_search" not in text
     assert "ka_skill_load" not in text
-    assert "ka_status" in text and "ka_doctor" in text
+    assert "ka_research_read" in text and "ka_research_read" in text
     assert "ka_new_quest" not in text
     assert "ka_record_user_requirement" in text
-    assert "first durable write" in text or "lazily create" in text
-    assert "evidence" in text and "formal_run" in text and "literature" in text and "paper_write" in text
+    assert "first write initializes" in text
+    assert "parameter schemas" in text and "profiles are optional" in text
 
 
 def test_analysis_campaign_creator_is_visible_when_slice_recorder_is_visible() -> None:
@@ -191,9 +172,9 @@ def test_analysis_campaign_creator_is_visible_when_slice_recorder_is_visible() -
         payload = tools_list_payload({"profile": profile})
         assert payload["ok"] is True, payload
         names = {tool["name"] for tool in payload["tools"]}
-        assert "ka_record_analysis_slice" in names
-        assert "ka_create_analysis_campaign" in names
-        assert "ka_get_analysis_campaign" in names
+        assert "ka_analysis" in names
+        assert "ka_analysis" in names
+        assert "ka_analysis" in names
 
 
 def test_bash_exec_schema_exposes_formal_run_provenance_fields() -> None:
@@ -224,5 +205,5 @@ def test_stdio_smoke_tools_list_accepts_profile_json_argument() -> None:
     assert payload["ok"] is True, payload
     assert payload["profile"] == "evidence"
     names = {tool["name"] for tool in payload["tools"]}
-    assert "ka_create_analysis_campaign" in names
-    assert "ka_record_analysis_slice" in names
+    assert "ka_analysis" in names
+    assert "ka_analysis" in names

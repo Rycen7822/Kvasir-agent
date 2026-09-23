@@ -1,77 +1,39 @@
 ---
 name: kvasir-agent
-description: Low-token router for Kvasir-agent in Codex CLI. MCP-only default for research-control workflows after Codex has entered ordinary or goal context.
+description: Maintain durable research evidence, constraints and recovery state with Kvasir-agent while Codex manages the task and ordinary coding work.
 ---
 
-# Kvasir-agent Codex Router
+# Kvasir-agent research workspace
 
-This skill is a thin router. It states policy and boundaries; it is not a full command manual.
+Use the `ka_*` MCP tools for research records under `<project>/Kvasir-agent/`. Codex owns `/goal`, continuation, native skill discovery, file editing, shell, Git, tests and ordinary process management.
 
-## Core rules
+## Start or resume
 
-- MCP-only default: use the curated `ka_*` MCP surface for repeated research-control workflows.
-- `/goal` is Codex-native. Kvasir-agent does not implement slash commands; after Codex has entered goal context, this router maps research semantics to MCP calls, project-local state, checkpoint, and resume contracts.
-- Start from the visible MCP surface: inspect `tools/list`, then call `ka_tool_schema` for the one tool you intend to use.
-- Runtime state lives in `<project>/Kvasir-agent/`.
-- Persist durable research facts through `ka_*` calls when they affect root-bound research state, memory, artifacts, baselines, experiments, reviews, analysis, method improvement, or evidence.
-- For long-task recovery, call `ka_status` then `ka_resume_brief` with the default 4K-8K budget; use `ka_pack_delta` only when changes after a checkpoint are too large for the brief.
-- Use `ka_log_digest` before reading raw logs, and `ka_artifact_index` before opening artifact files.
-- End each completed stage with `ka_checkpoint` so later turns can resume without chat history.
-- Load bundled Codex plugin support skills only through the Codex-native skill mechanism, and only when the current subtask actually needs one.
+1. Pass the absolute target project root as `project` on each research MCP call. The bundled server launches from the plugin cache. The server derives `quest_id` from that project manifest; do not pass `quest_id` or `project_root`.
+2. Call `ka_research_read(operation="status")`, then `ka_research_read(operation="resume")` for checkpoint, evidence and risk anchors. Inspect referenced artifacts only as needed. Use `ka_research_read(operation="delta")` for changes since a known checkpoint.
+3. Record durable user constraints with `ka_record_user_requirement`; the first write initializes project state. Read-only status does not create a new research project.
+4. Use the tools already advertised by MCP with their parameter schemas. Explicit profiles are optional diagnostic filters.
+5. Save a `ka_checkpoint` at meaningful milestones or before handoff, including completed work, decisions, actual validation, risks and the next action.
 
-## Default autonomy mode
+## Choose a research workflow
 
-The default mode is `copilot`.
+Load through Codex's native skill mechanism only when relevant:
 
-In copilot mode, Kvasir-agent records, checks, organizes, retrieves, and summarizes research state. It may check novelty or duplicate risk for a user-provided or document-provided idea, but it must not own the research direction.
+- **kvasir-agent-experiment**: baseline, novelty inputs, measured results, negative memory and analysis.
+- **kvasir-agent-strict-research**: literature qualification and bibliography.
+- **ka-paper-reliability**: paper identity, acceptance and evidence cards.
+- **kvasir-agent-write**: evidence-backed drafting, review and paper bundles.
+- **kvasir-agent-figure-polish**: render and inspect research figures.
+- **kvasir-agent-quest-handoffs**: researcher handoffs and durable status.
 
-`autonomous_idea_improvement` is disabled by default. Enable it only when the user explicitly asks for automatic idea/novelty improvement, or when a project manifest or handoff explicitly requires autonomous idea improvement. Otherwise, do not invent or improve ideas automatically; output candidate plans for user review instead of creating new running experiments.
+## Authority and evidence
 
-## execution-grounded gate
+The default mode is `copilot`: organize and assess the user's research. Autonomous idea improvement needs an explicit user request or existing manifest/handoff authority. Honor the existing authorization without repeatedly asking.
 
-execution-grounded work is opt-in. automatic idea search, variant implementation, run scheduling, and executor-backed operations require an explicit user request or manifest. In normal copilot use, record evidence and produce plans; do not submit experiments or create new executor-backed runs from this router.
+Use Codex-native shell for ordinary work. `ka_bash_exec` is for formal evidence commands whose command, process and logs must enter the project provenance. Executor tools require explicit authorization and their existing environment/manifest gates; availability does not authorize a run.
 
-Use `execution_planning` only for plan-first environment, feedback, trajectory, and evolutionary planning tools after they exist. Use `executor_local` only when the user or manifest explicitly authorizes local executor work and the tool reports that the gate is open. The default path stays MCP-visible, fail-closed, and non-executor.
+`ka_record_main_experiment` records supplied data. Novelty contracts preserve the proposed mechanism and related work without scoring scientific novelty. `ka_claim_gate` checks material completeness, not scientific validity. Verify results and claims against source evidence.
 
-## Operation boundary
+Use `ka_log_digest` and `ka_artifact_index` to locate relevant evidence without loading full logs. If MCP is unavailable, diagnose and repair the connection before mutating research state through another interface.
 
-Codex-native operation layer:
-
-- routine file, shell, Git, test, build, and process work;
-- file read/search/edit/patch and code navigation;
-- ordinary dependency checks, lint, smoke tests, commits, diffs, and process monitoring.
-
-Kvasir-agent semantic/provenance layer:
-
-- root-bound research state and provenance metadata;
-- durable user requirements, memory, artifacts, milestones, decisions, baselines, experiment records, analysis slices, method improvement gates, and paper/reliability ledgers;
-- formal evidence commands whose logs must be project-local evidence.
-
-Codex does the mechanical action; Kvasir-agent records the research meaning. Use `ka_bash_exec` only when the command itself must be auditable Kvasir-agent provenance, not as a general shell replacement.
-
-## Start of work
-
-From the target project root, initialize and inspect the MCP surface with Kvasir-agent MCP smoke helpers or direct MCP `initialize` / `tools/list`. Then follow this MCP-first flow:
-
-1. Call `ka_status` or `ka_doctor`.
-2. If no research state exists, let the first durable write lazily create it; normally record stable user constraints with `ka_record_user_requirement`.
-3. Treat any supplied `quest_id` only as provenance validation, not as a path selector.
-4. Choose the explicit profile that matches the work: `evidence`, `formal_run`, `literature`, or `paper_write`.
-5. Call `ka_tool_schema` for the selected tool before using it when arguments are not obvious.
-6. Use only tools visible in the current profile for status, manifest, context pack, durable research state, evidence, literature, paper, or recovery.
-7. If MCP is unavailable, fail closed in the default agent path: run diagnostics and repair MCP configuration instead of switching the research workflow to an admin/debug path.
-
-## Output policy
-
-Prefer compact status, bounded log tails, artifact paths, hashes, and summaries. Do not inject full logs, full JSONL ledgers, full papers, or full reference repositories into Codex context unless an explicit raw/range read is required. Full support-skill text and raw artifact content are explicit opt-in paths, not defaults.
-
-## Final reply checklist
-
-Report:
-
-- quest id and stage if used;
-- MCP tools used;
-- files created or modified;
-- new or updated durable memory/artifacts;
-- verification results;
-- next action or user-gated decision.
+Report the changed research records, actual verification, remaining uncertainty and next action. Keep detailed logs in project artifacts.

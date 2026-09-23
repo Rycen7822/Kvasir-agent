@@ -29,7 +29,7 @@ def test_default_profiles_are_curated_mcp_metadata_without_all_tools_surface():
     assert not PROFILES["legacy_compat"].registers_mcp
 
     manifest_text = (PLUGIN_ROOT / ".codex-plugin" / "plugin.json").read_text(encoding="utf-8")
-    assert "mcpServers" not in manifest_text
+    assert "mcpServers" in manifest_text and "./.mcp.json" in manifest_text
     assert "MCP-only default" in manifest_text
     assert "scripts/kactl.py" not in manifest_text
     assert "CLI fallback" not in manifest_text

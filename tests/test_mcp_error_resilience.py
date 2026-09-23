@@ -29,10 +29,10 @@ def test_bad_mcp_arguments_return_recoverable_payload_not_traceback(tmp_path):
     assert payload["error_type"] in {"invalid_argument", "tool_error"}
 
 
-def test_stdio_bad_arguments_keep_server_alive():
+def test_stdio_bad_arguments_keep_server_alive(tmp_path):
     messages = [
         {"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": "ka_soak_accelerated", "arguments": {"days": "bad"}}},
-        {"jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": {"name": "ka_status", "arguments": {}}},
+        {"jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": {"name": "ka_research_read", "arguments": {"project": str(tmp_path), "operation": "status"}}},
     ]
     completed = subprocess.run(
         [PYTHON, str(PLUGIN_ROOT / "scripts" / "ka_mcp.py")],
@@ -70,7 +70,7 @@ def test_stdio_tool_error_content_and_structured_content_are_redacted():
         "jsonrpc": "2.0",
         "id": 1,
         "method": "tools/call",
-        "params": {"name": "ka_tool_schema", "arguments": {"name": "ka_missing_" + secret}},
+        "params": {"name": "ka_missing_" + secret, "arguments": {}},
     }
     completed = subprocess.run(
         [PYTHON, str(PLUGIN_ROOT / "scripts" / "ka_mcp.py")],

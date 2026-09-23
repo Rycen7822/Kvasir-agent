@@ -1560,7 +1560,8 @@ def _root_bound_submit_idea(args: dict[str, Any], *, root: Path, quest_id: str) 
         "mechanism": args.get("mechanism"),
         "expected_gain": args.get("expected_gain"),
         "risks": list(args.get("risks") or []),
-        "selection_scores": args.get("selection_scores") if isinstance(args.get("selection_scores"), dict) else {},
+        "novelty_contract": args.get("novelty_contract"),
+        "assessment_status": "not_assessed",
         "status": "submitted",
         "created_at": _utc_now(),
     }
@@ -1573,7 +1574,7 @@ def _root_bound_submit_idea(args: dict[str, Any], *, root: Path, quest_id: str) 
 def _root_bound_record_main_experiment(args: dict[str, Any], *, root: Path, quest_id: str) -> dict[str, Any]:
     run_id = _safe_slug(args.get("run_id"), "run")
     record = {key: args.get(key) for key in ["title", "hypothesis", "setup", "execution", "results", "conclusion", "metric_rows", "metrics_summary", "evidence_paths", "verdict", "baseline_id"] if key in args}
-    record.update({"schema_version": 1, "quest_id": quest_id, "run_id": run_id, "status": args.get("status") or "recorded", "updated_at": _utc_now()})
+    record.update({"schema_version": 1, "quest_id": quest_id, "run_id": run_id, "status": args.get("status") or "recorded", "validation_status": "recorded_only", "updated_at": _utc_now()})
     path = root / "artifacts" / "experiments" / f"{run_id}.json"
     _write_json_file(path, record)
     _append_jsonl(root / "artifacts" / "_index.jsonl", {"artifact_id": run_id, "kind": "experiment", "path": str(path), "quest_id": quest_id, "updated_at": record["updated_at"]})
@@ -1584,6 +1585,7 @@ def _root_bound_record_main_experiment(args: dict[str, Any], *, root: Path, ques
         "quest_root": str(root),
         "run_id": run_id,
         "experiment": record,
+        "validation_status": "recorded_only",
         "path": str(path),
         "connector_metric_charts": [],
         "connector_metric_chart_status": chart_status,
@@ -1714,11 +1716,9 @@ def ka_get_method_scoreboard(args: dict[str, Any]) -> dict[str, Any]:
     quest_id, root, error = _artifact_root_from_args(args)
     if error:
         return error
-    scoreboard_path = root / "artifacts" / "method_scoreboard.json"
-    scoreboard = {"methods": [], "updated_at": _utc_now()}
-    scoreboard_path.parent.mkdir(parents=True, exist_ok=True)
-    scoreboard_path.write_text(json.dumps(scoreboard, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    return {"quest_id": quest_id, "quest_root": str(root), "json_path": str(scoreboard_path), "scoreboard": scoreboard}
+    from kvasir_agent.services.method_improvement import MethodImprovementService
+
+    return MethodImprovementService(_project_layout(args)).read_summary()
 
 
 @_guard
@@ -1726,7 +1726,10 @@ def ka_get_optimization_frontier(args: dict[str, Any]) -> dict[str, Any]:
     quest_id, root, error = _artifact_root_from_args(args)
     if error:
         return error
-    return {"quest_id": quest_id, "quest_root": str(root), "optimization_frontier": {"items": [], "count": 0}}
+    from kvasir_agent.services.method_improvement import MethodImprovementService
+
+    result = MethodImprovementService(_project_layout(args)).read_summary()
+    return {"ok": True, "quest_id": quest_id, "optimization_frontier": result["frontier"]}
 
 
 @_guard
@@ -1968,13 +1971,8 @@ def ka_submit_paper_bundle(args: dict[str, Any]) -> dict[str, Any]:
 
 @_guard
 def ka_refresh_summary(args: dict[str, Any]) -> dict[str, Any]:
-    quest_id, root, error = _artifact_root_from_args(args)
-    if error:
-        return error
-    summary_path = (root or Path(".")) / "SUMMARY.md"
-    reason = str(args.get("reason") or "manual refresh").strip() or "manual refresh"
-    summary_path.write_text(f"# Research summary\n\n- quest_id: {quest_id}\n- reason: {reason}\n", encoding="utf-8")
-    return {"quest_id": quest_id, "quest_root": str(root), "summary_path": str(summary_path), "summary": summary_path.read_text(encoding="utf-8")}
+    return {"ok": False, "error_type": "retired_tool", "recoverable": True,
+            "error": "Maintain SUMMARY.md from research evidence with the editor; automatic template overwrite was removed."}
 
 
 @_guard

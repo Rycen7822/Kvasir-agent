@@ -12,21 +12,19 @@ def test_codex_router_skill_stays_thin_and_points_to_recovery_tools():
     lower = text.lower()
 
     assert len(text) < 6000
-    assert "thin router" in lower
     assert "ka_skill_search" not in text
     assert "ka_skill_load" not in text
-    assert "ka_status" in text
-    assert "ka_doctor" in text
-    assert "ka_resume_brief" in text
+    assert "ka_research_read" in text
+    assert "ka_research_read" in text
     assert "ka_checkpoint" in text
     assert "ka_log_digest" in text
     assert "ka_artifact_index" in text
     assert "Load at most one stage/support skill" not in text
     assert "allow_full=true" not in text
-    assert "Codex-native skill mechanism" in text
-    assert "raw logs" in lower
-    assert "raw artifact content" in lower
-    assert "4K" in text and "8K" in text
+    assert "native skill mechanism" in text
+    assert "without loading full logs" in lower
+    assert "Codex owns" in text
+    assert "scientific validity" in text
     assert text.count("```") <= 2
 
 

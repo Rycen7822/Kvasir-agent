@@ -16,9 +16,9 @@ A crash/resume smoke should demonstrate that a stuck or interrupted run can be r
 
 1. inspect or lazily create the root-bound research state through the public MCP flow;
 2. start a runner or simulate a runner heartbeat gap;
-3. inspect public recovery state through `ka_status` and `ka_resume_brief`;
+3. inspect public recovery state through `ka_research_read(operation="status")` and `ka_research_read(operation="resume")`;
 4. run hidden/admin-only watchdog diagnostics only in explicit admin/CI validation, without writing a `runner_stuck` goal gate;
-5. call `ka_resume_brief` and verify `active_run_id`, passive `recovery_anchor`, and `source_refs` are present;
+5. call `ka_research_read(operation="resume")` and verify `active_run_id`, passive `recovery_anchor`, and `source_refs` are present;
 6. call `ka_checkpoint` after the bounded recovery action is complete.
 
 Expired leases move to `reconcile_required`; they are not silently requeued as pending jobs.
@@ -38,9 +38,9 @@ Long-run recovery state is project-local under `Kvasir-agent/` and must never be
 
 Use the bounded MCP-first recovery path before reading raw files:
 
-1. `ka_status` verifies the target project and state root.
-2. `ka_resume_brief` reports current root-bound research state, active run id, passive recovery anchor, and source refs.
-3. `ka_pack_delta` fetches post-checkpoint events when the latest brief is not enough.
+1. `ka_research_read(operation="status")` verifies the target project and state root.
+2. `ka_research_read(operation="resume")` reports current root-bound research state, active run id, passive recovery anchor, and source refs.
+3. `ka_research_read(operation="delta")` fetches post-checkpoint events when the latest brief is not enough.
 4. `ka_log_digest` summarizes long logs and classifies common failures before any raw log read.
 5. `ka_artifact_index` lists artifact path, type, size, and hash before opening full artifact content.
 6. Hidden/admin-only progress watchdog diagnostics may be used in explicit admin/CI validation for runner heartbeat and stuck-state questions, without writing goal gates.

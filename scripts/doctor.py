@@ -17,9 +17,15 @@ def main() -> int:
     if not (ROOT / "scripts" / "kactl.py").exists():
         problems.append("Missing CLI fallback entrypoint: scripts/kactl.py")
     manifest = json.loads((ROOT / ".codex-plugin" / "plugin.json").read_text(encoding="utf-8"))
-    server_key = "mcp" + "Servers"
-    if server_key in manifest:
-        problems.append("plugin.json must not contain a server-transport registry field.")
+    if manifest.get("mcpServers") != "./.mcp.json":
+        problems.append("plugin.json must declare the bundled .mcp.json server configuration.")
+    mcp_path = ROOT / ".mcp.json"
+    if not mcp_path.exists():
+        problems.append("Missing bundled MCP configuration: .mcp.json")
+    else:
+        servers = json.loads(mcp_path.read_text(encoding="utf-8")).get("mcpServers", {})
+        if "kvasir-agent" not in servers:
+            problems.append("Missing kvasir-agent bundled MCP server.")
     proc = subprocess.run([sys.executable, str(ROOT / "scripts" / "kactl.py"), "doctor", "--format", "json"], text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=30)
     payload = json.loads(proc.stdout) if proc.stdout.strip() else {"ok": False, "error": proc.stderr}
     ok = proc.returncode == 0 and payload.get("ok") is True and not problems

@@ -13,9 +13,9 @@
 - `paper_ranking/conference_ranking.csv`：会议分级精简快照 fallback。
 - `paper_ranking/journal_ranking.csv`：期刊分区精简快照 fallback。
 - `prompts/reliability_verifier_prompt.md`：LLM verifier prompt。
-- `subskills/acl-anthology-accepted-venue/SKILL.md`：ACL Anthology Python package / local metadata 子 skill，用于 NLP/CL 论文录用 venue 查询。
-- `subskills/openreview-accepted-venue/SKILL.md`：OpenReview 子 skill，用于 ICLR/TMLR/COLM 等 venue 的录用状态和 oral/spotlight/poster 查询。
-- `subskills/dblp-accepted-venue/SKILL.md`：DBLP publication search 子 skill，用于自动识别已录用 venue/journal。
+- `subskills/acl-anthology-accepted-venue/GUIDE.md`：ACL Anthology Python package / local metadata 子 skill，用于 NLP/CL 论文录用 venue 查询。
+- `subskills/openreview-accepted-venue/GUIDE.md`：OpenReview 子 skill，用于 ICLR/TMLR/COLM 等 venue 的录用状态和 oral/spotlight/poster 查询。
+- `subskills/dblp-accepted-venue/GUIDE.md`：DBLP publication search 子 skill，用于自动识别已录用 venue/journal。
 - `refs/references.md`：官方文档链接与 caveats。
 
 ## 安装

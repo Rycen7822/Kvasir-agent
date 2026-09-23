@@ -100,10 +100,12 @@ def test_goal_e2e_toy_research_runs_complete_mcp_only_flow(tmp_path: Path):
     result = run_toy_goal_research(tmp_path)
     quest_id = result["quest_id"]
 
+    assert result["experiment"]["validation_status"] == "recorded_only"
+    assert result["experiment"]["experiment"]["validation_status"] == "recorded_only"
     assert "method_improvement_due" not in result["experiment"]
     assert "next_required_tool" not in result["experiment"]
     assert result["scoreboard"]["scoreboard"]["ideas"]["toy-normalize"]["outcome"] == "positive"
-    assert result["claim"]["claim_gate"]["claimable"] is True
+    assert result["claim"]["claim_gate"]["evidence_complete"] is True
     assert result["checkpoint"]["checkpoint_id"]
     assert result["resume"]["current_quest"] == quest_id
     assert result["resume"]["last_completed_action"] == "claim-gate"

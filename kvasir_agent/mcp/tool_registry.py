@@ -7,9 +7,8 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Callable
 
-from kvasir_agent.mcp import goal_context, research_tools
+from kvasir_agent.mcp import research_tools
 from kvasir_agent.mcp.envelope import apply_budget_envelope
-from kvasir_agent.mcp.skill_index import load_skill, search_skills
 from kvasir_agent.profiles import DEFAULT_PROFILE_NAME, PROFILES, get_profile, get_profile_tool_names
 from kvasir_agent.runtime.vendor.kvasiragent.artifact.schemas import ARTIFACT_DIRS
 from kvasir_agent.services.artifacts import ArtifactIndexService
@@ -38,7 +37,7 @@ _PROVENANCE_QUEST_ID_DESCRIPTION = (
     "Root-bound provenance id. Omit in normal Codex plugin use. When provided, it must match "
     "Kvasir-agent/research.yaml and never changes storage root."
 )
-_LEGACY_QUEST_ID_REQUIRED_TOOLS = frozenset({"ka_set_active_quest", "ka_goal_context", "ka_goal_state", "ka_goal_next_action", "ka_goal_watchdog"})
+_LEGACY_QUEST_ID_REQUIRED_TOOLS = frozenset({"ka_set_active_quest", "ka_goal_watchdog"})
 
 
 @dataclass(frozen=True)
@@ -67,9 +66,13 @@ class ToolSpec:
     required_context_keys: tuple[str, ...] = ()
 
     def as_dict(self) -> dict[str, Any]:
+        from kvasir_agent.mcp.public_tools import PUBLIC_NAMES, definition
+
+        if self.name in PUBLIC_NAMES:
+            return definition(self.name)
         data = asdict(self)
         data["required_context_keys"] = list(self.required_context_keys)
-        data["inputSchema"] = {"type": "object", "additionalProperties": True}
+        data["inputSchema"] = _tool_schema({"name": self.name})["schema"]["input_schema"]
         data["annotations"] = {
             "readOnlyHint": self.read_only,
             "destructiveHint": self.destructive,
@@ -340,6 +343,9 @@ def _schema_with_registry_contract(schema: dict[str, Any], spec: ToolSpec) -> di
     for key in spec.required_context_keys:
         if key not in required:
             required.append(key)
+    if spec.name != "ka_tool_schema":
+        properties["project"]["description"] = "Absolute research project root; never the plugin installation directory."
+        input_schema["anyOf"] = [{"required": ["project"]}, {"required": ["project_root"]}]
     input_schema["type"] = "object"
     input_schema["properties"] = properties
     input_schema["required"] = required
@@ -350,7 +356,18 @@ def _schema_with_registry_contract(schema: dict[str, Any], spec: ToolSpec) -> di
 
 def _minimal_schema_from_spec(spec: ToolSpec) -> dict[str, Any]:
     extra_properties: dict[str, Any] = {}
-    if spec.name == "ka_resume_brief":
+    if spec.name == "ka_tool_schema":
+        extra_properties["name"] = {"type": "string", "description": "Tool name to inspect."}
+    elif spec.name == "ka_manifest_record_baseline":
+        extra_properties.update({
+            "status": {"type": "string", "default": "confirmed"},
+            "metric_contract": {"type": "string"},
+            "waiver_reason": {"type": "string"},
+            "artifact_requirements": {"type": "array", "items": {"type": "string"}},
+        })
+    elif spec.name == "ka_log_digest":
+        extra_properties["max_tail_lines"] = {"type": "integer", "default": 40, "minimum": 0, "maximum": 200}
+    elif spec.name == "ka_resume_brief":
         extra_properties.update({
             "quest_id": _minimal_property_for_key("quest_id"),
             "max_chars": {"type": "integer", "default": 8000},
@@ -397,7 +414,13 @@ def _minimal_schema_from_spec(spec: ToolSpec) -> dict[str, Any]:
 
 
 def _tool_schema(args: dict[str, Any]) -> dict[str, Any]:
+    from kvasir_agent.mcp.public_tools import OPERATIONS, definition
+
     name = str(args.get("name") or args.get("tool") or "").strip()
+    if name in OPERATIONS:
+        tool = definition(name)
+        return {"ok": True, "schema": {"name": name, "description": tool["description"],
+                                       "input_schema": tool["inputSchema"]}}
     if not name:
         return {"ok": False, "error": "Missing tool name", "error_type": "missing_argument", "recoverable": True}
     spec = _SPECS_BY_NAME.get(name)
@@ -423,9 +446,6 @@ def _spec(name: str, fallback: str, *, group: str, read_only: bool = True, idemp
 _HANDLERS: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
     "ka_doctor": research_tools.native_handler("ka_doctor"),
     "ka_status": _simple_status,
-    "ka_goal_context": goal_context.goal_context,
-    "ka_goal_state": goal_context.goal_state,
-    "ka_goal_next_action": goal_context.goal_next_action,
     "ka_tool_schema": _tool_schema,
     "ka_get_quest_state": research_tools.native_handler("ka_get_quest_state"),
     "ka_set_active_quest": research_tools.native_handler("ka_set_active_quest"),
@@ -456,8 +476,6 @@ _HANDLERS: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
     "ka_cost_status": _cost_status,
     "ka_soak_accelerated": _soak_accelerated,
     "ka_soak_crash_resume": _soak_crash_resume,
-    "ka_skill_search": search_skills,
-    "ka_skill_load": load_skill,
 }
 
 for _native_name in [
@@ -523,10 +541,7 @@ _HANDLERS["ka_claim_gate"] = research_tools.claim_gate
 _SPECS: list[ToolSpec] = [
     _spec("ka_doctor", "Run Kvasir-agent diagnostics.", group="core", read_only=False),
     _spec("ka_status", "Return a compact Kvasir-agent project status snapshot.", group="core"),
-    _spec("ka_goal_context", "Return active-only Codex goal context for the current quest stage.", group="goal", required=("quest_id",)),
-    _spec("ka_goal_state", "Read or update project-local Codex goal loop state.", group="goal", read_only=False, required=("quest_id",)),
-    _spec("ka_goal_next_action", "Return the machine-readable next goal gate action.", group="goal", required=("quest_id",)),
-    _spec("ka_tool_schema", "Return full schema for one MCP tool on demand.", group="schema"),
+    _spec("ka_tool_schema", "Return full schema for one MCP tool on demand.", group="schema", required=("name",)),
     _spec("ka_get_quest_state", "Read compact or full state for a quest.", group="quest", required=("quest_id",)),
     _spec("ka_set_active_quest", "Set the active quest for this session.", group="quest", read_only=False, required=("quest_id",)),
     _spec("ka_context_pack", "Generate or read a bounded context pack.", group="checkpoint", read_only=False),
@@ -534,8 +549,6 @@ _SPECS: list[ToolSpec] = [
     _spec("ka_checkpoint", "Persist a compact project-local recovery checkpoint.", group="checkpoint", read_only=False, idempotent=False),
     _spec("ka_goal_watchdog", "Reconcile goal progress, stuck runners, and checkpoint pressure.", group="checkpoint", read_only=False, required=("quest_id",)),
     _spec("ka_pack_delta", "Return event deltas since an event sequence or checkpoint.", group="checkpoint"),
-    _spec("ka_skill_search", "Search local Kvasir-agent skills and return short candidate cards.", group="skill"),
-    _spec("ka_skill_load", "Load a bounded view of one indexed Kvasir-agent skill.", group="skill"),
     _spec("ka_new_quest", "Create a new quest natively.", group="quest", read_only=False, idempotent=False, required=("goal",)),
     _spec("ka_record_user_requirement", "Record a durable user requirement.", group="quest", read_only=False, idempotent=False, required=("message",)),
     _spec("ka_memory_search", "Search quest-local memory cards.", group="memory", required=("quest_id", "query")),
@@ -551,7 +564,7 @@ _SPECS: list[ToolSpec] = [
     _spec("ka_record_negative_result", "Record a negative method result into quest method memory.", group="idea", read_only=False, idempotent=False, required=("quest_id", "idea_id")),
     _spec("ka_update_method_scoreboard", "Update method improvement scoreboard and frontier after an experiment.", group="idea", read_only=False, idempotent=False, required=("quest_id", "idea_id")),
     _spec("ka_select_next_idea", "Select the next non-duplicate idea candidate from the frontier.", group="idea", read_only=False, required=("quest_id",)),
-    _spec("ka_claim_gate", "Check whether a paper-facing claim has enough baseline, metric, evidence, analysis, and seed support.", group="analysis", read_only=False, idempotent=False, required=("quest_id", "claim_id")),
+    _spec("ka_claim_gate", "Check evidence completeness for a claim; does not verify scientific validity.", group="analysis", read_only=False, idempotent=False, required=("quest_id", "claim_id")),
     _spec("ka_record_main_experiment", "Record a main experiment run.", group="experiment", read_only=False, idempotent=False, required=("quest_id", "run_id")),
     _spec("ka_create_analysis_campaign", "Create an analysis campaign.", group="analysis", read_only=False, idempotent=False, required=("quest_id", "campaign_title", "campaign_goal", "slices")),
     _spec("ka_get_analysis_campaign", "Read analysis campaign state.", group="analysis", required=("quest_id",)),
@@ -1038,9 +1051,21 @@ def _bash_exec_preflight(args: dict[str, Any]) -> dict[str, Any] | None:
 
 
 def list_tool_specs(profile: str | None = None, stage: str | None = None) -> list[ToolSpec]:
+    from kvasir_agent.mcp.public_tools import OPERATIONS, definition
+
     profile_name = profile or DEFAULT_PROFILE_NAME
     names = get_profile_tool_names(profile_name, stage=stage)
-    return [spec for name in names if (spec := _SPECS_BY_NAME.get(name)) is not None]
+    specs = []
+    for name in names:
+        if name in OPERATIONS:
+            tool = definition(name)
+            hints = tool["annotations"]
+            specs.append(ToolSpec(name=name, description=tool["description"],
+                                  read_only=hints["readOnlyHint"], destructive=hints["destructiveHint"],
+                                  idempotent=hints["idempotentHint"], open_world=hints["openWorldHint"]))
+        elif name in _SPECS_BY_NAME:
+            specs.append(_SPECS_BY_NAME[name])
+    return specs
 
 
 def public_mcp_tool_names(args: dict[str, Any] | None = None) -> set[str]:
@@ -1077,8 +1102,21 @@ def mcp_tool_not_registered_payload(name: str) -> dict[str, Any]:
 
 
 def tools_list_payload(args: dict[str, Any] | None = None) -> dict[str, Any]:
+    from kvasir_agent.mcp.public_tools import PUBLIC_NAMES, definition
+
     payload_args = dict(args or {})
-    requested_profile = str(payload_args.get("profile") or DEFAULT_PROFILE_NAME).strip() or DEFAULT_PROFILE_NAME
+    # Standard MCP clients do not send custom profile parameters. Advertise every
+    # public research tool on first discovery; explicit profiles are optional views.
+    if not str(payload_args.get("profile") or "").strip():
+        names = public_mcp_tool_names(payload_args)
+        return apply_budget_envelope({
+            "ok": True, "server": "ka_mcp", "profile": "public",
+            "compact": False,
+            "tools": [definition(name) if name in PUBLIC_NAMES else _SPECS_BY_NAME[name].as_dict()
+                      for name in sorted(names)],
+            "warnings": [],
+        }, tool_name="tools/list")
+    requested_profile = str(payload_args["profile"]).strip()
     stage_label = str(payload_args.get("stage") or payload_args.get("active_stage") or "").strip() or None
     try:
         profile_obj = get_profile(requested_profile)
@@ -1121,7 +1159,7 @@ def tools_list_payload(args: dict[str, Any] | None = None) -> dict[str, Any]:
             "profile": requested_profile,
             "stage": stage_label,
             "stage_label": stage_label,
-            "compact": True,
+            "compact": False,
             "tools": [spec.as_dict() for spec in specs],
             "warnings": warnings,
         },
@@ -1134,6 +1172,10 @@ def _finalize_tool_payload(payload: dict[str, Any], *, tool_name: str | None = N
 
 
 def call_tool(name: str, args: dict[str, Any] | None = None) -> dict[str, Any]:
+    from kvasir_agent.mcp.public_tools import OPERATIONS, call_public_tool
+
+    if name in OPERATIONS:
+        return call_public_tool(name, dict(args or {}))
     if name not in _SPECS_BY_NAME:
         return _finalize_tool_payload(
             _error_payload("unknown_tool", f"Unknown MCP tool: {name}", True, name),

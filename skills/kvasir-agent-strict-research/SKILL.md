@@ -17,16 +17,16 @@ Strict research is **not** a keyword-only automatic mode. Heuristic routing may 
 
 When the agent chooses strict research mode:
 
-1. Work inside the current project root and call `ka_status` to inspect the root-bound Kvasir-agent state. The first durable write lazily creates `<project>/Kvasir-agent/research.yaml` when needed.
-2. Call `ka_strict_research_prepare` before reading papers deeply; treat any `quest_id` field only as provenance metadata, not as a path selector.
+1. Work inside the current project root and call `ka_research_read(operation="status")` to inspect the root-bound Kvasir-agent state. The first durable write lazily creates `<project>/Kvasir-agent/research.yaml` when needed.
+2. Call `ka_literature_setup(operation="prepare")` before reading papers deeply; pass the absolute `project`; quest identity is derived from its manifest.
 3. Broadly search for candidate papers first. Do **not** start detailed reading immediately.
-4. Record or update every plausible candidate in `reference/candidate_references.md` under the root-bound research tree with title, DOI if known, URLs, source, and short reason using `ka_strict_research_upsert_candidate` (or append-only `ka_strict_research_record_candidate` only for first-pass raw capture).
+4. Record or update every plausible candidate in `reference/candidate_references.md` under the root-bound research tree with title, DOI if known, URLs, source, and short reason using `ka_strict_research_upsert_candidate` .
 5. When the candidate pool is large enough for the task complexity (or the user-specified count), run `ka_paper_reliability_verify` in small batches. After each paper, use the returned top-level `paper`, `tier`, `quality_flags`, `warnings`, and `reliability_card_path` fields; avoid dumping all JSON cards into chat unless needed.
 6. After each small batch, immediately update the corresponding rows in `candidate_references.md` with `ka_strict_research_upsert_candidate(status=..., evidence_card=..., retain_reject_reason=...)` before starting the next batch.
 7. After all candidates are verified and marked, clean `candidate_references.md`: delete papers that cannot be referenced (`verified-rejected`, `do_not_use`, desk-reject-only, unverifiable) unless the user explicitly requested retention; keep `verified-retained`, `user-specified-retained`, and clearly marked `needs-human-review` rows.
 8. Apply the conservative filtering rules below. If retained papers are insufficient, continue scouting and repeat verification.
 9. Download all retained papers with `ka_paper_fetch` into `reference/pdfs/`, recording `canonical_url`, `pdf_path`, `sha256`, `page_count`, `body_text_status`, and `official_resource_status` in the ledger. Prefer official arXiv/OpenReview/PMLR/PDF sources.
-10. Call `ka_strict_research_init_bibliography` to create `reference/bibliography/` and the three required bibliography files.
+10. Call `ka_literature_setup(operation="bibliography")` to create `reference/bibliography/` and the three required bibliography files.
 11. Read retained papers one by one. After each paper, call `ka_record_literature_reading_note` with `paper_id`, `pdf_path`, `surfaces_read`, `sections_read`, `note`, `claim_routes`, and `status`, and update all relevant bibliography files before reading the next paper.
 12. Only after all retained papers are read and bibliography files are updated should you answer the user, write a report, draft a paper, or perform the requested downstream task.
 

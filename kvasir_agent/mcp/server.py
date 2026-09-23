@@ -3,8 +3,11 @@ from __future__ import annotations
 
 import json
 import sys
+from pathlib import Path
 from typing import Any, TextIO, cast
 
+from kvasir_agent.mcp.envelope import apply_budget_envelope
+from kvasir_agent.mcp.public_tools import PUBLIC_NAMES, call_public_tool
 from kvasir_agent.mcp.tool_registry import (
     call_tool,
     is_tool_registered_for_mcp,
@@ -75,10 +78,27 @@ def handle_jsonrpc_message(message: dict[str, Any]) -> dict[str, Any] | None:
             return _jsonrpc_error(message_id, -32602, "tools/call requires params.name")
         if not is_tool_registered_for_mcp(name, arguments):
             return _jsonrpc_result(message_id, _mcp_tool_result(mcp_tool_not_registered_payload(name)))
+        if name in PUBLIC_NAMES:
+            return _jsonrpc_result(message_id, _mcp_tool_result(call_public_tool(name, arguments)))
         if name == "ka_tool_schema":
             schema_name = arguments.get("name")
             if isinstance(schema_name, str) and schema_name and not is_tool_registered_for_mcp(schema_name, arguments):
                 return _jsonrpc_result(message_id, _mcp_tool_result(mcp_tool_not_registered_payload(schema_name)))
+        # Bundled servers launch from the plugin cache. A research operation must
+        # name its project so installation paths can never become research state.
+        project = arguments.get("project", arguments.get("project_root"))
+        if name != "ka_tool_schema" and (
+            not isinstance(project, str)
+            or not project.strip()
+            or not Path(project.strip()).expanduser().is_absolute()
+        ):
+            return _jsonrpc_result(message_id, _mcp_tool_result(apply_budget_envelope({
+                "ok": False,
+                "error_type": "missing_project_root",
+                "error": "Pass the absolute research project path as project (or project_root).",
+                "recoverable": True,
+                "suggested_next_action": "Repeat this call with project set to the absolute research project root.",
+            }, tool_name=name)))
         return _jsonrpc_result(message_id, _mcp_tool_result(call_tool_payload(name, arguments)))
     return _jsonrpc_error(message_id, -32601, f"Unsupported method: {method}")
 

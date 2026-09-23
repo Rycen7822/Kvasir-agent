@@ -23,13 +23,13 @@ def test_mcp_annotations_mark_state_writing_tools_as_not_read_only():
     specs = {spec.name: spec.as_dict()["annotations"] for spec in list_tool_specs("goal")}
 
     for name in [
-        "ka_doctor",
-        "ka_context_pack",
-        "ka_manifest_validate",
+        "ka_method_record",
+        "ka_checkpoint",
+        "ka_environment",
     ]:
         assert specs[name]["readOnlyHint"] is False
 
-    for name in ["ka_status", "ka_artifact_index", "ka_log_digest"]:
+    for name in ["ka_research_read", "ka_artifact_index", "ka_log_digest"]:
         assert specs[name]["readOnlyHint"] is True
 
 

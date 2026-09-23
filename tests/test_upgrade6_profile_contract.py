@@ -14,8 +14,8 @@ def _warnings_text(payload: dict) -> str:
     return json.dumps(payload.get("warnings", []), ensure_ascii=False, sort_keys=True)
 
 
-def test_default_core_surface_has_no_planner_or_execution_tools():
-    names = _names(tools_list_payload({}))
+def test_explicit_core_surface_has_no_planner_or_execution_tools():
+    names = _names(tools_list_payload({"profile": "core"}))
 
     forbidden = {
         "ka_goal_context",
@@ -35,16 +35,13 @@ def test_default_core_surface_has_no_planner_or_execution_tools():
         "ka_bash_exec",
     }
     required = {
-        "ka_doctor",
-        "ka_status",
-        "ka_tool_schema",
-        "ka_skill_search",
-        "ka_skill_load",
+        "ka_research_read",
+        "ka_research_read",
+        "ka_research_read",
         "ka_record_user_requirement",
         "ka_checkpoint",
-        "ka_resume_brief",
-        "ka_pack_delta",
-        "ka_context_pack",
+        "ka_research_read",
+        "ka_research_read",
     }
 
     assert names.isdisjoint(forbidden), sorted(names & forbidden)
@@ -72,13 +69,13 @@ def test_unknown_stage_does_not_fail_closed_as_route_gate():
     assert staged.get("stage_label") == "badstage"
 
 
-def test_literature_profile_contains_paper_reliability_and_default_does_not():
-    default_names = _names(tools_list_payload({}))
+def test_literature_profile_contains_paper_reliability_and_core_does_not():
+    default_names = _names(tools_list_payload({"profile": "core"}))
     evidence_names = _names(tools_list_payload({"profile": "evidence"}))
     literature_names = _names(tools_list_payload({"profile": "literature"}))
 
     literature_only = {
-        "ka_strict_research_prepare",
+        "ka_literature_setup",
         "ka_paper_fetch",
         "ka_record_literature_reading_note",
         "ka_paper_reliability_verify",

@@ -9,30 +9,19 @@ def _names(payload: dict) -> set[str]:
     return {tool["name"] for tool in payload["tools"]}
 
 
-def test_default_profile_is_core_not_all_tools():
-    assert DEFAULT_PROFILE_NAME == "core"
-    default_profile = get_profile(None)
-    goal_profile = get_profile("goal")
-    evidence_profile = get_profile("evidence")
-
-    assert default_profile.name == "core"
-    assert goal_profile.name == "goal"
-    assert goal_profile.deprecated
-    assert set(goal_profile.tool_names) == set(evidence_profile.tool_names)
-    assert len(default_profile.tool_names) < len(goal_profile.tool_names)
-    assert "all" not in PROFILES or not PROFILES["all"].registers_mcp
-
+def test_standard_discovery_lists_public_union_and_profiles_are_optional_filters():
     default_tools = _names(tools_list_payload())
-    goal_payload = tools_list_payload({"profile": "goal"})
-    goal_tools = _names(goal_payload)
-
-    assert default_tools == set(default_profile.tool_names)
-    assert "ka_bash_exec" not in default_tools
-    assert "ka_submit_paper_bundle" not in default_tools
-    assert "ka_bash_exec" not in goal_tools
-    assert "ka_submit_idea" in goal_tools
-    assert goal_tools.issuperset(default_tools)
-    assert any("profile_deprecated" in warning for warning in goal_payload["warnings"])
+    expected = {name for profile in PROFILES.values() if profile.registers_mcp for name in profile.tool_names}
+    assert default_tools == expected
+    assert {"ka_bash_exec", "ka_paper_record", "ka_environment"} <= default_tools
+    assert {"ka_skill_search", "ka_skill_load", "ka_goal_context", "ka_goal_state", "ka_goal_next_action", "ka_context_pack"}.isdisjoint(default_tools)
+    assert default_tools.isdisjoint(PROFILES["executor_local"].tool_names)
+    core = _names(tools_list_payload({"profile": "core"}))
+    assert core < default_tools
+    assert core == set(get_profile("core").tool_names)
+    goal = tools_list_payload({"profile": "goal"})
+    assert _names(goal) == set(get_profile("evidence").tool_names)
+    assert any("profile_deprecated" in warning for warning in goal["warnings"])
 
 
 def test_stage_label_does_not_filter_tool_cards():
@@ -45,5 +34,5 @@ def test_stage_label_does_not_filter_tool_cards():
     assert goal["profile"] == "goal"
     assert experiment["stage_label"] == "experiment"
     assert "stage_label_not_used_for_tool_filtering" in experiment["warnings"]
-    assert goal["compact"] is True
-    assert experiment["compact"] is True
+    assert goal["compact"] is False
+    assert experiment["compact"] is False
