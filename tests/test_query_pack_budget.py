@@ -2,8 +2,8 @@ from __future__ import annotations
 
 
 def test_query_pack_respects_character_budget_and_uses_compact_lines(tmp_path):
-    from codex_scientist.services.project_state import ProjectLayout
-    from codex_scientist.services.research_wiki import ResearchWikiService
+    from kvasir_agent.services.project_state import ProjectLayout
+    from kvasir_agent.services.research_wiki import ResearchWikiService
 
     wiki = ResearchWikiService(ProjectLayout.from_project_root(tmp_path))
     wiki.add_paper("P1", title="A very useful paper", summary="x" * 200)

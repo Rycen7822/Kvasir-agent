@@ -3,9 +3,9 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from codex_scientist.mcp.tool_registry import call_tool, tools_list_payload
+from kvasir_agent.mcp.tool_registry import call_tool, tools_list_payload
 
-FORBIDDEN_AGENT_CLI = ("scripts/csctl.py", "CLI fallback", "csctl")
+FORBIDDEN_AGENT_CLI = ("scripts/kactl.py", "CLI fallback", "kactl")
 
 
 def assert_no_cli_guidance(payload: object) -> None:
@@ -32,11 +32,11 @@ def assert_failure_envelope(payload: dict, *, expected_error_type: str, tool_nam
 
 
 def _state_root(project: Path) -> Path:
-    return project / "CodexScientist"
+    return project / "Kvasir-agent"
 
 
 def test_trial_lifecycle_missing_trial_id_returns_recoverable_contract(tmp_path: Path):
-    for tool_name in ("cs_trial_plan", "cs_trial_ready", "cs_trial_evaluate", "cs_trial_decide"):
+    for tool_name in ("ka_trial_plan", "ka_trial_ready", "ka_trial_evaluate", "ka_trial_decide"):
         payload = call_tool(tool_name, {"project": str(tmp_path)})
 
         assert payload["ok"] is False, tool_name
@@ -49,7 +49,7 @@ def test_trial_lifecycle_missing_trial_id_returns_recoverable_contract(tmp_path:
 
 
 def test_trial_lifecycle_unknown_trial_id_returns_not_found_contract(tmp_path: Path):
-    for tool_name in ("cs_trial_plan", "cs_trial_ready", "cs_trial_evaluate", "cs_trial_decide"):
+    for tool_name in ("ka_trial_plan", "ka_trial_ready", "ka_trial_evaluate", "ka_trial_decide"):
         payload = call_tool(tool_name, {"project": str(tmp_path), "trial_id": "T9999"})
 
         assert payload["ok"] is False, tool_name
@@ -58,18 +58,18 @@ def test_trial_lifecycle_unknown_trial_id_returns_not_found_contract(tmp_path: P
         text = json.dumps(payload, ensure_ascii=False)
         assert "FileNotFoundError" not in text
         assert "tool_error" not in text
-        assert "cs_trial_show" in text
-        assert "cs_trial_propose" in text
+        assert "ka_trial_show" in text
+        assert "ka_trial_propose" in text
         assert_no_cli_guidance(payload)
 
 
 def test_required_state_changing_tools_fail_closed_without_required_args(tmp_path: Path):
     strict_tools = (
-        "cs_manifest_init",
-        "cs_manifest_record_baseline",
-        "cs_queue_submit",
-        "cs_runner_start",
-        "cs_trial_propose",
+        "ka_manifest_init",
+        "ka_manifest_record_baseline",
+        "ka_queue_submit",
+        "ka_runner_start",
+        "ka_trial_propose",
     )
     for tool_name in strict_tools:
         before_paths = sorted(str(path.relative_to(tmp_path)) for path in _state_root(tmp_path).glob("**/*")) if _state_root(tmp_path).exists() else []
@@ -81,13 +81,13 @@ def test_required_state_changing_tools_fail_closed_without_required_args(tmp_pat
         assert payload["recoverable"] is True
         assert payload.get("retry_template", {}).get("name") == tool_name
         next_call = payload.get("next_call") or {}
-        assert next_call.get("name") != "cs_tool_schema"
+        assert next_call.get("name") != "ka_tool_schema"
         assert before_paths == after_paths
         assert_no_cli_guidance(payload)
 
 
 def test_bash_exec_list_without_command_is_readonly_and_run_without_command_fails_closed(tmp_path: Path):
-    list_payload = call_tool("cs_bash_exec", {"project": str(tmp_path), "quest_id": "Q1"})
+    list_payload = call_tool("ka_bash_exec", {"project": str(tmp_path), "quest_id": "Q1"})
 
     assert list_payload["ok"] is True
     list_text = json.dumps(list_payload, ensure_ascii=False).lower()
@@ -95,7 +95,7 @@ def test_bash_exec_list_without_command_is_readonly_and_run_without_command_fail
     assert_no_cli_guidance(list_payload)
 
     run_payload = call_tool(
-        "cs_bash_exec",
+        "ka_bash_exec",
         {"project": str(tmp_path), "quest_id": "Q1", "operation": "run"},
     )
 
@@ -130,20 +130,20 @@ def test_admin_profile_is_not_agent_facing_tools_list():
 
 
 def test_known_recoverable_failures_use_stable_error_taxonomy(tmp_path: Path):
-    missing_research = call_tool("cs_get_analysis_campaign", {"project": str(tmp_path), "quest_id": "Q1"})
-    assert_failure_envelope(missing_research, expected_error_type="no_research_state", tool_name="cs_get_analysis_campaign")
+    missing_research = call_tool("ka_get_analysis_campaign", {"project": str(tmp_path), "quest_id": "Q1"})
+    assert_failure_envelope(missing_research, expected_error_type="no_research_state", tool_name="ka_get_analysis_campaign")
 
-    created = call_tool("cs_new_quest", {"project": str(tmp_path), "quest_id": "Q1", "goal": "taxonomy"})
+    created = call_tool("ka_new_quest", {"project": str(tmp_path), "quest_id": "Q1", "goal": "taxonomy"})
     assert created["ok"] is True
 
-    missing_campaign = call_tool("cs_get_analysis_campaign", {"project": str(tmp_path), "quest_id": "Q1"})
-    assert_failure_envelope(missing_campaign, expected_error_type="not_found", tool_name="cs_get_analysis_campaign")
+    missing_campaign = call_tool("ka_get_analysis_campaign", {"project": str(tmp_path), "quest_id": "Q1"})
+    assert_failure_envelope(missing_campaign, expected_error_type="not_found", tool_name="ka_get_analysis_campaign")
     retry_template = missing_campaign.get("retry_template") or {}
-    assert retry_template.get("name") == "cs_create_analysis_campaign"
+    assert retry_template.get("name") == "ka_create_analysis_campaign"
     assert retry_template.get("required_arguments") == ["quest_id", "campaign_title", "campaign_goal", "slices"]
     assert retry_template.get("missing_arguments") == ["campaign_title", "campaign_goal", "slices"]
     assert retry_template.get("known_arguments") == {"quest_id": "Q1"}
 
-    invalid_memory_kind = call_tool("cs_memory_search", {"project": str(tmp_path), "query": "x", "kind": "bad-kind"})
-    assert_failure_envelope(invalid_memory_kind, expected_error_type="invalid_argument", tool_name="cs_memory_search")
+    invalid_memory_kind = call_tool("ka_memory_search", {"project": str(tmp_path), "query": "x", "kind": "bad-kind"})
+    assert_failure_envelope(invalid_memory_kind, expected_error_type="invalid_argument", tool_name="ka_memory_search")
     assert "allowed_memory_kinds" in invalid_memory_kind

@@ -1,27 +1,27 @@
 from __future__ import annotations
 
-from codex_scientist.mcp.tool_registry import call_tool, tools_list_payload
-from codex_scientist.profiles import PROFILES
+from kvasir_agent.mcp.tool_registry import call_tool, tools_list_payload
+from kvasir_agent.profiles import PROFILES
 
 
 LIFECYCLE_TOOLS = {
-    "cs_get_quest_state",
-    "cs_set_active_quest",
-    "cs_new_quest",
-    "cs_manifest_init",
+    "ka_get_quest_state",
+    "ka_set_active_quest",
+    "ka_new_quest",
+    "ka_manifest_init",
 }
 
 EXPECTED_CORE = {
-    "cs_doctor",
-    "cs_status",
-    "cs_tool_schema",
-    "cs_record_user_requirement",
-    "cs_context_pack",
-    "cs_resume_brief",
-    "cs_checkpoint",
-    "cs_pack_delta",
-    "cs_skill_search",
-    "cs_skill_load",
+    "ka_doctor",
+    "ka_status",
+    "ka_tool_schema",
+    "ka_record_user_requirement",
+    "ka_context_pack",
+    "ka_resume_brief",
+    "ka_checkpoint",
+    "ka_pack_delta",
+    "ka_skill_search",
+    "ka_skill_load",
 }
 
 
@@ -43,22 +43,22 @@ def test_registered_public_profiles_do_not_expose_lifecycle_or_manifest_init():
             continue
         names = _names(tools_list_payload({"profile": profile.name}))
         assert LIFECYCLE_TOOLS.isdisjoint(names), profile.name
-    assert "cs_manifest_record_baseline" in _names(tools_list_payload({"profile": "evidence"}))
-    assert "cs_manifest_validate" in _names(tools_list_payload({"profile": "evidence"}))
+    assert "ka_manifest_record_baseline" in _names(tools_list_payload({"profile": "evidence"}))
+    assert "ka_manifest_validate" in _names(tools_list_payload({"profile": "evidence"}))
 
 
 def test_public_root_bound_tool_schemas_do_not_require_quest_id():
     cases = {
-        "cs_memory_write": {"title"},
-        "cs_artifact_record": set(),
-        "cs_submit_idea": {"title", "novelty_contract"},
-        "cs_record_main_experiment": {"run_id"},
-        "cs_environment_validate": {"env_id"},
-        "cs_feedback_ingest": {"env_id", "trajectory_id", "run_id", "source_kind"},
-        "cs_bash_exec": set(),
+        "ka_memory_write": {"title"},
+        "ka_artifact_record": set(),
+        "ka_submit_idea": {"title", "novelty_contract"},
+        "ka_record_main_experiment": {"run_id"},
+        "ka_environment_validate": {"env_id"},
+        "ka_feedback_ingest": {"env_id", "trajectory_id", "run_id", "source_kind"},
+        "ka_bash_exec": set(),
     }
     for tool_name, expected_domain_required in cases.items():
-        schema = call_tool("cs_tool_schema", {"name": tool_name})["schema"]["input_schema"]
+        schema = call_tool("ka_tool_schema", {"name": tool_name})["schema"]["input_schema"]
         required = set(schema.get("required") or [])
         assert "quest_id" not in required, tool_name
         assert expected_domain_required <= required, tool_name

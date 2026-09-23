@@ -4,9 +4,9 @@ import json
 from pathlib import Path
 from typing import Any
 
-from codex_scientist.mcp.envelope import apply_budget_envelope
-from codex_scientist.mcp.tool_registry import call_tool
-from codex_scientist.runtime.redaction import redact_payload
+from kvasir_agent.mcp.envelope import apply_budget_envelope
+from kvasir_agent.mcp.tool_registry import call_tool
+from kvasir_agent.runtime.redaction import redact_payload
 
 _REQUIRED_ENVELOPE_KEYS = {
     "schema_version",
@@ -41,7 +41,7 @@ def _assert_budget_envelope(payload: dict[str, Any]) -> None:
 
 def test_core_status_search_and_load_tools_use_uniform_budget_envelope(tmp_path: Path):
     search = call_tool(
-        "cs_skill_search",
+        "ka_skill_search",
         {
             "project": str(tmp_path),
             "raw_user_request": "恢复长期任务时只加载必要 skill",
@@ -58,7 +58,7 @@ def test_core_status_search_and_load_tools_use_uniform_budget_envelope(tmp_path:
         assert isinstance(candidate["source_hash"], str)
 
     load = call_tool(
-        "cs_skill_load",
+        "ka_skill_load",
         {
             "project": str(tmp_path),
             "handle": search["candidates"][0]["handle"],
@@ -69,9 +69,9 @@ def test_core_status_search_and_load_tools_use_uniform_budget_envelope(tmp_path:
     assert load["ok"] is True
 
     payloads = [
-        call_tool("cs_status", {"project": str(tmp_path)}),
-        call_tool("cs_queue_status", {"project": str(tmp_path), "limit": 5}),
-        call_tool("cs_runner_status", {"project": str(tmp_path)}),
+        call_tool("ka_status", {"project": str(tmp_path)}),
+        call_tool("ka_queue_status", {"project": str(tmp_path), "limit": 5}),
+        call_tool("ka_runner_status", {"project": str(tmp_path)}),
         search,
         load,
     ]
@@ -86,8 +86,8 @@ def test_error_tool_payloads_use_budget_envelope_and_redaction():
     sensitive_text = "tok" + "en=" + "supersecret" + " pass" + "word=" + "hunter2"
 
     payloads = [
-        call_tool("cs_missing_" + sensitive_text, {}),
-        call_tool("cs_queue_status", {"limit": sensitive_text}),
+        call_tool("ka_missing_" + sensitive_text, {}),
+        call_tool("ka_queue_status", {"limit": sensitive_text}),
     ]
 
     for payload in payloads:
@@ -107,7 +107,7 @@ def test_budget_envelope_redacts_warning_and_source_ref_values():
             "warnings": ["token=" + "supersecret"],
             "source_refs": [{"path": "/tmp/password=" + "hunter2"}],
         },
-        tool_name="cs_status",
+        tool_name="ka_status",
     )
 
     _assert_budget_envelope(payload)

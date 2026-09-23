@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from codex_scientist.mcp.tool_registry import call_tool
+from kvasir_agent.mcp.tool_registry import call_tool
 
 
 FORBIDDEN_KEYS = {
@@ -49,14 +49,14 @@ def _forbidden_hits(value: Any, path: str = "$", hits: list[str] | None = None) 
 
 
 def _new_quest(tmp_path: Path) -> str:
-    payload = _ok(call_tool("cs_new_quest", {"project": str(tmp_path), "goal": "upgrade6", "title": "Upgrade 6"}))
+    payload = _ok(call_tool("ka_new_quest", {"project": str(tmp_path), "goal": "upgrade6", "title": "Upgrade 6"}))
     return str(payload["quest"]["quest_id"])
 
 
 def _confirm_baseline(tmp_path: Path, quest_id: str) -> None:
     baseline = _ok(
         call_tool(
-            "cs_create_local_baseline",
+            "ka_create_local_baseline",
             {
                 "project": str(tmp_path),
                 "quest_id": quest_id,
@@ -66,20 +66,20 @@ def _confirm_baseline(tmp_path: Path, quest_id: str) -> None:
             },
         )
     )
-    _ok(call_tool("cs_confirm_baseline", {"project": str(tmp_path), **baseline["confirm_args"]}))
+    _ok(call_tool("ka_confirm_baseline", {"project": str(tmp_path), **baseline["confirm_args"]}))
 
 
 def test_representative_payloads_have_no_planner_keys(tmp_path: Path):
     quest_id = _new_quest(tmp_path)
     _confirm_baseline(tmp_path, quest_id)
     payloads = [
-        call_tool("cs_get_quest_state", {"project": str(tmp_path), "quest_id": quest_id}),
-        call_tool("cs_context_pack", {"project": str(tmp_path), "quest_id": quest_id, "max_chars": 1600}),
-        call_tool("cs_resume_brief", {"project": str(tmp_path), "quest_id": quest_id, "max_chars": 1600}),
-        call_tool("cs_record_user_requirement", {"project": str(tmp_path), "quest_id": quest_id, "message": "keep plugin thin"}),
-        call_tool("cs_record_main_experiment", {"project": str(tmp_path), "quest_id": quest_id, "run_id": "R-UP6", "title": "thin plugin"}),
+        call_tool("ka_get_quest_state", {"project": str(tmp_path), "quest_id": quest_id}),
+        call_tool("ka_context_pack", {"project": str(tmp_path), "quest_id": quest_id, "max_chars": 1600}),
+        call_tool("ka_resume_brief", {"project": str(tmp_path), "quest_id": quest_id, "max_chars": 1600}),
+        call_tool("ka_record_user_requirement", {"project": str(tmp_path), "quest_id": quest_id, "message": "keep plugin thin"}),
+        call_tool("ka_record_main_experiment", {"project": str(tmp_path), "quest_id": quest_id, "run_id": "R-UP6", "title": "thin plugin"}),
         call_tool(
-            "cs_update_method_scoreboard",
+            "ka_update_method_scoreboard",
             {
                 "project": str(tmp_path),
                 "quest_id": quest_id,
@@ -100,15 +100,15 @@ def test_state_changing_tools_do_not_auto_write_watchdog_or_goal_gate(tmp_path: 
     quest_id = _new_quest(tmp_path)
     _confirm_baseline(tmp_path, quest_id)
 
-    requirement = _ok(call_tool("cs_record_user_requirement", {"project": str(tmp_path), "quest_id": quest_id, "message": "no auto gates"}))
-    experiment = _ok(call_tool("cs_record_main_experiment", {"project": str(tmp_path), "quest_id": quest_id, "run_id": "R-GATE", "title": "gate check"}))
+    requirement = _ok(call_tool("ka_record_user_requirement", {"project": str(tmp_path), "quest_id": quest_id, "message": "no auto gates"}))
+    experiment = _ok(call_tool("ka_record_main_experiment", {"project": str(tmp_path), "quest_id": quest_id, "run_id": "R-GATE", "title": "gate check"}))
 
     for payload in (requirement, experiment):
         assert "checkpoint_due" not in payload
         assert "next_checkpoint_tool" not in payload
         assert "progress_watchdog" not in payload
 
-    quest_root = tmp_path / "CodexScientist" / "quests" / quest_id
+    quest_root = tmp_path / "Kvasir-agent" / "quests" / quest_id
     assert not (quest_root / "runtime" / "progress_watchdog.json").exists()
 
     goal_state = quest_root / "runtime" / "goal_state.json"

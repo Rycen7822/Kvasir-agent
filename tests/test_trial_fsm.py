@@ -4,9 +4,9 @@ from pathlib import Path
 
 
 def test_trial_fsm_rejects_invalid_transition_and_blocks_ready_without_baseline(tmp_path: Path):
-    from codex_scientist.services.manifest import ManifestService
-    from codex_scientist.services.project_state import ProjectLayout
-    from codex_scientist.services.trial import TrialService
+    from kvasir_agent.services.manifest import ManifestService
+    from kvasir_agent.services.project_state import ProjectLayout
+    from kvasir_agent.services.trial import TrialService
 
     layout = ProjectLayout.from_project_root(tmp_path)
     manifest_service = ManifestService(layout)
@@ -31,9 +31,9 @@ def test_trial_fsm_rejects_invalid_transition_and_blocks_ready_without_baseline(
 
 
 def test_trial_ready_succeeds_after_confirmed_baseline(tmp_path: Path):
-    from codex_scientist.services.manifest import ManifestService
-    from codex_scientist.services.project_state import ProjectLayout
-    from codex_scientist.services.trial import TrialService
+    from kvasir_agent.services.manifest import ManifestService
+    from kvasir_agent.services.project_state import ProjectLayout
+    from kvasir_agent.services.trial import TrialService
 
     layout = ProjectLayout.from_project_root(tmp_path)
     manifest_service = ManifestService(layout)

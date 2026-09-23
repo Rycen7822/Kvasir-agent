@@ -5,9 +5,9 @@ import subprocess
 import sys
 from pathlib import Path
 
-from codex_scientist.services.project_state import ProjectLayout
-from codex_scientist.services.queue import QueueService
-from codex_scientist.services.runner import RunnerService
+from kvasir_agent.services.project_state import ProjectLayout
+from kvasir_agent.services.queue import QueueService
+from kvasir_agent.services.runner import RunnerService
 
 
 def test_queue_reconcile_links_runner_completion_and_expected_outputs(tmp_path: Path):
@@ -35,9 +35,9 @@ def test_queue_reconcile_across_process_does_not_mark_failed_run_completed(tmp_p
     start_code = """
 import sys
 from pathlib import Path
-from codex_scientist.services.project_state import ProjectLayout
-from codex_scientist.services.queue import QueueService
-from codex_scientist.services.runner import RunnerService
+from kvasir_agent.services.project_state import ProjectLayout
+from kvasir_agent.services.queue import QueueService
+from kvasir_agent.services.runner import RunnerService
 root = Path(sys.argv[1])
 layout = ProjectLayout.from_project_root(root)
 queue = QueueService(layout)
@@ -51,8 +51,8 @@ import json
 import time
 import sys
 from pathlib import Path
-from codex_scientist.services.project_state import ProjectLayout
-from codex_scientist.services.queue import QueueService
+from kvasir_agent.services.project_state import ProjectLayout
+from kvasir_agent.services.queue import QueueService
 root = Path(sys.argv[1])
 time.sleep(0.4)
 print(json.dumps(QueueService(ProjectLayout.from_project_root(root)).reconcile_expired_leases()))

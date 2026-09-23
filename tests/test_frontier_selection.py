@@ -2,8 +2,8 @@ from __future__ import annotations
 
 
 def test_frontier_selection_is_deterministic_and_single_seed_promotes_only_to_promising(tmp_path):
-    from codex_scientist.services.frontier import FrontierService
-    from codex_scientist.services.project_state import ProjectLayout
+    from kvasir_agent.services.frontier import FrontierService
+    from kvasir_agent.services.project_state import ProjectLayout
 
     frontier = FrontierService(ProjectLayout.from_project_root(tmp_path))
     frontier.add_candidate("I2", score=0.5, source="human")
@@ -19,9 +19,9 @@ def test_frontier_selection_is_deterministic_and_single_seed_promotes_only_to_pr
 
 
 def test_default_copilot_frontier_generation_requires_user_decision(tmp_path):
-    from codex_scientist.services.frontier import FrontierService
-    from codex_scientist.services.manifest import ManifestService
-    from codex_scientist.services.project_state import ProjectLayout
+    from kvasir_agent.services.frontier import FrontierService
+    from kvasir_agent.services.manifest import ManifestService
+    from kvasir_agent.services.project_state import ProjectLayout
 
     layout = ProjectLayout.from_project_root(tmp_path)
     manifest_service = ManifestService(layout)

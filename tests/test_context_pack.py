@@ -10,11 +10,11 @@ PYTHON = sys.executable
 
 
 def test_context_pack_service_writes_bounded_fixed_sections(tmp_path: Path):
-    from codex_scientist.services.context_pack import ContextPackService
-    from codex_scientist.services.frontier import FrontierService
-    from codex_scientist.services.manifest import ManifestService
-    from codex_scientist.services.project_state import ProjectLayout
-    from codex_scientist.services.queue import QueueService
+    from kvasir_agent.services.context_pack import ContextPackService
+    from kvasir_agent.services.frontier import FrontierService
+    from kvasir_agent.services.manifest import ManifestService
+    from kvasir_agent.services.project_state import ProjectLayout
+    from kvasir_agent.services.queue import QueueService
 
     layout = ProjectLayout.from_project_root(tmp_path)
     manifest = ManifestService(layout)
@@ -31,9 +31,9 @@ def test_context_pack_service_writes_bounded_fixed_sections(tmp_path: Path):
         assert f"## {section}" in result["content"]
 
 
-def run_csctl(*args: str, project_root: Path) -> dict:
+def run_kactl(*args: str, project_root: Path) -> dict:
     proc = subprocess.run(
-        [PYTHON, str(PLUGIN_ROOT / "scripts" / "csctl.py"), "--project-root", str(project_root), *args],
+        [PYTHON, str(PLUGIN_ROOT / "scripts" / "kactl.py"), "--project-root", str(project_root), *args],
         cwd=str(PLUGIN_ROOT),
         text=True,
         stdout=subprocess.PIPE,
@@ -45,22 +45,22 @@ def run_csctl(*args: str, project_root: Path) -> dict:
 
 
 def test_context_pack_cli_returns_path_digest_and_compact_content(tmp_path: Path):
-    run_csctl("manifest", "init", "--name", "Demo", "--goal", "Improve", "--format", "json", project_root=tmp_path)
+    run_kactl("manifest", "init", "--name", "Demo", "--goal", "Improve", "--format", "json", project_root=tmp_path)
 
-    result = run_csctl("summary", "context-pack", "--max-chars", "400", "--format", "json", project_root=tmp_path)
+    result = run_kactl("summary", "context-pack", "--max-chars", "400", "--format", "json", project_root=tmp_path)
 
     assert result["ok"] is True
     assert result["chars"] <= 400
     assert result["sha256"]
-    assert result["path"].endswith("CodexScientist/summaries/context_pack.md")
+    assert result["path"].endswith("Kvasir-agent/summaries/context_pack.md")
     assert "## active_state" in result["content"]
 
 
 def test_context_pack_includes_latest_checkpoint_anchor(tmp_path: Path):
-    from codex_scientist.services.checkpoint import CheckpointService
-    from codex_scientist.services.context_pack import ContextPackService
-    from codex_scientist.services.manifest import ManifestService
-    from codex_scientist.services.project_state import ProjectLayout
+    from kvasir_agent.services.checkpoint import CheckpointService
+    from kvasir_agent.services.context_pack import ContextPackService
+    from kvasir_agent.services.manifest import ManifestService
+    from kvasir_agent.services.project_state import ProjectLayout
 
     layout = ProjectLayout.from_project_root(tmp_path)
     ManifestService(layout).init(name="Demo", goal="Improve")

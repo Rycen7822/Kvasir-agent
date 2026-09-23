@@ -3,11 +3,11 @@ from __future__ import annotations
 import importlib
 from pathlib import Path
 
-from codex_scientist.mcp.tool_registry import call_tool
-from codex_scientist.runtime.runtime import ensure_runtime_import_environment
+from kvasir_agent.mcp.tool_registry import call_tool
+from kvasir_agent.runtime.runtime import ensure_runtime_import_environment
 
 ensure_runtime_import_environment()
-artifact_service = importlib.import_module("codexscientist.artifact.service")
+artifact_service = importlib.import_module("kvasiragent.artifact.service")
 
 
 def _ok(payload: dict) -> dict:
@@ -18,7 +18,7 @@ def _ok(payload: dict) -> dict:
 def _confirm_baseline(tmp_path: Path, quest_id: str) -> None:
     baseline = _ok(
         call_tool(
-            "cs_create_local_baseline",
+            "ka_create_local_baseline",
             {
                 "project": str(tmp_path),
                 "quest_id": quest_id,
@@ -28,16 +28,16 @@ def _confirm_baseline(tmp_path: Path, quest_id: str) -> None:
             },
         )
     )
-    _ok(call_tool("cs_confirm_baseline", {"project": str(tmp_path), **baseline["confirm_args"]}))
+    _ok(call_tool("ka_confirm_baseline", {"project": str(tmp_path), **baseline["confirm_args"]}))
 
 
 def test_main_experiment_records_evidence_without_method_planner_gate(tmp_path: Path):
-    quest = _ok(call_tool("cs_new_quest", {"project": str(tmp_path), "goal": "method ledger", "title": "Method Ledger"}))
+    quest = _ok(call_tool("ka_new_quest", {"project": str(tmp_path), "goal": "method ledger", "title": "Method Ledger"}))
     quest_id = quest["quest"]["quest_id"]
     _confirm_baseline(tmp_path, quest_id)
     _ok(
         call_tool(
-            "cs_submit_idea",
+            "ka_submit_idea",
             {
                 "project": str(tmp_path),
                 "quest_id": quest_id,
@@ -56,7 +56,7 @@ def test_main_experiment_records_evidence_without_method_planner_gate(tmp_path: 
 
     recorded = _ok(
         call_tool(
-            "cs_record_main_experiment",
+            "ka_record_main_experiment",
             {
                 "project": str(tmp_path),
                 "quest_id": quest_id,
@@ -74,7 +74,7 @@ def test_main_experiment_records_evidence_without_method_planner_gate(tmp_path: 
 
     updated = _ok(
         call_tool(
-            "cs_update_method_scoreboard",
+            "ka_update_method_scoreboard",
             {
                 "project": str(tmp_path),
                 "quest_id": quest_id,
@@ -89,10 +89,10 @@ def test_main_experiment_records_evidence_without_method_planner_gate(tmp_path: 
     assert updated["scoreboard"]["ideas"]["I-regressed"]["outcome"] == "negative"
     assert updated["recorded_negative_memory"] is True
 
-    state_path = tmp_path / "CodexScientist" / "runtime" / "goal_state.json"
+    state_path = tmp_path / "Kvasir-agent" / "runtime" / "goal_state.json"
     if state_path.exists():
-        assert "cs_select_next_idea" not in state_path.read_text(encoding="utf-8")
-    assert not (tmp_path / "CodexScientist" / "quests" / quest_id).exists()
+        assert "ka_select_next_idea" not in state_path.read_text(encoding="utf-8")
+    assert not (tmp_path / "Kvasir-agent" / "quests" / quest_id).exists()
 
 
 def test_main_experiment_records_when_optional_pillow_chart_renderer_missing(tmp_path: Path, monkeypatch):
@@ -101,12 +101,12 @@ def test_main_experiment_records_when_optional_pillow_chart_renderer_missing(tmp
 
     monkeypatch.setattr(artifact_service.ArtifactService, "_generate_main_experiment_metric_charts", _missing_pillow_chart)
 
-    quest = _ok(call_tool("cs_new_quest", {"project": str(tmp_path), "goal": "method ledger", "title": "Method Ledger"}))
+    quest = _ok(call_tool("ka_new_quest", {"project": str(tmp_path), "goal": "method ledger", "title": "Method Ledger"}))
     quest_id = quest["quest"]["quest_id"]
     _confirm_baseline(tmp_path, quest_id)
     _ok(
         call_tool(
-            "cs_submit_idea",
+            "ka_submit_idea",
             {
                 "project": str(tmp_path),
                 "quest_id": quest_id,
@@ -125,7 +125,7 @@ def test_main_experiment_records_when_optional_pillow_chart_renderer_missing(tmp
 
     recorded = _ok(
         call_tool(
-            "cs_record_main_experiment",
+            "ka_record_main_experiment",
             {
                 "project": str(tmp_path),
                 "quest_id": quest_id,
@@ -142,5 +142,5 @@ def test_main_experiment_records_when_optional_pillow_chart_renderer_missing(tmp
     chart_status = recorded.get("connector_metric_chart_status")
     assert chart_status == {"ok": True, "chart_count": 0, "skipped": "root_bound_lightweight"}
     assert recorded["connector_metric_charts"] == []
-    assert (tmp_path / "CodexScientist" / "artifacts" / "experiments" / "R-NO-PILLOW.json").exists()
-    assert not (tmp_path / "CodexScientist" / "quests" / quest_id).exists()
+    assert (tmp_path / "Kvasir-agent" / "artifacts" / "experiments" / "R-NO-PILLOW.json").exists()
+    assert not (tmp_path / "Kvasir-agent" / "quests" / quest_id).exists()

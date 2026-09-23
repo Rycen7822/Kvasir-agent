@@ -1,28 +1,28 @@
 from __future__ import annotations
 
-from codex_scientist.mcp.tool_registry import tools_list_payload
+from kvasir_agent.mcp.tool_registry import tools_list_payload
 
 PHASE1_TOOLS = {
-    "cs_environment_register",
-    "cs_environment_validate",
-    "cs_environment_show",
-    "cs_feedback_ingest",
-    "cs_trajectory_record",
-    "cs_trajectory_search",
-    "cs_trajectory_show",
+    "ka_environment_register",
+    "ka_environment_validate",
+    "ka_environment_show",
+    "ka_feedback_ingest",
+    "ka_trajectory_record",
+    "ka_trajectory_search",
+    "ka_trajectory_show",
 }
-PLANNING_TOOLS = {"cs_evolutionary_plan_round"}
-EVIDENCE_PHASE1_TOOLS = {"cs_feedback_ingest", "cs_trajectory_search", "cs_trajectory_show"}
+PLANNING_TOOLS = {"ka_evolutionary_plan_round"}
+EVIDENCE_PHASE1_TOOLS = {"ka_feedback_ingest", "ka_trajectory_search", "ka_trajectory_show"}
 EXECUTOR_TOOLS = {
-    "cs_variant_create",
-    "cs_variant_apply_patch",
-    "cs_variant_check",
-    "cs_variant_pack",
-    "cs_implementer_patch_check",
-    "cs_implementer_repair_patch",
-    "cs_scheduler_submit",
-    "cs_worker_claim",
-    "cs_evolutionary_round_submit",
+    "ka_variant_create",
+    "ka_variant_apply_patch",
+    "ka_variant_check",
+    "ka_variant_pack",
+    "ka_implementer_patch_check",
+    "ka_implementer_repair_patch",
+    "ka_scheduler_submit",
+    "ka_worker_claim",
+    "ka_evolutionary_round_submit",
 }
 
 

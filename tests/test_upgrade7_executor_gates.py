@@ -8,11 +8,11 @@ from pathlib import Path
 
 import pytest
 
-from codex_scientist.mcp.server import handle_jsonrpc_message
-from codex_scientist.mcp.tool_registry import tools_list_payload
-from codex_scientist.services.environment import EnvironmentService
-from codex_scientist.services.project_state import ProjectLayout
-from codex_scientist.services.trajectory import TrajectoryStore
+from kvasir_agent.mcp.server import handle_jsonrpc_message
+from kvasir_agent.mcp.tool_registry import tools_list_payload
+from kvasir_agent.services.environment import EnvironmentService
+from kvasir_agent.services.project_state import ProjectLayout
+from kvasir_agent.services.trajectory import TrajectoryStore
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 PYTHON = sys.executable
@@ -20,12 +20,12 @@ QUEST_ID = "QEXEC"
 ENV_ID = "env_exec"
 
 EXECUTOR_TOOLS = {
-    "cs_variant_create",
-    "cs_variant_apply_patch",
-    "cs_variant_check",
-    "cs_variant_pack",
-    "cs_implementer_patch_check",
-    "cs_implementer_repair_patch",
+    "ka_variant_create",
+    "ka_variant_apply_patch",
+    "ka_variant_check",
+    "ka_variant_pack",
+    "ka_implementer_patch_check",
+    "ka_implementer_repair_patch",
 }
 
 
@@ -47,7 +47,7 @@ def _make_repo(project_root: Path) -> tuple[Path, str]:
     (repo / "data.jsonl").write_text("{}\n", encoding="utf-8")
     _run(["git", "init"], repo)
     _run(["git", "add", "train.py", "evaluate.py", "data.jsonl"], repo)
-    _run(["git", "-c", "user.name=CodexScientist", "-c", "user.email=codexscientist@example.invalid", "commit", "-m", "baseline"], repo)
+    _run(["git", "-c", "user.name=Kvasir-agent", "-c", "user.email=kvasiragent@example.invalid", "commit", "-m", "baseline"], repo)
     return repo, _run(["git", "rev-parse", "HEAD"], repo).stdout.strip()
 
 
@@ -133,7 +133,7 @@ def _cli(project_root: Path, tool_name: str, payload: dict) -> tuple[int, dict]:
     result = subprocess.run(
         [
             PYTHON,
-            str(REPO_ROOT / "scripts" / "cs_native_cli.py"),
+            str(REPO_ROOT / "scripts" / "ka_native_cli.py"),
             "--project-root",
             str(project_root),
             "call",
@@ -166,13 +166,13 @@ def test_default_mcp_tools_list_and_call_fail_closed_for_executor_tools():
     assert names.isdisjoint(EXECUTOR_TOOLS), sorted(names & EXECUTOR_TOOLS)
 
     response = handle_jsonrpc_message(
-        {"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": "cs_variant_create", "arguments": {}}}
+        {"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": "ka_variant_create", "arguments": {}}}
     )
     assert response is not None
     structured = response["result"]["structuredContent"]
     assert structured["ok"] is False
     assert structured["error_type"] == "tool_not_registered_for_mcp"
-    assert structured["tool"] == "cs_variant_create"
+    assert structured["tool"] == "ka_variant_create"
 
 
 def test_executor_mcp_profile_requires_env_var_and_manifest_flag(tmp_path: Path, monkeypatch):
@@ -182,7 +182,7 @@ def test_executor_mcp_profile_requires_env_var_and_manifest_flag(tmp_path: Path,
     assert no_env["ok"] is False
     assert no_env["error_type"] == "executor_mcp_disabled"
 
-    monkeypatch.setenv("CODEXSCIENTIST_ENABLE_EXECUTOR_MCP", "1")
+    monkeypatch.setenv("KVASIR_AGENT_ENABLE_EXECUTOR_MCP", "1")
     no_manifest_flag = tools_list_payload({"profile": "executor_local", "project_root": str(tmp_path), "quest_id": QUEST_ID, "env_id": ENV_ID})
     assert no_manifest_flag["ok"] is False
     assert no_manifest_flag["error_type"] == "executor_mcp_manifest_required"
@@ -198,7 +198,7 @@ def test_executor_mcp_profile_requires_env_var_and_manifest_flag(tmp_path: Path,
 def test_cli_executor_variant_create_requires_approval_or_local_only_gate(tmp_path: Path):
     _layout, trajectory_id = _registered_executor_env(tmp_path)
 
-    returncode, blocked = _cli(tmp_path, "cs_variant_create", _variant_create_payload(trajectory_id, approved=False))
+    returncode, blocked = _cli(tmp_path, "ka_variant_create", _variant_create_payload(trajectory_id, approved=False))
 
     assert returncode == 1
     assert blocked["ok"] is False
@@ -211,7 +211,7 @@ def test_cli_executor_scheduler_submit_requires_approval_or_local_only_gate(tmp_
 
     returncode, blocked = _cli(
         tmp_path,
-        "cs_scheduler_submit",
+        "ka_scheduler_submit",
         {
             "quest_id": QUEST_ID,
             "env_id": ENV_ID,
@@ -232,7 +232,7 @@ def test_cli_executor_internal_mcp_marker_cannot_be_forged(tmp_path: Path):
 
     returncode, blocked = _cli(
         tmp_path,
-        "cs_scheduler_submit",
+        "ka_scheduler_submit",
         {
             "quest_id": QUEST_ID,
             "env_id": ENV_ID,
@@ -250,11 +250,11 @@ def test_cli_executor_internal_mcp_marker_cannot_be_forged(tmp_path: Path):
 
 
 def test_implementer_patch_check_rejects_protected_file_patch_before_git_apply_ok(tmp_path: Path):
-    from codex_scientist.runtime import tools
+    from kvasir_agent.runtime import tools
 
     _layout, trajectory_id = _registered_executor_env(tmp_path)
     created = json.loads(
-        tools.cs_variant_create(
+        tools.ka_variant_create(
             {
                 "project_root": str(tmp_path),
                 "quest_id": QUEST_ID,
@@ -278,7 +278,7 @@ def test_implementer_patch_check_rejects_protected_file_patch_before_git_apply_o
     )
 
     checked = json.loads(
-        tools.cs_implementer_patch_check(
+        tools.ka_implementer_patch_check(
             {
                 "project_root": str(tmp_path),
                 "quest_id": QUEST_ID,
@@ -298,7 +298,7 @@ def test_implementer_patch_check_rejects_protected_file_patch_before_git_apply_o
 def test_cli_executor_approved_variant_create_succeeds_on_zero_cost_toy_repo(tmp_path: Path):
     _layout, trajectory_id = _registered_executor_env(tmp_path)
 
-    returncode, created = _cli(tmp_path, "cs_variant_create", _variant_create_payload(trajectory_id, approved=True))
+    returncode, created = _cli(tmp_path, "ka_variant_create", _variant_create_payload(trajectory_id, approved=True))
 
     assert returncode == 0, created
     assert created["ok"] is True
@@ -309,7 +309,7 @@ def test_cli_executor_approved_variant_create_succeeds_on_zero_cost_toy_repo(tmp
 def test_cli_executor_local_only_gate_succeeds_without_approval_for_zero_cost_env(tmp_path: Path):
     _layout, trajectory_id = _registered_executor_env(tmp_path)
 
-    returncode, created = _cli(tmp_path, "cs_variant_create", _variant_create_payload(trajectory_id, local_only=True))
+    returncode, created = _cli(tmp_path, "ka_variant_create", _variant_create_payload(trajectory_id, local_only=True))
 
     assert returncode == 0, created
     assert created["ok"] is True
@@ -320,15 +320,15 @@ def test_cli_executor_local_only_gate_succeeds_without_approval_for_zero_cost_en
 @pytest.mark.parametrize(
     ("tool_name", "extra"),
     [
-        ("cs_variant_apply_patch", {"patch_path": "change.diff"}),
-        ("cs_variant_check", {}),
-        ("cs_variant_pack", {}),
-        ("cs_implementer_patch_check", {"patch_path": "change.diff"}),
-        ("cs_implementer_repair_patch", {"failure": {"error_type": "smoke_fail"}}),
+        ("ka_variant_apply_patch", {"patch_path": "change.diff"}),
+        ("ka_variant_check", {}),
+        ("ka_variant_pack", {}),
+        ("ka_implementer_patch_check", {"patch_path": "change.diff"}),
+        ("ka_implementer_repair_patch", {"failure": {"error_type": "smoke_fail"}}),
     ],
 )
 def test_variant_bound_local_only_gate_rejects_mismatched_env_id_before_execution(tmp_path: Path, tool_name: str, extra: dict):
-    from codex_scientist.runtime import tools
+    from kvasir_agent.runtime import tools
 
     _registered_executor_env(tmp_path, env_id=ENV_ID, idea_id="idea_zero")
     _layout, high_trajectory_id = _registered_executor_env(
@@ -341,7 +341,7 @@ def test_variant_bound_local_only_gate_rejects_mismatched_env_id_before_executio
         smoke_marker="HIGH_SMOKE_RAN",
     )
     created = json.loads(
-        tools.cs_variant_create(
+        tools.ka_variant_create(
             {
                 "project_root": str(tmp_path),
                 "quest_id": QUEST_ID,

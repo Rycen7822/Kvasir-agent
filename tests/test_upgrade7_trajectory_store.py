@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from codex_scientist.services.environment import EnvironmentService
-from codex_scientist.services.project_state import ProjectLayout
+from kvasir_agent.services.environment import EnvironmentService
+from kvasir_agent.services.project_state import ProjectLayout
 
 from test_upgrade7_environment_service import _valid_manifest
 
@@ -24,7 +24,7 @@ def _idea(idea_id: str = "idea_1") -> dict:
 
 
 def test_trajectory_create_show_round_trip(tmp_path: Path):
-    from codex_scientist.services.trajectory import TrajectoryStore
+    from kvasir_agent.services.trajectory import TrajectoryStore
 
     layout = _register_env(tmp_path)
     store = TrajectoryStore(layout)
@@ -42,7 +42,7 @@ def test_trajectory_create_show_round_trip(tmp_path: Path):
 
 
 def test_trajectory_update_result_with_metric_invalid_failure(tmp_path: Path):
-    from codex_scientist.services.trajectory import TrajectoryStore
+    from kvasir_agent.services.trajectory import TrajectoryStore
 
     layout = _register_env(tmp_path)
     store = TrajectoryStore(layout)
@@ -66,7 +66,7 @@ def test_trajectory_update_result_with_metric_invalid_failure(tmp_path: Path):
 
 
 def test_trajectory_positive_search_respects_metric_direction(tmp_path: Path):
-    from codex_scientist.services.trajectory import TrajectoryStore
+    from kvasir_agent.services.trajectory import TrajectoryStore
 
     layout = _register_env(tmp_path, direction="maximize", value=0.5)
     store = TrajectoryStore(layout)
@@ -90,7 +90,7 @@ def test_trajectory_positive_search_respects_metric_direction(tmp_path: Path):
 
 
 def test_trajectory_show_rejects_path_escape(tmp_path: Path):
-    from codex_scientist.services.trajectory import TrajectoryStore
+    from kvasir_agent.services.trajectory import TrajectoryStore
 
     store = TrajectoryStore(ProjectLayout.from_project_root(tmp_path))
     result = store.show(quest_id="QTRAJ", trajectory_id="../escape")

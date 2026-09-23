@@ -3,10 +3,10 @@ from __future__ import annotations
 import hashlib
 from pathlib import Path
 
-from codex_scientist.mcp.tool_registry import call_tool, tools_list_payload
-from codex_scientist.services.environment import EnvironmentService
-from codex_scientist.services.project_state import ProjectLayout
-from codex_scientist.services.trajectory import TrajectoryStore
+from kvasir_agent.mcp.tool_registry import call_tool, tools_list_payload
+from kvasir_agent.services.environment import EnvironmentService
+from kvasir_agent.services.project_state import ProjectLayout
+from kvasir_agent.services.trajectory import TrajectoryStore
 
 QUEST_ID = "QEVOMCP"
 ENV_ID = "env_evo_mcp"
@@ -59,15 +59,15 @@ def _register_env(tmp_path: Path) -> ProjectLayout:
 def test_execution_planning_profile_exposes_plan_only_evolutionary_tool():
     listed = tools_list_payload({"profile": "execution_planning"})
     tool_names = {tool["name"] for tool in listed["tools"]}
-    assert "cs_evolutionary_plan_round" in tool_names
-    assert "cs_evolutionary_round_submit" not in tool_names
+    assert "ka_evolutionary_plan_round" in tool_names
+    assert "ka_evolutionary_round_submit" not in tool_names
 
 
 def test_mcp_evolutionary_plan_round_is_plan_only_and_writes_round_artifact(tmp_path: Path):
     _register_env(tmp_path)
 
     planned = call_tool(
-        "cs_evolutionary_plan_round",
+        "ka_evolutionary_plan_round",
         {"project": str(tmp_path), "quest_id": QUEST_ID, "env_id": ENV_ID, "epoch": 2, "batch_size": 4},
     )
 
@@ -78,12 +78,12 @@ def test_mcp_evolutionary_plan_round_is_plan_only_and_writes_round_artifact(tmp_
     assert planned["round_plan"]["executor_side_effects"] is False
     assert planned["round_plan"]["exploit_parents"][0]["idea_id"] == "idea_mcp"
     assert Path(planned["path"]).is_file()
-    quest_root = tmp_path / "CodexScientist" / "quests" / QUEST_ID
+    quest_root = tmp_path / "Kvasir-agent" / "quests" / QUEST_ID
     assert not any((quest_root / "variants").glob("*/variant.json"))
     assert not any((quest_root / "runtime" / "queue").glob("*.json"))
 
 
 def test_default_mcp_rejects_evolutionary_round_submit_by_default(tmp_path: Path):
-    payload = call_tool("cs_evolutionary_round_submit", {"project": str(tmp_path), "quest_id": QUEST_ID, "round_id": "round_0001"})
+    payload = call_tool("ka_evolutionary_round_submit", {"project": str(tmp_path), "quest_id": QUEST_ID, "round_id": "round_0001"})
     assert payload["ok"] is False
     assert payload["error_type"] in {"unknown_tool", "tool_not_registered_for_mcp", "internal_error", "executor_gate_required", "executor_mcp_disabled"}

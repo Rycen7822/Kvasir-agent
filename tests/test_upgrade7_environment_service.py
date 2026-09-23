@@ -4,8 +4,8 @@ import hashlib
 import json
 from pathlib import Path
 
-from codex_scientist.services.event_store import EventStore
-from codex_scientist.services.project_state import ProjectLayout
+from kvasir_agent.services.event_store import EventStore
+from kvasir_agent.services.project_state import ProjectLayout
 
 
 def _sha256(path: Path) -> str:
@@ -48,7 +48,7 @@ def _valid_manifest(project_root: Path, quest_id: str = "QENV") -> dict:
 
 
 def test_environment_register_show_validate_round_trip(tmp_path: Path):
-    from codex_scientist.services.environment import EnvironmentService
+    from kvasir_agent.services.environment import EnvironmentService
 
     layout = ProjectLayout.from_project_root(tmp_path)
     service = EnvironmentService(layout)
@@ -57,7 +57,7 @@ def test_environment_register_show_validate_round_trip(tmp_path: Path):
     registered = service.register(quest_id="QENV", manifest=manifest)
     assert registered["ok"] is True
     assert registered["env_id"] == "env_toy"
-    env_path = tmp_path / "CodexScientist" / "environments" / "env_toy.json"
+    env_path = tmp_path / "Kvasir-agent" / "environments" / "env_toy.json"
     assert env_path.exists()
 
     shown = service.show(quest_id="QENV", env_id="env_toy")
@@ -75,7 +75,7 @@ def test_environment_register_show_validate_round_trip(tmp_path: Path):
 
 
 def test_environment_register_rejects_missing_env_id_without_write(tmp_path: Path):
-    from codex_scientist.services.environment import EnvironmentService
+    from kvasir_agent.services.environment import EnvironmentService
 
     service = EnvironmentService(ProjectLayout.from_project_root(tmp_path))
     manifest = _valid_manifest(tmp_path)
@@ -84,11 +84,11 @@ def test_environment_register_rejects_missing_env_id_without_write(tmp_path: Pat
     result = service.register(quest_id="QENV", manifest=manifest)
     assert result["ok"] is False
     assert result["error_type"] == "invalid_schema"
-    assert not (tmp_path / "CodexScientist" / "environments").exists()
+    assert not (tmp_path / "Kvasir-agent" / "environments").exists()
 
 
 def test_environment_validate_rejects_protected_hash_mismatch(tmp_path: Path):
-    from codex_scientist.services.environment import EnvironmentService
+    from kvasir_agent.services.environment import EnvironmentService
 
     service = EnvironmentService(ProjectLayout.from_project_root(tmp_path))
     manifest = _valid_manifest(tmp_path)
@@ -102,7 +102,7 @@ def test_environment_validate_rejects_protected_hash_mismatch(tmp_path: Path):
 
 
 def test_environment_validate_rejects_absolute_environment_paths(tmp_path: Path):
-    from codex_scientist.services.environment import EnvironmentService
+    from kvasir_agent.services.environment import EnvironmentService
 
     service = EnvironmentService(ProjectLayout.from_project_root(tmp_path))
     manifest = _valid_manifest(tmp_path)
@@ -115,7 +115,7 @@ def test_environment_validate_rejects_absolute_environment_paths(tmp_path: Path)
 
 
 def test_environment_validate_rejects_missing_primary_metric(tmp_path: Path):
-    from codex_scientist.services.environment import EnvironmentService
+    from kvasir_agent.services.environment import EnvironmentService
 
     service = EnvironmentService(ProjectLayout.from_project_root(tmp_path))
     manifest = _valid_manifest(tmp_path)

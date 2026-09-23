@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from codex_scientist.mcp.tool_registry import tools_list_payload
-from codex_scientist.profiles import DEFAULT_PROFILE_NAME, PROFILES, get_profile
+from kvasir_agent.mcp.tool_registry import tools_list_payload
+from kvasir_agent.profiles import DEFAULT_PROFILE_NAME, PROFILES, get_profile
 
 
 def _names(payload: dict) -> set[str]:
@@ -27,10 +27,10 @@ def test_default_profile_is_core_not_all_tools():
     goal_tools = _names(goal_payload)
 
     assert default_tools == set(default_profile.tool_names)
-    assert "cs_bash_exec" not in default_tools
-    assert "cs_submit_paper_bundle" not in default_tools
-    assert "cs_bash_exec" not in goal_tools
-    assert "cs_submit_idea" in goal_tools
+    assert "ka_bash_exec" not in default_tools
+    assert "ka_submit_paper_bundle" not in default_tools
+    assert "ka_bash_exec" not in goal_tools
+    assert "ka_submit_idea" in goal_tools
     assert goal_tools.issuperset(default_tools)
     assert any("profile_deprecated" in warning for warning in goal_payload["warnings"])
 

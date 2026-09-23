@@ -5,9 +5,9 @@ import json
 import sys
 from pathlib import Path
 
-from codex_scientist.services.environment import EnvironmentService
-from codex_scientist.services.project_state import ProjectLayout
-from codex_scientist.services.trajectory import TrajectoryStore
+from kvasir_agent.services.environment import EnvironmentService
+from kvasir_agent.services.project_state import ProjectLayout
+from kvasir_agent.services.trajectory import TrajectoryStore
 
 QUEST_ID = "QSCHED"
 ENV_ID = "env_sched"
@@ -69,7 +69,7 @@ def _setup(tmp_path: Path) -> tuple[ProjectLayout, str, Path]:
 
 
 def test_scheduler_local_submit_validates_package_and_creates_queue_job(tmp_path: Path):
-    from codex_scientist.services.scheduler import SchedulerService
+    from kvasir_agent.services.scheduler import SchedulerService
 
     layout, trajectory_id, package = _setup(tmp_path)
     command = f"{sys.executable} -c \"import json; json.dump({{'metrics': {{'score': 0.8}}}}, open('metrics.json','w'))\""
@@ -92,7 +92,7 @@ def test_scheduler_local_submit_validates_package_and_creates_queue_job(tmp_path
 
 
 def test_scheduler_blocks_nonlocal_backend_and_protected_hash_mismatch(tmp_path: Path):
-    from codex_scientist.services.scheduler import SchedulerService
+    from kvasir_agent.services.scheduler import SchedulerService
 
     layout, trajectory_id, package = _setup(tmp_path)
     nonlocal_result = SchedulerService(layout).submit(

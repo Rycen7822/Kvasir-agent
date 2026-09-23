@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-PLUGIN_NAME="codexscientist-codex"
-# Default install path: ~/.codex/plugins/codexscientist-codex
+PLUGIN_NAME="kvasir-agent"
+# Default install path: ~/.codex/plugins/kvasir-agent
 SOURCE_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 CODEX_HOME="${CODEX_HOME:-${HOME}/.codex}"
 INSTALL_DIR="${CODEX_HOME}/plugins/${PLUGIN_NAME}"
@@ -11,13 +11,13 @@ MARKETPLACE_FILE="${AGENTS_HOME}/plugins/marketplace.json"
 CONFIG_FILE="${CODEX_HOME}/config.toml"
 PYTHON_BIN="${PYTHON_BIN:-$(command -v python3 || command -v python || true)}"
 
-log() { printf '[CodexScientist-codex] %s\n' "$*"; }
-fail() { printf '[CodexScientist-codex] ERROR: %s\n' "$*" >&2; exit 1; }
-[ -n "${PYTHON_BIN}" ] || fail "python3 or python is required for CodexScientist MCP registration."
+log() { printf '[Kvasir-agent] %s\n' "$*"; }
+fail() { printf '[Kvasir-agent] ERROR: %s\n' "$*" >&2; exit 1; }
+[ -n "${PYTHON_BIN}" ] || fail "python3 or python is required for Kvasir-agent MCP registration."
 
-[ -f "${SOURCE_ROOT}/.codex-plugin/plugin.json" ] || fail "Run install.sh from a complete CodexScientist-codex source tree."
+[ -f "${SOURCE_ROOT}/.codex-plugin/plugin.json" ] || fail "Run install.sh from a complete Kvasir-agent source tree."
 if grep -R "mcp""Servers" -n "${SOURCE_ROOT}/.codex-plugin" >/dev/null 2>&1; then
-  fail "plugin.json should not inline MCP server registrations; use scripts/cs_mcp.py as the stable stdio entrypoint."
+  fail "plugin.json should not inline MCP server registrations; use scripts/ka_mcp.py as the stable stdio entrypoint."
 fi
 
 mkdir -p "$(dirname -- "${INSTALL_DIR}")"
@@ -55,10 +55,10 @@ home = Path(sys.argv[4]).expanduser().resolve()
 def source_path() -> str:
     default_codex_home = home / ".codex"
     if codex_home == default_codex_home:
-        return "./.codex/plugins/codexscientist-codex"
+        return "./.codex/plugins/kvasir-agent"
     return str(install_dir)
 entry = {
-    "name": "codexscientist-codex",
+    "name": "kvasir-agent",
     "source": {"source": "local", "path": source_path()},
     "policy": {"installation": "AVAILABLE", "authentication": "ON_INSTALL"},
     "category": "Productivity",
@@ -83,7 +83,7 @@ mkdir -p "$(dirname -- "${CONFIG_FILE}")"
 from pathlib import Path
 import re, sys
 path = Path(sys.argv[1])
-section = '[plugins."codexscientist-codex@local-personal"]'
+section = '[plugins."kvasir-agent@local-personal"]'
 enabled = 'enabled = true\n'
 if not path.exists():
     path.write_text(section + '\n' + enabled, encoding='utf-8')
@@ -120,7 +120,7 @@ if not found:
 path.write_text(''.join(out), encoding='utf-8')
 PY
 
-"${PYTHON_BIN}" - "${CONFIG_FILE}" "${INSTALL_DIR}/scripts/cs_mcp.py" "${PYTHON_BIN}" <<'PY'
+"${PYTHON_BIN}" - "${CONFIG_FILE}" "${INSTALL_DIR}/scripts/ka_mcp.py" "${PYTHON_BIN}" <<'PY'
 from pathlib import Path
 import json
 import sys
@@ -128,7 +128,7 @@ import sys
 path = Path(sys.argv[1])
 mcp_entry = Path(sys.argv[2])
 python_bin = sys.argv[3]
-section = '[mcp_servers.codexscientist-codex]'
+section = '[mcp_servers.kvasir-agent]'
 body = [
     f'command = {json.dumps(python_bin)}\n',
     f'args = ["-B", {json.dumps(str(mcp_entry))}]\n',
@@ -167,7 +167,7 @@ if [ "${SOURCE_ROOT}" != "${INSTALL_DIR}" ]; then
 fi
 log "Installed ${PLUGIN_NAME} to ${INSTALL_DIR}"
 log "Registered marketplace: ${MARKETPLACE_FILE}"
-log "Enabled [plugins.\"codexscientist-codex@local-personal\"] in ${CONFIG_FILE}"
-log "Registered MCP server [mcp_servers.codexscientist-codex] in ${CONFIG_FILE}"
-log "Verify with: codex mcp list && codex mcp get codexscientist-codex"
-log "Smoke test: ${PYTHON_BIN} -B ${INSTALL_DIR}/scripts/cs_mcp.py --stdio-smoke call cs_doctor '{}'"
+log "Enabled [plugins.\"kvasir-agent@local-personal\"] in ${CONFIG_FILE}"
+log "Registered MCP server [mcp_servers.kvasir-agent] in ${CONFIG_FILE}"
+log "Verify with: codex mcp list && codex mcp get kvasir-agent"
+log "Smoke test: ${PYTHON_BIN} -B ${INSTALL_DIR}/scripts/ka_mcp.py --stdio-smoke call ka_doctor '{}'"

@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import sys
 
-from codex_scientist.services.project_state import ProjectLayout
-from codex_scientist.services.queue import QueueService
-from codex_scientist.services.runner import RunnerService
+from kvasir_agent.services.project_state import ProjectLayout
+from kvasir_agent.services.queue import QueueService
+from kvasir_agent.services.runner import RunnerService
 
 
 def test_queue_attempt_retry_starts_new_run_id_per_retry(tmp_path):

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from codex_scientist.services.stage_router import StageRouter
+from kvasir_agent.services.stage_router import StageRouter
 
 
 def test_stage_router_keeps_active_stage_for_ambiguous_continue():

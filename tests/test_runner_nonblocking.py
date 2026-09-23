@@ -4,8 +4,8 @@ from pathlib import Path
 
 
 def test_runner_start_is_nonblocking_and_collect_failed_other_is_terminal(tmp_path: Path):
-    from codex_scientist.services.project_state import ProjectLayout
-    from codex_scientist.services.runner import RunnerService
+    from kvasir_agent.services.project_state import ProjectLayout
+    from kvasir_agent.services.runner import RunnerService
 
     runner = RunnerService(ProjectLayout.from_project_root(tmp_path))
     started = runner.start(command="python train.py", job_id="job1", dry_run=True)
@@ -13,7 +13,7 @@ def test_runner_start_is_nonblocking_and_collect_failed_other_is_terminal(tmp_pa
     assert started["ok"] is True
     assert started["run"]["run_id"] == "R0001"
     assert started["run"]["status"] == "dry_run"
-    assert Path(started["run"]["log_path"]).is_relative_to(tmp_path / "CodexScientist")
+    assert Path(started["run"]["log_path"]).is_relative_to(tmp_path / "Kvasir-agent")
 
     collected = runner.collect("R0001", exit_code=1)
     assert collected["ok"] is True
@@ -22,8 +22,8 @@ def test_runner_start_is_nonblocking_and_collect_failed_other_is_terminal(tmp_pa
 
 
 def test_runner_tail_limits_and_redacts_secret_like_content(tmp_path: Path):
-    from codex_scientist.services.project_state import ProjectLayout
-    from codex_scientist.services.runner import RunnerService
+    from kvasir_agent.services.project_state import ProjectLayout
+    from kvasir_agent.services.runner import RunnerService
 
     runner = RunnerService(ProjectLayout.from_project_root(tmp_path))
     started = runner.start(command="python train.py", dry_run=True)

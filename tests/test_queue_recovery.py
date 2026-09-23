@@ -2,8 +2,8 @@ from __future__ import annotations
 
 
 def test_queue_failed_other_is_terminal_and_snapshot_replays_from_events(tmp_path):
-    from codex_scientist.services.project_state import ProjectLayout
-    from codex_scientist.services.queue import QueueService
+    from kvasir_agent.services.project_state import ProjectLayout
+    from kvasir_agent.services.queue import QueueService
 
     queue = QueueService(ProjectLayout.from_project_root(tmp_path))
     queue.submit(job_id="job1", command="python a.py")

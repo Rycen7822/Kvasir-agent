@@ -4,8 +4,8 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from time import perf_counter
 
-from codex_scientist.adapters.cli import normalize_envelope
-from codex_scientist.mcp.tool_registry import call_tool, list_tool_specs
+from kvasir_agent.adapters.cli import normalize_envelope
+from kvasir_agent.mcp.tool_registry import call_tool, list_tool_specs
 
 
 def test_mcp_tool_descriptions_and_outputs_are_bounded(tmp_path: Path):
@@ -13,13 +13,13 @@ def test_mcp_tool_descriptions_and_outputs_are_bounded(tmp_path: Path):
     assert specs
     assert all(len(spec.description) <= 160 for spec in specs)
 
-    context = call_tool("cs_context_pack", {"project": str(tmp_path), "max_chars": 240})
+    context = call_tool("ka_context_pack", {"project": str(tmp_path), "max_chars": 240})
     assert context["ok"] is True
     assert context["chars"] <= 240
     assert len(context["content"]) <= 240
 
     search = call_tool(
-        "cs_skill_search",
+        "ka_skill_search",
         {
             "raw_user_request": "请检查 manifest 和 queue 状态",
             "description_query": "manifest queue status",
@@ -71,9 +71,9 @@ def test_mcp_readonly_calls_are_fast_enough_for_context_budget():
     start = perf_counter()
     listed = [spec.as_dict() for spec in list_tool_specs()]
     search = call_tool(
-        "cs_skill_search",
+        "ka_skill_search",
         {
-            "raw_user_request": "use CodexScientist MCP status",
+            "raw_user_request": "use Kvasir-agent MCP status",
             "description_query": "mcp status skill retrieval",
             "workflow_query": "doctor status skill load",
             "limit": 5,
@@ -88,7 +88,7 @@ def test_mcp_readonly_calls_are_fast_enough_for_context_budget():
 
 def test_mcp_readonly_calls_are_safe_under_basic_concurrency(tmp_path: Path):
     def call_once(index: int) -> bool:
-        payload = call_tool("cs_queue_status", {"project": str(tmp_path), "limit": 20})
+        payload = call_tool("ka_queue_status", {"project": str(tmp_path), "limit": 20})
         return payload["ok"] is True and payload["mcp"] is True
 
     with ThreadPoolExecutor(max_workers=4) as pool:

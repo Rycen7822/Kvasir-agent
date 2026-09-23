@@ -5,7 +5,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 ARCH = ROOT / "docs" / "ARCHITECTURE.md"
 MCP = ROOT / "docs" / "MCP.md"
-ROUTER = ROOT / "skills" / "codexscientist-codex" / "SKILL.md"
+ROUTER = ROOT / "skills" / "kvasir-agent" / "SKILL.md"
 EGR = ROOT / "docs" / "EXECUTION_GROUNDED_RESEARCH.md"
 
 
@@ -22,9 +22,9 @@ def test_mcp_documents_execution_planning_and_executor_profiles():
     text = MCP.read_text(encoding="utf-8")
     assert "execution_planning" in text
     assert "executor_local" in text
-    assert "CODEXSCIENTIST_ENABLE_EXECUTOR_MCP=1" in text
-    assert "cs_evolutionary_round_plan" in text
-    assert "cs_variant_create" in text
+    assert "KVASIR_AGENT_ENABLE_EXECUTOR_MCP=1" in text
+    assert "ka_evolutionary_round_plan" in text
+    assert "ka_variant_create" in text
     assert "not registered by default" in text
 
 

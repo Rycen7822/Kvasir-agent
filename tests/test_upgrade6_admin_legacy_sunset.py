@@ -5,7 +5,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from codex_scientist.runtime import schemas
+from kvasir_agent.runtime import schemas
 
 ROOT = Path(__file__).resolve().parents[1]
 PYTHON = sys.executable
@@ -13,18 +13,18 @@ PYTHON = sys.executable
 
 def test_legacy_alias_not_in_public_schema_or_default_native_call(tmp_path: Path):
     public_names = {schema["name"] for schema in schemas.PUBLIC_SCHEMAS}
-    assert not any(name.startswith("codexscientist_") for name in public_names)
+    assert not any(name.startswith("kvasiragent_") for name in public_names)
 
     completed = subprocess.run(
         [
             PYTHON,
-            str(ROOT / "scripts" / "cs_native_cli.py"),
+            str(ROOT / "scripts" / "ka_native_cli.py"),
             "--project-root",
             str(tmp_path),
             "--format",
             "json",
             "call",
-            "codexscientist_doctor",
+            "kvasiragent_doctor",
         ],
         cwd=ROOT,
         text=True,
@@ -36,18 +36,18 @@ def test_legacy_alias_not_in_public_schema_or_default_native_call(tmp_path: Path
     payload = json.loads(completed.stdout)
     assert payload.get("ok") is False, payload
     assert payload.get("error_type") in {"legacy_alias_disabled", "unknown_tool"}, payload
-    assert payload.get("canonical_tool") in {None, "cs_doctor"}
+    assert payload.get("canonical_tool") in {None, "ka_doctor"}
 
 
-def test_csctl_admin_only_not_referenced_by_agent_docs():
+def test_kactl_admin_only_not_referenced_by_agent_docs():
     targets = [
         ROOT / ".codex-plugin" / "plugin.json",
         ROOT / "README.md",
         ROOT / "docs" / "USAGE.md",
-        ROOT / "skills" / "codexscientist-codex" / "SKILL.md",
+        ROOT / "skills" / "kvasir-agent" / "SKILL.md",
     ]
     forbidden = (
-        "scripts/csctl.py",
+        "scripts/kactl.py",
         "queue submit",
         "runner start",
         "trial propose",

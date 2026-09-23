@@ -23,20 +23,20 @@ def _run(script: str, *args: str) -> dict:
 
 
 def test_doctor_accepts_legacy_json_output_flag_for_final_acceptance_commands():
-    for script in ["csctl.py", "csctl.py"]:
+    for script in ["kactl.py", "kactl.py"]:
         payload = _run(script, "doctor", "--json")
         assert payload["ok"] is True
         assert payload["transport"] == "codex-native-cli"
         assert payload["mcp"] is False
 
 
-def test_csctl_accepts_legacy_project_and_json_flags_after_subcommand(tmp_path: Path):
-    init = _run("csctl.py", "manifest", "init", "--project", str(tmp_path), "--name", "Demo", "--goal", "Improve", "--json")
+def test_kactl_accepts_legacy_project_and_json_flags_after_subcommand(tmp_path: Path):
+    init = _run("kactl.py", "manifest", "init", "--project", str(tmp_path), "--name", "Demo", "--goal", "Improve", "--json")
     assert init["ok"] is True
 
-    validate = _run("csctl.py", "manifest", "validate", "--project", str(tmp_path), "--json")
+    validate = _run("kactl.py", "manifest", "validate", "--project", str(tmp_path), "--json")
     assert validate["ok"] is True
 
-    runner = _run("csctl.py", "runner", "start", "--project", str(tmp_path), "--command", "python train.py", "--dry-run", "--json")
+    runner = _run("kactl.py", "runner", "start", "--project", str(tmp_path), "--command", "python train.py", "--dry-run", "--json")
     assert runner["ok"] is True
     assert runner["run"]["status"] == "dry_run"

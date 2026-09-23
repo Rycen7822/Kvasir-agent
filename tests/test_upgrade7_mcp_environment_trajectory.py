@@ -4,8 +4,8 @@ import hashlib
 import json
 from pathlib import Path
 
-from codex_scientist.mcp.server import handle_jsonrpc_message
-from codex_scientist.mcp.tool_registry import call_tool, tools_list_payload
+from kvasir_agent.mcp.server import handle_jsonrpc_message
+from kvasir_agent.mcp.tool_registry import call_tool, tools_list_payload
 
 QUEST_ID = "QMCP7"
 ENV_ID = "env_mcp"
@@ -51,18 +51,18 @@ def test_mcp_call_round_trip_for_environment_trajectory_and_feedback(tmp_path: P
     project_root = str(tmp_path)
 
     registered = call_tool(
-        "cs_environment_register",
+        "ka_environment_register",
         {"project_root": project_root, "quest_id": QUEST_ID, "manifest": manifest},
     )
     assert registered.get("ok") is True, registered
     assert registered.get("env_id") == ENV_ID
 
-    validated = call_tool("cs_environment_validate", {"project_root": project_root, "quest_id": QUEST_ID, "env_id": ENV_ID})
+    validated = call_tool("ka_environment_validate", {"project_root": project_root, "quest_id": QUEST_ID, "env_id": ENV_ID})
     assert validated.get("ok") is True, validated
     assert validated.get("primary_metric", {}).get("value") == 0.51
 
     created = call_tool(
-        "cs_trajectory_record",
+        "ka_trajectory_record",
         {
             "project_root": project_root,
             "quest_id": QUEST_ID,
@@ -79,7 +79,7 @@ def test_mcp_call_round_trip_for_environment_trajectory_and_feedback(tmp_path: P
     log_path = tmp_path / "run.log"
     log_path.write_text("epoch=1 token=secret-value\nscore=0.62\n", encoding="utf-8")
     feedback = call_tool(
-        "cs_feedback_ingest",
+        "ka_feedback_ingest",
         {
             "project_root": project_root,
             "quest_id": QUEST_ID,
@@ -96,26 +96,26 @@ def test_mcp_call_round_trip_for_environment_trajectory_and_feedback(tmp_path: P
     assert feedback.get("feedback", {}).get("primary_metric", {}).get("value") == 0.62
     assert "secret-value" not in json.dumps(feedback, ensure_ascii=False)
 
-    shown = call_tool("cs_trajectory_show", {"project_root": project_root, "quest_id": QUEST_ID, "trajectory_id": trajectory_id})
+    shown = call_tool("ka_trajectory_show", {"project_root": project_root, "quest_id": QUEST_ID, "trajectory_id": trajectory_id})
     assert shown.get("ok") is True, shown
     assert shown["trajectory"]["result"]["status"] == "evaluated"
 
-    searched = call_tool("cs_trajectory_search", {"project_root": project_root, "quest_id": QUEST_ID, "positive_only": True})
+    searched = call_tool("ka_trajectory_search", {"project_root": project_root, "quest_id": QUEST_ID, "positive_only": True})
     assert searched.get("ok") is True, searched
     assert [item["trajectory_id"] for item in searched["trajectories"]] == [trajectory_id]
 
 
 def test_phase1_mcp_schema_and_missing_argument_contracts_are_bounded():
     names = {tool["name"] for tool in tools_list_payload({"profile": "execution_planning"})["tools"]}
-    assert "cs_environment_register" in names
-    assert "cs_feedback_ingest" in names
+    assert "ka_environment_register" in names
+    assert "ka_feedback_ingest" in names
 
     schema_response = handle_jsonrpc_message(
         {
             "jsonrpc": "2.0",
             "id": 1,
             "method": "tools/call",
-            "params": {"name": "cs_tool_schema", "arguments": {"name": "cs_feedback_ingest"}},
+            "params": {"name": "ka_tool_schema", "arguments": {"name": "ka_feedback_ingest"}},
         }
     )
     assert schema_response is not None
@@ -125,7 +125,7 @@ def test_phase1_mcp_schema_and_missing_argument_contracts_are_bounded():
     assert {"env_id", "trajectory_id", "run_id", "source_kind"} <= set(schema.get("required", []))
     assert "quest_id" not in set(schema.get("required", []))
 
-    missing = call_tool("cs_feedback_ingest", {"quest_id": QUEST_ID})
+    missing = call_tool("ka_feedback_ingest", {"quest_id": QUEST_ID})
     assert missing.get("ok") is False, missing
     assert missing.get("error_type") == "missing_argument"
     assert missing.get("recoverable") is True

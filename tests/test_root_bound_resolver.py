@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from codex_scientist.services.project_state import ProjectRootResolver
+from kvasir_agent.services.project_state import ProjectRootResolver
 
 
 def test_project_root_resolver_explicit_project_wins_over_cwd(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -25,7 +25,7 @@ def test_project_root_resolver_env_used_only_without_explicit_project(tmp_path: 
     env_root = tmp_path / "env_root"
     explicit.mkdir()
     env_root.mkdir()
-    monkeypatch.setenv("CODEXSCIENTIST_PROJECT_ROOT", str(env_root))
+    monkeypatch.setenv("KVASIR_AGENT_PROJECT_ROOT", str(env_root))
 
     assert ProjectRootResolver.resolve({}) == env_root.resolve()
     assert ProjectRootResolver.resolve({"project_root": str(explicit)}) == explicit.resolve()
@@ -37,7 +37,7 @@ def test_project_root_resolver_prefers_nearest_research_manifest_over_git(tmp_pa
     cwd = nested_project / "src"
     cwd.mkdir(parents=True)
     (repo / ".git").mkdir()
-    state_root = nested_project / "CodexScientist"
+    state_root = nested_project / "Kvasir-agent"
     state_root.mkdir()
     (state_root / "research.yaml").write_text("schema_version: 2\nlayout_mode: root_bound\n", encoding="utf-8")
     monkeypatch.chdir(cwd)

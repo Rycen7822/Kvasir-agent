@@ -23,13 +23,13 @@ def run(script: str, *args: str, cwd: Path | None = None) -> dict:
 
 
 def test_planned_final_acceptance_command_group_works_with_legacy_flags(tmp_path: Path):
-    run("csctl.py", "doctor", "--json")
-    run("csctl.py", "doctor", "--json")
-    run("csctl.py", "manifest", "init", "--project", str(tmp_path), "--name", "Demo", "--goal", "Improve", "--json")
+    run("kactl.py", "doctor", "--json")
+    run("kactl.py", "doctor", "--json")
+    run("kactl.py", "manifest", "init", "--project", str(tmp_path), "--name", "Demo", "--goal", "Improve", "--json")
 
-    assert run("csctl.py", "manifest", "validate", "--project", str(tmp_path), "--json")["ok"] is True
-    assert run("csctl.py", "runner", "start", "--project", str(tmp_path), "--dry-run", "--json")["ok"] is True
-    assert run("csctl.py", "queue", "status", "--project", str(tmp_path), "--json")["ok"] is True
-    assert run("csctl.py", "wiki", "query-pack", "--project", str(tmp_path), "--limit", "20", "--json")["ok"] is True
-    assert run("csctl.py", "review", "status", "--project", str(tmp_path), "--json")["ok"] is True
-    assert run("csctl.py", "cost", "status", "--project", str(tmp_path), "--json")["ok"] is True
+    assert run("kactl.py", "manifest", "validate", "--project", str(tmp_path), "--json")["ok"] is True
+    assert run("kactl.py", "runner", "start", "--project", str(tmp_path), "--dry-run", "--json")["ok"] is True
+    assert run("kactl.py", "queue", "status", "--project", str(tmp_path), "--json")["ok"] is True
+    assert run("kactl.py", "wiki", "query-pack", "--project", str(tmp_path), "--limit", "20", "--json")["ok"] is True
+    assert run("kactl.py", "review", "status", "--project", str(tmp_path), "--json")["ok"] is True
+    assert run("kactl.py", "cost", "status", "--project", str(tmp_path), "--json")["ok"] is True

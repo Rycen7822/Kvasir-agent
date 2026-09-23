@@ -2,8 +2,8 @@ from __future__ import annotations
 
 
 def test_cost_approval_allows_readonly_and_blocks_over_budget_gpu(tmp_path):
-    from codex_scientist.services.costs import CostApprovalService
-    from codex_scientist.services.project_state import ProjectLayout
+    from kvasir_agent.services.costs import CostApprovalService
+    from kvasir_agent.services.project_state import ProjectLayout
 
     service = CostApprovalService(ProjectLayout.from_project_root(tmp_path), daily_cap_usd=1.0)
 
@@ -16,8 +16,8 @@ def test_cost_approval_allows_readonly_and_blocks_over_budget_gpu(tmp_path):
 
 
 def test_cost_approval_blocks_destructive_and_scheduled_by_default(tmp_path):
-    from codex_scientist.services.costs import CostApprovalService
-    from codex_scientist.services.project_state import ProjectLayout
+    from kvasir_agent.services.costs import CostApprovalService
+    from kvasir_agent.services.project_state import ProjectLayout
 
     service = CostApprovalService(ProjectLayout.from_project_root(tmp_path), daily_cap_usd=10.0)
 

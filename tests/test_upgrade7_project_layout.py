@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from codex_scientist.services.project_state import ProjectLayout
+from kvasir_agent.services.project_state import ProjectLayout
 
 
 def test_execution_grounded_dirs_created(tmp_path: Path):

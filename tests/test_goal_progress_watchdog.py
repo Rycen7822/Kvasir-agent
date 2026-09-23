@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from codex_scientist.mcp.tool_registry import call_tool
+from kvasir_agent.mcp.tool_registry import call_tool
 
 
 def _ok(payload: dict) -> dict:
@@ -12,12 +12,12 @@ def _ok(payload: dict) -> dict:
 
 
 def test_state_changing_tools_do_not_report_or_write_progress_watchdog(tmp_path: Path):
-    quest = _ok(call_tool("cs_new_quest", {"project": str(tmp_path), "goal": "watchdog", "title": "Watchdog"}))
+    quest = _ok(call_tool("ka_new_quest", {"project": str(tmp_path), "goal": "watchdog", "title": "Watchdog"}))
     quest_id = quest["quest"]["quest_id"]
 
     first = _ok(
         call_tool(
-            "cs_record_user_requirement",
+            "ka_record_user_requirement",
             {
                 "project": str(tmp_path),
                 "quest_id": quest_id,
@@ -29,7 +29,7 @@ def test_state_changing_tools_do_not_report_or_write_progress_watchdog(tmp_path:
     )
     second = _ok(
         call_tool(
-            "cs_record_user_requirement",
+            "ka_record_user_requirement",
             {
                 "project": str(tmp_path),
                 "quest_id": quest_id,
@@ -46,16 +46,16 @@ def test_state_changing_tools_do_not_report_or_write_progress_watchdog(tmp_path:
         assert "next_checkpoint_tool" not in payload
         assert "progress_watchdog" not in payload
 
-    state_path = tmp_path / "CodexScientist" / "quests" / quest_id / "runtime" / "progress_watchdog.json"
+    state_path = tmp_path / "Kvasir-agent" / "quests" / quest_id / "runtime" / "progress_watchdog.json"
     assert not state_path.exists()
 
 
 def test_checkpoint_writes_passive_checkpoint_without_watchdog_or_goal_gate(tmp_path: Path):
-    quest = _ok(call_tool("cs_new_quest", {"project": str(tmp_path), "goal": "watchdog reset", "title": "Watchdog Reset"}))
+    quest = _ok(call_tool("ka_new_quest", {"project": str(tmp_path), "goal": "watchdog reset", "title": "Watchdog Reset"}))
     quest_id = quest["quest"]["quest_id"]
     _ok(
         call_tool(
-            "cs_record_user_requirement",
+            "ka_record_user_requirement",
             {
                 "project": str(tmp_path),
                 "quest_id": quest_id,
@@ -67,7 +67,7 @@ def test_checkpoint_writes_passive_checkpoint_without_watchdog_or_goal_gate(tmp_
 
     checkpoint = _ok(
         call_tool(
-            "cs_checkpoint",
+            "ka_checkpoint",
             {
                 "project": str(tmp_path),
                 "quest_id": quest_id,
@@ -86,7 +86,7 @@ def test_checkpoint_writes_passive_checkpoint_without_watchdog_or_goal_gate(tmp_
     assert "goal_state_path" not in checkpoint
     assert "progress_watchdog" not in checkpoint
 
-    quest_runtime = tmp_path / "CodexScientist" / "quests" / quest_id / "runtime"
+    quest_runtime = tmp_path / "Kvasir-agent" / "quests" / quest_id / "runtime"
     assert not (quest_runtime / "progress_watchdog.json").exists()
     goal_state = quest_runtime / "goal_state.json"
     assert not goal_state.exists()

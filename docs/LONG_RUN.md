@@ -1,6 +1,6 @@
 # Long Run Validation
 
-CodexScientist is a Codex CLI plugin with an MCP-only default research control plane. Long-run validation records whether each run used MCP-only default tools, hidden admin/debug compatibility commands, or both; default Codex research work should use MCP tools and project-local state.
+Kvasir-agent is a Codex CLI plugin with an MCP-only default research control plane. Long-run validation records whether each run used MCP-only default tools, hidden admin/debug compatibility commands, or both; default Codex research work should use MCP tools and project-local state.
 
 ## Validation layers
 
@@ -8,7 +8,7 @@ CodexScientist is a Codex CLI plugin with an MCP-only default research control p
 2. `overnight soak`: a local wall-clock run of at least 12 hours with real process/log/reconcile behavior.
 3. `wall-clock soak`: a release validation of at least ten natural days.
 
-The accelerated layer writes `CodexScientist/summaries/long_run_validation.md` and must mark real wall-clock coverage as `wall-clock: not_run` unless a real wall-clock soak was actually executed.
+The accelerated layer writes `Kvasir-agent/summaries/long_run_validation.md` and must mark real wall-clock coverage as `wall-clock: not_run` unless a real wall-clock soak was actually executed.
 
 ## Crash resume smoke
 
@@ -16,16 +16,16 @@ A crash/resume smoke should demonstrate that a stuck or interrupted run can be r
 
 1. inspect or lazily create the root-bound research state through the public MCP flow;
 2. start a runner or simulate a runner heartbeat gap;
-3. inspect public recovery state through `cs_status` and `cs_resume_brief`;
+3. inspect public recovery state through `ka_status` and `ka_resume_brief`;
 4. run hidden/admin-only watchdog diagnostics only in explicit admin/CI validation, without writing a `runner_stuck` goal gate;
-5. call `cs_resume_brief` and verify `active_run_id`, passive `recovery_anchor`, and `source_refs` are present;
-6. call `cs_checkpoint` after the bounded recovery action is complete.
+5. call `ka_resume_brief` and verify `active_run_id`, passive `recovery_anchor`, and `source_refs` are present;
+6. call `ka_checkpoint` after the bounded recovery action is complete.
 
 Expired leases move to `reconcile_required`; they are not silently requeued as pending jobs.
 
 ## Recovery artifacts
 
-Long-run recovery state is project-local under `CodexScientist/` and must never be committed into the plugin repository root. Important files include:
+Long-run recovery state is project-local under `Kvasir-agent/` and must never be committed into the plugin repository root. Important files include:
 
 - `events/events.jsonl` plus `events/events.lock` for append-only event sequencing and cross-process append safety;
 - `events/corrupt/` for quarantined malformed JSONL lines;
@@ -38,13 +38,13 @@ Long-run recovery state is project-local under `CodexScientist/` and must never 
 
 Use the bounded MCP-first recovery path before reading raw files:
 
-1. `cs_status` verifies the target project and state root.
-2. `cs_resume_brief` reports current root-bound research state, active run id, passive recovery anchor, and source refs.
-3. `cs_pack_delta` fetches post-checkpoint events when the latest brief is not enough.
-4. `cs_log_digest` summarizes long logs and classifies common failures before any raw log read.
-5. `cs_artifact_index` lists artifact path, type, size, and hash before opening full artifact content.
+1. `ka_status` verifies the target project and state root.
+2. `ka_resume_brief` reports current root-bound research state, active run id, passive recovery anchor, and source refs.
+3. `ka_pack_delta` fetches post-checkpoint events when the latest brief is not enough.
+4. `ka_log_digest` summarizes long logs and classifies common failures before any raw log read.
+5. `ka_artifact_index` lists artifact path, type, size, and hash before opening full artifact content.
 6. Hidden/admin-only progress watchdog diagnostics may be used in explicit admin/CI validation for runner heartbeat and stuck-state questions, without writing goal gates.
-7. `cs_checkpoint` records completed stage boundaries and factual validation state.
+7. `ka_checkpoint` records completed stage boundaries and factual validation state.
 
 State-changing MCP tools do not auto-inject checkpoint gates. Recovery payloads should remain passive and may return:
 

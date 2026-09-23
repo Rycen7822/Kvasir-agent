@@ -5,7 +5,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from codex_scientist.mcp.tool_registry import call_tool, list_tool_specs, tools_list_payload
+from kvasir_agent.mcp.tool_registry import call_tool, list_tool_specs, tools_list_payload
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -17,14 +17,14 @@ def _ok(payload: dict) -> dict:
 
 
 def _new_quest(tmp_path: Path, goal: str = "problems regression quest") -> str:
-    payload = _ok(call_tool("cs_new_quest", {"project": str(tmp_path), "goal": goal, "title": goal}))
+    payload = _ok(call_tool("ka_new_quest", {"project": str(tmp_path), "goal": goal, "title": goal}))
     return str(payload["quest"]["quest_id"])
 
 
 def _open_baseline(tmp_path: Path, quest_id: str) -> None:
     baseline = _ok(
         call_tool(
-            "cs_create_local_baseline",
+            "ka_create_local_baseline",
             {
                 "project": str(tmp_path),
                 "quest_id": quest_id,
@@ -35,7 +35,7 @@ def _open_baseline(tmp_path: Path, quest_id: str) -> None:
             },
         )
     )
-    _ok(call_tool("cs_confirm_baseline", {"project": str(tmp_path), **baseline["confirm_args"]}))
+    _ok(call_tool("ka_confirm_baseline", {"project": str(tmp_path), **baseline["confirm_args"]}))
 
 
 def test_usage_doc_matches_upgrade6_profile_contract() -> None:
@@ -47,8 +47,8 @@ def test_usage_doc_matches_upgrade6_profile_contract() -> None:
         "filtered by active stage subset",
         "progress watchdog state",
         "allowed_tools_for_stage",
-        "Use `cs_skill_search`",
-        "Use `cs_skill_load`",
+        "Use `ka_skill_search`",
+        "Use `ka_skill_load`",
     ]
     for phrase in stale_phrases:
         assert phrase not in usage
@@ -67,13 +67,13 @@ def test_project_root_alias_is_honored_and_does_not_write_to_cwd(tmp_path: Path,
     cwd.mkdir()
     monkeypatch.chdir(cwd)
 
-    status = _ok(call_tool("cs_status", {"project_root": str(target)}))
+    status = _ok(call_tool("ka_status", {"project_root": str(target)}))
     assert status["project"] == str(target.resolve())
-    assert status["state_root"] == str((target / "CodexScientist").resolve())
+    assert status["state_root"] == str((target / "Kvasir-agent").resolve())
 
     checkpoint = _ok(
         call_tool(
-            "cs_checkpoint",
+            "ka_checkpoint",
             {
                 "project_root": str(target),
                 "phase": "project-root-alias-regression",
@@ -82,14 +82,14 @@ def test_project_root_alias_is_honored_and_does_not_write_to_cwd(tmp_path: Path,
         )
     )
     assert str(target.resolve()) in str(checkpoint)
-    assert (target / "CodexScientist").exists()
-    assert not (cwd / "CodexScientist").exists()
+    assert (target / "Kvasir-agent").exists()
+    assert not (cwd / "Kvasir-agent").exists()
 
 
 def test_tool_schema_returns_minimal_schema_for_every_registered_tool() -> None:
     missing: list[str] = []
     for spec in list_tool_specs("admin"):
-        payload = call_tool("cs_tool_schema", {"name": spec.name})
+        payload = call_tool("ka_tool_schema", {"name": spec.name})
         if payload.get("ok") is not True:
             missing.append(f"{spec.name}:{payload.get('error_type')}:{payload.get('error')}")
             continue
@@ -106,7 +106,7 @@ def test_tool_schema_returns_minimal_schema_for_every_registered_tool() -> None:
 def _jsonrpc_tool_call(name: str, arguments: dict) -> dict:
     message = {"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": name, "arguments": arguments}}
     result = subprocess.run(
-        [sys.executable, "scripts/cs_mcp.py"],
+        [sys.executable, "scripts/ka_mcp.py"],
         cwd=str(REPO_ROOT),
         input=json.dumps(message) + "\n",
         text=True,
@@ -121,13 +121,13 @@ def _jsonrpc_tool_call(name: str, arguments: dict) -> dict:
 def test_jsonrpc_tools_call_enforces_public_mcp_profile_boundary(tmp_path: Path) -> None:
     quest_id = _new_quest(tmp_path)
 
-    public_payload = _jsonrpc_tool_call("cs_status", {"project": str(tmp_path)})
+    public_payload = _jsonrpc_tool_call("ka_status", {"project": str(tmp_path)})
     assert public_payload["ok"] is True, public_payload
 
     for hidden_name, args in [
-        ("cs_cost_status", {"project": str(tmp_path)}),
-        ("cs_select_next_idea", {"project": str(tmp_path), "quest_id": quest_id}),
-        ("cs_goal_watchdog", {"project": str(tmp_path), "quest_id": quest_id}),
+        ("ka_cost_status", {"project": str(tmp_path)}),
+        ("ka_select_next_idea", {"project": str(tmp_path), "quest_id": quest_id}),
+        ("ka_goal_watchdog", {"project": str(tmp_path), "quest_id": quest_id}),
     ]:
         payload = _jsonrpc_tool_call(hidden_name, args)
         assert payload["ok"] is False, (hidden_name, payload)
@@ -135,7 +135,7 @@ def test_jsonrpc_tools_call_enforces_public_mcp_profile_boundary(tmp_path: Path)
         assert payload["recoverable"] is True
         assert "tools/list" in json.dumps(payload)
 
-        schema_payload = _jsonrpc_tool_call("cs_tool_schema", {"name": hidden_name})
+        schema_payload = _jsonrpc_tool_call("ka_tool_schema", {"name": hidden_name})
         assert schema_payload["ok"] is False, (hidden_name, schema_payload)
         assert schema_payload["error_type"] == "tool_not_registered_for_mcp", (hidden_name, schema_payload)
         assert "schema" not in schema_payload
@@ -146,7 +146,7 @@ def test_resume_brief_uses_mcp_first_quest_goal_without_missing_goal_blocker(tmp
     quest_id = _new_quest(tmp_path, goal=goal)
     _ok(
         call_tool(
-            "cs_checkpoint",
+            "ka_checkpoint",
             {
                 "project": str(tmp_path),
                 "quest_id": quest_id,
@@ -157,7 +157,7 @@ def test_resume_brief_uses_mcp_first_quest_goal_without_missing_goal_blocker(tmp
         )
     )
 
-    brief = _ok(call_tool("cs_resume_brief", {"project": str(tmp_path), "quest_id": quest_id}))
+    brief = _ok(call_tool("ka_resume_brief", {"project": str(tmp_path), "quest_id": quest_id}))
     assert brief["goal"]["title"] == goal
     assert brief.get("blocker") is None
     assert "blocked_missing_goal" not in brief.get("warnings", [])
@@ -167,7 +167,7 @@ def test_artifact_index_can_scope_to_quest_artifacts_seen_by_compact_state(tmp_p
     quest_id = _new_quest(tmp_path)
     _ok(
         call_tool(
-            "cs_artifact_record",
+            "ka_artifact_record",
             {
                 "project": str(tmp_path),
                 "quest_id": quest_id,
@@ -178,8 +178,8 @@ def test_artifact_index_can_scope_to_quest_artifacts_seen_by_compact_state(tmp_p
         )
     )
 
-    state = _ok(call_tool("cs_get_quest_state", {"project": str(tmp_path), "quest_id": quest_id}))
-    index = _ok(call_tool("cs_artifact_index", {"project": str(tmp_path), "quest_id": quest_id, "max_items": 20}))
+    state = _ok(call_tool("ka_get_quest_state", {"project": str(tmp_path), "quest_id": quest_id}))
+    index = _ok(call_tool("ka_artifact_index", {"project": str(tmp_path), "quest_id": quest_id, "max_items": 20}))
     assert index["scope"] == "quest"
     assert index["quest_id"] == quest_id
     assert index["count"] >= 1
@@ -194,19 +194,19 @@ def test_public_tool_metadata_and_schemas_are_codex_discoverable() -> None:
         for tool in payload["tools"]:
             assert "Hermes" not in tool.get("description", ""), (profile, tool)
 
-    bash_schema = _ok(call_tool("cs_tool_schema", {"name": "cs_bash_exec"}))["schema"]["input_schema"]
+    bash_schema = _ok(call_tool("ka_tool_schema", {"name": "ka_bash_exec"}))["schema"]["input_schema"]
     assert "allOf" in bash_schema or "oneOf" in bash_schema or "if" in bash_schema
     encoded_bash_schema = json.dumps(bash_schema)
     for key in ["command_class", "provenance_reason", "experiment_or_artifact_id", "cwd_policy"]:
         assert key in encoded_bash_schema
 
-    resume_props = _ok(call_tool("cs_tool_schema", {"name": "cs_resume_brief"}))["schema"]["input_schema"]["properties"]
+    resume_props = _ok(call_tool("ka_tool_schema", {"name": "ka_resume_brief"}))["schema"]["input_schema"]["properties"]
     assert {"quest_id", "max_chars", "include_recent_events", "include_risks"} <= set(resume_props)
 
-    delta_props = _ok(call_tool("cs_tool_schema", {"name": "cs_pack_delta"}))["schema"]["input_schema"]["properties"]
+    delta_props = _ok(call_tool("ka_tool_schema", {"name": "ka_pack_delta"}))["schema"]["input_schema"]["properties"]
     assert {"since_event_seq", "since_checkpoint_id", "max_chars"} <= set(delta_props)
 
-    checkpoint_props = _ok(call_tool("cs_tool_schema", {"name": "cs_checkpoint"}))["schema"]["input_schema"]["properties"]
+    checkpoint_props = _ok(call_tool("ka_tool_schema", {"name": "ka_checkpoint"}))["schema"]["input_schema"]["properties"]
     assert {
         "phase",
         "completed",
@@ -218,15 +218,15 @@ def test_public_tool_metadata_and_schemas_are_codex_discoverable() -> None:
         "idempotency_key",
     } <= set(checkpoint_props)
 
-    context_props = _ok(call_tool("cs_tool_schema", {"name": "cs_context_pack"}))["schema"]["input_schema"]["properties"]
+    context_props = _ok(call_tool("ka_tool_schema", {"name": "ka_context_pack"}))["schema"]["input_schema"]["properties"]
     assert {"quest_id", "max_chars"} <= set(context_props)
 
-    analysis_schema = _ok(call_tool("cs_tool_schema", {"name": "cs_create_analysis_campaign"}))["schema"]["input_schema"]
+    analysis_schema = _ok(call_tool("ka_tool_schema", {"name": "ka_create_analysis_campaign"}))["schema"]["input_schema"]
     analysis_props = analysis_schema["properties"]
     assert {"selected_outline_ref", "research_questions", "experimental_designs", "todo_items"} <= set(analysis_props)
     assert "writing-facing" in json.dumps(analysis_schema).lower()
 
-    artifact_schema = _ok(call_tool("cs_tool_schema", {"name": "cs_artifact_record"}))["schema"]["input_schema"]
+    artifact_schema = _ok(call_tool("ka_tool_schema", {"name": "ka_artifact_record"}))["schema"]["input_schema"]
     kind_schema = artifact_schema["properties"]["kind"]
     assert {"report", "run", "decision", "baseline"} <= set(kind_schema.get("enum", []))
 
@@ -235,7 +235,7 @@ def test_analysis_campaign_writing_fields_return_actionable_retry_template(tmp_p
     quest_id = _new_quest(tmp_path)
     _open_baseline(tmp_path, quest_id)
     payload = call_tool(
-        "cs_create_analysis_campaign",
+        "ka_create_analysis_campaign",
         {
             "project": str(tmp_path),
             "quest_id": quest_id,
@@ -249,14 +249,14 @@ def test_analysis_campaign_writing_fields_return_actionable_retry_template(tmp_p
     encoded = json.dumps(payload)
     assert "selected_outline_ref" in encoded
     assert "retry_template" in payload
-    assert payload["retry_template"]["name"] == "cs_create_analysis_campaign"
+    assert payload["retry_template"]["name"] == "ka_create_analysis_campaign"
 
 
 def test_analysis_campaign_preflight_reports_all_missing_writing_contract_fields(tmp_path: Path) -> None:
     quest_id = _new_quest(tmp_path)
     _open_baseline(tmp_path, quest_id)
     payload = call_tool(
-        "cs_create_analysis_campaign",
+        "ka_create_analysis_campaign",
         {
             "project": str(tmp_path),
             "quest_id": quest_id,
@@ -270,7 +270,7 @@ def test_analysis_campaign_preflight_reports_all_missing_writing_contract_fields
     assert payload["ok"] is False
     assert payload["error_type"] == "missing_argument"
     assert {"experimental_designs", "todo_items"} <= set(payload["missing_context_keys"])
-    assert payload["retry_template"]["name"] == "cs_create_analysis_campaign"
+    assert payload["retry_template"]["name"] == "ka_create_analysis_campaign"
     encoded = json.dumps(payload["retry_template"], ensure_ascii=False)
     assert "section_id" in encoded and "claim_links" in encoded
 
@@ -278,7 +278,7 @@ def test_analysis_campaign_preflight_reports_all_missing_writing_contract_fields
 def test_artifact_record_rejects_unknown_kind_with_allowed_kinds_and_retry_template(tmp_path: Path) -> None:
     quest_id = _new_quest(tmp_path)
     payload = call_tool(
-        "cs_artifact_record",
+        "ka_artifact_record",
         {
             "project": str(tmp_path),
             "quest_id": quest_id,
@@ -290,7 +290,7 @@ def test_artifact_record_rejects_unknown_kind_with_allowed_kinds_and_retry_templ
     assert payload["error_type"] == "invalid_argument"
     assert "report" in payload["allowed_kinds"]
     assert payload["retry_template"] == {
-        "name": "cs_artifact_record",
+        "name": "ka_artifact_record",
         "kind": "report",
         "payload": {"kind": "report", "report_type": "dataset_inspection", "summary": "synthetic dataset inspection"},
     }
@@ -300,7 +300,7 @@ def test_bash_exec_outside_workdir_reports_allowed_roots_and_retry_template(tmp_
     quest_id = _new_quest(tmp_path)
     outside = tmp_path.parent
     payload = call_tool(
-        "cs_bash_exec",
+        "ka_bash_exec",
         {
             "project": str(tmp_path),
             "quest_id": quest_id,
@@ -317,7 +317,7 @@ def test_bash_exec_outside_workdir_reports_allowed_roots_and_retry_template(tmp_
     assert payload["ok"] is False
     assert payload["error_type"] == "workdir_outside_quest"
     assert payload.get("allowed_roots")
-    assert payload.get("retry_template", {}).get("name") == "cs_bash_exec"
+    assert payload.get("retry_template", {}).get("name") == "ka_bash_exec"
 
 
 def test_paper_reliability_verify_supports_bounded_dry_run(tmp_path: Path) -> None:
@@ -327,8 +327,8 @@ def test_paper_reliability_verify_supports_bounded_dry_run(tmp_path: Path) -> No
         "-c",
         (
             "import json; "
-            "from codex_scientist.mcp.tool_registry import call_tool; "
-            "payload = call_tool('cs_paper_reliability_verify', "
+            "from kvasir_agent.mcp.tool_registry import call_tool; "
+            "payload = call_tool('ka_paper_reliability_verify', "
             + repr(
                 {
                     "project": str(tmp_path),
@@ -348,9 +348,9 @@ def test_paper_reliability_verify_supports_bounded_dry_run(tmp_path: Path) -> No
     payload = json.loads(result.stdout)
     assert payload["dry_run"] is True
     assert payload["network"] is False
-    assert payload["tool"] == "cs_paper_reliability_verify"
+    assert payload["tool"] == "ka_paper_reliability_verify"
     assert "reliability_card_path" not in payload
-    assert payload["suggested_next_action"].startswith("Retry cs_paper_reliability_verify")
+    assert payload["suggested_next_action"].startswith("Retry ka_paper_reliability_verify")
 
 
 def test_paper_reliability_verify_external_url_without_bounded_mode_fails_fast(tmp_path: Path) -> None:
@@ -360,8 +360,8 @@ def test_paper_reliability_verify_external_url_without_bounded_mode_fails_fast(t
         "-c",
         (
             "import json; "
-            "from codex_scientist.mcp.tool_registry import call_tool; "
-            "payload = call_tool('cs_paper_reliability_verify', "
+            "from kvasir_agent.mcp.tool_registry import call_tool; "
+            "payload = call_tool('ka_paper_reliability_verify', "
             + repr(
                 {
                     "project": str(tmp_path),
@@ -388,7 +388,7 @@ def test_submit_paper_outline_accepts_string_list_as_section_titles(tmp_path: Pa
 
     payload = _ok(
         call_tool(
-            "cs_submit_paper_outline",
+            "ka_submit_paper_outline",
             {
                 "project": str(tmp_path),
                 "quest_id": quest_id,
@@ -408,31 +408,31 @@ def test_baseline_gate_errors_use_mcp_tool_guidance(tmp_path: Path) -> None:
     outside_baseline.write_text("# external baseline\n", encoding="utf-8")
 
     confirm = call_tool(
-        "cs_confirm_baseline",
+        "ka_confirm_baseline",
         {"project": str(tmp_path), "quest_id": quest_id, "baseline_path": str(outside_baseline)},
     )
     assert confirm.get("ok") is False
     assert confirm.get("error_type") == "invalid_argument"
-    assert "cs_create_local_baseline" in confirm.get("suggested_next_action", "")
+    assert "ka_create_local_baseline" in confirm.get("suggested_next_action", "")
     assert "artifact.confirm_baseline" not in json.dumps(confirm)
     assert "baseline_path must stay within state_root" in json.dumps(confirm)
 
     experiment = call_tool(
-        "cs_record_main_experiment",
+        "ka_record_main_experiment",
         {"project": str(tmp_path), "quest_id": quest_id, "run_id": "run1", "title": "run"},
     )
     assert experiment.get("ok") is True
     encoded = json.dumps(experiment)
     assert "artifact.confirm_baseline" not in encoded
     assert "artifact.waive_baseline" not in encoded
-    assert experiment.get("quest_root") == str(tmp_path / "CodexScientist")
+    assert experiment.get("quest_root") == str(tmp_path / "Kvasir-agent")
 
 
 def test_submit_idea_missing_nested_contract_fields_returns_retry_template(tmp_path: Path) -> None:
     quest_id = _new_quest(tmp_path)
 
     payload = call_tool(
-        "cs_submit_idea",
+        "ka_submit_idea",
         {
             "project": str(tmp_path),
             "quest_id": quest_id,
@@ -446,20 +446,20 @@ def test_submit_idea_missing_nested_contract_fields_returns_retry_template(tmp_p
     assert payload.get("ok") is False
     assert payload.get("error_type") == "missing_mechanism"
     retry_template = payload.get("retry_template") or {}
-    assert retry_template.get("name") == "cs_submit_idea"
+    assert retry_template.get("name") == "ka_submit_idea"
     minimal = retry_template.get("minimal_novelty_contract") or {}
     assert set(minimal) >= {"mechanism", "related_work_refs", "expected_difference"}
     assert "novelty_contract.mechanism" in payload.get("suggested_next_action", "")
 
 
-def test_native_cli_accepts_cs_status_as_lightweight_mcp_boundary_hint(tmp_path: Path) -> None:
+def test_native_cli_accepts_ka_status_as_lightweight_mcp_boundary_hint(tmp_path: Path) -> None:
     command = [
         sys.executable,
-        str(REPO_ROOT / "scripts" / "cs_native_cli.py"),
+        str(REPO_ROOT / "scripts" / "ka_native_cli.py"),
         "--format",
         "json",
         "call",
-        "cs_status",
+        "ka_status",
         "--json",
         json.dumps({"project": str(tmp_path)}),
     ]
@@ -467,6 +467,6 @@ def test_native_cli_accepts_cs_status_as_lightweight_mcp_boundary_hint(tmp_path:
     assert result.returncode == 0, result.stderr + result.stdout
     payload = json.loads(result.stdout)
     assert payload.get("ok") is True
-    assert payload.get("tool") == "cs_status"
+    assert payload.get("tool") == "ka_status"
     assert payload.get("mcp") is False
-    assert payload.get("mcp_hint") == "Use scripts/cs_mcp.py for the default MCP registry surface."
+    assert payload.get("mcp_hint") == "Use scripts/ka_mcp.py for the default MCP registry surface."

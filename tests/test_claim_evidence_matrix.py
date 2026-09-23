@@ -4,8 +4,8 @@ from pathlib import Path
 
 
 def test_claim_without_evidence_is_hypothesis_not_result_claim(tmp_path: Path):
-    from codex_scientist.services.claims import ClaimEvidenceService
-    from codex_scientist.services.project_state import ProjectLayout
+    from kvasir_agent.services.claims import ClaimEvidenceService
+    from kvasir_agent.services.project_state import ProjectLayout
 
     service = ClaimEvidenceService(ProjectLayout.from_project_root(tmp_path))
     claim = service.upsert_claim(claim_id="C1", text="Method improves accuracy")
@@ -15,8 +15,8 @@ def test_claim_without_evidence_is_hypothesis_not_result_claim(tmp_path: Path):
 
 
 def test_claim_with_evidence_writes_matrix_and_can_enter_results(tmp_path: Path):
-    from codex_scientist.services.claims import ClaimEvidenceService
-    from codex_scientist.services.project_state import ProjectLayout
+    from kvasir_agent.services.claims import ClaimEvidenceService
+    from kvasir_agent.services.project_state import ProjectLayout
 
     service = ClaimEvidenceService(ProjectLayout.from_project_root(tmp_path))
     result = service.upsert_claim(
@@ -24,7 +24,7 @@ def test_claim_with_evidence_writes_matrix_and_can_enter_results(tmp_path: Path)
         text="Method improves accuracy",
         supporting_trial_ids=["T0001"],
         metric_values={"accuracy": 0.91},
-        artifact_paths=["CodexScientist/trials/T0001/metrics.json"],
+        artifact_paths=["Kvasir-agent/trials/T0001/metrics.json"],
         limitations=["toy data"],
         contradictory_trial_ids=["T0002"],
         reviewer_verdict="pass",

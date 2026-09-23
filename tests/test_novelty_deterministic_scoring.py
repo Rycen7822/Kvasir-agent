@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from codex_scientist.services.method_improvement import MethodImprovementService
-from codex_scientist.services.project_state import ProjectLayout
+from kvasir_agent.services.method_improvement import MethodImprovementService
+from kvasir_agent.services.project_state import ProjectLayout
 
 
 def test_novelty_scoring_is_deterministic_and_bounded(tmp_path):

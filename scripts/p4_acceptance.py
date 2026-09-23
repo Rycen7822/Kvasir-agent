@@ -47,7 +47,7 @@ def run(label: str, command: list[str]) -> None:
 def verify_surface_scan() -> None:
     code = """
 from pathlib import Path
-from codex_scientist.mcp.surface_allowlist import find_agent_facing_cli_violations
+from kvasir_agent.mcp.surface_allowlist import find_agent_facing_cli_violations
 root = Path.cwd()
 violations = find_agent_facing_cli_violations(root)
 print('violations', len(violations))
@@ -60,10 +60,10 @@ if violations:
 
 
 def main() -> int:
-    run("compileall", [PYTHON, "-m", "compileall", "-q", "codex_scientist", "scripts", "tests"])
+    run("compileall", [PYTHON, "-m", "compileall", "-q", "kvasir_agent", "scripts", "tests"])
     run("targeted pytest", [PYTHON, "-m", "pytest", *P4_TARGETED_TESTS, "-q"])
-    run("MCP tools/list smoke", [PYTHON, "scripts/cs_mcp.py", "--stdio-smoke", "tools/list"])
-    run("MCP initialize smoke", [PYTHON, "scripts/cs_mcp.py", "--stdio-smoke", "initialize"])
+    run("MCP tools/list smoke", [PYTHON, "scripts/ka_mcp.py", "--stdio-smoke", "tools/list"])
+    run("MCP initialize smoke", [PYTHON, "scripts/ka_mcp.py", "--stdio-smoke", "initialize"])
     verify_surface_scan()
     print("P4 acceptance passed", flush=True)
     return 0

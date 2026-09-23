@@ -51,7 +51,7 @@ def _cli(project: Path, tool: str, payload: dict) -> dict:
     result = subprocess.run(
         [
             PYTHON,
-            str(REPO_ROOT / "scripts" / "cs_native_cli.py"),
+            str(REPO_ROOT / "scripts" / "ka_native_cli.py"),
             "--project-root",
             str(project),
             "call",
@@ -72,7 +72,7 @@ def _cli(project: Path, tool: str, payload: dict) -> dict:
 
 def test_native_cli_lists_phase1_tools_and_round_trips_environment_and_trajectory(tmp_path: Path):
     listed = subprocess.run(
-        [PYTHON, str(REPO_ROOT / "scripts" / "cs_native_cli.py"), "--project-root", str(tmp_path), "list-tools", "--format", "json"],
+        [PYTHON, str(REPO_ROOT / "scripts" / "ka_native_cli.py"), "--project-root", str(tmp_path), "list-tools", "--format", "json"],
         cwd=REPO_ROOT,
         text=True,
         capture_output=True,
@@ -80,23 +80,23 @@ def test_native_cli_lists_phase1_tools_and_round_trips_environment_and_trajector
         check=True,
     )
     tool_names = {tool["name"] for tool in json.loads(listed.stdout)["tools"]}
-    assert {"cs_environment_validate", "cs_trajectory_show", "cs_feedback_ingest", "cs_evolutionary_plan_round"} <= tool_names
+    assert {"ka_environment_validate", "ka_trajectory_show", "ka_feedback_ingest", "ka_evolutionary_plan_round"} <= tool_names
 
     manifest = _toy_manifest(tmp_path)
-    registered = _cli(tmp_path, "cs_environment_register", {"quest_id": QUEST_ID, "manifest": manifest})
+    registered = _cli(tmp_path, "ka_environment_register", {"quest_id": QUEST_ID, "manifest": manifest})
     assert registered.get("ok") is True, registered
 
-    validated = _cli(tmp_path, "cs_environment_validate", {"quest_id": QUEST_ID, "env_id": ENV_ID})
+    validated = _cli(tmp_path, "ka_environment_validate", {"quest_id": QUEST_ID, "env_id": ENV_ID})
     assert validated.get("ok") is True, validated
     assert validated.get("primary_metric", {}).get("value") == 0.51
 
     created = _cli(
         tmp_path,
-        "cs_trajectory_record",
+        "ka_trajectory_record",
         {"quest_id": QUEST_ID, "env_id": ENV_ID, "idea": {"idea_id": "idea_cli", "title": "CLI improvement"}},
     )
     assert created.get("ok") is True, created
 
-    shown = _cli(tmp_path, "cs_trajectory_show", {"quest_id": QUEST_ID, "trajectory_id": created["trajectory_id"]})
+    shown = _cli(tmp_path, "ka_trajectory_show", {"quest_id": QUEST_ID, "trajectory_id": created["trajectory_id"]})
     assert shown.get("ok") is True, shown
     assert shown["trajectory"]["idea"]["idea_id"] == "idea_cli"

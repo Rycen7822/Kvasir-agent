@@ -4,16 +4,16 @@ import hashlib
 import json
 from pathlib import Path
 
-from codex_scientist.services.environment import EnvironmentService
-from codex_scientist.services.feedback_ingest import FeedbackIngestService
-from codex_scientist.services.goal_loop import GoalLoopService
-from codex_scientist.services.journal import JournalService
-from codex_scientist.services.method_improvement import MethodImprovementService
-from codex_scientist.services.project_state import ProjectLayout
-from codex_scientist.services.queue import QueueService
-from codex_scientist.services.runner import RunnerService
-from codex_scientist.services.trajectory import TrajectoryStore
-from codex_scientist.services.trial import TrialService
+from kvasir_agent.services.environment import EnvironmentService
+from kvasir_agent.services.feedback_ingest import FeedbackIngestService
+from kvasir_agent.services.goal_loop import GoalLoopService
+from kvasir_agent.services.journal import JournalService
+from kvasir_agent.services.method_improvement import MethodImprovementService
+from kvasir_agent.services.project_state import ProjectLayout
+from kvasir_agent.services.queue import QueueService
+from kvasir_agent.services.runner import RunnerService
+from kvasir_agent.services.trajectory import TrajectoryStore
+from kvasir_agent.services.trial import TrialService
 
 
 QUEST_ID = "QROOT"
@@ -52,37 +52,37 @@ def test_core_services_write_root_bound_paths_without_quest_detail_copy(tmp_path
 
     env = EnvironmentService(layout).register(quest_id=QUEST_ID, manifest=_env_manifest(tmp_path))
     assert env["ok"] is True, env
-    assert Path(env["path"]) == tmp_path / "CodexScientist" / "environments" / "env_root.json"
+    assert Path(env["path"]) == tmp_path / "Kvasir-agent" / "environments" / "env_root.json"
 
     negative = JournalService(layout).record_negative_result(trial_id="TNEG", idea_id="I1", failure_reason="regressed", lesson="avoid duplicate", quest_id=QUEST_ID)
-    assert Path(negative["negative_memory_path"]) == tmp_path / "CodexScientist" / "method_memory" / "negative" / "negative_memory.jsonl"
+    assert Path(negative["negative_memory_path"]) == tmp_path / "Kvasir-agent" / "method_memory" / "negative" / "negative_memory.jsonl"
 
     method = MethodImprovementService(layout).update_scoreboard(quest_id=QUEST_ID, idea_id="I1", outcome="positive", metric_delta=0.1)
-    assert Path(method["scoreboard_path"]) == tmp_path / "CodexScientist" / "method_memory" / "scoreboard" / "scoreboard.json"
-    assert MethodImprovementService(layout).frontier_path(QUEST_ID) == tmp_path / "CodexScientist" / "method_memory" / "frontier" / "frontier.json"
+    assert Path(method["scoreboard_path"]) == tmp_path / "Kvasir-agent" / "method_memory" / "scoreboard" / "scoreboard.json"
+    assert MethodImprovementService(layout).frontier_path(QUEST_ID) == tmp_path / "Kvasir-agent" / "method_memory" / "frontier" / "frontier.json"
 
     trial = TrialService(layout).propose(quest_id=QUEST_ID, idea_id="I1", hypothesis="h", mechanism="m")
-    assert trial["quest_root"] == str(tmp_path / "CodexScientist")
+    assert trial["quest_root"] == str(tmp_path / "Kvasir-agent")
     assert "detail_path" not in trial
-    assert (tmp_path / "CodexScientist" / "trials" / trial["trial_id"] / "trial.json").exists()
+    assert (tmp_path / "Kvasir-agent" / "trials" / trial["trial_id"] / "trial.json").exists()
 
     goal = GoalLoopService(layout).write_state(QUEST_ID, active_stage="experiment")
-    assert Path(goal["path"]) == tmp_path / "CodexScientist" / "runtime" / "goal_state.json"
-    assert goal["state"]["quest_root"] == str(tmp_path / "CodexScientist")
+    assert Path(goal["path"]) == tmp_path / "Kvasir-agent" / "runtime" / "goal_state.json"
+    assert goal["state"]["quest_root"] == str(tmp_path / "Kvasir-agent")
     assert "quest_id" not in goal["state"]["next_action"].get("required_inputs", [])
 
     queued = QueueService(layout).submit(job_id="job1", command="echo ok", quest_id=QUEST_ID)
     job = queued["job"]
-    assert job["quest_root"] == str(tmp_path / "CodexScientist")
+    assert job["quest_root"] == str(tmp_path / "Kvasir-agent")
     assert "detail_path" not in job
-    assert (tmp_path / "CodexScientist" / "queue" / "queue_state.json").exists()
+    assert (tmp_path / "Kvasir-agent" / "queue" / "queue_state.json").exists()
 
     run = RunnerService(layout).start(command="echo ok", dry_run=True, quest_id=QUEST_ID)["run"]
-    assert run["quest_root"] == str(tmp_path / "CodexScientist")
+    assert run["quest_root"] == str(tmp_path / "Kvasir-agent")
     assert "detail_path" not in run
-    assert Path(run["log_path"]).is_relative_to(tmp_path / "CodexScientist" / "runs")
+    assert Path(run["log_path"]).is_relative_to(tmp_path / "Kvasir-agent" / "runs")
 
-    assert not (tmp_path / "CodexScientist" / "quests").exists()
+    assert not (tmp_path / "Kvasir-agent" / "quests").exists()
 
 
 def test_execution_grounded_feedback_uses_root_bound_artifact_dir(tmp_path: Path):
@@ -104,12 +104,12 @@ def test_execution_grounded_feedback_uses_root_bound_artifact_dir(tmp_path: Path
     )
 
     assert feedback["ok"] is True, feedback
-    assert Path(feedback["path"]) == tmp_path / "CodexScientist" / "artifacts" / "execution_grounded" / "RROOT" / "feedback_bundle.json"
-    assert not (tmp_path / "CodexScientist" / "quests").exists()
+    assert Path(feedback["path"]) == tmp_path / "Kvasir-agent" / "artifacts" / "execution_grounded" / "RROOT" / "feedback_bundle.json"
+    assert not (tmp_path / "Kvasir-agent" / "quests").exists()
 
 
 def test_service_layer_has_no_non_legacy_quest_detail_path_calls():
-    services_dir = Path(__file__).parents[1] / "codex_scientist" / "services"
+    services_dir = Path(__file__).parents[1] / "kvasir_agent" / "services"
     forbidden = [
         "ensure_quest_layout(",
         "quest_root_for(",

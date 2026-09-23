@@ -3,10 +3,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from codex_scientist.services.checkpoint import CheckpointService
-from codex_scientist.services.event_store import EventStore
-from codex_scientist.services.project_state import ProjectLayout
-from codex_scientist.services.resume import ResumeService
+from kvasir_agent.services.checkpoint import CheckpointService
+from kvasir_agent.services.event_store import EventStore
+from kvasir_agent.services.project_state import ProjectLayout
+from kvasir_agent.services.resume import ResumeService
 
 
 def test_checkpoint_writes_event_latest_snapshot_and_redacts_secrets(tmp_path: Path):

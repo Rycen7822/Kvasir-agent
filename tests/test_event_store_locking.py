@@ -3,8 +3,8 @@ from __future__ import annotations
 import json
 from concurrent.futures import ThreadPoolExecutor
 
-from codex_scientist.services.event_store import EventStore
-from codex_scientist.services.project_state import ProjectLayout
+from kvasir_agent.services.event_store import EventStore
+from kvasir_agent.services.project_state import ProjectLayout
 
 
 def test_event_store_concurrent_appends_are_sequential_and_idempotent(tmp_path):

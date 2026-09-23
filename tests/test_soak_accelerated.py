@@ -4,8 +4,8 @@ from pathlib import Path
 
 
 def test_accelerated_soak_writes_validation_report_without_claiming_wall_clock_pass(tmp_path: Path):
-    from codex_scientist.services.project_state import ProjectLayout
-    from codex_scientist.services.soak import SoakService
+    from kvasir_agent.services.project_state import ProjectLayout
+    from kvasir_agent.services.soak import SoakService
 
     result = SoakService(ProjectLayout.from_project_root(tmp_path)).run_accelerated(days=10, inject_failures=True)
 
@@ -20,9 +20,9 @@ def test_accelerated_soak_writes_validation_report_without_claiming_wall_clock_p
 
 
 def test_crash_resume_reconciles_expired_lease_and_records_restart_event(tmp_path: Path):
-    from codex_scientist.services.project_state import ProjectLayout
-    from codex_scientist.services.queue import QueueService
-    from codex_scientist.services.soak import SoakService
+    from kvasir_agent.services.project_state import ProjectLayout
+    from kvasir_agent.services.queue import QueueService
+    from kvasir_agent.services.soak import SoakService
 
     layout = ProjectLayout.from_project_root(tmp_path)
     queue = QueueService(layout)

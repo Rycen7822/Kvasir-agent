@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from codex_scientist.services.artifacts import ArtifactIndexService
-from codex_scientist.services.project_state import ProjectLayout
+from kvasir_agent.services.artifacts import ArtifactIndexService
+from kvasir_agent.services.project_state import ProjectLayout
 
 
 def test_artifact_index_returns_refs_hashes_and_no_file_content(tmp_path: Path):

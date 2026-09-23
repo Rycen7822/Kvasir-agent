@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from codex_scientist.services.project_state import ProjectLayout, ResearchLayout
+from kvasir_agent.services.project_state import ProjectLayout, ResearchLayout
 
 
 def test_research_layout_creates_root_bound_dirs_without_legacy_quests(tmp_path: Path) -> None:
@@ -14,7 +14,7 @@ def test_research_layout_creates_root_bound_dirs_without_legacy_quests(tmp_path:
 
     assert isinstance(research, ResearchLayout)
     assert research.project_root == tmp_path.resolve()
-    assert research.state_root == tmp_path / "CodexScientist"
+    assert research.state_root == tmp_path / "Kvasir-agent"
     assert research.manifest_path == research.state_root / "research.yaml"
     assert research.event_log_path == research.state_root / "events" / "events.jsonl"
     for relative_dir in [
@@ -52,7 +52,7 @@ def test_research_layout_creates_root_bound_dirs_without_legacy_quests(tmp_path:
 def test_research_layout_safe_paths_reject_escape_and_absolute_paths(tmp_path: Path) -> None:
     research = ProjectLayout.from_project_root(tmp_path).research
 
-    assert research.state_path("memory/ideas/item.md") == (tmp_path / "CodexScientist" / "memory" / "ideas" / "item.md").resolve()
+    assert research.state_path("memory/ideas/item.md") == (tmp_path / "Kvasir-agent" / "memory" / "ideas" / "item.md").resolve()
     assert research.root_detail_path("experiments/run.py") == (tmp_path / "experiments" / "run.py").resolve()
 
     for bad in ["", ".", "..", "../escape", "memory//bad", Path("/tmp/outside")]:
@@ -65,7 +65,7 @@ def test_research_layout_safe_paths_reject_escape_and_absolute_paths(tmp_path: P
 def test_project_layout_keeps_legacy_quest_api_explicitly_legacy(tmp_path: Path) -> None:
     layout = ProjectLayout.from_project_root(tmp_path)
 
-    assert layout.legacy_quests_dir == tmp_path / "CodexScientist" / "quests"
+    assert layout.legacy_quests_dir == tmp_path / "Kvasir-agent" / "quests"
     assert layout.legacy_quest_root_for("Q1") == layout.legacy_quests_dir / "Q1"
     legacy = layout.ensure_legacy_quest_layout("Q1")
 

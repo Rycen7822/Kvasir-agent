@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from codex_scientist.services.project_state import ProjectLayout
-from codex_scientist.services.runner import RunnerService
+from kvasir_agent.services.project_state import ProjectLayout
+from kvasir_agent.services.runner import RunnerService
 
 
 def test_runner_log_digest_returns_bounded_redacted_log_reference(tmp_path: Path):

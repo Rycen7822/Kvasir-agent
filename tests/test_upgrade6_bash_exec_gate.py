@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from codex_scientist.mcp.tool_registry import call_tool
+from kvasir_agent.mcp.tool_registry import call_tool
 
 
 def _ok(payload: dict) -> dict:
@@ -11,12 +11,12 @@ def _ok(payload: dict) -> dict:
 
 
 def _new_quest(tmp_path: Path) -> str:
-    payload = _ok(call_tool("cs_new_quest", {"project": str(tmp_path), "goal": "formal provenance", "title": "Formal Provenance"}))
+    payload = _ok(call_tool("ka_new_quest", {"project": str(tmp_path), "goal": "formal provenance", "title": "Formal Provenance"}))
     return str(payload["quest"]["quest_id"])
 
 
 def _bash_runtime_files(tmp_path: Path, quest_id: str) -> list[Path]:
-    quest_root = tmp_path / "CodexScientist" / "quests" / quest_id
+    quest_root = tmp_path / "Kvasir-agent" / "quests" / quest_id
     if not quest_root.exists():
         return []
     return [path for path in quest_root.rglob("*bash*") if path.is_file()]
@@ -27,7 +27,7 @@ def test_bash_exec_run_requires_formal_provenance_fields(tmp_path: Path):
     before = _bash_runtime_files(tmp_path, quest_id)
 
     payload = call_tool(
-        "cs_bash_exec",
+        "ka_bash_exec",
         {
             "project": str(tmp_path),
             "quest_id": quest_id,
@@ -52,7 +52,7 @@ def test_bash_exec_accepts_only_formal_command_classes(tmp_path: Path):
 
     for command_class in invalid_classes:
         payload = call_tool(
-            "cs_bash_exec",
+            "ka_bash_exec",
             {
                 "project": str(tmp_path),
                 "quest_id": quest_id,
@@ -71,7 +71,7 @@ def test_bash_exec_accepts_only_formal_command_classes(tmp_path: Path):
         assert payload.get("error_type") == "invalid_command_class", payload
 
     allowed_payload = call_tool(
-        "cs_bash_exec",
+        "ka_bash_exec",
         {
             "project": str(tmp_path),
             "quest_id": quest_id,

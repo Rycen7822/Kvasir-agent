@@ -1,25 +1,25 @@
 {
-  "name": "codexscientist-codex",
+  "name": "kvasir-agent",
   "version": "0.1.0",
-  "description": "CodexScientist Codex plugin with MCP-only default research semantics for project-local research state. Codex-native tools handle routine file, shell, Git, test, build, and process work.",
+  "description": "Kvasir-agent Codex plugin with MCP-only default research semantics for project-local research state. Codex-native tools handle routine file, shell, Git, test, build, and process work.",
   "author": {
-    "name": "CodexScientist Codex MCP"
+    "name": "Kvasir-agent Codex MCP"
   },
   "skills": "./skills",
   "interface": {
-    "displayName": "CodexScientist Codex MCP",
-    "shortDescription": "MCP-only default for CodexScientist research state.",
-    "longDescription": "A self-contained Codex CLI plugin exposing project-local research state through scripts/cs_mcp.py as the MCP-only default research control plane. Ordinary file editing/search, shell, Git, tests, builds, and process management remain Codex-native responsibilities. `/goal` is Codex-native; CodexScientist does not implement slash commands.",
-    "developerName": "CodexScientist Codex MCP",
+    "displayName": "Kvasir-agent Codex MCP",
+    "shortDescription": "MCP-only default for Kvasir-agent research state.",
+    "longDescription": "A self-contained Codex CLI plugin exposing project-local research state through scripts/ka_mcp.py as the MCP-only default research control plane. Ordinary file editing/search, shell, Git, tests, builds, and process management remain Codex-native responsibilities. `/goal` is Codex-native; Kvasir-agent does not implement slash commands.",
+    "developerName": "Kvasir-agent Codex MCP",
     "category": "Productivity",
     "capabilities": [
       "Read",
       "Write"
     ],
     "defaultPrompt": [
-      "MCP-only default: use scripts/cs_mcp.py and curated cs_* tools for project-local research state.",
-      "`/goal` is Codex-native; CodexScientist does not implement slash commands.",
-      "Use Codex-native file/shell/Git/test/build for routine work; cs_bash_exec is formal provenance only."
+      "MCP-only default: use scripts/ka_mcp.py and curated ka_* tools for project-local research state.",
+      "`/goal` is Codex-native; Kvasir-agent does not implement slash commands.",
+      "Use Codex-native file/shell/Git/test/build for routine work; ka_bash_exec is formal provenance only."
     ],
     "brandColor": "#4D6A7A"
   }

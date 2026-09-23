@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 
-from codex_scientist.mcp.tool_registry import tools_list_payload
+from kvasir_agent.mcp.tool_registry import tools_list_payload
 
 
 def _names(payload: dict) -> set[str]:
@@ -18,33 +18,33 @@ def test_default_core_surface_has_no_planner_or_execution_tools():
     names = _names(tools_list_payload({}))
 
     forbidden = {
-        "cs_goal_context",
-        "cs_goal_state",
-        "cs_goal_next_action",
-        "cs_goal_watchdog",
-        "cs_queue_submit",
-        "cs_queue_status",
-        "cs_runner_start",
-        "cs_runner_status",
-        "cs_trial_propose",
-        "cs_trial_plan",
-        "cs_trial_ready",
-        "cs_trial_evaluate",
-        "cs_trial_decide",
-        "cs_select_next_idea",
-        "cs_bash_exec",
+        "ka_goal_context",
+        "ka_goal_state",
+        "ka_goal_next_action",
+        "ka_goal_watchdog",
+        "ka_queue_submit",
+        "ka_queue_status",
+        "ka_runner_start",
+        "ka_runner_status",
+        "ka_trial_propose",
+        "ka_trial_plan",
+        "ka_trial_ready",
+        "ka_trial_evaluate",
+        "ka_trial_decide",
+        "ka_select_next_idea",
+        "ka_bash_exec",
     }
     required = {
-        "cs_doctor",
-        "cs_status",
-        "cs_tool_schema",
-        "cs_skill_search",
-        "cs_skill_load",
-        "cs_record_user_requirement",
-        "cs_checkpoint",
-        "cs_resume_brief",
-        "cs_pack_delta",
-        "cs_context_pack",
+        "ka_doctor",
+        "ka_status",
+        "ka_tool_schema",
+        "ka_skill_search",
+        "ka_skill_load",
+        "ka_record_user_requirement",
+        "ka_checkpoint",
+        "ka_resume_brief",
+        "ka_pack_delta",
+        "ka_context_pack",
     }
 
     assert names.isdisjoint(forbidden), sorted(names & forbidden)
@@ -78,10 +78,10 @@ def test_literature_profile_contains_paper_reliability_and_default_does_not():
     literature_names = _names(tools_list_payload({"profile": "literature"}))
 
     literature_only = {
-        "cs_strict_research_prepare",
-        "cs_paper_fetch",
-        "cs_record_literature_reading_note",
-        "cs_paper_reliability_verify",
+        "ka_strict_research_prepare",
+        "ka_paper_fetch",
+        "ka_record_literature_reading_note",
+        "ka_paper_reliability_verify",
     }
 
     assert default_names.isdisjoint(literature_only)

@@ -10,7 +10,7 @@ PYTHON = sys.executable
 
 FORBIDDEN_DEFAULT_PHRASES = (
     "CLI fallback",
-    "scripts/csctl.py",
+    "scripts/kactl.py",
 )
 
 P4_TARGETED_TESTS = (
@@ -44,7 +44,7 @@ def test_p4_acceptance_script_exists_and_declares_required_gates():
     for phrase in [
         "compileall",
         "pytest",
-        "cs_mcp.py",
+        "ka_mcp.py",
         "tools/list",
         "initialize",
         "find_agent_facing_cli_violations",
@@ -75,9 +75,9 @@ def test_ci_runs_p4_acceptance_and_mcp_smokes():
     ci = _read(".github/workflows/ci.yml")
     assert "python scripts/p4_acceptance.py" in ci
     assert "python -m pytest -q" in ci
-    assert "python -m vulture codex_scientist scripts tests --min-confidence 100" in ci
-    assert "python scripts/cs_mcp.py --stdio-smoke tools/list" in ci
-    assert "python scripts/cs_mcp.py --stdio-smoke initialize" in ci
+    assert "python -m vulture kvasir_agent scripts tests --min-confidence 100" in ci
+    assert "python scripts/ka_mcp.py --stdio-smoke tools/list" in ci
+    assert "python scripts/ka_mcp.py --stdio-smoke initialize" in ci
 
 
 def test_default_docs_are_mcp_only_and_admin_cli_is_isolated():
@@ -96,7 +96,7 @@ def test_default_docs_are_mcp_only_and_admin_cli_is_isolated():
     )
     assert "MCP-only default" in default_docs
     assert "`/goal` is Codex-native" in default_docs
-    assert "cs_goal_watchdog" not in default_docs
+    assert "ka_goal_watchdog" not in default_docs
     assert "progress watchdog" in default_docs
     assert "claim gate" in default_docs
     for forbidden in FORBIDDEN_DEFAULT_PHRASES:
@@ -104,7 +104,7 @@ def test_default_docs_are_mcp_only_and_admin_cli_is_isolated():
 
     admin = _read("docs/ADMIN_CLI.md")
     assert "hidden admin/debug CLI" in admin
-    assert "scripts/csctl.py" in admin
+    assert "scripts/kactl.py" in admin
     assert "human/admin/debug/CI/recovery" in admin
 
 
@@ -117,11 +117,11 @@ def test_mcp_doc_lists_current_profiles_and_goal_tools():
         "`literature`",
         "`paper_write`",
         "`stage` argument is a context label",
-        "cs_log_digest",
-        "cs_update_method_scoreboard",
-        "cs_claim_gate",
-        "cs_create_analysis_campaign",
-        "cs_record_analysis_slice",
+        "ka_log_digest",
+        "ka_update_method_scoreboard",
+        "ka_claim_gate",
+        "ka_create_analysis_campaign",
+        "ka_record_analysis_slice",
         "fail closed",
     ]:
         assert phrase in text
@@ -134,8 +134,8 @@ def test_long_run_doc_spells_out_watchdog_checkpoint_resume_contract():
     for phrase in [
         "admin-only watchdog diagnostics",
         "without writing goal gates",
-        "cs_checkpoint",
-        "cs_resume_brief",
+        "ka_checkpoint",
+        "ka_resume_brief",
         "runner_stuck",
         "recovery_anchor",
         "active_run_id",

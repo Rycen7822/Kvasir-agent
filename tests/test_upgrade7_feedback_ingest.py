@@ -3,9 +3,9 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from codex_scientist.services.environment import EnvironmentService
-from codex_scientist.services.project_state import ProjectLayout
-from codex_scientist.services.trajectory import TrajectoryStore
+from kvasir_agent.services.environment import EnvironmentService
+from kvasir_agent.services.project_state import ProjectLayout
+from kvasir_agent.services.trajectory import TrajectoryStore
 
 from test_upgrade7_environment_service import _valid_manifest
 
@@ -19,7 +19,7 @@ def _setup(tmp_path: Path) -> tuple[ProjectLayout, str]:
 
 
 def test_feedback_ingest_local_metrics_updates_trajectory(tmp_path: Path):
-    from codex_scientist.services.feedback_ingest import FeedbackIngestService
+    from kvasir_agent.services.feedback_ingest import FeedbackIngestService
 
     layout, trajectory_id = _setup(tmp_path)
     metrics_path = tmp_path / "metrics.json"
@@ -38,7 +38,7 @@ def test_feedback_ingest_local_metrics_updates_trajectory(tmp_path: Path):
     assert result["ok"] is True
     assert result["feedback"]["status"] == "parsed"
     assert result["feedback"]["primary_metric"]["value"] == 0.8
-    bundle_path = tmp_path / "CodexScientist" / "artifacts" / "execution_grounded" / "run_good" / "feedback_bundle.json"
+    bundle_path = tmp_path / "Kvasir-agent" / "artifacts" / "execution_grounded" / "run_good" / "feedback_bundle.json"
     assert bundle_path.exists()
 
     trajectory = TrajectoryStore(layout).show(quest_id="QFEED", trajectory_id=trajectory_id)["trajectory"]
@@ -47,7 +47,7 @@ def test_feedback_ingest_local_metrics_updates_trajectory(tmp_path: Path):
 
 
 def test_feedback_ingest_missing_metric_records_metric_missing_failure(tmp_path: Path):
-    from codex_scientist.services.feedback_ingest import FeedbackIngestService
+    from kvasir_agent.services.feedback_ingest import FeedbackIngestService
 
     layout, trajectory_id = _setup(tmp_path)
     metrics_path = tmp_path / "metrics.json"
@@ -70,7 +70,7 @@ def test_feedback_ingest_missing_metric_records_metric_missing_failure(tmp_path:
 
 
 def test_feedback_ingest_blocks_on_protected_hash_mismatch(tmp_path: Path):
-    from codex_scientist.services.feedback_ingest import FeedbackIngestService
+    from kvasir_agent.services.feedback_ingest import FeedbackIngestService
 
     layout, trajectory_id = _setup(tmp_path)
     (tmp_path / "evaluate.py").write_text("print('tampered')\n", encoding="utf-8")
@@ -90,7 +90,7 @@ def test_feedback_ingest_blocks_on_protected_hash_mismatch(tmp_path: Path):
 
 
 def test_feedback_ingest_wandb_source_requires_revalidation(tmp_path: Path):
-    from codex_scientist.services.feedback_ingest import FeedbackIngestService
+    from kvasir_agent.services.feedback_ingest import FeedbackIngestService
 
     layout, trajectory_id = _setup(tmp_path)
     metrics_path = tmp_path / "wandb_metrics.json"
@@ -113,7 +113,7 @@ def test_feedback_ingest_wandb_source_requires_revalidation(tmp_path: Path):
 
 
 def test_feedback_ingest_log_digest_redacts_token_like_strings(tmp_path: Path):
-    from codex_scientist.services.feedback_ingest import FeedbackIngestService
+    from kvasir_agent.services.feedback_ingest import FeedbackIngestService
 
     layout, trajectory_id = _setup(tmp_path)
     metrics_path = tmp_path / "metrics.json"

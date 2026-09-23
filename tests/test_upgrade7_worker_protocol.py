@@ -6,9 +6,9 @@ import sys
 import time
 from pathlib import Path
 
-from codex_scientist.services.environment import EnvironmentService
-from codex_scientist.services.project_state import ProjectLayout
-from codex_scientist.services.trajectory import TrajectoryStore
+from kvasir_agent.services.environment import EnvironmentService
+from kvasir_agent.services.project_state import ProjectLayout
+from kvasir_agent.services.trajectory import TrajectoryStore
 
 QUEST_ID = "QWORKER"
 ENV_ID = "env_worker"
@@ -70,8 +70,8 @@ def _setup(tmp_path: Path) -> tuple[ProjectLayout, str, Path]:
 
 
 def test_worker_claim_runs_collects_feedback_and_updates_trajectory(tmp_path: Path):
-    from codex_scientist.services.scheduler import SchedulerService
-    from codex_scientist.services.worker import WorkerService
+    from kvasir_agent.services.scheduler import SchedulerService
+    from kvasir_agent.services.worker import WorkerService
 
     layout, trajectory_id, package = _setup(tmp_path)
     command = f"{sys.executable} -c \"import json; json.dump({{'metrics': {{'score': 0.82}}}}, open('metrics.json','w'))\""
@@ -109,8 +109,8 @@ def test_worker_claim_runs_collects_feedback_and_updates_trajectory(tmp_path: Pa
 
 
 def test_worker_collect_invalid_metrics_fails_job_and_does_not_mark_claimable(tmp_path: Path):
-    from codex_scientist.services.scheduler import SchedulerService
-    from codex_scientist.services.worker import WorkerService
+    from kvasir_agent.services.scheduler import SchedulerService
+    from kvasir_agent.services.worker import WorkerService
 
     layout, trajectory_id, package = _setup(tmp_path)
     command = f"{sys.executable} -c \"import json; json.dump({{'metrics': {{'other': 0.82}}}}, open('metrics.json','w'))\""
@@ -143,8 +143,8 @@ def test_worker_collect_invalid_metrics_fails_job_and_does_not_mark_claimable(tm
 
 
 def test_worker_collect_missing_metrics_maps_to_metric_missing(tmp_path: Path):
-    from codex_scientist.services.scheduler import SchedulerService
-    from codex_scientist.services.worker import WorkerService
+    from kvasir_agent.services.scheduler import SchedulerService
+    from kvasir_agent.services.worker import WorkerService
 
     layout, trajectory_id, package = _setup(tmp_path)
     submitted = SchedulerService(layout).submit(

@@ -1,12 +1,12 @@
 # P4 Terms: MCP-only Default and Codex Goal Context
 
-P4 fixes the default research control plane for CodexScientist. These terms are normative for tests, docs, skills, and implementation.
+P4 fixes the default research control plane for Kvasir-agent. These terms are normative for tests, docs, skills, and implementation.
 
 ## agent-facing surface
 
-Content that Codex may see by default when operating the CodexScientist plugin: plugin metadata, defaultPrompt, the operator skill, runtime skill views loaded through MCP, MCP tool descriptions, MCP error payloads, and MCP suggested actions.
+Content that Codex may see by default when operating the Kvasir-agent plugin: plugin metadata, defaultPrompt, the operator skill, runtime skill views loaded through MCP, MCP tool descriptions, MCP error payloads, and MCP suggested actions.
 
-The agent-facing surface must present MCP-only default as the normal research path and must not advertise terminal compatibility commands as the default research path. Bare compatibility-command wording, including naked `csctl` references in MCP-loaded runtime skill content, is treated as agent-facing CLI guidance risk even when it is not an automatic fallback.
+The agent-facing surface must present MCP-only default as the normal research path and must not advertise terminal compatibility commands as the default research path. Bare compatibility-command wording, including naked `kactl` references in MCP-loaded runtime skill content, is treated as agent-facing CLI guidance risk even when it is not an automatic fallback.
 
 ## hidden admin/debug CLI
 
@@ -14,7 +14,7 @@ The existing terminal compatibility entrypoints remain available for humans, adm
 
 ## MCP-only default
 
-The default research control plane is MCP `cs_*` tools plus Codex-native file/search/edit/shell/Git/test/build/process capabilities. Research semantics are recorded through MCP/service calls.
+The default research control plane is MCP `ka_*` tools plus Codex-native file/search/edit/shell/Git/test/build/process capabilities. Research semantics are recorded through MCP/service calls.
 
 ## fail closed
 
@@ -22,11 +22,11 @@ When MCP is unavailable or a tool is missing, the default agent-facing response 
 
 ## Codex-goal-driven research loop adapter
 
-`/goal` is Codex-native. CodexScientist does not implement slash commands. After Codex has entered goal context, CodexScientist provides MCP tools, bounded prompt/skill routing, state files, progress watchdog, checkpoint, and resume contracts for research progress.
+`/goal` is Codex-native. Kvasir-agent does not implement slash commands. After Codex has entered goal context, Kvasir-agent provides MCP tools, bounded prompt/skill routing, state files, progress watchdog, checkpoint, and resume contracts for research progress.
 
 ## research root
 
-The research root is the project-local directory `<project>/CodexScientist/`. It stores the single root-bound research state for the current project. Legacy `CodexScientist/quests/<quest_id>/` directories are migration inputs only, not new-write targets.
+The research root is the project-local directory `<project>/Kvasir-agent/`. It stores the single root-bound research state for the current project. Legacy `Kvasir-agent/quests/<quest_id>/` directories are migration inputs only, not new-write targets.
 
 ## method improvement gate
 

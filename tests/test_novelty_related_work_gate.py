@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from codex_scientist.mcp.tool_registry import call_tool
+from kvasir_agent.mcp.tool_registry import call_tool
 
 
 def test_related_work_refs_are_required_for_novelty_contract(tmp_path: Path):
     payload = call_tool(
-        "cs_submit_idea",
+        "ka_submit_idea",
         {
             "project": str(tmp_path),
             "quest_id": "QREL",

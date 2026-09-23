@@ -1,44 +1,44 @@
-# Codex-Scientist Architecture
+# Kvasir-agent Architecture
 
-Codex-Scientist is a Codex CLI plugin with an MCP-only default research control plane. It is not a standalone autonomous research platform and it is not a replacement for Codex-native file, shell, Git, test, build, or process capabilities.
+Kvasir-agent is a Codex CLI plugin with an MCP-only default research control plane. It is not a standalone autonomous research platform and it is not a replacement for Codex-native file, shell, Git, test, build, or process capabilities.
 
 ## Runtime boundary
 
 Runtime state remains project-local under:
 
 ```text
-<project>/CodexScientist/
+<project>/Kvasir-agent/
 ```
 
-This tree stores one root-bound research state: `research.yaml`, events, runtime files, artifacts, memory, queue/runner ledgers, summaries, manual diagnostic records, checkpoints, validation reports, novelty decisions, and claim gate records. `CodexScientist/quests/<quest_id>/` is a legacy migration input only; new writes target the root-bound state tree directly.
+This tree stores one root-bound research state: `research.yaml`, events, runtime files, artifacts, memory, queue/runner ledgers, summaries, manual diagnostic records, checkpoints, validation reports, novelty decisions, and claim gate records. `Kvasir-agent/quests/<quest_id>/` is a legacy migration input only; new writes target the root-bound state tree directly.
 
 ## Default autonomy boundary
 
 The default mode is `copilot`.
 
-In default mode, Codex-Scientist records, validates, organizes, retrieves, summarizes, and audits research state. It does not automatically invent or improve ideas. Automatic idea or novelty improvement requires an explicit user request or a manifest/handoff that explicitly enables autonomous idea improvement.
+In default mode, Kvasir-agent records, validates, organizes, retrieves, summarizes, and audits research state. It does not automatically invent or improve ideas. Automatic idea or novelty improvement requires an explicit user request or a manifest/handoff that explicitly enables autonomous idea improvement.
 
 ## Adapter and service layers
 
-`codex_scientist/adapters` owns process-facing compatibility code:
+`kvasir_agent/adapters` owns process-facing compatibility code:
 
-- `scripts/cs_mcp.py` is the MCP stdio entrypoint for repeated high-frequency research-control workflows.
+- `scripts/ka_mcp.py` is the MCP stdio entrypoint for repeated high-frequency research-control workflows.
 - hidden admin/debug CLI entrypoints are isolated for CI, debugging, migration, recovery, and MCP-unavailable environments.
 - Adapter code normalizes JSON envelopes, redaction, transport markers, and structured recoverable errors.
 - Adapter code does not contain research business logic.
 
-`codex_scientist/services` owns testable business and state primitives:
+`kvasir_agent/services` owns testable business and state primitives:
 
-- project-local layout under `CodexScientist/`;
+- project-local layout under `Kvasir-agent/`;
 - append-only event logs and atomic snapshots;
 - manifest, trial, runner, queue, wiki, frontier, journal, review, claim, cost, migration, and soak services;
 - method improvement, manual diagnostics, checkpoint, resume, and context-pack services.
 
 MCP handlers and terminal compatibility parsers call the same service layer. The MCP implementation must not shell out to terminal compatibility commands as its main path.
 
-## CodexScientist native runtime
+## Kvasir-agent native runtime
 
-`codex_scientist/runtime` is the canonical local runtime package. Public schemas and tool handlers use `cs_*` names. Historical legacy package paths and non-`cs_*` public names are not part of the default surface.
+`kvasir_agent/runtime` is the canonical local runtime package. Public schemas and tool handlers use `ka_*` names. Historical legacy package paths and non-`ka_*` public names are not part of the default surface.
 
 ## Operation boundary
 
@@ -50,7 +50,7 @@ Codex-native operation layer:
 - manage Git/GitHub and processes;
 - inspect dependencies and local project state.
 
-CodexScientist semantic/provenance layer:
+Kvasir-agent semantic/provenance layer:
 
 - root-bound research state and provenance metadata;
 - durable user requirements;
@@ -59,7 +59,7 @@ CodexScientist semantic/provenance layer:
 - method scoreboard/frontier, novelty scoring, duplicate block, related-work gate, claim gate, manual diagnostics, checkpoint, and resume anchors;
 - formal commands whose logs must become project-local research provenance.
 
-Codex does the mechanical action; CodexScientist records the research meaning.
+Codex does the mechanical action; Kvasir-agent records the research meaning.
 
 ## Execution-grounded extension boundary
 
@@ -73,7 +73,7 @@ The MCP boundary uses explicit profiles:
 
 - `core`: default tools for doctor/status, schema lookup, passive context/resume/checkpoint/delta, and root-bound research anchoring.
 - `evidence`: root-bound memory, manifest, baseline, artifact, experiment, analysis, method, and claim-gate workflows.
-- `formal_run`: evidence plus formal `cs_bash_exec` provenance-gated execution.
+- `formal_run`: evidence plus formal `ka_bash_exec` provenance-gated execution.
 - `literature`: strict literature, paper fetch, reliability, bibliography, and reading-note workflows.
 - `paper_write`: literature plus paper outline/bundle/summary/review work.
 - `admin`, `autonomous`, and `legacy_compat`: not registered as default MCP surfaces.

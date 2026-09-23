@@ -4,14 +4,14 @@ from pathlib import Path
 
 
 def test_review_service_is_readonly_and_redacts_secret_like_content(tmp_path: Path):
-    from codex_scientist.services.project_state import ProjectLayout
-    from codex_scientist.services.review import ReviewService
+    from kvasir_agent.services.project_state import ProjectLayout
+    from kvasir_agent.services.review import ReviewService
 
     review = ReviewService(ProjectLayout.from_project_root(tmp_path))
     result = review.create_review(
         claim_text="Model improves accuracy; token=abc123",
         trial_ids=["T0001"],
-        artifact_paths=["CodexScientist/trials/T0001/metrics.json"],
+        artifact_paths=["Kvasir-agent/trials/T0001/metrics.json"],
         verdict="needs_fix",
         notes="Do not trust password=hunter2",
     )

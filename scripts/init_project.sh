@@ -3,32 +3,32 @@ set -euo pipefail
 ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 PROJECT="${1:-$(pwd)}"
 mkdir -p "${PROJECT}/.codex"
-cat > "${PROJECT}/.codex/CODEXSCIENTIST_CODEX.md" <<EOF
-# CodexScientist Codex MCP Project Note
+cat > "${PROJECT}/.codex/KVASIR_AGENT_CODEX.md" <<EOF
+# Kvasir-agent Codex MCP Project Note
 
-Use this project with the CodexScientist Codex MCP control plane.
+Use this project with the Kvasir-agent Codex MCP control plane.
 
-- Runtime home: ${PROJECT}/CodexScientist
-- MCP server entrypoint: ${ROOT}/scripts/cs_mcp.py
+- Runtime home: ${PROJECT}/Kvasir-agent
+- MCP server entrypoint: ${ROOT}/scripts/ka_mcp.py
 - Routine file, shell, Git, test, build, and process work remains Codex-native.
-- Use CodexScientist MCP \`cs_*\` tools only for durable research semantics: quest state, requirements, memory, artifacts, baselines, experiments, analysis, paper/reliability, checkpoint, resume, and formal evidence provenance.
-- Bundled support skills include codexscientist-experiment-execution, codexscientist-quest-handoffs, codexscientist-writing-plans, cs-paper-reliability, and codexscientist-review.
+- Use Kvasir-agent MCP \`ka_*\` tools only for durable research semantics: quest state, requirements, memory, artifacts, baselines, experiments, analysis, paper/reliability, checkpoint, resume, and formal evidence provenance.
+- Bundled support skills include kvasir-agent-experiment-execution, kvasir-agent-quest-handoffs, kvasir-agent-writing-plans, ka-paper-reliability, and kvasir-agent-review.
 
 MCP smoke checks:
 
 \`\`\`bash
 cd "${PROJECT}"
-python "${ROOT}/scripts/cs_mcp.py" --stdio-smoke initialize
-python "${ROOT}/scripts/cs_mcp.py" --stdio-smoke tools/list
-python "${ROOT}/scripts/cs_mcp.py" --stdio-smoke call cs_doctor '{"project":"${PROJECT}"}'
+python "${ROOT}/scripts/ka_mcp.py" --stdio-smoke initialize
+python "${ROOT}/scripts/ka_mcp.py" --stdio-smoke tools/list
+python "${ROOT}/scripts/ka_mcp.py" --stdio-smoke call ka_doctor '{"project":"${PROJECT}"}'
 \`\`\`
 
 If Codex cannot see the tools, verify the MCP registration:
 
 \`\`\`bash
 codex mcp list
-codex mcp get codexscientist-codex
+codex mcp get kvasir-agent
 \`\`\`
 EOF
-PYTHONDONTWRITEBYTECODE=1 python "${ROOT}/scripts/cs_mcp.py" --stdio-smoke initialize >/dev/null
-printf 'Initialized CodexScientist Codex MCP note in %s/.codex/CODEXSCIENTIST_CODEX.md\n' "${PROJECT}"
+PYTHONDONTWRITEBYTECODE=1 python "${ROOT}/scripts/ka_mcp.py" --stdio-smoke initialize >/dev/null
+printf 'Initialized Kvasir-agent Codex MCP note in %s/.codex/KVASIR_AGENT_CODEX.md\n' "${PROJECT}"

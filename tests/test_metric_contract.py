@@ -4,7 +4,7 @@ import math
 
 
 def test_metric_contract_accepts_finite_in_range_value_with_required_artifacts():
-    from codex_scientist.services.metric import validate_metric_result
+    from kvasir_agent.services.metric import validate_metric_result
 
     contract = {
         "id": "primary",
@@ -17,7 +17,7 @@ def test_metric_contract_accepts_finite_in_range_value_with_required_artifacts()
 
 
 def test_metric_contract_rejects_nan_out_of_range_and_missing_artifacts():
-    from codex_scientist.services.metric import validate_metric_result
+    from kvasir_agent.services.metric import validate_metric_result
 
     contract = {
         "id": "primary",
@@ -39,7 +39,7 @@ def test_metric_contract_rejects_nan_out_of_range_and_missing_artifacts():
 
 
 def test_metric_contract_extracts_json_path_and_flat_key_values():
-    from codex_scientist.services.metric import extract_metric_value
+    from kvasir_agent.services.metric import extract_metric_value
 
     payload = {"metrics": {"eval": {"mean_reward": 0.75}}, "acc": 0.9}
 
@@ -51,7 +51,7 @@ def test_metric_contract_extracts_json_path_and_flat_key_values():
 
 
 def test_metric_contract_rejects_missing_or_unsupported_parser():
-    from codex_scientist.services.metric import extract_metric_value
+    from kvasir_agent.services.metric import extract_metric_value
 
     missing = extract_metric_value({"metrics": {}}, {"parser": "json_path", "path": "metrics.eval.mean_reward"})
     assert missing["ok"] is False

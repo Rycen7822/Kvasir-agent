@@ -6,8 +6,8 @@ import sys
 import time
 from pathlib import Path
 
-from codex_scientist.services.project_state import ProjectLayout
-from codex_scientist.services.runner import RunnerService
+from kvasir_agent.services.project_state import ProjectLayout
+from kvasir_agent.services.runner import RunnerService
 
 
 def test_runner_real_subprocess_collects_log_pid_and_heartbeat(tmp_path: Path):
@@ -57,8 +57,8 @@ def test_runner_collect_across_process_uses_exit_code_sentinel(tmp_path: Path):
     start_code = """
 import sys
 from pathlib import Path
-from codex_scientist.services.project_state import ProjectLayout
-from codex_scientist.services.runner import RunnerService
+from kvasir_agent.services.project_state import ProjectLayout
+from kvasir_agent.services.runner import RunnerService
 root = Path(sys.argv[1])
 runner = RunnerService(ProjectLayout.from_project_root(root))
 started = runner.start(command=f'{sys.executable} -c "import sys; sys.exit(7)"', dry_run=False)
@@ -70,8 +70,8 @@ print(started['run']['run_id'])
 import json
 import sys
 from pathlib import Path
-from codex_scientist.services.project_state import ProjectLayout
-from codex_scientist.services.runner import RunnerService
+from kvasir_agent.services.project_state import ProjectLayout
+from kvasir_agent.services.runner import RunnerService
 root = Path(sys.argv[1])
 run_id = sys.argv[2]
 print(json.dumps(RunnerService(ProjectLayout.from_project_root(root)).collect(run_id)))

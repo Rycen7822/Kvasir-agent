@@ -4,11 +4,11 @@ import hashlib
 import json
 from pathlib import Path
 
-from codex_scientist.services.environment import EnvironmentService
-from codex_scientist.services.feedback_ingest import FeedbackIngestService
-from codex_scientist.services.method_improvement import MethodImprovementService
-from codex_scientist.services.project_state import ProjectLayout
-from codex_scientist.services.trajectory import TrajectoryStore
+from kvasir_agent.services.environment import EnvironmentService
+from kvasir_agent.services.feedback_ingest import FeedbackIngestService
+from kvasir_agent.services.method_improvement import MethodImprovementService
+from kvasir_agent.services.project_state import ProjectLayout
+from kvasir_agent.services.trajectory import TrajectoryStore
 
 QUEST_ID = "QCLAIMLINK"
 ENV_ID = "env_claimlink"

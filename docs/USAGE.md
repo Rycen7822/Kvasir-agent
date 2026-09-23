@@ -1,21 +1,21 @@
-# CodexScientist Usage
+# Kvasir-agent Usage
 
-CodexScientist is operated through an MCP-only default research control plane. Hidden admin/debug/native CLI paths remain available only for explicit human, CI, recovery, or compatibility work.
+Kvasir-agent is operated through an MCP-only default research control plane. Hidden admin/debug/native CLI paths remain available only for explicit human, CI, recovery, or compatibility work.
 
 ## Recommended control plane
 
 Use MCP first for repeated research-control workflows:
 
 ```bash
-python scripts/cs_mcp.py --stdio-smoke initialize
-python scripts/cs_mcp.py --stdio-smoke tools/list
-python scripts/cs_mcp.py --stdio-smoke call cs_doctor '{}'
+python scripts/ka_mcp.py --stdio-smoke initialize
+python scripts/ka_mcp.py --stdio-smoke tools/list
+python scripts/ka_mcp.py --stdio-smoke call ka_doctor '{}'
 ```
 
-The default core profile exposes curated `cs_*` tools for status, root-bound research anchoring, passive context/recovery anchors, checkpointing, and schema lookup. Wider agent-facing profiles are explicit:
+The default core profile exposes curated `ka_*` tools for status, root-bound research anchoring, passive context/recovery anchors, checkpointing, and schema lookup. Wider agent-facing profiles are explicit:
 
 - `evidence`: tools for root-bound evidence, memory, manifest, baseline, artifact, experiment, analysis, and method ledgers.
-- `formal_run`: 34 tools; `evidence` plus formal `cs_bash_exec` provenance-gated execution.
+- `formal_run`: 34 tools; `evidence` plus formal `ka_bash_exec` provenance-gated execution.
 - `literature`: tools for strict literature and project-local paper resources.
 - `paper_write`: 27 tools for literature plus paper outline/bundle/summary/review work.
 
@@ -28,12 +28,12 @@ Use `docs/ADMIN_CLI.md` only when a human/admin/debug/CI/recovery task explicitl
 Runtime state lives under:
 
 ```text
-<project>/CodexScientist/
+<project>/Kvasir-agent/
 ```
 
 For MCP calls, pass `project` as the preferred project root argument. `project_root` is accepted as a compatibility alias. Both should resolve to the same runtime path.
 
-This tree stores the root-bound research manifest, memory, artifacts, logs, queue/runner state, config, cache, passive checkpoints, recovery anchors, summaries, and manual watchdog diagnostic records. `CodexScientist/quests/` is only a legacy migration input.
+This tree stores the root-bound research manifest, memory, artifacts, logs, queue/runner state, config, cache, passive checkpoints, recovery anchors, summaries, and manual watchdog diagnostic records. `Kvasir-agent/quests/` is only a legacy migration input.
 
 ## Codex-native operation boundary
 
@@ -43,43 +43,43 @@ Codex-native operation layer:
 - ordinary shell commands, dependency checks, tests, builds, lint/compile checks, and background process monitoring;
 - Git/GitHub mechanics such as status, diff, branch/worktree, commit, push, PR checks, and routine CI diagnosis.
 
-CodexScientist semantic/provenance layer:
+Kvasir-agent semantic/provenance layer:
 
 - root-bound research state and provenance metadata;
 - durable user requirements, project-local memory, artifacts, milestones, decisions, main experiment records, analysis slices, baseline gates, paper bundles, strict-research ledgers, and claim gate decisions;
 - manual watchdog diagnostic snapshots, passive checkpoint/resume anchors, method scoreboard/frontier, novelty scoring, duplicate block, related-work gate, and evidence gate state;
 - formal experiment, baseline, analysis-slice, or paper-facing commands whose logs must become project-local evidence.
 
-Practical rule: Codex does the mechanical action; CodexScientist records the research meaning.
+Practical rule: Codex does the mechanical action; Kvasir-agent records the research meaning.
 
 ## Codex-native `/goal` boundary
 
-`/goal` is Codex-native. CodexScientist does not implement slash commands and does not act as the planner.
+`/goal` is Codex-native. Kvasir-agent does not implement slash commands and does not act as the planner.
 
 Recommended flow after Codex has entered goal context:
 
-1. Call `cs_status`; the first durable write such as `cs_record_user_requirement` lazily creates `<project>/CodexScientist/research.yaml` when needed.
+1. Call `ka_status`; the first durable write such as `ka_record_user_requirement` lazily creates `<project>/Kvasir-agent/research.yaml` when needed.
 2. Choose an explicit MCP profile for the current evidence surface, usually `evidence`, `formal_run`, `literature`, or `paper_write`.
 3. Use baseline, idea, experiment, analysis, literature, or paper tools to record research evidence and gates.
-4. Use `cs_status`, `cs_resume_brief`, and `cs_pack_delta` for public MCP recovery during long-running work.
-5. Use `cs_checkpoint` at phase boundaries.
-6. Use `cs_resume_brief` and `cs_pack_delta` after context compaction or interruption.
+4. Use `ka_status`, `ka_resume_brief`, and `ka_pack_delta` for public MCP recovery during long-running work.
+5. Use `ka_checkpoint` at phase boundaries.
+6. Use `ka_resume_brief` and `ka_pack_delta` after context compaction or interruption.
 
 ## Schema, skills, and context budget
 
-`cs_tool_schema` returns detailed native schemas when available and a minimal registry schema for MCP registry-only tools. Every tool returned by `tools/list` should at least expose required arguments through either `tools/list` or `cs_tool_schema`.
+`ka_tool_schema` returns detailed native schemas when available and a minimal registry schema for MCP registry-only tools. Every tool returned by `tools/list` should at least expose required arguments through either `tools/list` or `ka_tool_schema`.
 
 Bundled support skills are loaded through the Codex plugin skill mechanism when a subtask needs a procedure. They are not part of the default Codex-facing MCP profile.
 
-Long-task recovery should normally use `cs_status` plus `cs_resume_brief` in the 4K-8K range. Use `cs_pack_delta` for post-checkpoint changes, `cs_log_digest` before raw logs, `cs_artifact_index` before opening artifacts, and `cs_checkpoint` at phase boundaries. Context budget is not smaller is better; incident/debug/audit work may expand to 12K-24K while still avoiding raw full logs and full artifact content unless explicitly requested.
+Long-task recovery should normally use `ka_status` plus `ka_resume_brief` in the 4K-8K range. Use `ka_pack_delta` for post-checkpoint changes, `ka_log_digest` before raw logs, `ka_artifact_index` before opening artifacts, and `ka_checkpoint` at phase boundaries. Context budget is not smaller is better; incident/debug/audit work may expand to 12K-24K while still avoiding raw full logs and full artifact content unless explicitly requested.
 
 ## Native CLI boundary
 
 The native CLI is not the default control plane. It exists for human/admin/debug/CI/recovery compatibility.
 
-`cs_status` is available in the native CLI as a lightweight boundary hint, but MCP registry-only tools should normally be exercised through `scripts/cs_mcp.py`.
+`ka_status` is available in the native CLI as a lightweight boundary hint, but MCP registry-only tools should normally be exercised through `scripts/ka_mcp.py`.
 
-Legacy `codexscientist_*` aliases are disabled by default. Use canonical `cs_*` names and prefer MCP for agent-facing research-control work.
+Use `ka_*` tool names and prefer MCP for agent-facing research-control work.
 
 ## Default autonomy
 
@@ -87,11 +87,11 @@ The default mode is `copilot`. Automatic idea or novelty improvement requires an
 
 ## Safety boundaries
 
-- Use only curated `cs_*` MCP tools in the default MCP path.
+- Use only curated `ka_*` MCP tools in the default MCP path.
 - Keep hidden admin/debug CLI available but isolated from the default agent-facing research path.
 - Avoid all-tools/full-runtime MCP registration.
 - Keep large logs, ledgers, papers, and reference repositories out of context unless an explicit bounded raw read is needed.
-- Use `cs_bash_exec` only when the command itself must be auditable CodexScientist provenance, not as a general shell replacement.
+- Use `ka_bash_exec` only when the command itself must be auditable Kvasir-agent provenance, not as a general shell replacement.
 - Use `dry_run=true` or `network=false` for open-world literature checks when Codex needs a bounded planning response instead of external IO.
 
 ## Long-run claims

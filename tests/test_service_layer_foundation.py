@@ -4,14 +4,14 @@ import json
 from pathlib import Path
 
 
-def test_project_layout_uses_project_local_codexscientist_tree(tmp_path: Path):
-    from codex_scientist.services.project_state import ProjectLayout
+def test_project_layout_uses_project_local_kvasiragent_tree(tmp_path: Path):
+    from kvasir_agent.services.project_state import ProjectLayout
 
     layout = ProjectLayout.from_project_root(tmp_path)
     assert layout.project_root == tmp_path
-    assert layout.state_root == tmp_path / "CodexScientist"
-    assert layout.project_state_path == tmp_path / "CodexScientist" / "project_state.json"
-    assert layout.event_log_path == tmp_path / "CodexScientist" / "events" / "events.jsonl"
+    assert layout.state_root == tmp_path / "Kvasir-agent"
+    assert layout.project_state_path == tmp_path / "Kvasir-agent" / "project_state.json"
+    assert layout.event_log_path == tmp_path / "Kvasir-agent" / "events" / "events.jsonl"
 
     layout.ensure_core_dirs()
     assert layout.state_root.is_dir()
@@ -20,8 +20,8 @@ def test_project_layout_uses_project_local_codexscientist_tree(tmp_path: Path):
 
 
 def test_event_store_appends_schema_versioned_jsonl(tmp_path: Path):
-    from codex_scientist.services.event_store import EventStore
-    from codex_scientist.services.project_state import ProjectLayout
+    from kvasir_agent.services.event_store import EventStore
+    from kvasir_agent.services.project_state import ProjectLayout
 
     store = EventStore(ProjectLayout.from_project_root(tmp_path))
     first = store.append("quest.created", {"quest_id": "q1"})
@@ -39,8 +39,8 @@ def test_event_store_appends_schema_versioned_jsonl(tmp_path: Path):
 
 
 def test_snapshot_write_is_atomic_and_corrupt_snapshot_is_quarantined(tmp_path: Path):
-    from codex_scientist.services.event_store import EventStore
-    from codex_scientist.services.project_state import ProjectLayout
+    from kvasir_agent.services.event_store import EventStore
+    from kvasir_agent.services.project_state import ProjectLayout
 
     layout = ProjectLayout.from_project_root(tmp_path)
     store = EventStore(layout)

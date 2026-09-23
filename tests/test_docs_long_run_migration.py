@@ -13,15 +13,15 @@ def test_long_run_and_migration_docs_are_p4_native_and_do_not_overclaim_wall_clo
 
     for phrase in [
         "MCP-only default",
-        "scripts/cs_mcp.py",
+        "scripts/ka_mcp.py",
         "accelerated soak",
         "wall-clock soak",
         "do not claim stable ten-day wall-clock operation",
         "migrate legacy quests",
         "progress watchdog",
-        "cs_checkpoint",
+        "ka_checkpoint",
     ]:
         assert phrase in combined
     default_combined = usage + "\n" + long_run
     assert "CLI fallback" not in default_combined
-    assert "scripts/csctl.py" not in default_combined
+    assert "scripts/kactl.py" not in default_combined

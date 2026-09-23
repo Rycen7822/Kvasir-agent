@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from codex_scientist.mcp.tool_registry import call_tool
+from kvasir_agent.mcp.tool_registry import call_tool
 
 
 def _assert_ok(payload: dict) -> dict:
@@ -12,14 +12,14 @@ def _assert_ok(payload: dict) -> dict:
 
 
 def test_goal_research_loop_runs_through_mcp_without_cli(monkeypatch, tmp_path: Path):
-    monkeypatch.setenv("CODEXSCIENTIST_PROJECT_ROOT", str(tmp_path))
+    monkeypatch.setenv("KVASIR_AGENT_PROJECT_ROOT", str(tmp_path))
 
-    quest = _assert_ok(call_tool("cs_new_quest", {"project": str(tmp_path), "goal": "tiny mcp loop", "title": "Tiny MCP Loop"}))
+    quest = _assert_ok(call_tool("ka_new_quest", {"project": str(tmp_path), "goal": "tiny mcp loop", "title": "Tiny MCP Loop"}))
     quest_id = quest["quest"]["quest_id"]
 
     requirement = _assert_ok(
         call_tool(
-            "cs_record_user_requirement",
+            "ka_record_user_requirement",
             {"project": str(tmp_path), "quest_id": quest_id, "message": "Use only deterministic toy artifacts.", "stage": "scout"},
         )
     )
@@ -27,7 +27,7 @@ def test_goal_research_loop_runs_through_mcp_without_cli(monkeypatch, tmp_path: 
 
     baseline = _assert_ok(
         call_tool(
-            "cs_create_local_baseline",
+            "ka_create_local_baseline",
             {
                 "project": str(tmp_path),
                 "quest_id": quest_id,
@@ -38,11 +38,11 @@ def test_goal_research_loop_runs_through_mcp_without_cli(monkeypatch, tmp_path: 
         )
     )
     confirm_args = {"project": str(tmp_path), **baseline["confirm_args"]}
-    _assert_ok(call_tool("cs_confirm_baseline", confirm_args))
+    _assert_ok(call_tool("ka_confirm_baseline", confirm_args))
 
     idea = _assert_ok(
         call_tool(
-            "cs_submit_idea",
+            "ka_submit_idea",
             {
                 "project": str(tmp_path),
                 "quest_id": quest_id,
@@ -67,7 +67,7 @@ def test_goal_research_loop_runs_through_mcp_without_cli(monkeypatch, tmp_path: 
 
     experiment = _assert_ok(
         call_tool(
-            "cs_record_main_experiment",
+            "ka_record_main_experiment",
             {
                 "project": str(tmp_path),
                 "quest_id": quest_id,
@@ -89,7 +89,7 @@ def test_goal_research_loop_runs_through_mcp_without_cli(monkeypatch, tmp_path: 
 
     campaign = _assert_ok(
         call_tool(
-            "cs_create_analysis_campaign",
+            "ka_create_analysis_campaign",
             {
                 "project": str(tmp_path),
                 "quest_id": quest_id,
@@ -103,7 +103,7 @@ def test_goal_research_loop_runs_through_mcp_without_cli(monkeypatch, tmp_path: 
 
     slice_payload = _assert_ok(
         call_tool(
-            "cs_record_analysis_slice",
+            "ka_record_analysis_slice",
             {
                 "project": str(tmp_path),
                 "quest_id": quest_id,
@@ -118,11 +118,11 @@ def test_goal_research_loop_runs_through_mcp_without_cli(monkeypatch, tmp_path: 
     )
     assert slice_payload.get("ok") is True
 
-    _assert_ok(call_tool("cs_get_method_scoreboard", {"project": str(tmp_path), "quest_id": quest_id}))
-    _assert_ok(call_tool("cs_get_optimization_frontier", {"project": str(tmp_path), "quest_id": quest_id}))
+    _assert_ok(call_tool("ka_get_method_scoreboard", {"project": str(tmp_path), "quest_id": quest_id}))
+    _assert_ok(call_tool("ka_get_optimization_frontier", {"project": str(tmp_path), "quest_id": quest_id}))
     checkpoint = _assert_ok(
         call_tool(
-            "cs_checkpoint",
+            "ka_checkpoint",
             {
                 "project": str(tmp_path),
                 "phase": "p4-2-toy-loop",
@@ -131,10 +131,10 @@ def test_goal_research_loop_runs_through_mcp_without_cli(monkeypatch, tmp_path: 
             },
         )
     )
-    resume = _assert_ok(call_tool("cs_resume_brief", {"project": str(tmp_path), "max_chars": 4000}))
+    resume = _assert_ok(call_tool("ka_resume_brief", {"project": str(tmp_path), "max_chars": 4000}))
 
     assert checkpoint.get("checkpoint_id") or checkpoint.get("checkpoint")
     assert "resume" in json.dumps(resume, ensure_ascii=False).lower() or resume.get("text")
 
     repo_text = "\n".join(path.read_text(encoding="utf-8", errors="replace") for path in tmp_path.rglob("*.json") if path.is_file())
-    assert "scripts/csctl.py" not in repo_text
+    assert "scripts/kactl.py" not in repo_text

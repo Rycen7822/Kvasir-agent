@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from codex_scientist.services.checkpoint import CheckpointService
-from codex_scientist.services.manifest import ManifestService
-from codex_scientist.services.project_state import ProjectLayout
-from codex_scientist.services.resume import ResumeService
+from kvasir_agent.services.checkpoint import CheckpointService
+from kvasir_agent.services.manifest import ManifestService
+from kvasir_agent.services.project_state import ProjectLayout
+from kvasir_agent.services.resume import ResumeService
 
 _REQUIRED_RESUME_KEYS = {
     "goal",
@@ -34,7 +34,7 @@ def test_resume_brief_contains_stable_recovery_anchors(tmp_path: Path):
         decisions=["use project-local compact state"],
         validation=["unit test"],
         next_action="implement delta pack",
-        artifact_refs=[{"path": "CodexScientist/summaries/latest_checkpoint.json"}],
+        artifact_refs=[{"path": "Kvasir-agent/summaries/latest_checkpoint.json"}],
         risk_flags=["budget_too_small_if_under_anchor_floor"],
     )
 

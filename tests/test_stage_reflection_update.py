@@ -2,9 +2,9 @@ from __future__ import annotations
 
 
 def test_stage_reflection_outputs_plan_update_and_default_copilot_needs_user_decision(tmp_path):
-    from codex_scientist.services.journal import JournalService
-    from codex_scientist.services.manifest import ManifestService
-    from codex_scientist.services.project_state import ProjectLayout
+    from kvasir_agent.services.journal import JournalService
+    from kvasir_agent.services.manifest import ManifestService
+    from kvasir_agent.services.project_state import ProjectLayout
 
     layout = ProjectLayout.from_project_root(tmp_path)
     manifest = ManifestService(layout)
@@ -19,9 +19,9 @@ def test_stage_reflection_outputs_plan_update_and_default_copilot_needs_user_dec
 
 
 def test_novelty_check_blocks_duplicate_failed_idea(tmp_path):
-    from codex_scientist.services.frontier import FrontierService
-    from codex_scientist.services.journal import JournalService
-    from codex_scientist.services.project_state import ProjectLayout
+    from kvasir_agent.services.frontier import FrontierService
+    from kvasir_agent.services.journal import JournalService
+    from kvasir_agent.services.project_state import ProjectLayout
 
     layout = ProjectLayout.from_project_root(tmp_path)
     JournalService(layout).record_negative_result(trial_id="T0001", idea_id="I_old", failure_reason="duplicate mechanism", lesson="avoid widening layer blindly")

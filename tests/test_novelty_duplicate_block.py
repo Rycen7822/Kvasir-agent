@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from codex_scientist.mcp.tool_registry import call_tool
+from kvasir_agent.mcp.tool_registry import call_tool
 
 
 def test_duplicate_mechanism_is_blocked_by_negative_memory(tmp_path: Path):
     recorded = call_tool(
-        "cs_record_negative_result",
+        "ka_record_negative_result",
         {
             "project": str(tmp_path),
             "quest_id": "QDUP",
@@ -21,7 +21,7 @@ def test_duplicate_mechanism_is_blocked_by_negative_memory(tmp_path: Path):
     assert recorded["ok"] is True, recorded
 
     duplicate = call_tool(
-        "cs_submit_idea",
+        "ka_submit_idea",
         {
             "project": str(tmp_path),
             "quest_id": "QDUP",

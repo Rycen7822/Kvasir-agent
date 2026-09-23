@@ -3,12 +3,12 @@ requires = ["hatchling>=1.21"]
 build-backend = "hatchling.build"
 
 [project]
-name = "codex-scientist"
+name = "kvasir-agent"
 version = "0.1.0"
 description = "Codex CLI plugin with a stable curated MCP control plane for research provenance workflows."
 readme = "README.md"
 requires-python = ">=3.10"
-authors = [{ name = "CodexScientist Hermes adaptation" }]
+authors = [{ name = "Kvasir-agent Hermes adaptation" }]
 dependencies = [
   "PyYAML>=6.0.1",
 ]
@@ -20,7 +20,7 @@ dev = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["codex_scientist"]
+packages = ["kvasir_agent"]
 artifacts = [
   ".codex-plugin/**",
   "docs/**",

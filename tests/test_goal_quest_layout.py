@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from codex_scientist.services.project_state import ProjectLayout
+from kvasir_agent.services.project_state import ProjectLayout
 
 
 EXPECTED_QUEST_DIRS = {
@@ -50,7 +50,7 @@ def test_project_layout_creates_quest_scoped_layout_and_rejects_escape(tmp_path:
     layout = ProjectLayout.from_project_root(tmp_path)
     quest = layout.ensure_quest_layout("Q-001")
 
-    assert quest.quest_root == tmp_path / "CodexScientist" / "quests" / "Q-001"
+    assert quest.quest_root == tmp_path / "Kvasir-agent" / "quests" / "Q-001"
     assert quest.quest_root.is_dir()
     for rel in EXPECTED_QUEST_DIRS:
         assert (quest.quest_root / rel).is_dir(), rel
@@ -77,7 +77,7 @@ def test_legacy_global_queue_index_can_be_read_before_migration(tmp_path: Path):
     legacy_path.parent.mkdir(parents=True, exist_ok=True)
     legacy_path.write_text(json.dumps(legacy_state), encoding="utf-8")
 
-    from codex_scientist.services.queue import QueueService
+    from kvasir_agent.services.queue import QueueService
 
     status = QueueService(layout).status()
     assert status["ok"] is True

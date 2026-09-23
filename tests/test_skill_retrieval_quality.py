@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from codex_scientist.mcp.skill_eval import evaluate_cases
-from codex_scientist.mcp.skill_index import clear_skill_cache, iter_skill_cards, skill_cache_info
-from codex_scientist.mcp.tool_registry import call_tool
+from kvasir_agent.mcp.skill_eval import evaluate_cases
+from kvasir_agent.mcp.skill_index import clear_skill_cache, iter_skill_cards, skill_cache_info
+from kvasir_agent.mcp.tool_registry import call_tool
 
 FIXTURE_ROOT = Path(__file__).parent / "fixtures" / "skill_retrieval"
 
@@ -33,7 +33,7 @@ _SEARCH_FIELDS = {
 
 def test_skill_search_returns_decision_schema_without_content():
     result = call_tool(
-        "cs_skill_search",
+        "ka_skill_search",
         {
             "raw_user_request": "上下文压缩后恢复长期任务",
             "description_query": "resume checkpoint delta",
@@ -55,10 +55,10 @@ def test_skill_search_returns_decision_schema_without_content():
 
 
 def test_runtime_view_is_procedural_not_full_skill_truncation():
-    runtime = call_tool("cs_skill_load", {"skill_id": "codexscientist-codex", "view": "runtime", "max_chars": 2200})
+    runtime = call_tool("ka_skill_load", {"skill_id": "kvasir-agent", "view": "runtime", "max_chars": 2200})
     full = call_tool(
-        "cs_skill_load",
-        {"skill_id": "codexscientist-codex", "view": "full", "allow_full": True, "max_chars": 12000},
+        "ka_skill_load",
+        {"skill_id": "kvasir-agent", "view": "full", "allow_full": True, "max_chars": 12000},
     )
 
     assert runtime["ok"] is True
@@ -91,10 +91,10 @@ def test_skill_retrieval_fixture_quality_gate_passes():
 
 def test_missing_must_have_forces_preview_first_load_decision():
     result = call_tool(
-        "cs_skill_search",
+        "ka_skill_search",
         {
-            "raw_user_request": "use codexscientist-codex",
-            "description_query": "codexscientist-codex",
+            "raw_user_request": "use kvasir-agent",
+            "description_query": "kvasir-agent",
             "workflow_query": "mcp status context pack",
             "must_have": ["nonexistent-gate"],
             "limit": 1,
@@ -110,7 +110,7 @@ def test_missing_must_have_forces_preview_first_load_decision():
 
 def test_chinese_resume_request_routes_to_codex_router_when_no_resume_skill_exists():
     result = call_tool(
-        "cs_skill_search",
+        "ka_skill_search",
         {
             "raw_user_request": "上下文压缩后恢复长期实验任务",
             "description_query": "",
@@ -121,16 +121,16 @@ def test_chinese_resume_request_routes_to_codex_router_when_no_resume_skill_exis
     )
 
     candidate = result["candidates"][0]
-    assert candidate["skill_id"] == "codexscientist-codex"
+    assert candidate["skill_id"] == "kvasir-agent"
     assert candidate["confidence"] in {"high", "medium"}
 
 
 def test_skill_index_cache_reuses_records_and_invalidates_on_file_change(tmp_path: Path):
     skills_root = tmp_path / "skills"
-    skill_dir = skills_root / "codexscientist-cache"
+    skill_dir = skills_root / "kvasir-agent-cache"
     skill_dir.mkdir(parents=True)
     skill_file = skill_dir / "SKILL.md"
-    skill_file.write_text("---\nname: codexscientist-cache\ndescription: first description\n---\n\n# Cache\n", encoding="utf-8")
+    skill_file.write_text("---\nname: kvasir-agent-cache\ndescription: first description\n---\n\n# Cache\n", encoding="utf-8")
     clear_skill_cache()
 
     first = iter_skill_cards(skills_root)
@@ -140,7 +140,7 @@ def test_skill_index_cache_reuses_records_and_invalidates_on_file_change(tmp_pat
     assert second[0].description == "first description"
     assert info["hits"] >= 1
 
-    skill_file.write_text("---\nname: codexscientist-cache\ndescription: second description\n---\n\n# Cache\n", encoding="utf-8")
+    skill_file.write_text("---\nname: kvasir-agent-cache\ndescription: second description\n---\n\n# Cache\n", encoding="utf-8")
     third = iter_skill_cards(skills_root)
     assert third[0].description == "second description"
     assert skill_cache_info()["invalidations"] >= 1
@@ -148,10 +148,10 @@ def test_skill_index_cache_reuses_records_and_invalidates_on_file_change(tmp_pat
 
 def test_tiny_budget_search_preserves_full_source_hash():
     result = call_tool(
-        "cs_skill_search",
+        "ka_skill_search",
         {
-            "raw_user_request": "use codexscientist-codex",
-            "description_query": "codexscientist-codex",
+            "raw_user_request": "use kvasir-agent",
+            "description_query": "kvasir-agent",
             "workflow_query": "mcp status context pack",
             "limit": 1,
             "max_chars": 500,

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from codex_scientist.mcp.tool_registry import call_tool, list_tool_specs
+from kvasir_agent.mcp.tool_registry import call_tool, list_tool_specs
 
 
 def test_mcp_tool_specs_include_safety_annotations():
@@ -23,18 +23,18 @@ def test_mcp_annotations_mark_state_writing_tools_as_not_read_only():
     specs = {spec.name: spec.as_dict()["annotations"] for spec in list_tool_specs("goal")}
 
     for name in [
-        "cs_doctor",
-        "cs_context_pack",
-        "cs_manifest_validate",
+        "ka_doctor",
+        "ka_context_pack",
+        "ka_manifest_validate",
     ]:
         assert specs[name]["readOnlyHint"] is False
 
-    for name in ["cs_status", "cs_artifact_index", "cs_log_digest"]:
+    for name in ["ka_status", "ka_artifact_index", "ka_log_digest"]:
         assert specs[name]["readOnlyHint"] is True
 
 
 def test_mcp_unknown_tool_returns_structured_actionable_error():
-    payload = call_tool("cs_missing_tool", {})
+    payload = call_tool("ka_missing_tool", {})
 
     assert payload["ok"] is False
     assert payload["error_type"] == "unknown_tool"

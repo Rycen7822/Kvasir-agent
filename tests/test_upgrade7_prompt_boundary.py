@@ -4,8 +4,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PROMPTS = [
-    ROOT / "codex_scientist" / "runtime" / "resources" / "prompts" / "system_copilot.md",
-    ROOT / "codex_scientist" / "runtime" / "resources" / "repo" / "src" / "prompts" / "system_copilot.md",
+    ROOT / "kvasir_agent" / "runtime" / "resources" / "prompts" / "system_copilot.md",
+    ROOT / "kvasir_agent" / "runtime" / "resources" / "repo" / "src" / "prompts" / "system_copilot.md",
 ]
 
 
@@ -19,7 +19,7 @@ def test_system_copilot_does_not_force_all_shell_through_bash_exec():
         assert forbidden not in text, path
         assert "Use Codex-native" in text, path
         assert "formal experiment" in text, path
-        assert "cs_bash_exec" in text, path
+        assert "ka_bash_exec" in text, path
 
 
 def test_system_copilot_keeps_formal_provenance_fields_for_bash_exec():

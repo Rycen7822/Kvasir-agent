@@ -3,10 +3,10 @@ from __future__ import annotations
 import hashlib
 from pathlib import Path
 
-from codex_scientist.services.environment import EnvironmentService
-from codex_scientist.services.method_improvement import MethodImprovementService
-from codex_scientist.services.project_state import ProjectLayout
-from codex_scientist.services.trajectory import TrajectoryStore
+from kvasir_agent.services.environment import EnvironmentService
+from kvasir_agent.services.method_improvement import MethodImprovementService
+from kvasir_agent.services.project_state import ProjectLayout
+from kvasir_agent.services.trajectory import TrajectoryStore
 
 QUEST_ID = "QEVO"
 ENV_ID = "env_evo"
@@ -79,7 +79,7 @@ def _trajectory(
 
 
 def test_evolutionary_planner_selects_positive_parents_by_metric_direction(tmp_path: Path):
-    from codex_scientist.services.evolutionary import EvolutionarySearchService
+    from kvasir_agent.services.evolutionary import EvolutionarySearchService
 
     layout = _register_env(tmp_path, direction="minimize", baseline_value=1.0)
     good = _trajectory(layout, idea_id="good", mechanism_family="optimizer", metric_value=0.7, direction="minimize")
@@ -95,7 +95,7 @@ def test_evolutionary_planner_selects_positive_parents_by_metric_direction(tmp_p
 
 
 def test_evolutionary_planner_excludes_protected_hash_failures(tmp_path: Path):
-    from codex_scientist.services.evolutionary import EvolutionarySearchService
+    from kvasir_agent.services.evolutionary import EvolutionarySearchService
 
     layout = _register_env(tmp_path)
     good = _trajectory(layout, idea_id="good", mechanism_family="adapter", metric_value=0.8, protected_ok=True)
@@ -110,7 +110,7 @@ def test_evolutionary_planner_excludes_protected_hash_failures(tmp_path: Path):
 
 
 def test_evolutionary_planner_marks_duplicate_negative_mechanisms_as_risky(tmp_path: Path):
-    from codex_scientist.services.evolutionary import EvolutionarySearchService
+    from kvasir_agent.services.evolutionary import EvolutionarySearchService
 
     layout = _register_env(tmp_path)
     MethodImprovementService(layout).record_negative_result(
@@ -130,7 +130,7 @@ def test_evolutionary_planner_marks_duplicate_negative_mechanisms_as_risky(tmp_p
 
 
 def test_evolutionary_planner_diversity_quota_prevents_family_collapse(tmp_path: Path):
-    from codex_scientist.services.evolutionary import EvolutionarySearchService
+    from kvasir_agent.services.evolutionary import EvolutionarySearchService
 
     layout = _register_env(tmp_path)
     for index in range(6):
@@ -145,7 +145,7 @@ def test_evolutionary_planner_diversity_quota_prevents_family_collapse(tmp_path:
 
 
 def test_evolutionary_planner_is_plan_only_and_never_creates_executor_state(tmp_path: Path):
-    from codex_scientist.services.evolutionary import EvolutionarySearchService
+    from kvasir_agent.services.evolutionary import EvolutionarySearchService
 
     layout = _register_env(tmp_path)
     _trajectory(layout, idea_id="good", mechanism_family="adapter", metric_value=0.8)
@@ -153,6 +153,6 @@ def test_evolutionary_planner_is_plan_only_and_never_creates_executor_state(tmp_
     plan = EvolutionarySearchService(layout).plan_round(quest_id=QUEST_ID, env_id=ENV_ID, epoch=1, batch_size=4)
 
     assert plan["round_plan"]["submit_allowed"] is False
-    quest_root = tmp_path / "CodexScientist" / "quests" / QUEST_ID
+    quest_root = tmp_path / "Kvasir-agent" / "quests" / QUEST_ID
     assert not any((quest_root / "variants").glob("*/variant.json"))
     assert not any((quest_root / "runtime" / "queue").glob("*.json"))

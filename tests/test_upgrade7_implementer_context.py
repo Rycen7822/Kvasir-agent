@@ -4,10 +4,10 @@ import hashlib
 import json
 from pathlib import Path
 
-from codex_scientist.services.environment import EnvironmentService
-from codex_scientist.services.project_state import ProjectLayout
+from kvasir_agent.services.environment import EnvironmentService
+from kvasir_agent.services.project_state import ProjectLayout
 
-PROMPT_ROOT = Path(__file__).resolve().parents[1] / "codex_scientist" / "runtime" / "resources" / "prompts" / "execution_grounded"
+PROMPT_ROOT = Path(__file__).resolve().parents[1] / "kvasir_agent" / "runtime" / "resources" / "prompts" / "execution_grounded"
 QUEST_ID = "QCTX"
 ENV_ID = "env_ctx"
 
@@ -80,7 +80,7 @@ def _register_second_env(layout: ProjectLayout, tmp_path: Path, env_id: str = "e
 
 def test_execution_grounded_prompts_define_schema_first_patch_contracts():
     runtime_root = PROMPT_ROOT
-    repo_root = Path(__file__).resolve().parents[1] / "codex_scientist" / "runtime" / "resources" / "repo" / "src" / "prompts" / "execution_grounded"
+    repo_root = Path(__file__).resolve().parents[1] / "kvasir_agent" / "runtime" / "resources" / "repo" / "src" / "prompts" / "execution_grounded"
     for filename in ("implementer.md", "patch_repair.md"):
         runtime_content = (runtime_root / filename).read_text(encoding="utf-8")
         repo_content = (repo_root / filename).read_text(encoding="utf-8")
@@ -98,7 +98,7 @@ def test_execution_grounded_prompts_define_schema_first_patch_contracts():
 
 
 def test_implementer_context_includes_only_mutable_and_declared_context_files_with_line_numbers(tmp_path: Path):
-    from codex_scientist.services.implementer_context import ImplementerContextBuilder
+    from kvasir_agent.services.implementer_context import ImplementerContextBuilder
 
     layout = _registered_layout(tmp_path)
     context = ImplementerContextBuilder(layout).build(quest_id=QUEST_ID, env_id=ENV_ID, idea_id="idea_ctx", token_budget=800)
@@ -119,7 +119,7 @@ def test_implementer_context_includes_only_mutable_and_declared_context_files_wi
 
 
 def test_implementer_context_excludes_protected_and_dataset_content_but_keeps_metadata(tmp_path: Path):
-    from codex_scientist.services.implementer_context import ImplementerContextBuilder
+    from kvasir_agent.services.implementer_context import ImplementerContextBuilder
 
     layout = _registered_layout(tmp_path)
     context = ImplementerContextBuilder(layout).build(quest_id=QUEST_ID, env_id=ENV_ID, idea_id="idea_ctx", token_budget=800)
@@ -147,7 +147,7 @@ def test_implementer_context_excludes_protected_and_dataset_content_but_keeps_me
 
 
 def test_implementer_context_dataset_metadata_filters_non_scalar_values(tmp_path: Path):
-    from codex_scientist.services.implementer_context import ImplementerContextBuilder
+    from kvasir_agent.services.implementer_context import ImplementerContextBuilder
 
     layout = ProjectLayout.from_project_root(tmp_path)
     manifest = _write_context_project(tmp_path)
@@ -169,7 +169,7 @@ def test_implementer_context_dataset_metadata_filters_non_scalar_values(tmp_path
 
 
 def test_malformed_manifest_metadata_never_leaks_raw_values(tmp_path: Path):
-    from codex_scientist.services.implementer_context import ImplementerContextBuilder
+    from kvasir_agent.services.implementer_context import ImplementerContextBuilder
 
     layout = ProjectLayout.from_project_root(tmp_path)
     manifest = _write_context_project(tmp_path)
@@ -214,7 +214,7 @@ def test_malformed_manifest_metadata_never_leaks_raw_values(tmp_path: Path):
 
 
 def test_repair_context_sanitizes_hash_report_error_messages(tmp_path: Path):
-    from codex_scientist.services.implementer_context import ImplementerContextBuilder
+    from kvasir_agent.services.implementer_context import ImplementerContextBuilder
 
     layout = ProjectLayout.from_project_root(tmp_path)
     manifest = _write_context_project(tmp_path)
@@ -239,7 +239,7 @@ def test_repair_context_sanitizes_hash_report_error_messages(tmp_path: Path):
 
 
 def test_implementer_context_token_budget_truncation_is_deterministic_and_records_omissions(tmp_path: Path):
-    from codex_scientist.services.implementer_context import ImplementerContextBuilder
+    from kvasir_agent.services.implementer_context import ImplementerContextBuilder
 
     layout = _registered_layout(tmp_path)
     first = ImplementerContextBuilder(layout).build(quest_id=QUEST_ID, env_id=ENV_ID, idea_id="idea_ctx", token_budget=20)
@@ -255,11 +255,11 @@ def test_implementer_context_token_budget_truncation_is_deterministic_and_record
 
 
 def test_repair_context_includes_failure_digests_and_redacts_secrets(tmp_path: Path):
-    from codex_scientist.services.implementer_context import ImplementerContextBuilder
+    from kvasir_agent.services.implementer_context import ImplementerContextBuilder
 
     layout = _registered_layout(tmp_path)
     _write_variant_record(layout)
-    variant_root = tmp_path / "CodexScientist" / "variants" / "var_ctx"
+    variant_root = tmp_path / "Kvasir-agent" / "variants" / "var_ctx"
     variant_root.mkdir(parents=True, exist_ok=True)
     (variant_root / "checks.json").write_text(
         '{"smoke_status":"failed","failure_class":"syntax_fail","stderr_tail":"SyntaxError: token=sk-proj-SECRETSECRETSECRETSECRET"}',
@@ -294,7 +294,7 @@ def test_repair_context_includes_failure_digests_and_redacts_secrets(tmp_path: P
 
 
 def test_repair_context_accepts_patch_check_stderr_tail_and_rejects_bad_variant_inputs(tmp_path: Path):
-    from codex_scientist.services.implementer_context import ImplementerContextBuilder
+    from kvasir_agent.services.implementer_context import ImplementerContextBuilder
 
     layout = _registered_layout(tmp_path)
     _write_variant_record(layout)

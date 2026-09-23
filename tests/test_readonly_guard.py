@@ -2,7 +2,7 @@ from __future__ import annotations
 
 
 def test_readonly_guard_allows_editable_changes_and_blocks_readonly_eval_changes():
-    from codex_scientist.services.readonly_guard import check_readonly_changes
+    from kvasir_agent.services.readonly_guard import check_readonly_changes
 
     allowed = check_readonly_changes(
         changed_paths=["src/model.py"],

@@ -9,9 +9,9 @@ PLUGIN_ROOT = Path(__file__).resolve().parents[1]
 PYTHON = sys.executable
 
 
-def run_csctl(*args: str, project_root: Path) -> dict:
+def run_kactl(*args: str, project_root: Path) -> dict:
     proc = subprocess.run(
-        [PYTHON, str(PLUGIN_ROOT / "scripts" / "csctl.py"), "--project-root", str(project_root), *args],
+        [PYTHON, str(PLUGIN_ROOT / "scripts" / "kactl.py"), "--project-root", str(project_root), *args],
         cwd=str(PLUGIN_ROOT),
         text=True,
         stdout=subprocess.PIPE,
@@ -23,16 +23,16 @@ def run_csctl(*args: str, project_root: Path) -> dict:
 
 
 def test_baseline_confirm_and_trial_cli_reaches_ready(tmp_path: Path):
-    run_csctl("manifest", "init", "--name", "Demo", "--goal", "Improve", "--format", "json", project_root=tmp_path)
+    run_kactl("manifest", "init", "--name", "Demo", "--goal", "Improve", "--format", "json", project_root=tmp_path)
 
-    baseline = run_csctl("baseline", "confirm", "--id", "b1", "--metric-contract", "primary", "--format", "json", project_root=tmp_path)
+    baseline = run_kactl("baseline", "confirm", "--id", "b1", "--metric-contract", "primary", "--format", "json", project_root=tmp_path)
     assert baseline["ok"] is True
     assert baseline["baseline"]["status"] == "confirmed"
 
-    baseline_show = run_csctl("baseline", "show", "--format", "json", project_root=tmp_path)
+    baseline_show = run_kactl("baseline", "show", "--format", "json", project_root=tmp_path)
     assert baseline_show["baseline_ready"] is True
 
-    proposed = run_csctl(
+    proposed = run_kactl(
         "trial",
         "propose",
         "--quest-id",
@@ -50,25 +50,25 @@ def test_baseline_confirm_and_trial_cli_reaches_ready(tmp_path: Path):
     assert proposed["trial"]["trial_id"] == "T0001"
     assert proposed["trial"]["status"] == "proposed"
 
-    planned = run_csctl("trial", "plan", "T0001", "--metric-contract", "primary", "--novelty", "allow", "--format", "json", project_root=tmp_path)
+    planned = run_kactl("trial", "plan", "T0001", "--metric-contract", "primary", "--novelty", "allow", "--format", "json", project_root=tmp_path)
     assert planned["trial"]["status"] == "planned"
 
-    ready = run_csctl("trial", "ready", "T0001", "--format", "json", project_root=tmp_path)
+    ready = run_kactl("trial", "ready", "T0001", "--format", "json", project_root=tmp_path)
     assert ready["ok"] is True
     assert ready["trial"]["status"] == "ready"
 
-    shown = run_csctl("trial", "show", "T0001", "--format", "json", project_root=tmp_path)
+    shown = run_kactl("trial", "show", "T0001", "--format", "json", project_root=tmp_path)
     assert shown["trial"]["status"] == "ready"
 
 
 def test_baseline_waive_makes_manifest_baseline_ready(tmp_path: Path):
-    run_csctl("manifest", "init", "--name", "Demo", "--goal", "Improve", "--format", "json", project_root=tmp_path)
+    run_kactl("manifest", "init", "--name", "Demo", "--goal", "Improve", "--format", "json", project_root=tmp_path)
 
-    waived = run_csctl("baseline", "waive", "--id", "w1", "--reason", "No comparable baseline for smoke", "--format", "json", project_root=tmp_path)
+    waived = run_kactl("baseline", "waive", "--id", "w1", "--reason", "No comparable baseline for smoke", "--format", "json", project_root=tmp_path)
     assert waived["ok"] is True
     assert waived["baseline"]["status"] == "waived"
     assert waived["baseline"]["waiver_reason"] == "No comparable baseline for smoke"
 
-    validate = run_csctl("manifest", "validate", "--format", "json", project_root=tmp_path)
+    validate = run_kactl("manifest", "validate", "--format", "json", project_root=tmp_path)
     assert validate["ok"] is True
     assert validate["baseline_ready"] is True

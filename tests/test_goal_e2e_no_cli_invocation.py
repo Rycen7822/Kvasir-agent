@@ -36,4 +36,4 @@ def test_goal_e2e_does_not_invoke_hidden_cli(monkeypatch, tmp_path: Path):
 
     result = run_toy_goal_research(tmp_path)
     assert result["claim"]["claim_gate"]["claimable"] is True
-    assert all("csctl.py" not in item for item in observed)
+    assert all("kactl.py" not in item for item in observed)

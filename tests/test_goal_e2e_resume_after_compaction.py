@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from codex_scientist.mcp.tool_registry import call_tool
+from kvasir_agent.mcp.tool_registry import call_tool
 from test_goal_e2e_toy_research import FORBIDDEN, run_toy_goal_research
 
 
@@ -16,8 +16,8 @@ def test_goal_e2e_resume_after_compaction_preserves_passive_recovery_anchors(tmp
     result = run_toy_goal_research(tmp_path)
     quest_id = result["quest_id"]
 
-    resume = _ok(call_tool("cs_resume_brief", {"project": str(tmp_path), "quest_id": quest_id, "max_chars": 1600}))
-    pack = _ok(call_tool("cs_context_pack", {"project": str(tmp_path), "quest_id": quest_id, "max_chars": 1600}))
+    resume = _ok(call_tool("ka_resume_brief", {"project": str(tmp_path), "quest_id": quest_id, "max_chars": 1600}))
+    pack = _ok(call_tool("ka_context_pack", {"project": str(tmp_path), "quest_id": quest_id, "max_chars": 1600}))
 
     assert resume["current_quest"] == quest_id
     assert resume["last_completed_action"] == "claim-gate"

@@ -5,16 +5,16 @@ import subprocess
 import sys
 from pathlib import Path
 
-from codex_scientist.mcp.tool_registry import call_tool, list_tool_specs, tools_list_payload
+from kvasir_agent.mcp.tool_registry import call_tool, list_tool_specs, tools_list_payload
 
 PLUGIN_ROOT = Path(__file__).resolve().parents[1]
 PYTHON = sys.executable
-FORBIDDEN_AGENT_CLI = ("scripts/csctl.py", "CLI fallback", "csctl")
+FORBIDDEN_AGENT_CLI = ("scripts/kactl.py", "CLI fallback", "kactl")
 
 
 def _run_stdio(raw_input: str) -> list[dict]:
     completed = subprocess.run(
-        [PYTHON, str(PLUGIN_ROOT / "scripts" / "cs_mcp.py")],
+        [PYTHON, str(PLUGIN_ROOT / "scripts" / "ka_mcp.py")],
         cwd=PLUGIN_ROOT,
         input=raw_input,
         text=True,
@@ -36,7 +36,7 @@ def _assert_no_cli_leak(payload: object) -> None:
 
 
 def _quest_root(project: Path, quest_id: str = "Q1") -> Path:
-    root = project / "CodexScientist" / "quests" / quest_id
+    root = project / "Kvasir-agent" / "quests" / quest_id
     root.mkdir(parents=True, exist_ok=True)
     (root / "quest.yaml").write_text(f"quest_id: {quest_id}\n", encoding="utf-8")
     return root
@@ -50,11 +50,11 @@ def test_stdio_jsonrpc_stress_subset_has_stable_protocol_responses():
         [
             {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}},
             {"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {"profile": "goal", "stage": "analysis"}},
-            {"jsonrpc": "2.0", "id": 3, "method": "codexscientist/missing", "params": {}},
+            {"jsonrpc": "2.0", "id": 3, "method": "kvasiragent/missing", "params": {}},
         ]
     )
 
-    assert responses[0]["result"]["serverInfo"]["name"] == "codexscientist_mcp"
+    assert responses[0]["result"]["serverInfo"]["name"] == "ka_mcp"
     analysis = responses[1]["result"]
     assert analysis["ok"] is True
     assert analysis["profile"] == "goal"
@@ -74,8 +74,8 @@ def test_profile_stage_and_schema_stress_subset_matches_upgrade6_contract():
     goal_names = {tool["name"] for tool in goal["tools"]}
     assert len(list_tool_specs()) == 10
     assert len(core["tools"]) == 10
-    assert {"cs_feedback_ingest", "cs_trajectory_search", "cs_trajectory_show"} <= goal_names
-    assert core_names.isdisjoint({"cs_feedback_ingest", "cs_trajectory_search", "cs_trajectory_show"})
+    assert {"ka_feedback_ingest", "ka_trajectory_search", "ka_trajectory_show"} <= goal_names
+    assert core_names.isdisjoint({"ka_feedback_ingest", "ka_trajectory_search", "ka_trajectory_show"})
     assert unknown_stage["ok"] is True
     assert unknown_stage["stage_label"] == "unknown-stage"
     assert {tool["name"] for tool in unknown_stage["tools"]} == {tool["name"] for tool in goal["tools"]}
@@ -83,13 +83,13 @@ def test_profile_stage_and_schema_stress_subset_matches_upgrade6_contract():
     assert admin["error_type"] == "profile_not_registered_for_mcp"
     assert "tools" not in admin
 
-    full_schema = call_tool("cs_tool_schema", {"name": "cs_submit_idea"})
-    registry_schema = call_tool("cs_tool_schema", {"name": "cs_status"})
+    full_schema = call_tool("ka_tool_schema", {"name": "ka_submit_idea"})
+    registry_schema = call_tool("ka_tool_schema", {"name": "ka_status"})
     assert full_schema["ok"] is True
-    assert full_schema["schema"]["name"] == "cs_submit_idea"
+    assert full_schema["schema"]["name"] == "ka_submit_idea"
     assert "novelty_contract" in full_schema["schema"]["input_schema"]["required"]
     assert registry_schema["ok"] is True
-    assert registry_schema["schema"]["name"] == "cs_status"
+    assert registry_schema["schema"]["name"] == "ka_status"
     assert registry_schema["schema"].get("mcp_registry_only") is True
     _assert_no_cli_leak([core, goal, unknown_stage, admin, full_schema, registry_schema])
 
@@ -97,10 +97,10 @@ def test_profile_stage_and_schema_stress_subset_matches_upgrade6_contract():
 def test_failure_envelope_stress_subset_has_no_tool_error_or_cli_leakage(tmp_path: Path):
     _quest_root(tmp_path)
     payloads = [
-        call_tool("cs_trial_plan", {"project": str(tmp_path)}),
-        call_tool("cs_manifest_init", {"project": str(tmp_path)}),
-        call_tool("cs_missing_for_stress_regression", {"project": str(tmp_path)}),
-        call_tool("cs_claim_gate", {"project": str(tmp_path), "quest_id": "Q1", "claim_id": "C1", "claim_text": "unsupported claim"}),
+        call_tool("ka_trial_plan", {"project": str(tmp_path)}),
+        call_tool("ka_manifest_init", {"project": str(tmp_path)}),
+        call_tool("ka_missing_for_stress_regression", {"project": str(tmp_path)}),
+        call_tool("ka_claim_gate", {"project": str(tmp_path), "quest_id": "Q1", "claim_id": "C1", "claim_text": "unsupported claim"}),
     ]
 
     expected = ["missing_argument", "missing_argument", "unknown_tool", "claim_gate_blocked"]

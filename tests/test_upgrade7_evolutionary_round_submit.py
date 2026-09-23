@@ -6,12 +6,12 @@ import sys
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-from codex_scientist.mcp.tool_registry import call_tool
-from codex_scientist.services.environment import EnvironmentService
-from codex_scientist.services.evolutionary import EvolutionarySearchService
-from codex_scientist.services.project_state import ProjectLayout
-from codex_scientist.services.queue import QueueService
-from codex_scientist.services.trajectory import TrajectoryStore
+from kvasir_agent.mcp.tool_registry import call_tool
+from kvasir_agent.services.environment import EnvironmentService
+from kvasir_agent.services.evolutionary import EvolutionarySearchService
+from kvasir_agent.services.project_state import ProjectLayout
+from kvasir_agent.services.queue import QueueService
+from kvasir_agent.services.trajectory import TrajectoryStore
 
 QUEST_ID = "QROUND"
 ENV_ID = "env_round"
@@ -76,10 +76,10 @@ def _setup(tmp_path: Path) -> tuple[ProjectLayout, str, str, Path]:
 
 def test_direct_executor_round_submit_requires_mcp_gate(tmp_path: Path, monkeypatch):
     _layout, round_id, trajectory_id, package = _setup(tmp_path)
-    monkeypatch.delenv("CODEXSCIENTIST_ENABLE_EXECUTOR_MCP", raising=False)
+    monkeypatch.delenv("KVASIR_AGENT_ENABLE_EXECUTOR_MCP", raising=False)
 
     result = call_tool(
-        "cs_evolutionary_round_submit",
+        "ka_evolutionary_round_submit",
         {
             "project_root": str(tmp_path),
             "quest_id": QUEST_ID,
@@ -96,11 +96,11 @@ def test_direct_executor_round_submit_requires_mcp_gate(tmp_path: Path, monkeypa
 
 def test_evolutionary_round_submit_uses_existing_plan_and_scheduler(tmp_path: Path, monkeypatch):
     _layout, round_id, trajectory_id, package = _setup(tmp_path)
-    monkeypatch.setenv("CODEXSCIENTIST_ENABLE_EXECUTOR_MCP", "1")
+    monkeypatch.setenv("KVASIR_AGENT_ENABLE_EXECUTOR_MCP", "1")
     command = f"{sys.executable} -c \"import json; json.dump({{'metrics': {{'score': 0.9}}}}, open('metrics.json','w'))\""
 
     submitted = call_tool(
-        "cs_evolutionary_round_submit",
+        "ka_evolutionary_round_submit",
         {
             "project_root": str(tmp_path),
             "quest_id": QUEST_ID,
@@ -129,7 +129,7 @@ def test_evolutionary_round_submit_uses_existing_plan_and_scheduler(tmp_path: Pa
 
 def test_evolutionary_round_submit_does_not_allow_repeat_without_new_approval(tmp_path: Path, monkeypatch):
     _layout, round_id, trajectory_id, package = _setup(tmp_path)
-    monkeypatch.setenv("CODEXSCIENTIST_ENABLE_EXECUTOR_MCP", "1")
+    monkeypatch.setenv("KVASIR_AGENT_ENABLE_EXECUTOR_MCP", "1")
     approved = {"approved": True, "budget_expires_at": (datetime.now(UTC) + timedelta(minutes=5)).isoformat()}
     submission = {
         "candidate_id": "cand_0000_001",
@@ -139,13 +139,13 @@ def test_evolutionary_round_submit_does_not_allow_repeat_without_new_approval(tm
         "command": f"{sys.executable} -c \"print('once')\"",
     }
     first = call_tool(
-        "cs_evolutionary_round_submit",
+        "ka_evolutionary_round_submit",
         {"project_root": str(tmp_path), "quest_id": QUEST_ID, "env_id": ENV_ID, "round_id": round_id, "approval": approved, "submissions": [submission]},
     )
     assert first["ok"] is True, first
 
     second = call_tool(
-        "cs_evolutionary_round_submit",
+        "ka_evolutionary_round_submit",
         {"project_root": str(tmp_path), "quest_id": QUEST_ID, "env_id": ENV_ID, "round_id": round_id, "submissions": [submission]},
     )
 
@@ -155,7 +155,7 @@ def test_evolutionary_round_submit_does_not_allow_repeat_without_new_approval(tm
 
 def test_evolutionary_round_submit_rejects_duplicate_or_existing_jobs_before_partial_submit(tmp_path: Path, monkeypatch):
     layout, round_id, trajectory_id, package = _setup(tmp_path)
-    monkeypatch.setenv("CODEXSCIENTIST_ENABLE_EXECUTOR_MCP", "1")
+    monkeypatch.setenv("KVASIR_AGENT_ENABLE_EXECUTOR_MCP", "1")
     approved = {"approved": True, "budget_expires_at": (datetime.now(UTC) + timedelta(minutes=5)).isoformat()}
     submission = {
         "candidate_id": "cand_0000_001",
@@ -166,7 +166,7 @@ def test_evolutionary_round_submit_rejects_duplicate_or_existing_jobs_before_par
     }
 
     duplicate = call_tool(
-        "cs_evolutionary_round_submit",
+        "ka_evolutionary_round_submit",
         {"project_root": str(tmp_path), "quest_id": QUEST_ID, "env_id": ENV_ID, "round_id": round_id, "approval": approved, "submissions": [submission, dict(submission)]},
     )
 
@@ -177,7 +177,7 @@ def test_evolutionary_round_submit_rejects_duplicate_or_existing_jobs_before_par
     whitespace_submission = dict(submission)
     whitespace_submission["variant_id"] = f" {VARIANT_ID} "
     whitespace_duplicate = call_tool(
-        "cs_evolutionary_round_submit",
+        "ka_evolutionary_round_submit",
         {"project_root": str(tmp_path), "quest_id": QUEST_ID, "env_id": ENV_ID, "round_id": round_id, "approval": approved, "submissions": [submission, whitespace_submission]},
     )
 
@@ -192,7 +192,7 @@ def test_evolutionary_round_submit_rejects_duplicate_or_existing_jobs_before_par
     )
     assert preexisting["ok"] is True
     existing = call_tool(
-        "cs_evolutionary_round_submit",
+        "ka_evolutionary_round_submit",
         {"project_root": str(tmp_path), "quest_id": QUEST_ID, "env_id": ENV_ID, "round_id": round_id, "approval": approved, "submissions": [submission]},
     )
 
@@ -203,10 +203,10 @@ def test_evolutionary_round_submit_rejects_duplicate_or_existing_jobs_before_par
 
 def test_evolutionary_round_submit_prevalidates_batch_without_partial_jobs(tmp_path: Path, monkeypatch):
     layout, round_id, trajectory_id, package = _setup(tmp_path)
-    monkeypatch.setenv("CODEXSCIENTIST_ENABLE_EXECUTOR_MCP", "1")
+    monkeypatch.setenv("KVASIR_AGENT_ENABLE_EXECUTOR_MCP", "1")
     bad_package = tmp_path / "missing-package.json"
     result = call_tool(
-        "cs_evolutionary_round_submit",
+        "ka_evolutionary_round_submit",
         {
             "project_root": str(tmp_path),
             "quest_id": QUEST_ID,
