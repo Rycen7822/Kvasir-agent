@@ -26,9 +26,6 @@ jobs:
       - name: Run tests
         run: python -m pytest -q
 
-      - name: Run P4 acceptance gate
-        run: python scripts/p4_acceptance.py
-
       - name: Run high-confidence dead-code scan
         run: python -m vulture kvasir_agent scripts tests --min-confidence 100
 

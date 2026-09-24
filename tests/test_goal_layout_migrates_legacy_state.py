@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from kvasir_agent.mcp.tool_registry import call_tool
 from kvasir_agent.services.project_state import ProjectLayout
 from kvasir_agent.services.queue import QueueService
 from kvasir_agent.services.runner import RunnerService
@@ -44,31 +43,4 @@ def test_queue_runner_trial_new_writes_use_root_bound_paths(tmp_path: Path):
     assert Path(trial["quest_root"]) == layout.state_root
     assert "detail_path" not in trial
     assert _load(layout.state_root / "trials" / trial["trial_id"] / "trial.json")["quest_root"] == str(layout.state_root)
-    assert not (layout.state_root / "quests" / quest_id).exists()
-
-
-def test_mcp_bridge_preserves_quest_id_as_root_bound_provenance(tmp_path: Path):
-    quest_id = "Q-002"
-    layout = ProjectLayout.from_project_root(tmp_path)
-
-    queue = call_tool("ka_queue_submit", {"project": str(tmp_path), "quest_id": quest_id, "job_id": "job2", "command": "python train.py"})
-    assert queue["ok"] is True
-    assert queue["job"]["quest_id"] == quest_id
-    assert Path(queue["job"]["quest_root"]) == layout.state_root
-    assert "detail_path" not in queue["job"]
-
-    run = call_tool("ka_runner_start", {"project": str(tmp_path), "quest_id": quest_id, "job_id": "job2", "command": "python train.py", "dry_run": True})
-    assert run["ok"] is True
-    assert run["run"]["quest_id"] == quest_id
-    assert Path(run["run"]["quest_root"]) == layout.state_root
-    assert "detail_path" not in run["run"]
-
-    trial = call_tool(
-        "ka_trial_propose",
-        {"project": str(tmp_path), "quest_id": quest_id, "idea_id": "I2", "hypothesis": "h", "mechanism": "m"},
-    )
-    assert trial["ok"] is True
-    assert trial["trial"]["quest_id"] == quest_id
-    assert Path(trial["trial"]["quest_root"]) == layout.state_root
-    assert "detail_path" not in trial["trial"]
     assert not (layout.state_root / "quests" / quest_id).exists()

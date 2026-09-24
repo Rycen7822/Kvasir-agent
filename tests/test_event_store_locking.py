@@ -23,7 +23,7 @@ def test_event_store_concurrent_appends_are_sequential_and_idempotent(tmp_path):
     assert {event["idempotency_key"] for event in events} == {f"key-{index}" for index in range(10)}
 
 
-def test_event_store_quarantines_single_corrupt_jsonl_line(tmp_path):
+def test_event_store_repairs_corrupt_lines_only_explicitly(tmp_path):
     layout = ProjectLayout.from_project_root(tmp_path)
     store = EventStore(layout)
     first = store.append("first", {})
@@ -31,7 +31,11 @@ def test_event_store_quarantines_single_corrupt_jsonl_line(tmp_path):
     lines = [json.dumps(first), "{broken", json.dumps(second)]
     store.path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
+    before = (store.path.read_bytes(), store.path.stat().st_mtime_ns)
     events = store.read_events()
+    assert (store.path.read_bytes(), store.path.stat().st_mtime_ns) == before
+    assert not (layout.events_dir / "corrupt").exists()
+    store.repair_events()
 
     assert [event["event_type"] for event in events] == ["first", "second"]
     corrupt_files = list((layout.events_dir / "corrupt").glob("events.jsonl.line*.corrupt.*"))

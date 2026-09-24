@@ -38,7 +38,7 @@ def test_event_store_appends_schema_versioned_jsonl(tmp_path: Path):
     assert [event["event_type"] for event in store.read_events()] == ["quest.created", "trial.updated"]
 
 
-def test_snapshot_write_is_atomic_and_corrupt_snapshot_is_quarantined(tmp_path: Path):
+def test_snapshot_write_is_atomic_and_corrupt_snapshot_read_preserves_source(tmp_path: Path):
     from kvasir_agent.services.event_store import EventStore
     from kvasir_agent.services.project_state import ProjectLayout
 
@@ -50,9 +50,10 @@ def test_snapshot_write_is_atomic_and_corrupt_snapshot_is_quarantined(tmp_path: 
     assert not list(layout.state_root.glob("*.tmp"))
 
     layout.project_state_path.write_text("{broken", encoding="utf-8")
+    before = (layout.project_state_path.read_bytes(), layout.project_state_path.stat().st_mtime_ns)
     result = store.read_snapshot(default={"status": "rebuilt"})
 
     assert result == {"status": "rebuilt"}
     corrupt_files = list(layout.state_root.glob("project_state.json.corrupt.*"))
-    assert len(corrupt_files) == 1
-    assert corrupt_files[0].read_text(encoding="utf-8") == "{broken"
+    assert corrupt_files == []
+    assert (layout.project_state_path.read_bytes(), layout.project_state_path.stat().st_mtime_ns) == before

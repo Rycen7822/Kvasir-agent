@@ -9,7 +9,6 @@ from pathlib import Path
 import pytest
 
 from kvasir_agent.mcp.server import handle_jsonrpc_message
-from kvasir_agent.mcp.tool_registry import tools_list_payload
 from kvasir_agent.services.environment import EnvironmentService
 from kvasir_agent.services.project_state import ProjectLayout
 from kvasir_agent.services.trajectory import TrajectoryStore
@@ -129,126 +128,6 @@ def _registered_executor_env(
     return layout, trajectory["trajectory_id"]
 
 
-def _cli(project_root: Path, tool_name: str, payload: dict) -> tuple[int, dict]:
-    result = subprocess.run(
-        [
-            PYTHON,
-            str(REPO_ROOT / "scripts" / "ka_native_cli.py"),
-            "--project-root",
-            str(project_root),
-            "call",
-            tool_name,
-            "--json",
-            json.dumps(payload),
-            "--format",
-            "json",
-        ],
-        cwd=REPO_ROOT,
-        text=True,
-        capture_output=True,
-        timeout=30,
-    )
-    try:
-        parsed = json.loads(result.stdout)
-    except json.JSONDecodeError as exc:  # pragma: no cover - assertion helper
-        raise AssertionError(result.stderr + result.stdout) from exc
-    return result.returncode, parsed
-
-
-def _variant_create_payload(trajectory_id: str, **extra: object) -> dict:
-    payload: dict[str, object] = {"quest_id": QUEST_ID, "env_id": ENV_ID, "trajectory_id": trajectory_id, "idea_id": "idea_exec"}
-    payload.update(extra)
-    return payload
-
-
-def test_default_mcp_tools_list_and_call_fail_closed_for_executor_tools():
-    names = {tool["name"] for tool in tools_list_payload({})["tools"]}
-    assert names.isdisjoint(EXECUTOR_TOOLS), sorted(names & EXECUTOR_TOOLS)
-
-    response = handle_jsonrpc_message(
-        {"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": "ka_variant_create", "arguments": {}}}
-    )
-    assert response is not None
-    structured = response["result"]["structuredContent"]
-    assert structured["ok"] is False
-    assert structured["error_type"] == "tool_not_registered_for_mcp"
-    assert structured["tool"] == "ka_variant_create"
-
-
-def test_executor_mcp_profile_requires_env_var_and_manifest_flag(tmp_path: Path, monkeypatch):
-    _registered_executor_env(tmp_path, executor_mcp_enabled=False)
-
-    no_env = tools_list_payload({"profile": "executor_local", "project_root": str(tmp_path), "quest_id": QUEST_ID, "env_id": ENV_ID})
-    assert no_env["ok"] is False
-    assert no_env["error_type"] == "executor_mcp_disabled"
-
-    monkeypatch.setenv("KVASIR_AGENT_ENABLE_EXECUTOR_MCP", "1")
-    no_manifest_flag = tools_list_payload({"profile": "executor_local", "project_root": str(tmp_path), "quest_id": QUEST_ID, "env_id": ENV_ID})
-    assert no_manifest_flag["ok"] is False
-    assert no_manifest_flag["error_type"] == "executor_mcp_manifest_required"
-
-    enabled_project = tmp_path / "enabled"
-    _registered_executor_env(enabled_project, executor_mcp_enabled=True)
-    listed = tools_list_payload({"profile": "executor_local", "project_root": str(enabled_project), "quest_id": QUEST_ID, "env_id": ENV_ID})
-    assert listed["ok"] is True, listed
-    names = {tool["name"] for tool in listed["tools"]}
-    assert EXECUTOR_TOOLS <= names
-
-
-def test_cli_executor_variant_create_requires_approval_or_local_only_gate(tmp_path: Path):
-    _layout, trajectory_id = _registered_executor_env(tmp_path)
-
-    returncode, blocked = _cli(tmp_path, "ka_variant_create", _variant_create_payload(trajectory_id, approved=False))
-
-    assert returncode == 1
-    assert blocked["ok"] is False
-    assert blocked["error_type"] == "executor_gate_required"
-    assert blocked["required_approval"] == "approved=true"
-
-
-def test_cli_executor_scheduler_submit_requires_approval_or_local_only_gate(tmp_path: Path):
-    _layout, trajectory_id = _registered_executor_env(tmp_path)
-
-    returncode, blocked = _cli(
-        tmp_path,
-        "ka_scheduler_submit",
-        {
-            "quest_id": QUEST_ID,
-            "env_id": ENV_ID,
-            "trajectory_id": trajectory_id,
-            "variant_id": "var_cli_gate",
-            "package_path": str(tmp_path / "missing-package.json"),
-            "command": "echo should-not-run",
-        },
-    )
-
-    assert returncode == 1
-    assert blocked["ok"] is False
-    assert blocked["error_type"] == "executor_gate_required"
-
-
-def test_cli_executor_internal_mcp_marker_cannot_be_forged(tmp_path: Path):
-    _layout, trajectory_id = _registered_executor_env(tmp_path)
-
-    returncode, blocked = _cli(
-        tmp_path,
-        "ka_scheduler_submit",
-        {
-            "quest_id": QUEST_ID,
-            "env_id": ENV_ID,
-            "trajectory_id": trajectory_id,
-            "variant_id": "var_mcp_forged",
-            "package_path": str(tmp_path / "missing-package.json"),
-            "command": "echo should-not-run",
-            "_mcp_executor_gate_passed": True,
-        },
-    )
-
-    assert returncode == 1
-    assert blocked["ok"] is False
-    assert blocked["error_type"] == "executor_gate_required"
-
-
 def test_implementer_patch_check_rejects_protected_file_patch_before_git_apply_ok(tmp_path: Path):
     from kvasir_agent.runtime import tools
 
@@ -293,28 +172,6 @@ def test_implementer_patch_check_rejects_protected_file_patch_before_git_apply_o
     assert checked["ok"] is False, checked
     assert checked["error_type"] == "readonly_or_eval_changed"
     assert "evaluate.py" in checked.get("blocked_paths", [])
-
-
-def test_cli_executor_approved_variant_create_succeeds_on_zero_cost_toy_repo(tmp_path: Path):
-    _layout, trajectory_id = _registered_executor_env(tmp_path)
-
-    returncode, created = _cli(tmp_path, "ka_variant_create", _variant_create_payload(trajectory_id, approved=True))
-
-    assert returncode == 0, created
-    assert created["ok"] is True
-    assert created["variant_id"].startswith("var_")
-    assert Path(created["workspace_path"]).is_dir()
-
-
-def test_cli_executor_local_only_gate_succeeds_without_approval_for_zero_cost_env(tmp_path: Path):
-    _layout, trajectory_id = _registered_executor_env(tmp_path)
-
-    returncode, created = _cli(tmp_path, "ka_variant_create", _variant_create_payload(trajectory_id, local_only=True))
-
-    assert returncode == 0, created
-    assert created["ok"] is True
-    assert created["executor_gate"]["decision"] == "local_only_allowed"
-    assert created["variant_id"].startswith("var_")
 
 
 @pytest.mark.parametrize(

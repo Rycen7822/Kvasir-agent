@@ -42,21 +42,22 @@ def test_manifest_ensure_initialized_lazy_creates_root_bound_yaml_without_quests
     assert "research.initialized" in events
 
 
-def test_manifest_reads_json_compatible_yaml_and_rewrites_to_real_yaml(tmp_path: Path) -> None:
+def test_manifest_reads_json_compatible_yaml_without_rewriting(tmp_path: Path) -> None:
     state_root = tmp_path / "Kvasir-agent"
     state_root.mkdir()
     path = state_root / "research.yaml"
     path.write_text(json.dumps({"project": {"name": "old"}, "goal": {"title": "old goal"}, "state": {"schema_version": 1}}), encoding="utf-8")
     service = ManifestService(ProjectLayout.from_project_root(tmp_path))
 
-    result = service.ensure_initialized(create=True, write_reason="upgrade")
+    before = (path.read_bytes(), path.stat().st_mtime_ns)
+    result = service.ensure_initialized(create=False)
 
     assert result["ok"] is True
     manifest = result["manifest"]
     assert manifest["schema_version"] == 2
     assert manifest["layout_mode"] == "root_bound"
     raw = path.read_text(encoding="utf-8")
-    assert raw.lstrip().startswith("schema_version: 2")
+    assert (path.read_bytes(), path.stat().st_mtime_ns) == before
     assert yaml.safe_load(raw)["project"]["name"] == "old"
 
 

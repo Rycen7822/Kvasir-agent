@@ -31,31 +31,6 @@ def test_context_pack_service_writes_bounded_fixed_sections(tmp_path: Path):
         assert f"## {section}" in result["content"]
 
 
-def run_kactl(*args: str, project_root: Path) -> dict:
-    proc = subprocess.run(
-        [PYTHON, str(PLUGIN_ROOT / "scripts" / "kactl.py"), "--project-root", str(project_root), *args],
-        cwd=str(PLUGIN_ROOT),
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        timeout=30,
-    )
-    assert proc.returncode == 0, proc.stderr + proc.stdout
-    return json.loads(proc.stdout)
-
-
-def test_context_pack_cli_returns_path_digest_and_compact_content(tmp_path: Path):
-    run_kactl("manifest", "init", "--name", "Demo", "--goal", "Improve", "--format", "json", project_root=tmp_path)
-
-    result = run_kactl("summary", "context-pack", "--max-chars", "400", "--format", "json", project_root=tmp_path)
-
-    assert result["ok"] is True
-    assert result["chars"] <= 400
-    assert result["sha256"]
-    assert result["path"].endswith("Kvasir-agent/summaries/context_pack.md")
-    assert "## active_state" in result["content"]
-
-
 def test_context_pack_includes_latest_checkpoint_anchor(tmp_path: Path):
     from kvasir_agent.services.checkpoint import CheckpointService
     from kvasir_agent.services.context_pack import ContextPackService

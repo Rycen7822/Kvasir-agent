@@ -1,66 +1,22 @@
-# Install Kvasir-agent
+# Install
 
-Requires Python 3.10+, PyYAML and jsonschema (`python3 -m pip install -e .` from this source tree) and Codex CLI plugin support. The plugin bundles its stdio MCP configuration in `.mcp.json`.
+Requires Linux (process identity and file locks), Python 3.10+, PyYAML, jsonschema and a Codex CLI with plugin support. Install Python dependencies into the interpreter used by the bundled `python3` MCP entrypoint.
 
-## Register a source
+Register this repository through a Codex plugin marketplace and install its exact marketplace reference:
 
-Use an existing local marketplace when available. For a first personal installation, ask Codex's `plugin-creator` to register this source in `~/.agents/plugins/marketplace.json`. Preserve other entries and the existing marketplace name. The source must point to this plugin directory, containing `.codex-plugin/plugin.json`.
-
-Alternatively, use a separate local marketplace directory with this layout:
-
-```text
-marketplace/
-  .agents/plugins/marketplace.json
-  plugins/kvasir-agent/    # this plugin source
-```
-
-Its catalog can contain:
-
-```json
-{
-  "name": "kvasir-local",
-  "plugins": [{
-    "name": "kvasir-agent",
-    "source": {"source": "local", "path": "./plugins/kvasir-agent"},
-    "policy": {"installation": "AVAILABLE", "authentication": "ON_INSTALL"},
-    "category": "Productivity"
-  }]
-}
-```
-
-Register that non-default marketplace with `codex plugin marketplace add /path/to/marketplace`. The personal marketplace is discovered automatically and needs no such command.
-
-## Install and verify
-
-Use the actual marketplace name:
-
-```bash
-bash scripts/install.sh kvasir-agent@local-personal
+```sh
+bash scripts/install.sh kvasir-agent@your-marketplace
 codex plugin list
 ```
 
-The installer calls `codex plugin add`. Codex manages the cache, enablement and bundled MCP server; the script does not edit `config.toml` or register a global server. Open a **new thread** after installation or upgrade. Check that `ka_research_read` and the seven skills are available.
+The wrapper delegates to `codex plugin add` and preserves errors. Open a fresh thread after changing the installation. The plugin manifest registers `./skills` and `./.mcp.json`. Expected discovery is five research tools and one `kvasir-agent` skill; project paths must be supplied explicitly.
 
-A source-level check is useful but does not prove host discovery:
+For updates to a local source, refresh the plugin cache version and reinstall from the registered marketplace. Verify the installed source/cache identity, not only the source checkout. A source-level test does not prove host discovery.
 
-```bash
-python3 scripts/doctor.py
-python3 scripts/ka_mcp.py --stdio-smoke initialize
-python3 scripts/ka_mcp.py --stdio-smoke tools/list
+Project creation is a separate, user-triggered action:
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 python3 /absolute/plugin/path/scripts/ka_admin.py init --project /absolute/existing/project
 ```
 
-The bundled server launches from its cache directory using `cwd: "."`; pass the absolute research root as `project` on every MCP research call. Missing roots are rejected before writing state. `scripts/init_project.sh /path/to/project` writes an optional project note.
-
-## Updates and migration
-
-Update the plugin source and version/cachebuster, then rerun `codex plugin add kvasir-agent@<marketplace-name>` and open a new thread. Use the plugin-creator update workflow for local cache refreshes.
-
-Older installations registered a standalone `[mcp_servers.kvasir-agent]` in addition to the plugin. After confirming the bundled server works, remove that old global registration with `codex mcp remove kvasir-agent` to avoid duplicate tools. The installer leaves existing registrations and research data untouched.
-
-Existing `<project>/Kvasir-agent/` records remain readable. Old goal-state files are ignored; use `ka_research_read` with `operation="resume"` and Codex's own goals. Context-pack export is retained only for admin/legacy consumers. Retired skill and goal MCP tools should be removed from external callers.
-
-## Uninstall
-
-Use `codex plugin remove kvasir-agent@<marketplace-name>`. Project research records remain in `<project>/Kvasir-agent/`. Hidden admin/debug CLI compatibility is documented in [ADMIN_CLI.md](ADMIN_CLI.md).
-
-The public API now exposes 24 tools. See [tool migration](TOOL_MIGRATION.md) for grouped operations and the canonical project parameter.
+This creates minimal state and no Codex instructions. The independent `manual/init/SKILL.md` is packaged but not registered or auto-discovered. Its name, description, path and body are absent from ordinary model startup context. Users may execute the terminal command directly, or explicitly supply the manual path in a separate conversation. See [ADMIN_CLI.md](ADMIN_CLI.md) for legacy migration and maintenance.

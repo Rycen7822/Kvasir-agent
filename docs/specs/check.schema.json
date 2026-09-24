@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "oneOf": [
+    {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "target": {
+          "const": "environment"
+        },
+        "environment_path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        }
+      },
+      "required": [
+        "schema_version",
+        "target",
+        "environment_path"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "target": {
+          "const": "run"
+        },
+        "run_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,80}$"
+        }
+      },
+      "required": [
+        "schema_version",
+        "target",
+        "run_id"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "target": {
+          "const": "claim"
+        },
+        "claim": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "run_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_-]{1,80}$"
+          },
+          "minItems": 1,
+          "maxItems": 100,
+          "uniqueItems": true
+        },
+        "minimum_seeds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        }
+      },
+      "required": [
+        "schema_version",
+        "target",
+        "claim",
+        "run_ids",
+        "minimum_seeds"
+      ],
+      "additionalProperties": false
+    }
+  ]
+}

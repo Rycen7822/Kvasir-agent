@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "purpose": {
+      "enum": [
+        "baseline",
+        "experiment"
+      ]
+    },
+    "command": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 4096
+      },
+      "minItems": 1,
+      "maxItems": 128
+    },
+    "cwd": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024
+    },
+    "environment_path": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024
+    },
+    "method_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,80}$"
+    },
+    "seed": {
+      "type": "integer"
+    },
+    "baseline_run_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,80}$"
+    },
+    "resources": {
+      "type": "object",
+      "properties": {
+        "timeout_seconds": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 604800
+        },
+        "max_log_bytes": {
+          "type": "integer",
+          "minimum": 1024,
+          "maximum": 104857600
+        }
+      },
+      "required": [
+        "timeout_seconds",
+        "max_log_bytes"
+      ],
+      "additionalProperties": false
+    },
+    "metrics_path": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024
+    },
+    "outputs": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 1024
+      },
+      "minItems": 1,
+      "maxItems": 100,
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "schema_version",
+    "purpose",
+    "command",
+    "cwd",
+    "environment_path",
+    "method_id",
+    "seed",
+    "resources",
+    "metrics_path",
+    "outputs"
+  ],
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "purpose": {
+            "const": "experiment"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "baseline_run_id"
+        ]
+      }
+    }
+  ]
+}

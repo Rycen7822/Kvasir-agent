@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "env_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,80}$"
+    },
+    "baseline": {
+      "type": "object",
+      "properties": {
+        "repo_path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "commit": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{40,64}$"
+        }
+      },
+      "required": [
+        "repo_path"
+      ],
+      "additionalProperties": false
+    },
+    "protected_files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        },
+        "required": [
+          "path",
+          "sha256"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 1,
+      "maxItems": 200
+    },
+    "datasets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        },
+        "required": [
+          "path",
+          "sha256"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 1,
+      "maxItems": 200
+    },
+    "primary_metric": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,80}$"
+        },
+        "direction": {
+          "enum": [
+            "maximize",
+            "minimize"
+          ]
+        },
+        "parser": {
+          "enum": [
+            "json_path",
+            "flat_key"
+          ]
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "validation": {
+          "type": "object",
+          "properties": {
+            "range": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            }
+          },
+          "required": [
+            "range"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "name",
+        "direction",
+        "parser",
+        "path"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "schema_version",
+    "env_id",
+    "baseline",
+    "protected_files",
+    "datasets",
+    "primary_metric"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "origin": {
+    "type": "external_run",
+    "source": "lab result location",
+    "run_id": "upstream-run-1"
+  },
+  "environment_path": "environment.json",
+  "method_id": "external_method",
+  "seed": 1,
+  "metrics_path": "external/metrics.json",
+  "artifacts": [
+    {
+      "path": "external/metrics.json",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  ]
+}

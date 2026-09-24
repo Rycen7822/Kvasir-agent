@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "env_id": "example",
+  "baseline": {
+    "repo_path": "."
+  },
+  "protected_files": [
+    {
+      "path": "evaluate.py",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  ],
+  "datasets": [
+    {
+      "path": "data.json",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  ],
+  "primary_metric": {
+    "name": "score",
+    "direction": "maximize",
+    "parser": "flat_key",
+    "path": "score"
+  }
+}

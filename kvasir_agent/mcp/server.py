@@ -3,11 +3,8 @@ from __future__ import annotations
 
 import json
 import sys
-from pathlib import Path
 from typing import Any, TextIO, cast
 
-from kvasir_agent.mcp.envelope import apply_budget_envelope
-from kvasir_agent.mcp.public_tools import PUBLIC_NAMES, call_public_tool
 from kvasir_agent.mcp.tool_registry import (
     call_tool,
     is_tool_registered_for_mcp,
@@ -25,7 +22,7 @@ def initialize_payload() -> dict[str, Any]:
         "protocolVersion": "2024-11-05",
         "transport": "stdio",
         "capabilities": {"tools": {}},
-        "serverInfo": {"name": "ka_mcp", "version": "0.1.0"},
+        "serverInfo": {"name": "ka_mcp", "version": "0.2.0"},
     }
 
 
@@ -42,7 +39,7 @@ def _jsonrpc_result(message_id: object, result: dict[str, Any]) -> dict[str, Any
 
 
 def _mcp_tool_result(payload: dict[str, Any]) -> dict[str, Any]:
-    result = dict(payload)
+    result = {}
     result["structuredContent"] = payload
     result["isError"] = not bool(payload.get("ok", False))
     result["content"] = [{"type": "text", "text": json.dumps(payload, ensure_ascii=False)}]
@@ -73,32 +70,11 @@ def handle_jsonrpc_message(message: dict[str, Any]) -> dict[str, Any] | None:
     if method == "tools/call":
         name = params.get("name")
         raw_arguments = params.get("arguments")
-        arguments: dict[str, Any] = raw_arguments if isinstance(raw_arguments, dict) else {}
+        arguments = raw_arguments if raw_arguments is not None else {}
         if not isinstance(name, str) or not name:
             return _jsonrpc_error(message_id, -32602, "tools/call requires params.name")
         if not is_tool_registered_for_mcp(name, arguments):
             return _jsonrpc_result(message_id, _mcp_tool_result(mcp_tool_not_registered_payload(name)))
-        if name in PUBLIC_NAMES:
-            return _jsonrpc_result(message_id, _mcp_tool_result(call_public_tool(name, arguments)))
-        if name == "ka_tool_schema":
-            schema_name = arguments.get("name")
-            if isinstance(schema_name, str) and schema_name and not is_tool_registered_for_mcp(schema_name, arguments):
-                return _jsonrpc_result(message_id, _mcp_tool_result(mcp_tool_not_registered_payload(schema_name)))
-        # Bundled servers launch from the plugin cache. A research operation must
-        # name its project so installation paths can never become research state.
-        project = arguments.get("project", arguments.get("project_root"))
-        if name != "ka_tool_schema" and (
-            not isinstance(project, str)
-            or not project.strip()
-            or not Path(project.strip()).expanduser().is_absolute()
-        ):
-            return _jsonrpc_result(message_id, _mcp_tool_result(apply_budget_envelope({
-                "ok": False,
-                "error_type": "missing_project_root",
-                "error": "Pass the absolute research project path as project (or project_root).",
-                "recoverable": True,
-                "suggested_next_action": "Repeat this call with project set to the absolute research project root.",
-            }, tool_name=name)))
         return _jsonrpc_result(message_id, _mcp_tool_result(call_tool_payload(name, arguments)))
     return _jsonrpc_error(message_id, -32601, f"Unsupported method: {method}")
 

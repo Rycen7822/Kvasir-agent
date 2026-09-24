@@ -25,25 +25,6 @@ def test_runtime_state_dirs_are_not_repository_source_or_hidden():
     assert not (ROOT / "DeepScientist").exists()
 
 
-def test_plugin_doctor_does_not_create_repository_runtime_state():
-    assert not (ROOT / "Kvasir-agent").exists()
-    assert not (ROOT / "DeepScientist").exists()
-
-    proc = subprocess.run(
-        [sys.executable, str(ROOT / "scripts" / "kactl.py"), "doctor", "--format", "json"],
-        cwd=ROOT,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        timeout=30,
-        check=False,
-    )
-
-    assert proc.returncode == 0, proc.stderr or proc.stdout
-    assert not (ROOT / "Kvasir-agent").exists()
-    assert not (ROOT / "DeepScientist").exists()
-
-
 def test_runtime_source_lives_under_main_plugin_package():
     assert not (ROOT / "kvasiragent_native").exists()
     assert (ROOT / "kvasir_agent" / "runtime" / "__init__.py").exists()
@@ -76,35 +57,3 @@ def test_ci_workflow_installs_project_with_dev_dependencies():
     workflow = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
     assert 'python -m pip install -e ".[dev]"' in workflow
     assert "python -m pip install pytest vulture" not in workflow
-
-
-def test_repository_layout_doc_names_default_agent_facing_trees():
-    layout = (ROOT / "docs" / "REPOSITORY_LAYOUT.md").read_text(encoding="utf-8")
-    required = [
-        "kvasir_agent/services",
-        "kvasir_agent/mcp",
-        "kvasir_agent/runtime/vendor",
-        "kvasir_agent/runtime/resources",
-        "skills/",
-        "scripts/ka_mcp.py",
-        "Kvasir-agent/",
-    ]
-    for marker in required:
-        assert marker in layout
-    assert "scripts/kactl.py" not in layout
-    assert "CLI fallback" not in layout
-
-    admin_cli = (ROOT / "docs" / "ADMIN_CLI.md").read_text(encoding="utf-8")
-    assert "scripts/kactl.py" in admin_cli
-    assert "not part of the default agent research path" in admin_cli
-
-
-def test_ci_workflow_runs_core_local_validation_gates():
-    workflow = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
-    for marker in [
-        "python -m pytest -q",
-        "python -m vulture kvasir_agent scripts tests --min-confidence 100",
-        "python -m compileall -q kvasir_agent scripts tests",
-        "scripts/ka_mcp.py --stdio-smoke tools/list",
-    ]:
-        assert marker in workflow

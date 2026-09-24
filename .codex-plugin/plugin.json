@@ -1,15 +1,15 @@
 {
   "name": "kvasir-agent",
-  "version": "0.1.0",
-  "description": "Kvasir-agent Codex plugin with MCP-only default research semantics for project-local research state. Codex-native tools handle routine file, shell, Git, test, build, and process work.",
+  "version": "0.2.0+codex.20260924010201",
+  "description": "Managed research runs and bounded evidence checks for Codex.",
   "author": {
     "name": "Kvasir-agent Codex MCP"
   },
   "skills": "./skills",
   "interface": {
     "displayName": "Kvasir-agent Codex MCP",
-    "shortDescription": "Research evidence, experiments and recovery for Codex.",
-    "longDescription": "A self-contained Codex CLI plugin exposing project-local research state through scripts/ka_mcp.py as the MCP-only default research control plane. Ordinary file editing/search, shell, Git, tests, builds, and process management remain Codex-native responsibilities. `/goal` is Codex-native; Kvasir-agent does not implement slash commands.",
+    "shortDescription": "Reproducible runs and project-local research evidence.",
+    "longDescription": "Five compact MCP tools for project status, managed runs, stopping, evidence checks and external result imports. Codex handles research reasoning, files, literature and task coordination.",
     "developerName": "Kvasir-agent Codex MCP",
     "category": "Productivity",
     "capabilities": [
@@ -17,9 +17,9 @@
       "Write"
     ],
     "defaultPrompt": [
-      "Use Kvasir-agent MCP for durable research evidence, baselines and experiment records.",
-      "Recover with ka_research_read(operation=resume, project=absolute_path). Codex owns /goal, skills and coding.",
-      "Treat recorded results and evidence completeness separately from scientific verification."
+      "Use Kvasir-agent for managed research runs and evidence checks.",
+      "Read ka_research_status with an absolute project path; inspect referenced files only as needed.",
+      "Separate execution evidence and material integrity from scientific validity."
     ],
     "brandColor": "#4D6A7A"
   },

@@ -216,7 +216,8 @@ class ManifestService:
     ) -> dict[str, Any]:
         if self.path.exists():
             manifest = self._normalize_manifest(_read_yaml_manifest(self.path), inferred_goal=inferred_goal)
-            _write_yaml_atomic(self.path, manifest)
+            # Compatibility read for offline legacy consumers: never persist a
+            # normalization merely because a caller requested current state.
             return {"ok": True, "path": str(self.path), "manifest": manifest, "created": False}
         legacy_status = LegacyQuestDetector.inspect(self.layout)
         if not create:

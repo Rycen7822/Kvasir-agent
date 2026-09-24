@@ -9,66 +9,6 @@ PLUGIN_ROOT = Path(__file__).resolve().parents[1]
 PYTHON = sys.executable
 
 
-def run_ctl(script_name: str, *args: str, allow_error: bool = False) -> dict:
-    proc = subprocess.run(
-        [PYTHON, str(PLUGIN_ROOT / "scripts" / script_name), *args],
-        cwd=str(PLUGIN_ROOT),
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        timeout=30,
-    )
-    if allow_error:
-        assert proc.stdout.strip(), proc.stderr
-    else:
-        assert proc.returncode == 0, proc.stderr + proc.stdout
-    return json.loads(proc.stdout)
-
-
-def test_kactl_exists_and_matches_kactl_public_tool_envelope():
-    assert (PLUGIN_ROOT / "scripts" / "kactl.py").exists()
-
-    kactl_payload = run_ctl("kactl.py", "list-tools", "--format", "json")
-    kactl_payload = run_ctl("kactl.py", "list-tools", "--format", "json")
-
-    assert kactl_payload["ok"] is True
-    assert kactl_payload["transport"] == "codex-native-cli"
-    assert kactl_payload["mcp"] is False
-    assert kactl_payload["count"] == kactl_payload["count"]
-    assert {item["name"] for item in kactl_payload["tools"]} == {item["name"] for item in kactl_payload["tools"]}
-
-
-def assert_unknown_tool_envelope(payload: dict) -> None:
-    assert payload["ok"] is False
-    assert payload["transport"] == "codex-native-cli"
-    assert payload["mcp"] is False
-    assert payload["error"]
-    assert payload["error_type"] == "unknown_tool"
-    assert payload["recoverable"] is True
-
-
-def test_kactl_error_envelope_is_stable_json():
-    payload = run_ctl("kactl.py", "call", "missing_tool", "--format", "json", allow_error=True)
-    assert_unknown_tool_envelope(payload)
-
-
-def test_kactl_error_envelope_matches_kactl_for_unknown_tool():
-    kactl_payload = run_ctl("kactl.py", "call", "missing_tool", "--format", "json", allow_error=True)
-    kactl_payload = run_ctl("kactl.py", "call", "missing_tool", "--format", "json", allow_error=True)
-
-    assert_unknown_tool_envelope(kactl_payload)
-    assert {key: kactl_payload[key] for key in ("ok", "transport", "mcp", "error_type", "recoverable")} == {
-        key: kactl_payload[key] for key in ("ok", "transport", "mcp", "error_type", "recoverable")
-    }
-
-
-def test_legacy_kactl_adapter_delegates_to_native_cli_envelope():
-    from kvasir_agent.adapters.legacy_kactl import run
-
-    payload = run(["call", "missing_tool"])
-    assert_unknown_tool_envelope(payload)
-
-
 def test_cli_envelope_redacts_secret_like_values():
     from kvasir_agent.adapters.cli import normalize_envelope
 

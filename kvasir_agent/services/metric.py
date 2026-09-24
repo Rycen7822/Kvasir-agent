@@ -5,6 +5,8 @@ from typing import Any
 
 
 def _numeric_value(value: Any) -> dict[str, Any]:
+    if isinstance(value, bool):
+        return {"ok": False, "error": "Metric value must be numeric, not boolean", "error_type": "metric_invalid", "recoverable": True}
     try:
         numeric = float(value)
     except (TypeError, ValueError):

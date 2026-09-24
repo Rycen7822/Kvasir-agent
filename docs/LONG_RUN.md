@@ -1,60 +1,9 @@
-# Long Run Validation
+# Long runs and recovery
 
-Kvasir-agent is a Codex CLI plugin with an MCP-only default research control plane. Long-run validation records whether each run used MCP-only default tools, hidden admin/debug compatibility commands, or both; default Codex research work should use MCP tools and project-local state.
+The wrapper is a detached process launched with the plugin's absolute script and interpreter. It executes one authorized RunSpec, limits saved stdout/stderr bytes, enforces timeout and writes terminal evidence. Closing the MCP connection does not cancel a run.
 
-## Validation layers
+`ka_research_status` reads saved state. It never calls a collector or writes a heartbeat. A missing worker for an unfinished record is reported as interrupted without changing the record. Stop verifies recorded process identity before signalling; repeated stops preserve an existing terminal result.
 
-1. `accelerated soak`: CI-friendly fake-clock validation for ten equivalent days. It must inject heartbeat timeout, runner exit, queue retry terminal state, state reload, event replay, log compaction, passive checkpoint recovery, manual watchdog diagnostics, and cost cap checks.
-2. `overnight soak`: a local wall-clock run of at least 12 hours with real process/log/reconcile behavior.
-3. `wall-clock soak`: a release validation of at least ten natural days.
+Use native Codex planning and ordinary project notes for research decisions and handoffs. Run and report paths are durable recovery anchors. There is no plugin goal loop, stage controller or mandatory checkpoint API. A same-key retry returns the original request instead of repeating uncertain side effects.
 
-The accelerated layer writes `Kvasir-agent/summaries/long_run_validation.md` and must mark real wall-clock coverage as `wall-clock: not_run` unless a real wall-clock soak was actually executed.
-
-## Crash resume smoke
-
-A crash/resume smoke should demonstrate that a stuck or interrupted run can be recovered without chat history:
-
-1. inspect or lazily create the root-bound research state through the public MCP flow;
-2. start a runner or simulate a runner heartbeat gap;
-3. inspect public recovery state through `ka_research_read(operation="status")` and `ka_research_read(operation="resume")`;
-4. run hidden/admin-only watchdog diagnostics only in explicit admin/CI validation, without writing a `runner_stuck` goal gate;
-5. call `ka_research_read(operation="resume")` and verify `active_run_id`, passive `recovery_anchor`, and `source_refs` are present;
-6. call `ka_checkpoint` after the bounded recovery action is complete.
-
-Expired leases move to `reconcile_required`; they are not silently requeued as pending jobs.
-
-## Recovery artifacts
-
-Long-run recovery state is project-local under `Kvasir-agent/` and must never be committed into the plugin repository root. Important files include:
-
-- `events/events.jsonl` plus `events/events.lock` for append-only event sequencing and cross-process append safety;
-- `events/corrupt/` for quarantined malformed JSONL lines;
-- `runs/<run_id>/runner.json`, `runs/<run_id>/run.log`, `runs/<run_id>/stderr.log`, `runs/<run_id>/heartbeat.txt`, and `runs/<run_id>/exit_code.txt` for process lifecycle, bounded log digest, stderr digest, cross-process exit status recovery, and stale-run detection;
-- `summaries/checkpoints.jsonl` and `summaries/latest_checkpoint.json` for passive checkpoint anchors;
-- `queue/queue_state.json` for job/run linkage, attempts, expected outputs, terminal status, and all_done_reason;
-- `summaries/context_pack.md` and checkpoint records for context recovery.
-
-## Watchdog/checkpoint/resume contract
-
-Use the bounded MCP-first recovery path before reading raw files:
-
-1. `ka_research_read(operation="status")` verifies the target project and state root.
-2. `ka_research_read(operation="resume")` reports current root-bound research state, active run id, passive recovery anchor, and source refs.
-3. `ka_research_read(operation="delta")` fetches post-checkpoint events when the latest brief is not enough.
-4. `ka_log_digest` summarizes long logs and classifies common failures before any raw log read.
-5. `ka_artifact_index` lists artifact path, type, size, and hash before opening full artifact content.
-6. Hidden/admin-only progress watchdog diagnostics may be used in explicit admin/CI validation for runner heartbeat and stuck-state questions, without writing goal gates.
-7. `ka_checkpoint` records completed stage boundaries and factual validation state.
-
-State-changing MCP tools do not auto-inject checkpoint gates. Recovery payloads should remain passive and may return:
-
-- `recovery_anchor`: the latest factual checkpoint anchor;
-- `active_run_id`: the run id to inspect after crash/restart recovery;
-- `source_refs`: state files used to build the recovery view;
-- bounded log or artifact summaries when explicitly requested.
-
-Queue reconciliation classifies important stuck/failure states explicitly. Examples: `failed_artifact` for completed runs with missing expected outputs, `missing_heartbeat` for a running run whose heartbeat file vanished, `runner_stuck` for stale active runners, and `reconcile_required` for expired leases or missing run snapshots.
-
-## Claim limits
-
-If the report says `wall-clock: not_run`, do not claim stable ten-day wall-clock operation. A passing accelerated soak is necessary for CI, but it is not a substitute for the real wall-clock soak.
+If derived recording is partial, the run record remains authoritative. Explicit maintenance can reconcile it after execution ends; it cannot invent missing metrics or turn an interrupted execution into success. See the human [maintenance guide](ADMIN_CLI.md) when this operation is actually needed.

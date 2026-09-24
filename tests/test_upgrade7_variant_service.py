@@ -173,7 +173,7 @@ def test_variant_create_blocks_invalid_environment_before_workspace_write(tmp_pa
     assert result["ok"] is False
     assert result["error_type"] == "protected_hash_mismatch"
     worktree_root = tmp_path / "Kvasir-agent" / "runtime" / "worktrees"
-    assert list(worktree_root.iterdir()) == []
+    assert not worktree_root.exists() or list(worktree_root.iterdir()) == []
 
 
 def test_variant_create_fails_closed_when_git_baseline_commit_missing_or_symbolic(tmp_path: Path):
@@ -193,7 +193,7 @@ def test_variant_create_fails_closed_when_git_baseline_commit_missing_or_symboli
 
     assert result["ok"] is False
     assert result["error_type"] == "baseline_commit_required"
-    assert list((tmp_path / "Kvasir-agent" / "variants").iterdir()) == []
+    assert not (tmp_path / "Kvasir-agent" / "variants").exists() or list((tmp_path / "Kvasir-agent" / "variants").iterdir()) == []
 
     symbolic = json.loads(json.dumps(manifest))
     symbolic["env_id"] = "env_symbolic"

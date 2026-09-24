@@ -1,39 +1,34 @@
 ---
 name: kvasir-agent
-description: Maintain durable research evidence, constraints and recovery state with Kvasir-agent while Codex manages the task and ordinary coding work.
+description: Run reproducible research experiments and inspect project-local evidence with Kvasir-agent.
 ---
 
-# Kvasir-agent research workspace
+# Research evidence
 
-Use the `ka_*` MCP tools for research records under `<project>/Kvasir-agent/`. Codex owns `/goal`, continuation, native skill discovery, file editing, shell, Git, tests and ordinary process management.
+Use the five research tools when the task needs managed experiments or recorded evidence. Codex handles research reasoning, literature searches, document editing, code, tests, Git, and task coordination through its native capabilities. A recorded result is not a scientifically validated conclusion.
 
-## Start or resume
+## Choose an operation
 
-1. Pass the absolute target project root as `project` on each research MCP call. The bundled server launches from the plugin cache. The server derives `quest_id` from that project manifest; do not pass `quest_id` or `project_root`.
-2. Call `ka_research_read(operation="status")`, then `ka_research_read(operation="resume")` for checkpoint, evidence and risk anchors. Inspect referenced artifacts only as needed. Use `ka_research_read(operation="delta")` for changes since a known checkpoint.
-3. Record durable user constraints with `ka_record_user_requirement`; the first write initializes project state. Read-only status does not create a new research project.
-4. Use the tools already advertised by MCP with their parameter schemas. Explicit profiles are optional diagnostic filters.
-5. Save a `ka_checkpoint` at meaningful milestones or before handoff, including completed work, decisions, actual validation, risks and the next action.
+| Tool | Use |
+| --- | --- |
+| `ka_research_status` | Read saved project or run state without filesystem changes. |
+| `ka_experiment_run` | Validate a RunSpec file and protected inputs, then start an authorized run. |
+| `ka_experiment_stop` | Stop a recorded run and retain its actual terminal state. |
+| `ka_evidence_check` | Check environment, run or claim evidence; save a report. |
+| `ka_evidence_import` | Preserve external results with unverified origin. |
 
-## Choose a research workflow
+Pass `project` as the absolute research project directory. A specification path resolves within that project. Do not use a plugin installation directory as the research project. Tools return bounded summaries and file paths; read only the referenced detail relevant to the task.
 
-Load through Codex's native skill mechanism only when relevant:
+## Managed experiments
 
-- **kvasir-agent-experiment**: baseline, novelty inputs, measured results, negative memory and analysis.
-- **kvasir-agent-strict-research**: literature qualification and bibliography.
-- **ka-paper-reliability**: paper identity, acceptance and evidence cards.
-- **kvasir-agent-write**: evidence-backed drafting, review and paper bundles.
-- **kvasir-agent-figure-polish**: render and inspect research figures.
-- **kvasir-agent-quest-handoffs**: researcher handoffs and durable status.
+Read [file contracts](../../docs/EVIDENCE_SPECS.md) when preparing a run, check or import. Load only the matching example/schema. Write specifications using ordinary file tools. Environment records pin evaluator and dataset hashes and define the metric. An experiment must reference a completed, verified baseline in the same environment.
 
-## Authority and evidence
+Use a stable `idempotency_key` for the same request. Repeating that request returns the saved run; changing the request requires a new key. A start receipt does not prove completion. Read status after useful work or with a reasonable polling interval. If a wrapper is interrupted, report that uncertainty; do not automatically launch a replacement under a new key.
 
-The default mode is `copilot`: organize and assess the user's research. Autonomous idea improvement needs an explicit user request or existing manifest/handoff authority. Honor the existing authorization without repeatedly asking.
+The process receives `KVASIR_RUN_DIR`, `KVASIR_RUN_ID` and `KVASIR_SEED`. Store declared output files under that run directory. The wrapper writes logs, checks protected inputs again, parses the metric, and records a result when execution ends, even after the MCP connection closes. There is no separate trajectory or method registration step.
 
-Use Codex-native shell for ordinary work. `ka_bash_exec` is for formal evidence commands whose command, process and logs must enter the project provenance. Executor tools require explicit authorization and their existing environment/manifest gates; availability does not authorize a run.
+## Evidence interpretation
 
-`ka_record_main_experiment` records supplied data. Novelty contracts preserve the proposed mechanism and related work without scoring scientific novelty. `ka_claim_gate` checks material completeness, not scientific validity. Verify results and claims against source evidence.
+`completed` plus `evidence_status=verified` establishes local execution and checked material integrity. Inspect failures, missing artifacts and the saved report before using a result. `derivation_status=partial` means the run record exists but downstream result recording is incomplete. Preserve that distinction in reports.
 
-Use `ka_log_digest` and `ka_artifact_index` to locate relevant evidence without loading full logs. If MCP is unavailable, diagnose and repair the connection before mutating research state through another interface.
-
-Report the changed research records, actual verification, remaining uncertainty and next action. Keep detailed logs in project artifacts.
+Claim checks resolve actual run records and observed seeds. They do not judge novelty, statistical adequacy or scientific validity. External imports remain `external_unverified`; a successful checksum check cannot upgrade their execution origin. Keep uncertainty and negative findings in project documents using native file editing. Never reinterpret missing evidence as success.

@@ -44,7 +44,7 @@ class EventStore:
 
     @contextmanager
     def _locked(self) -> Iterator[None]:
-        self.layout.ensure_core_dirs()
+        self.path.parent.mkdir(parents=True, exist_ok=True)
         process_lock = _process_lock_for(self.lock_path)
         with process_lock:
             with self.lock_path.open("a+", encoding="utf-8") as handle:
@@ -56,7 +56,7 @@ class EventStore:
 
     def append(self, event_type: str, payload: dict[str, Any], *, idempotency_key: str | None = None) -> dict[str, Any]:
         with self._locked():
-            events = self._read_events_unlocked(quarantine=True)
+            events = self._read_events_unlocked(quarantine=False)
             if idempotency_key:
                 for event in events:
                     if event.get("idempotency_key") == idempotency_key:
@@ -78,8 +78,7 @@ class EventStore:
     def next_event_seq(self) -> int:
         if not self.path.exists():
             return 1
-        with self._locked():
-            return self._next_event_seq_unlocked(self._read_events_unlocked(quarantine=True))
+        return self._next_event_seq_unlocked(self._read_events_unlocked(quarantine=False))
 
     @staticmethod
     def _next_event_seq_unlocked(events: list[dict[str, Any]]) -> int:
@@ -88,6 +87,10 @@ class EventStore:
     def read_events(self) -> list[dict[str, Any]]:
         if not self.path.exists():
             return []
+        return self._read_events_unlocked(quarantine=False)
+
+    def repair_events(self) -> list[dict[str, Any]]:
+        """Explicit maintenance; ordinary reads never quarantine or rewrite."""
         with self._locked():
             return self._read_events_unlocked(quarantine=True)
 
@@ -141,8 +144,6 @@ class EventStore:
         try:
             loaded = json.loads(target.read_text(encoding="utf-8"))
         except json.JSONDecodeError:
-            quarantine = target.with_name(f"{target.name}.corrupt.{_safe_timestamp()}")
-            target.replace(quarantine)
             return dict(default or {})
         if not isinstance(loaded, dict):
             return dict(default or {})

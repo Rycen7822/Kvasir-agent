@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "origin": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "enum": [
+            "external_run",
+            "published_result"
+          ]
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "run_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        }
+      },
+      "required": [
+        "type",
+        "source",
+        "run_id"
+      ],
+      "additionalProperties": false
+    },
+    "environment_path": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024
+    },
+    "method_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,80}$"
+    },
+    "seed": {
+      "type": "integer"
+    },
+    "metrics_path": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        },
+        "required": [
+          "path",
+          "sha256"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 1,
+      "maxItems": 100
+    }
+  },
+  "required": [
+    "schema_version",
+    "origin",
+    "environment_path",
+    "method_id",
+    "seed",
+    "metrics_path",
+    "artifacts"
+  ],
+  "additionalProperties": false
+}
