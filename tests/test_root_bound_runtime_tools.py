@@ -64,27 +64,6 @@ def test_native_new_quest_accepts_supplied_quest_id_as_initial_provenance_only(t
     assert not (tmp_path / "Kvasir-agent" / "quests" / "root-provenance").exists()
 
 
-def test_native_memory_write_without_quest_id_lazy_creates_root_bound_memory(tmp_path: Path):
-    payload = _payload(
-        tools.ka_memory_write(
-            {
-                "project": str(tmp_path),
-                "title": "root memory",
-                "content": "durable memory",
-                "kind": "decision",
-            }
-        )
-    )
-
-    assert payload["scope"] == "quest"
-    assert payload["quest_root"] == str(tmp_path / "Kvasir-agent")
-    card_path = Path(payload["card"]["path"])
-    assert card_path.is_relative_to(tmp_path / "Kvasir-agent" / "memory")
-    assert "quests" not in card_path.parts
-    assert (tmp_path / "Kvasir-agent" / "research.yaml").exists()
-    assert not (tmp_path / "Kvasir-agent" / "quests").exists()
-
-
 def test_native_artifact_record_without_quest_id_uses_root_bound_vendor_shim(tmp_path: Path):
     payload = _payload(
         tools.ka_artifact_record(
@@ -113,12 +92,13 @@ def test_supplied_mismatched_quest_id_is_rejected_without_path_switch(tmp_path: 
     manifest_quest_id = created["quest_id"]
 
     raw = json.loads(
-        tools.ka_memory_write(
+        tools.ka_artifact_record(
             {
                 "project": str(tmp_path),
                 "quest_id": manifest_quest_id + "_other",
-                "title": "bad",
-                "content": "bad",
+                "kind": "report",
+                "summary": "bad",
+                "payload": {"kind": "report", "summary": "bad"},
             }
         )
     )

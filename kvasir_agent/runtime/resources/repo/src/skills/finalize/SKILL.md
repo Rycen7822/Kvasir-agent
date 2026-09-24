@@ -263,39 +263,6 @@ Weak finalization:
 - drops the package or file inventory needed for resumption
 - ignores unmapped completed analysis that never entered the paper contract
 
-## Memory rules
-
-Stage-start requirement:
-
-- begin every finalize pass with `ka_memory_search(scope='quest', limit=5)`
-- then run at least one finalize-relevant `ka_memory_search(...)` before closure writing
-- if several idea, run, or campaign lines exist, retrieve only the memory tied to the line being finalized unless the final report is explicitly comparing lines
-
-Finalize should read memory before writing closure, especially:
-
-- quest `decisions`
-- quest `knowledge`
-- quest `episodes`
-- quest `papers` when the final story depends on citation or literature context
-
-If final closure depends on rereading a paper, keep the same split:
-
-- use web search only to relocate or verify the paper reference
-- use `artifact.arxiv(paper_id=..., full_text=False)` for the actual paper reading or refresh
-- switch to `full_text=True` only when the shorter view is insufficient
-
-Write to memory only when the lesson is reusable across quests, such as:
-
-- general methodological pitfalls
-- robust baseline lessons
-- durable writing or evaluation lessons
-
-Stage-end requirement:
-
-- if finalize produced a durable cross-quest lesson worth reusing later, write at least one `ka_memory_write(...)` before leaving the stage
-
-Quest-specific closure state belongs in files and artifacts first, not only memory.
-
 ## Artifact rules
 
 Typical final artifacts:
@@ -343,3 +310,7 @@ Exit the finalize stage once one of the following is durably true:
 - the limitations and recommendation are explicit
 - the stopping point is recorded through artifact
 - the claim ledger and package inventory are clear enough for later resumption or publication handoff
+
+## Research records
+
+Preserve closure decisions, evidence gaps and release limitations in the project delivery documents.

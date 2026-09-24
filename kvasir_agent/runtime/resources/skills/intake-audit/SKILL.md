@@ -21,7 +21,7 @@ Use this skill when the quest already has meaningful state and the first job is 
 - **Do not bypass Kvasir-agent semantic tools for durable research state; Codex-native file/shell/process tools remain appropriate for routine operation-layer work.**
 - **Use Codex-native execution for routine shell/CLI/Python/node/git/npm/uv/repo-audit checks. Use `ka_bash_exec` only when the audit command itself must become Kvasir-agent research evidence.**
 - **For git inspection or maintenance inside the current project repository or worktree, prefer `project-local git state via backend service or Codex-controlled git action(...)` before raw shell git commands.**
-- **Use shell execution only when durable quest files, artifacts, and memory are insufficient; do not bypass durable state just because shell feels faster.**
+- **Use shell execution only when durable quest files, artifacts and research records are insufficient; do not bypass durable state just because shell feels faster.**
 
 ## Purpose
 
@@ -108,7 +108,7 @@ Use, in roughly this order:
   - `SUMMARY.md`
 - recent durable artifact state and quest snapshot
 - current workspace tree and visible quest files
-- prior memory cards and decisions
+- prior research notes and decisions
 - git history and current branch topology when needed
 - user messages
 
@@ -134,19 +134,6 @@ Interpret these fields specially when present:
   - expect a paper/review package and likely handoff to `rebuttal`
 - `custom_profile = freeform`
   - prefer the custom brief over the default stage ordering
-
-### 2. Retrieve memory before filesystem triage
-
-Stage-start requirement:
-
-- run `ka_memory_search(scope='quest', limit=5)`
-- run at least one `ka_memory_search(...)` using:
-  - the quest title or central topic
-  - any known baseline id or method name
-  - any known paper title or venue short name
-  - any known review keyword such as `rebuttal`, `review`, or `revision`
-
-The point is to reuse prior route knowledge before re-auditing the same state from scratch.
 
 ### 3. Inventory the research state
 
@@ -245,29 +232,6 @@ Open additional skills only when the audit indicates they are necessary:
 - `decision`
   - when more than one next anchor remains plausible
 
-## Memory discipline
-
-Stage-end requirement:
-
-- if the intake pass produced a durable route choice, trust judgment, or asset-reuse rule, write at least one `ka_memory_write(...)`
-
-Useful tags include:
-
-- `stage:intake-audit`
-- `type:state-audit`
-- `type:route-handoff`
-- `type:reuse-rule`
-- `state:trusted`
-- `state:needs-verification`
-
-When the audit concerns a specific existing line, include identifiers when known:
-
-- `baseline_id`
-- `idea_id`
-- `run_id`
-- `branch`
-- `paper_state`
-
 ## Success condition
 
 `intake-audit` is successful when:
@@ -277,3 +241,7 @@ When the audit concerns a specific existing line, include identifiers when known
 - the untrusted gaps are explicit
 - the next anchor is explicit
 - the system can continue without pretending the quest started from zero
+
+## Research records
+
+Inspect existing research documents before filesystem triage. Preserve source provenance, trust judgments and asset reuse decisions in the intake report.

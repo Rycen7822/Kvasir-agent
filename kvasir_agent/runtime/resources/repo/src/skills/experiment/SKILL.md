@@ -184,7 +184,7 @@ Use:
 - shell logs and generated outputs from the actual run
 - `ka_bash_exec` session ids, progress markers, and exported logs from the actual run
 - the selected idea handoff contract
-- incident or failure-pattern memory from earlier runs
+- incident or failure records from earlier runs
 
 Do not claim run success without durable outputs.
 
@@ -640,77 +640,6 @@ Before marking the run complete, verify all of the following:
 
 If these checks fail, record the run as partial or blocked rather than pretending it is complete.
 
-## Memory rules
-
-Stage-start requirement:
-
-- begin every experiment pass with `ka_memory_search(scope='quest', limit=5)`
-- then run at least one experiment-relevant `ka_memory_search(...)` before a new run, retry, or material execution change
-- if several idea or experiment lines exist, narrow retrieval to the current `idea_id`, `branch`, and `run_id`; do not casually reuse memory from another idea line unless you are explicitly comparing lines
-
-Write to memory only when the lesson is reusable, such as:
-
-- experiment failure patterns
-- stable implementation lessons
-- evaluation pitfalls
-- validated mechanism scope and caveats
-
-The canonical record of the run itself belongs in `artifact`, not only in memory.
-
-Preferred memory usage:
-
-- quest `ideas`:
-  - the current idea contract and claim boundary
-- quest `decisions`:
-  - run-scope choices
-  - retry or branch decisions
-  - stop conditions that must not drift
-- quest `episodes`:
-  - failed runs
-  - debugging episodes
-  - suspicious-result investigations
-  - repeated infrastructure or resource failures
-- quest `knowledge`:
-  - validated mechanism scope
-  - evaluation caveats
-  - stable implementation lessons worth reusing in later runs of this quest
-- global `knowledge`:
-  - reusable debugging heuristics
-  - stable reproducibility lessons
-  - cross-quest experiment design playbooks
-- global `templates`:
-  - run-manifest patterns
-  - claim-validation templates
-  - experiment summary templates
-
-Use tags to refine retrieval when helpful, for example:
-
-- `stage:experiment`
-- `type:failure-pattern`
-- `type:metric-contract`
-- `type:claim-validation`
-- `topic:<mechanism>`
-
-When calling `ka_memory_write(...)`, pass `tags` as an array like `["stage:experiment", "type:failure-pattern", "topic:<mechanism>"]`, not as one comma-joined string.
-
-Recommended read timing:
-
-- before the first run:
-  - consult quest `ideas`, `decisions`, and relevant `knowledge`
-- before a retry:
-  - search quest `episodes` first
-- before changing execution strategy materially:
-  - re-check quest `decisions`
-- after suspicious results:
-  - consult recent `episodes` and stable debugging `knowledge`
-
-Stage-end requirement:
-
-- successful runs should leave at least one reusable knowledge note if the lesson generalizes
-- failed or partial runs should leave an incident note when the failure pattern is reusable
-- every experiment `ka_memory_write(...)` must state whether the outcome was `success`, `partial`, or `failure`
-- every experiment `ka_memory_write(...)` should also include the current `idea_id`, `branch`, and `run_id` so later retrieval does not mix different experiment lines
-
 ## Artifact rules
 
 Typical artifact sequence:
@@ -804,3 +733,7 @@ Exit the experiment stage once one of the following is durably true:
 - a main run is completed and recorded
 - the run failed and the blocker is durably recorded
 - the next step is clearly `analysis-campaign`, `write`, another `experiment`, or `reset`
+
+## Research records
+
+Read the current idea contract and relevant prior runs before execution or retry. Scope history to the intended idea, branch and run. Preserve success, partial and failure outcomes, stop/retry decisions, evaluation caveats and artifact references in the experiment records.

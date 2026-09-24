@@ -19,12 +19,8 @@ def test_research_layout_creates_root_bound_dirs_without_legacy_quests(tmp_path:
     assert research.event_log_path == research.state_root / "events" / "events.jsonl"
     for relative_dir in [
         "events",
-        "memory/decisions",
-        "memory/episodes",
         "memory/ideas",
-        "memory/knowledge",
         "memory/papers",
-        "memory/templates",
         "artifacts/runs",
         "artifacts/execution_grounded",
         "baselines/local",
@@ -45,6 +41,8 @@ def test_research_layout_creates_root_bound_dirs_without_legacy_quests(tmp_path:
         "tmp",
     ]:
         assert (research.state_root / relative_dir).is_dir(), relative_dir
+    for kind in ("decisions", "episodes", "knowledge", "templates"):
+        assert not (research.state_root / "memory" / kind).exists()
     assert not (research.state_root / "quests").exists()
     assert not research.manifest_path.exists()
 

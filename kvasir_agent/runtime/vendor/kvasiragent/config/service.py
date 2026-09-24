@@ -633,7 +633,6 @@ This page edits `{home_text}/config/native_tool_servers_disabled.yaml`.
 
 ## What does not belong here
 
-- built-in `memory` native tool
 - built-in `artifact` native tool
 - quest-local native tool state
 - recent tool outputs

@@ -6,7 +6,7 @@ import shutil
 from pathlib import Path
 from uuid import uuid4
 
-from ..memory.frontmatter import load_markdown_document
+from ..markdown import load_markdown_document
 from ..shared import ensure_dir, read_json, utc_now, write_json
 from .registry import discover_skill_bundles
 

@@ -21,7 +21,7 @@ Use this skill when the quest does not yet have a stable research frame.
 - **Do not bypass Kvasir-agent semantic tools for durable research state; Codex-native file/shell/process tools remain appropriate for routine operation-layer work.**
 - **Use Codex-native execution for routine shell/CLI/Python/node/git/npm/uv/repo-inspection checks. Use `ka_bash_exec` only when the inspection command itself must become Kvasir-agent research evidence.**
 - **For git inspection inside the current project repository or worktree, prefer `project-local git state via backend service or Codex-controlled git action(...)` before raw shell git commands.**
-- **If scouting only needs durable research context, prefer `artifact.read_quest_documents(...)`, `artifact.get_quest_state(...)`, and `memory.*` instead of shelling out.**
+- **If scouting only needs durable research context, prefer `artifact.read_quest_documents(...)`, `artifact.get_quest_state(...)` and native file reads instead of shelling out.**
 
 ## Stage purpose
 
@@ -52,7 +52,7 @@ If one of these layers is still missing, say so explicitly.
 - Do not ask the user ordinary technical questions before checking local evidence first.
 - Do not force a baseline route without comparing attach, import, and reproduce options.
 - Do not rely on memory alone when primary sources or durable quest files exist.
-- Before broad external search, check quest/global memory first with `ka_memory_search(...)` and `ka_memory_search(...)`.
+- Before broad external search, inspect existing project research records.
 - When search tools are available, actively use them.
   Prefer web search for paper discovery, usually targeting arXiv first, then expand with benchmark docs, official repos, and broader web search for provenance.
 - When a specific arXiv paper must be read or summarized, use `artifact.arxiv(paper_id=..., full_text=False)` instead of defaulting to a raw PDF.
@@ -89,7 +89,7 @@ Before spending time scouting, first verify whether the current research state a
 - `status.md`
 - `SUMMARY.md`
 - baseline artifacts
-- recent paper or knowledge memory cards
+- recent paper notes or research records
 
 If the answer is already clear, exit quickly and move to the correct next anchor.
 
@@ -113,7 +113,7 @@ Prefer the following sources in order:
 2. durable quest files and artifacts
 3. codebase and repository docs
 4. primary papers, official repos, and benchmark docs
-5. existing reusable baselines and quest/global memory
+5. existing reusable baselines and project research records
 6. web-search results, often including arXiv and adjacent sources, used to fill gaps, verify provenance, or update recency
 
 Do not let the scout stage rest on vague recollection alone.
@@ -196,30 +196,6 @@ Also classify each unknown:
 - blocks both
 - useful but non-blocking
 
-### 2.1 Reuse durable memory before external search
-
-Before opening the web, check what the quest already knows.
-
-At minimum:
-
-- inspect recent quest `papers`, `knowledge`, and `decisions`
-- inspect recent global `papers`, `knowledge`, and `templates` when the topic or benchmark looks reusable
-- run `ka_memory_search(...)` over:
-  - task name
-  - dataset or benchmark
-  - metric or split keywords
-  - likely baseline names
-  - mechanism or failure-mode keywords
-
-Then classify the current state:
-
-- already covered well
-- stale and needs refresh
-- still missing
-
-If the frame is already explicit after memory reuse, stop and record the next anchor.
-Do not open a fresh broad search just because scouting feels unfinished.
-
 ### 3. Search the paper and repo neighborhood
 
 Build a compact but sufficient neighborhood of references and implementations.
@@ -268,7 +244,7 @@ Keep a compact scouting ledger while searching.
 For each meaningful search pass, record:
 
 - query text
-- source, such as `memory`, `arXiv`, benchmark docs, repo search, or open web
+- source, such as `research records`, `arXiv`, benchmark docs, repo search, or open web
 - why the query was issued
 - what new references were added
 - what prior references were re-confirmed
@@ -392,82 +368,6 @@ Continue searching only if:
 
 Do not continue searching just to collect more papers after the next anchor is already clear.
 
-## Memory rules
-
-Stage-start requirement:
-
-- begin every scout pass with `ka_memory_search(scope='quest', limit=5)`
-- then run at least one scout-relevant `ka_memory_search(...)` before broad new search
-- if several idea or baseline lines already exist, narrow retrieval to the current line instead of mixing unrelated memory casually
-
-Write durable memory only when it is reusable later.
-
-Preferred memory usage:
-
-- quest `papers`:
-  - literature scouting summaries
-  - paper cards
-  - benchmark notes
-  - official-doc references
-  - repo provenance notes
-- quest `knowledge`:
-  - dataset quirks
-  - metric-contract notes
-  - split caveats
-  - bounded framing lessons for this quest
-- quest `decisions`:
-  - why a baseline route was preferred
-  - why a conflicting evaluation interpretation was rejected
-- global `knowledge`:
-  - reusable benchmark caveats
-  - general scouting heuristics
-- global `templates`:
-  - paper-card templates
-  - eval-contract templates
-  - shortlist templates
-
-Useful tags include:
-
-- `stage:scout`
-- `type:literature-scout`
-- `type:related-work`
-- `type:benchmark-note`
-- `type:metric-contract`
-- `type:baseline-shortlist`
-- `topic:<task-or-dataset>`
-
-When calling `ka_memory_write(...)`, pass `tags` as an array like `["stage:scout", "type:related-work", "topic:<task-or-dataset>"]`, not as one comma-joined string.
-
-Recommended read timing:
-
-- before any new web search:
-  - run `ka_memory_search(...)` over task, benchmark, metric, split, and likely baselines
-- at scout start:
-  - read recent quest `papers`, `knowledge`, and `decisions`
-- before baseline recommendation:
-  - re-check quest `decisions` and shortlist-related notes
-- after a long pause:
-  - warm-start from quest `papers` and `knowledge` before re-searching
-
-Stage-end requirement:
-
-- if scouting produced a durable framing conclusion, paper note, shortlist lesson, or metric-contract caveat, write at least one `ka_memory_write(...)` before leaving the stage
-
-When writing quest `papers` cards, include enough metadata to reduce repeated scouting later:
-
-- title
-- identifier or arXiv id when available
-- URL
-- year
-- task / dataset / metric relevance
-- baseline relevance or provenance relevance
-- whether the source is official, community, or uncertain
-- whether it is `new_this_pass`, `known_before`, or `watchlist`
-
-At least one durable piece of the scouting survey should be written into quest memory whenever external search materially shaped the framing or baseline shortlist.
-
-Prefer concise, high-signal notes over long prose dumps.
-
 ## Artifact rules
 
 Preferred artifact usage:
@@ -522,3 +422,7 @@ Typical next anchors:
 - `baseline`
 - `idea`
 - remain in `scout` only if the remaining blocker is explicit and durable
+
+## Research records
+
+Search existing paper notes and survey records by task, dataset, metric and baseline before repeating external searches. Distinguish covered, stale and missing evidence. Preserve paper identifiers, titles, URLs, year, source provenance, relevance and unresolved search gaps in the research documents.

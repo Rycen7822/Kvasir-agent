@@ -8,12 +8,8 @@ from typing import Any
 
 RESEARCH_DIRS: tuple[str, ...] = (
     "events",
-    "memory/decisions",
-    "memory/episodes",
     "memory/ideas",
-    "memory/knowledge",
     "memory/papers",
-    "memory/templates",
     "artifacts/approvals",
     "artifacts/baselines",
     "artifacts/decisions",

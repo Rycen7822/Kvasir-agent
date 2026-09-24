@@ -209,13 +209,13 @@ git commit -m "docs: add implementation plan for [feature]"
 
 When the plan is for a Kvasir-agent project's experiment execution rather than a normal software feature (see `references/kvasir-agent-experiment-roadmaps.md` for the session-tested checklist):
 
-1. Load the relevant Kvasir-agent stage skill and follow the Codex-native operation boundary: use Codex-native tools for routine shell/Git/Python checks, and use `ka_bash_exec` only for formal evidence commands that need project-local provenance. Use `ka_artifact_record` / `ka_memory_write` for durable outputs.
+1. Load the relevant Kvasir-agent stage skill and follow the Codex-native operation boundary: use Codex-native tools for routine shell/Git/Python checks, and use `ka_bash_exec` only for formal evidence commands that need project-local provenance. Use `ka_artifact_record` and native file editing for durable outputs.
 2. Read the user's requested source order exactly. For split research ideas, read the top-level `idea/*foundational_report.md` / index first, then active docs such as `paper_main.md`, `experiment_protocol.md`, `implementation_spec.md`, appendix/theory, related work, risk register, and download/resource manifest.
 3. Save the roadmap under the quest's requested experiment directory, commonly `experiments/EXPERIMENT_EXECUTION_PLAN.md`, not only in chat.
 4. Structure it as an ordered execution pipeline: preflight/baseline/resource gate, engineering scaffold, data split manifest, candidate/floorplan enumeration, trajectory extraction, chart/model-specific fitting, score implementation, sanity checks, main benchmark, statistics/robustness, retrofit/recoverability, appendix experiments, and paper-facing packaging.
 5. Include explicit gates, required run artifacts, resource/model/data paths, protocol split boundaries, verification commands, and the first concrete implementation task.
 6. Verify the written markdown with at least: required source-doc references present, all phase IDs present, all gates present, code-fence balance, display-math balance, and table consistency.
-7. Record a quest memory and milestone artifact pointing to the roadmap and verification summary.
+7. Record a research record and milestone artifact pointing to the roadmap and verification summary.
 
 ### Kvasir-agent code-only implementation variant
 
@@ -227,7 +227,7 @@ Key rules:
 2. Put source-document priority, allowed checks, and forbidden experiment actions in the plan itself.
 3. Re-read and update the plan after each completed step; do not batch all checkbox updates at the end.
 4. Make experiment-shaped CLI commands safe by default, typically writing `planned_not_executed` manifests instead of launching Phase 0/1A/2 runs.
-5. Validate with code-only checks (`py_compile`, CLI help, pytest, lint, dry-run/fixture smoke), then record quest memory and a milestone that explicitly says no real experiment/model forward/training ran.
+5. Validate with code-only checks (`py_compile`, CLI help, pytest, lint, dry-run/fixture smoke), then record project research records and a milestone that explicitly says no real experiment/model forward/training ran.
 
 ### Kvasir-agent formal experiment command handoff variant
 
@@ -241,7 +241,7 @@ Key rules:
 4. For every command block, state exactly what it produces and where outputs are saved; distinguish current dry-run/planned outputs from future real-run artifacts.
 5. If current experiment-shaped CLI commands are `planned_not_executed` stubs, state that prominently so the user does not mistake command-plan JSON for real model evidence.
 6. Include post-run validation commands and the exact information the user should provide back to Kvasir-agent for durable experiment recording.
-7. Validate the written markdown for required phase tokens, key manifest paths, code-fence balance, and command/help consistency; record a quest memory and milestone.
+7. Validate the written markdown for required phase tokens, key manifest paths, code-fence balance, and command/help consistency; record a research record and milestone.
 
 ## Principles
 

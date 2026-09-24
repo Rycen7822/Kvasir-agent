@@ -121,12 +121,12 @@ Break ties primarily through careful reasoning over:
 - Treat that literature floor as a hard gate, not a suggestion.
   If the direct task-modeling neighborhood truly contains fewer than `5` usable papers, record that evidence explicitly and fill the remaining slots with the closest adjacent papers whose mechanism can be translated into the current task and codebase.
 - Algorithm-first exception:
-  - when `startup_contract.need_research_paper = false` and a concrete optimization handle already exists, you may stop after a memory sweep plus a small targeted paper check instead of satisfying the full `5-10` paper floor
+  - when `startup_contract.need_research_paper = false` and a concrete optimization handle already exists, you may stop after a research-history review plus a small targeted paper check instead of satisfying the full `5-10` paper floor
   - use that exception only when the immediate goal is method-brief selection for `optimize`, not paper-level novelty claims
   - if you use the exception, say explicitly that the output is an optimization brief frontier rather than a paper-ready idea package
   - still shape that frontier deliberately: clarify the bottleneck and comparability boundary first, keep a differentiated `2-3` candidate slate, and explain why one brief is recommended now
 - Every fresh idea build or idea-refinement pass must begin with:
-  - a memory sweep, and
+  - a research-history review, and
   - an external literature sweep.
 - Every fresh or resumed idea pass must update `artifacts/idea/literature_survey.md` or an equivalent durable survey report before a direction is promoted.
 - Every survey update must explicitly separate:
@@ -137,7 +137,7 @@ Break ties primarily through careful reasoning over:
   Prefer web search for paper discovery, usually targeting arXiv first, then expand with citation and open-web search for neighborhood coverage.
 - When a concrete arXiv paper needs to be read, compared, or summarized, use `artifact.arxiv(paper_id=..., full_text=False)`.
   Keep search in web discovery; use `artifact.arxiv(...)` for reading shortlisted papers, and set `full_text=True` only when needed.
-- Before opening a broad new search, check quest and global memory with `ka_memory_search(...)` and reuse existing paper notes, idea notes, and knowledge cards.
+- Before opening a broad new search, inspect existing paper notes, idea notes and research records.
 - Search for genuinely missing, newly relevant, or more recent papers whenever possible.
   Do not rerun the same broad search without stating what gap the new search is meant to close.
 - Do not introduce a new dataset or a new evaluation regime unless the quest scope explicitly changed.
@@ -260,10 +260,10 @@ Use:
 - baseline artifacts and verification notes
 - baseline paper and source repo
 - current codebase and recent diffs
-- scout notes and paper memory cards
+- scout notes and paper notes
 - prior failed runs and decisions
 - current task constraints
-- quest and global memory cards returned by `ka_memory_search(...)` and `ka_memory_search(...)`
+- existing paper notes, idea notes and research records
 - prior literature survey reports and related-work artifacts
 - web-search discovery results for arXiv and related sources
 - paper-reading notes produced after using `artifact.arxiv(...)`
@@ -279,13 +279,13 @@ Rank them on evidence, feasibility, and testability.
 Before you choose a direction, perform a broad but bounded literature sweep.
 
 The sweep must be grounded in actual retrieval, not recall alone.
-If durable quest memory already contains a recent and explicit survey, reuse it first and search externally only for the missing buckets, newer papers, or unresolved overlaps.
+If durable project research records already contains a recent and explicit survey, reuse it first and search externally only for the missing buckets, newer papers, or unresolved overlaps.
 For a normal selected-idea decision, the durable sweep must end with at least `5` and usually `5-10` papers that are close enough to the task-modeling problem, failure mode, mechanism, or codebase translation question to inform the actual design.
 This floor exists to prevent thin novelty claims and under-motivated ideas, not to reward quota chasing.
 
 When tools allow it, combine:
 
-- `ka_memory_search(...)` and recent memory reads
+- existing research records and recent experiment history
 - web search for arXiv and adjacent sources
 - `artifact.arxiv(paper_id=..., full_text=False)` for actually reading shortlisted papers
 - citation expansion or open-web search for follow-up papers, code, and comparisons
@@ -349,7 +349,7 @@ The idea stage should usually leave behind:
 - `2-5` candidate ideas, with the final serious frontier usually narrowed to `2-3`
 - a selected idea or explicit rejection of the current line
 - a durable Markdown idea draft that is finalized before the accepted idea is submitted
-- one or more memory cards for reusable rationale
+- one or more research notes for the idea rationale
 - one or more quest `papers` cards for the strongest papers or search clusters
 - an idea artifact and a decision artifact
 
@@ -429,7 +429,7 @@ The point is not uncontrolled brainstorming.
 The point is to widen the search just enough to avoid premature convergence onto the first implementable idea.
 
 This divergence protocol does not replace the main workflow below.
-It sits inside the main workflow after minimum grounding already exists from memory reuse, initial literature sweep, baseline reconstruction, and limitation analysis.
+It sits inside the main workflow after minimum grounding already exists from research-history review, initial literature sweep, baseline reconstruction, and limitation analysis.
 If strong durable evidence already narrows the route to one obvious serious option, you may abbreviate the full widening pass, but you must record why a broader divergence pass was unnecessary.
 
 First classify the current entry frame:
@@ -527,7 +527,7 @@ Goal:
 
 Precondition:
 
-- minimum grounding already exists from quest memory, an initial literature sweep, baseline reconstruction, and a current limitations map
+- minimum grounding already exists from project research records, an initial literature sweep, baseline reconstruction, and a current limitations map
 
 Recommended sequence:
 
@@ -651,34 +651,6 @@ Before deep searching, write a compact plan for:
 The plan does not need to be long.
 It does need to make the search strategy explicit.
 
-### 1.2 Reuse durable memory before searching again
-
-Before the open-web sweep, actively check what the quest already knows.
-
-At minimum:
-
-- inspect recent quest `papers`, `ideas`, `decisions`, and `knowledge`
-- inspect recent global `papers`, `knowledge`, and `templates` if the topic looks reusable
-- inspect the latest `artifacts/idea/literature_survey.md` or equivalent survey report when it exists
-- run `ka_memory_search(...)` on:
-  - the baseline method name
-  - the task and dataset
-  - the likely mechanism keywords
-  - the strongest current candidate labels
-- record which buckets are:
-  - already covered
-  - stale or incomplete
-  - still missing
-
-If the quest already has a strong survey and paper memory set, do not blindly repeat the whole search.
-Only search the open web for uncovered gaps, newer papers, or unclear overlaps.
-Every new external query should close one of these explicit gaps:
-
-- missing paper bucket
-- newer-than-last-survey refresh
-- unresolved overlap with a candidate idea
-- verification of a paper that might block novelty or value claims
-
 ### 2. Run the related-work sweep
 
 Search broadly enough to cover the strongest obvious competitors and neighboring methods.
@@ -698,7 +670,7 @@ Keep a compact search ledger while you work.
 For each meaningful search query or paper cluster, record:
 
 - query text
-- source, such as `memory`, `arXiv`, or open web
+- source, such as `research records`, `arXiv`, or open web
 - why you issued the query
 - which papers were newly added
 - which previously known papers were re-confirmed
@@ -1095,110 +1067,6 @@ The idea stage is primarily a planning and reasoning stage.
 - only perform a tiny code or config inspection change if it is necessary to verify feasibility
 - if major implementation seems necessary just to understand the idea, that is a sign to stop and sharpen the idea first
 
-## Memory rules
-
-Stage-start requirement:
-
-- begin every idea pass with `ka_memory_search(scope='quest', limit=5)`
-- then run at least one idea-relevant `ka_memory_search(...)` before broad new ideation or literature expansion
-- before proposing a new idea, explicitly review prior quest idea records and experiment outcomes so the new proposal builds on actual history instead of rediscovering old work
-- treat prior idea lines and experiment lines as reference material, not as the active idea contract unless you intentionally select and continue that line
-
-Store reusable reasoning in memory, such as:
-
-- literature survey summaries
-- search-ledger conclusions
-- related-work judgments
-- limitation summaries
-- idea tradeoff notes
-- failure patterns that should shape future ideation
-- novelty caveats and research-value boundaries
-
-Do not let the only copy of the idea rationale live in chat.
-
-Preferred memory usage:
-
-- quest `papers`:
-  - literature survey summaries
-  - arXiv or paper-cluster notes
-  - related-work notes
-  - closest-prior-work comparisons
-  - citation-grounded method observations
-- quest `ideas`:
-  - candidate direction records
-  - selected idea handoff notes
-  - rejected idea rationale when it may matter later
-- quest `decisions`:
-  - selection tradeoffs
-  - branch or reject choices
-  - user-sensitive route resolutions
-- quest `knowledge`:
-  - distilled limitation patterns
-  - stable novelty caveats
-  - research-value boundaries worth reusing later in this quest
-- global `knowledge`:
-  - reusable ideation heuristics
-  - cross-domain translation lessons
-- global `templates`:
-  - reusable related-work maps
-  - selection-gate checklists
-
-Use tags to sharpen retrieval when helpful, for example:
-
-- `stage:idea`
-- `type:related-work`
-- `type:literature-survey`
-- `type:novelty-check`
-- `type:selection-rationale`
-- `topic:<mechanism>`
-
-When calling `ka_memory_write(...)`, pass `tags` as an array like `["stage:idea", "type:selection-rationale", "topic:<mechanism>"]`, not as one comma-joined string.
-
-Recommended read timing:
-
-- before any new paper search:
-  - run `ka_memory_search(...)` over the baseline, task, dataset, mechanism, and current idea labels
-- before broad new ideation:
-  - review prior quest `ideas`, experiment results, failure patterns, and decision notes in detail
-- before wide literature search:
-  - consult quest `papers`, `ideas`, experiment lessons, and `decisions`
-- before final selection:
-  - re-check quest `ideas`, `decisions`, and `knowledge`
-- after a failed or rejected idea line:
-  - check quest and global ideation lessons before proposing the next line
-
-Stage-end requirement:
-
-- if ideation produced a durable survey conclusion, selected-idea rationale, rejected-idea lesson, or novelty caveat, write at least one `ka_memory_write(...)` before leaving the stage
-- at least one quest memory card should preserve the survey delta with retrieval hints, such as:
-  - covered paper buckets
-  - unresolved buckets
-  - paper identifiers or arXiv ids
-  - search-window notes like `searched_through: 2026-03`
-
-When writing paper memory cards, include enough metadata to avoid redundant search later, such as:
-
-- title
-- paper identifier or arXiv id when available
-- year
-- URL
-- task / dataset / metric overlap
-- mechanism summary
-- novelty or value implication for this quest
-- whether it is `new_this_pass`, `known_before`, or `watchlist`
-
-At the end of ideation, at least one part of the literature survey must be preserved in memory so a later idea pass can retrieve it directly instead of rebuilding the search from scratch.
-
-Every serious idea pass should also leave a durable outcome split:
-
-- one selected idea or selected direction family
-- any deferred but still plausible alternatives
-- any rejected alternatives with a one-line rejection reason
-
-Do not leave the rejected and deferred reasoning only in chat.
-
-Promote to global memory only when the lesson is reusable outside this quest.
-
 ## Artifact rules
 
 Typical durable records:
@@ -1284,3 +1152,7 @@ Do not exit this stage with a "selected idea" if:
 - the novelty / value verdict is still hand-wavy
 - the falsification path is unclear
 - the experiment handoff contract is incomplete
+
+## Research records
+
+Review prior ideas, literature surveys and experiment outcomes before proposing a new direction. Preserve selected, deferred and rejected alternatives with rationale in research records. Paper notes should include identifiers, year, URL, task/data/metric overlap, mechanism, novelty caveats and search coverage or unresolved gaps.

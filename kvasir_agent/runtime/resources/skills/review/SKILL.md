@@ -34,7 +34,7 @@ It is also not the same as `rebuttal`.
 - Treat `startup_contract.*` as optional user-provided constraints or manuscript-edit preferences; ignore them when absent.
 - Replace legacy shell-wrapper calls with public MCP `ka_bash_exec` for quest-logged shell; ordinary Codex file tools for direct file IO.
 - Replace legacy milestone or artifact-interaction hooks with ordinary user-visible progress updates in the assistant response.
-- Replace legacy memory helper calls with `session_search(...)`, `ka_memory_write`, and durable local review files as appropriate.
+- Read and update the relevant local review files with native file tools.
 - Route names such as `intake-audit`, `scout`, `analysis-campaign`, `baseline`, `write`, `decision`, `finalize`, and `rebuttal` are workflow labels. If those exact skills are unavailable, use the closest available Codex skills/tools to accomplish the same purpose.
 
 ## Interaction discipline
@@ -402,29 +402,6 @@ Use Codex tools deliberately:
 - `ka_bash_exec` for quest-logged shell; ordinary file tools for direct file IO, `read_file`, `search_files`, and `patch`
   - manuscript inspection, edits, verification, and local workflow execution
 
-## Memory discipline
-
-Stage-start requirement:
-
-- run `session_search(...)` when prior work on the same paper, method, or review context may matter
-- check current workspace files and, when useful, search prior sessions for:
-  - paper title
-  - main method name
-  - review or self-review
-  - key claim or strongest figure
-
-Stage-end requirement:
-
-- if the review produced a durable lesson, claim downgrade, revision rule, or experiment-gap judgment that will matter across sessions, write a concise `ka_memory_write` card or durable local note
-
-Useful tags include:
-
-- `stage:review`
-- `type:paper-review`
-- `type:revision-plan`
-- `type:experiment-gap`
-- `type:claim-downgrade`
-
 ## Success condition
 
 `review` is successful when:
@@ -437,3 +414,7 @@ Useful tags include:
 
 The goal is not to sound severe.
 The goal is to make the next revision step technically clear and evidence-bound.
+
+## Research records
+
+Preserve findings, claim downgrades and revision requirements in the review documents with supporting evidence references.

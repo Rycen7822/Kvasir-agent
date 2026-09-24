@@ -50,7 +50,7 @@ For each meaningful search pass, record:
 
 Recommended source labels:
 
-- `memory`
+- project research records
 - `arXiv`
 - `citation`
 - `open-web`
@@ -119,7 +119,7 @@ Connect the literature back to the repo:
 - likely feasibility blockers
 - cheapest falsification path
 
-## 8. Memory writes to create or refresh
+## 8. Research records to create or refresh
 
 List the durable follow-up writes:
 
@@ -127,7 +127,7 @@ List the durable follow-up writes:
 - quest `knowledge` cards to distill
 - global cards worth promoting later, if any
 
-At least one survey-derived memory card should be written before the idea stage exits.
+At least one survey-derived research note should be written before the idea stage exits.
 
 ## 9. Idea implications
 

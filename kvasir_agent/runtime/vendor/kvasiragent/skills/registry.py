@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from ..memory.frontmatter import load_markdown_document
+from ..markdown import load_markdown_document
 
 _DEFAULT_STAGE_SKILLS = (
     "scout",

@@ -509,28 +509,6 @@ For reusable-package expectations, read `references/publishable-baseline-package
 - if baseline setup is risky or intrusive, prepare an isolated branch or worktree first and record why
 - do not proliferate branches without a reason
 
-## Memory rules
-
-Stage-start requirement:
-
-- by default, begin every baseline pass with `ka_memory_search(scope='quest', limit=5)`
-- then run at least one baseline-relevant `ka_memory_search(...)` before new baseline analysis, repair, or rerun work
-- fast-path exception: if the quest already exposes a clear `requested_baseline_ref` or `confirmed_baseline_ref` and the immediate task is only to validate or reattach that concrete baseline, you may skip broad retrieval
-
-Write memory only for reusable lessons such as:
-
-- paper-to-code mismatch notes
-- environment incidents
-- dataset quirks
-- verification caveats
-- attach vs import vs reproduce vs repair rationale
-
-When calling `ka_memory_write(...)`, pass `tags` as an array like `["stage:baseline", "baseline:<baseline_id>", "type:repro-lesson"]`, not as one comma-joined string.
-
-Stage-end requirement:
-
-- if baseline work produced a durable reproduction lesson, verification caveat, environment incident, or route rationale, write at least one `ka_memory_write(...)` before leaving the stage
-
 ## Artifact rules
 
 Typical artifact sequence:
@@ -602,3 +580,7 @@ Typical next anchors:
 - `idea`
 - `experiment` in tightly scoped follow-on cases
 - `decision` if the baseline line remains contested
+
+## Research records
+
+Preserve baseline setup failures, dataset/metric caveats, route rationale and accepted verification limits in the baseline records.

@@ -29,7 +29,7 @@ Before broad web search:
 
 1. read recent quest `papers`, `knowledge`, and `decisions`
 2. read relevant global `papers`, `knowledge`, and `templates`
-3. run `ka_memory_search(...)` on task, benchmark, dataset, metric, split, and likely baseline names
+3. search project research records on task, benchmark, dataset, metric, split, and likely baseline names
 
 Then search externally for the missing pieces:
 

@@ -83,7 +83,6 @@ def build_session_descriptor(
         "active_anchor": snapshot.get("active_anchor"),
         "bound_conversations": snapshot.get("bound_conversations") or [],
         "native_tool_servers_disabled": [
-            {"name": "ka_memory", "call_surface": "kactl", "scope": "quest-local"},
             {"name": "ka_artifact", "call_surface": "kactl", "scope": "quest-local"},
             {"name": "ka_bash_exec", "call_surface": "kactl", "scope": "quest-local"},
         ],

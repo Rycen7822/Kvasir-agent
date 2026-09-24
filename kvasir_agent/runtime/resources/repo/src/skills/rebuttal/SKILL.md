@@ -37,7 +37,7 @@ It should convert reviewer material into a durable response workflow:
 Default rebuttal stance: analysis before execution.
 Do not jump from “reviewer asked for more evidence” straight to experiments.
 Do not invent rebuttal-only special tools or side workflows.
-Stay inside the normal Kvasir-agent surface: `memory`, `artifact`, `ka_bash_exec`, plus ordinary stage/companion skills.
+Stay inside the normal Kvasir-agent surface: `artifact`, `ka_bash_exec`, plus ordinary stage/companion skills.
 First decide whether the issue is actually:
 
 - a wording / clarity gap
@@ -96,7 +96,7 @@ Use, in roughly this order:
 - current-turn attachments and user-provided local paths / directories / URLs for the manuscript or review packet
 - the six-field `evaluation_summary` blocks from recent main experiments and analysis slices
 - recent main and analysis experiment results
-- prior decision and writing memory
+- prior decision and writing records
 - existing figures, tables, and claim-evidence maps
 
 If the current paper/result state is still unclear, open `intake-audit` first before continuing the rebuttal workflow.
@@ -438,29 +438,6 @@ Use these tools deliberately:
 - `ka_artifact_record ...)`
   - user-visible progress and rebuttal milestones
 
-## Memory discipline
-
-Stage-start requirement:
-
-- run `ka_memory_search(scope='quest', limit=5)`
-- run at least one `ka_memory_search(...)` for:
-  - paper title
-  - main method name
-  - reviewer / rebuttal / revision
-  - key criticized claim or figure
-
-Stage-end requirement:
-
-- if the rebuttal pass produced a durable lesson, claim downgrade, or reviewer-driven route change, write at least one `ka_memory_write(...)`
-
-Useful tags include:
-
-- `stage:rebuttal`
-- `type:review-matrix`
-- `type:claim-downgrade`
-- `type:revision-lesson`
-- `type:reviewer-request`
-
 ## Success condition
 
 `rebuttal` is successful when:
@@ -476,3 +453,7 @@ Useful tags include:
 
 The goal is not just “write a nicer response”.
 The goal is to convert review pressure into a durable, auditable revision workflow.
+
+## Research records
+
+Preserve reviewer-driven revisions, claim changes and experiment gaps in the rebuttal and evidence records.

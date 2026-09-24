@@ -67,8 +67,6 @@ class NativeConfig:
     runner: str = "codex"
     allow_legacy_cli_fallback: bool = False
     allow_codex_runner_fallback: bool = False
-    use_kvasiragent_memory: bool = True
-    sync_to_hermes_memory: bool = False
     resource_repo_root: Path | None = None
 
     def as_dict(self) -> dict[str, Any]:
@@ -88,10 +86,6 @@ class NativeConfig:
                 "runner": self.runner,
                 "allow_legacy_cli_fallback": self.allow_legacy_cli_fallback,
                 "allow_codex_runner_fallback": self.allow_codex_runner_fallback,
-            },
-            "memory": {
-                "use_kvasiragent_memory": self.use_kvasiragent_memory,
-                "sync_to_hermes_memory": self.sync_to_hermes_memory,
             },
             "resource_repo_root": str(self.resource_repo_root) if self.resource_repo_root else None,
         }
@@ -131,7 +125,6 @@ def load_config(config_path: Path | None = None) -> NativeConfig:
     state_data = data.get("state") if isinstance(data.get("state"), dict) else {}
     mode_data = data.get("mode") if isinstance(data.get("mode"), dict) else {}
     runtime_data = data.get("runtime") if isinstance(data.get("runtime"), dict) else {}
-    memory_data = data.get("memory") if isinstance(data.get("memory"), dict) else {}
     resource_repo_root = data.get("resource_repo_root")
     return NativeConfig(
         config_root=root,
@@ -146,8 +139,6 @@ def load_config(config_path: Path | None = None) -> NativeConfig:
         runner=str(runtime_data.get("runner") or "codex"),
         allow_legacy_cli_fallback=_as_bool(runtime_data.get("allow_legacy_cli_fallback"), False),
         allow_codex_runner_fallback=_as_bool(runtime_data.get("allow_codex_runner_fallback"), False),
-        use_kvasiragent_memory=_as_bool(memory_data.get("use_kvasiragent_memory"), True),
-        sync_to_hermes_memory=_as_bool(memory_data.get("sync_to_hermes_memory"), False),
         resource_repo_root=Path(str(resource_repo_root)).expanduser() if resource_repo_root else None,
     )
 
@@ -171,7 +162,4 @@ runtime:
 state:
   # Defaults to <runtime_home>/runtime/codex-session-map.json
   # session_map_path: ./Kvasir-agent/runtime/codex-session-map.json
-memory:
-  use_kvasiragent_memory: true
-  sync_to_hermes_memory: false
 """

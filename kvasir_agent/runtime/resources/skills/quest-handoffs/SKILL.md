@@ -28,7 +28,7 @@ Create or update a quest-root `AGENTS.md` unless the project already has a clear
 Include these sections when relevant:
 
 1. provenance id, title, source root, synced/root copy paths, and handoff timestamp;
-2. current research state: status, active anchor/stage, baseline gate, pending messages/decisions, artifact and memory counts;
+2. current research state: status, active anchor/stage, baseline gate, pending messages/decisions, artifact and research-document counts;
 3. one-minute research/task summary;
 4. authoritative reading order with relative paths;
 5. durable literature/resource/artifact state;

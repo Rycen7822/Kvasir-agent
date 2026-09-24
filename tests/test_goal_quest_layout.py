@@ -10,10 +10,7 @@ from kvasir_agent.services.project_state import ProjectLayout
 
 EXPECTED_QUEST_DIRS = {
     "events",
-    "memory/decisions",
-    "memory/episodes",
     "memory/ideas",
-    "memory/knowledge",
     "memory/papers",
     "artifacts/approvals",
     "artifacts/baselines",
@@ -54,6 +51,8 @@ def test_project_layout_creates_quest_scoped_layout_and_rejects_escape(tmp_path:
     assert quest.quest_root.is_dir()
     for rel in EXPECTED_QUEST_DIRS:
         assert (quest.quest_root / rel).is_dir(), rel
+    for kind in ("decisions", "episodes", "knowledge", "templates"):
+        assert not (quest.quest_root / "memory" / kind).exists()
     for rel in EXPECTED_QUEST_FILES:
         assert (quest.quest_root / rel).exists(), rel
 

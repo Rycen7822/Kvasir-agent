@@ -49,10 +49,6 @@ def ensure_home_layout(home: Path) -> dict[str, Path]:
     ensure_dir(config / "baselines")
     ensure_dir(config / "baselines" / "entries")
 
-    memory = ensure_dir(home / "memory")
-    for kind in ("papers", "ideas", "decisions", "episodes", "knowledge", "templates"):
-        ensure_dir(memory / kind)
-
     quests = ensure_dir(home / "quests")
     plugins = ensure_dir(home / "plugins")
     logs = ensure_dir(home / "logs")
@@ -63,7 +59,6 @@ def ensure_home_layout(home: Path) -> dict[str, Path]:
         "home": home,
         "runtime": runtime,
         "config": config,
-        "memory": memory,
         "quests": quests,
         "plugins": plugins,
         "logs": logs,

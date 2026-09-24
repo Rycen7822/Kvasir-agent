@@ -48,7 +48,7 @@ Do **not** use this skill for:
 
 For every paper retrieval that materially affects the quest, leave a durable project-local record. Prefer one of these surfaces depending on the stage:
 
-- `ka_memory_write` for compact paper facts, constraints, official-resource status, or citation notes.
+- Native file editing for paper facts, constraints, official-resource status and citation notes.
 - `ka_artifact_record` for a structured retrieval report, literature-scout report, or evidence item.
 - Stage-specific tools such as `ka_confirm_baseline`, `ka_record_main_experiment`, `ka_submit_paper_outline`, or `ka_submit_paper_bundle` when the paper is tied to that artifact type.
 - Quest-local files under artifacts/reports/literature/baselines/paper evidence directories when a longer report is needed, then register them with the relevant `ka_*` tool.
@@ -154,7 +154,7 @@ Expected keys:
 Rules:
 
 - Do **not** print credentials.
-- Do **not** store credentials in quest memory, artifacts, logs, notes, or final replies.
+- Do **not** store credentials in project research records, artifacts, logs, notes, or final replies.
 - Do **not** blindly `source` the env file in bash; passwords may contain shell-significant characters.
 - Parse the env file as plain text in Python, splitting on the first `=`.
 - Prefer `/home/xu/miniconda3/envs/test/bin/python3` for authenticated OpenReview retrieval in this workspace.
@@ -369,7 +369,7 @@ Use or adapt this shape when recording a retrieval report:
 
 Before finishing a paper-fetch task:
 
-- [ ] The retrieval result is recorded in quest memory/artifacts or a stage-specific Kvasir-agent record.
+- [ ] The retrieval result is recorded in project research records/artifacts or a stage-specific Kvasir-agent record.
 - [ ] Original and canonical source URLs are preserved.
 - [ ] The agent records exactly which body surface was read.
 - [ ] Official resources are verified directly or caveated.

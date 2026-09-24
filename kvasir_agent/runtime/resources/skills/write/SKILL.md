@@ -1175,77 +1175,6 @@ If a critical packaging issue remains, mark the stage as blocked or warn explici
 }
 ```
 
-## Memory rules
-
-Stage-start requirement:
-
-- begin every writing pass with `ka_memory_search(scope='quest', limit=5)`
-- then run at least one write-relevant `ka_memory_search(...)` before drafting, major revision, or claim restructuring
-- if several idea or experiment lines exist, narrow retrieval to the line actually supporting the current draft and do not mix evidence memory from another line unless you are explicitly comparing claims
-
-Use memory for reusable lessons only, such as:
-
-- citation pitfalls
-- writing-stage failure patterns
-- strong narrative framing lessons
-
-Do not use memory as the only record of the draft state.
-
-Preferred memory usage:
-
-- quest `papers`:
-  - related-work notes
-  - citation verification notes
-  - paper-specific source reminders
-- quest `decisions`:
-  - claim downgrades
-  - scope reductions
-  - evidence-gap route changes
-- quest `knowledge`:
-  - stable writing constraints
-  - venue or packaging caveats
-  - distilled review lessons that still matter later in this quest
-- global `knowledge`:
-  - reusable writing playbooks
-  - stable citation or proofing heuristics
-- global `templates`:
-  - reusable claim-evidence map patterns
-  - review checklist structures
-  - submission packaging templates
-
-Use tags to refine meaning when helpful, for example:
-
-- `stage:write`
-- `type:writing-playbook`
-- `type:evidence-ledger`
-- `type:citation-check`
-- `type:proofing-lesson`
-
-When calling `ka_memory_write(...)`, pass `tags` as an array like `["stage:write", "type:writing-playbook", "type:evidence-ledger"]`, not as one comma-joined string.
-
-Recommended read timing:
-
-- before outline drafting:
-  - consult quest `papers`, `decisions`, and `knowledge`
-  - consult `references/reviewer-first-writing.md` and `references/section-contracts.md` when the narrative shape is still unstable
-- before final completion:
-  - re-check quest `decisions` and writing-related `knowledge`
-- after a serious writing failure:
-  - consult quest and global writing failure patterns before retrying
-  - consult `references/sentence-level-proofing.md` when the failure is mainly about readability, wording, or sentence quality
-
-Write quest memory when:
-
-- a citation or evidence mistake is likely to recur later in the quest
-- a review lesson should shape the next revision
-- a claim boundary or package constraint should not be rediscovered
-
-Stage-end requirement:
-
-- if writing produced a durable citation lesson, review lesson, claim-boundary rule, or packaging constraint, write at least one `ka_memory_write(...)` before leaving the stage
-
-Promote to global memory only when the lesson is clearly reusable beyond this quest.
-
 ## Artifact rules
 
 Typical artifact sequence:
@@ -1316,3 +1245,7 @@ Exit the write stage only when one of the following is durably true:
 - a packaging or proofing blocker has been recorded and the next action is explicit
 
 For paper-like writing, do not treat the draft as evidence-complete enough for `finalize` while `paper/paper_experiment_matrix.*` still contains currently feasible non-optional rows that remain unresolved.
+
+## Research records
+
+Read the current paper, evidence ledger and relevant research history. Preserve claim boundaries, citation sources and revision decisions in the paper and research documents.

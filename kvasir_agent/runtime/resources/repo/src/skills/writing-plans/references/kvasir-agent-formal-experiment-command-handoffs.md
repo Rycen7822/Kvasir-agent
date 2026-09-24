@@ -52,7 +52,7 @@ Use this reference when a user asks for a step-by-step command document they wil
 - Check key manifest/output paths are present.
 - Check markdown code fences are balanced.
 - Search for placeholder bugs such as unexported variables that are later read from `os.environ`.
-- Record quest memory and a milestone saying this was a command document only and whether any real experiment was executed.
+- Record project research records and a milestone saying this was a command document only and whether any real experiment was executed.
 
 ## Pitfalls from session 2026-05-03
 

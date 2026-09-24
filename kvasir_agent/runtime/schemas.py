@@ -17,16 +17,6 @@ def _schema(name: str, description: str, properties: dict[str, Any] | None = Non
         },
     }
 
-MEMORY_KIND_VALUES = [
-    "papers", "ideas", "decisions", "episodes", "knowledge", "templates",
-    "paper", "idea", "decision", "episode", "template",
-    "constraint", "constraints", "context", "observation", "observations", "hypothesis", "hypotheses", "result", "results", "plan", "plans",
-]
-MEMORY_KIND_FIELD = {
-    "type": "string",
-    "enum": MEMORY_KIND_VALUES,
-    "description": "Kvasir-agent memory kind. Canonical kinds are papers, ideas, decisions, episodes, knowledge, templates. Singular and semantic aliases such as constraint/context/observation/hypothesis/result/plan are accepted and normalized by the MCP wrapper.",
-}
 PAPER_OUTLINE_MODE_FIELD = {
     "type": "string",
     "enum": ["candidate", "select", "revise", "selected"],
@@ -119,10 +109,6 @@ KA_ADD_USER_MESSAGE = _schema("ka_add_user_message", "Append a user message/inst
 KA_RECORD_USER_REQUIREMENT = _schema("ka_record_user_requirement", "Record a durable user requirement in the quest conversation and active-user-requirements memory without leaving a pending user-message queue item.", {"quest_id": S["quest_id"], "message": S["message"], "source": {"type": "string"}, "stage": S["stage"]}, ["message"])
 KA_EVENTS = _schema("ka_events", "Read quest events directly from native quest files.", {"quest_id": S["quest_id"], "limit": S["limit"]}, ["quest_id"])
 KA_READ_QUEST_DOCUMENTS = _schema("ka_read_quest_documents", "List or read quest documents and skill docs.", {"quest_id": S["quest_id"], "names": {"type": "array", "items": {"type": "string"}}, "include_content": {"type": "boolean", "default": True}, "max_chars": {"type": "integer", "default": 12000}})
-KA_MEMORY_SEARCH = _schema("ka_memory_search", "Search Kvasir-agent global/quest memory cards.", {"query": S["query"], "quest_id": S["quest_id"], "scope": S["scope"], "kind": MEMORY_KIND_FIELD, "limit": S["limit"]}, ["query"])
-KA_MEMORY_READ = _schema("ka_memory_read", "Read a Kvasir-agent memory card by id or path.", {"card_id": {"type": "string"}, "path": S["path"], "quest_id": S["quest_id"], "scope": S["scope"]})
-KA_MEMORY_LIST_RECENT = _schema("ka_memory_list_recent", "List the most recently updated Kvasir-agent memory cards, matching the original memory.list_recent MCP capability through Codex-native transport.", {"quest_id": S["quest_id"], "scope": S["scope"], "kind": MEMORY_KIND_FIELD, "limit": S["limit"]})
-KA_MEMORY_WRITE = _schema("ka_memory_write", "Write a Kvasir-agent memory card. Semantic kind aliases such as constraint/context/observation/hypothesis/result/plan are normalized to knowledge with tags/metadata.", {"title": S["title"], "content": S["content"], "body": S["body"], "markdown": {"type": "string"}, "quest_id": S["quest_id"], "scope": S["scope"], "kind": MEMORY_KIND_FIELD, "tags": {"type": "array", "items": {"type": "string"}}, "metadata": {"type": "object"}}, ["title"])
 KA_ARTIFACT_RECORD = _schema("ka_artifact_record", "Record a canonical Kvasir-agent artifact in a quest. Use kind=report plus payload.report_type for semantic subtypes such as dataset_inspection.", {"quest_id": S["quest_id"], "payload": S["payload"], "kind": ARTIFACT_KIND_FIELD, "summary": {"type": "string"}, "status": {"type": "string"}, "checkpoint": {"type": "boolean"}}, ["quest_id"])
 KA_CONFIRM_BASELINE = _schema("ka_confirm_baseline", "Confirm a baseline gate using native artifact service.", {"quest_id": S["quest_id"], "baseline_path": S["path"], "baseline_id": {"type": "string"}, "variant_id": {"type": "string"}, "summary": {"type": "string"}, "comment": {}, "metric_contract": {"type": "object"}}, ["quest_id", "baseline_path"])
 KA_WAIVE_BASELINE = _schema("ka_waive_baseline", "Explicitly waive the baseline gate.", {"quest_id": S["quest_id"], "reason": {"type": "string"}, "comment": {}}, ["quest_id", "reason"])
@@ -323,9 +309,8 @@ KA_STOP_QUEST = _schema("ka_stop_quest", "Mark a quest stopped.", {"quest_id": S
 
 NATIVE_SCHEMAS = [
     KA_DOCTOR, KA_LIST_QUESTS, KA_GET_QUEST_STATE, KA_SET_ACTIVE_QUEST, KA_NEW_QUEST, KA_UPDATE_QUEST_MODE,
-    KA_ADD_USER_MESSAGE, KA_RECORD_USER_REQUIREMENT, KA_EVENTS, KA_READ_QUEST_DOCUMENTS, KA_MEMORY_SEARCH, KA_MEMORY_READ,
-    KA_MEMORY_LIST_RECENT,
-    KA_MEMORY_WRITE, KA_ARTIFACT_RECORD, KA_CONFIRM_BASELINE, KA_WAIVE_BASELINE,
+    KA_ADD_USER_MESSAGE, KA_RECORD_USER_REQUIREMENT, KA_EVENTS, KA_READ_QUEST_DOCUMENTS,
+    KA_ARTIFACT_RECORD, KA_CONFIRM_BASELINE, KA_WAIVE_BASELINE,
     KA_ATTACH_BASELINE, KA_CREATE_LOCAL_BASELINE, KA_SUBMIT_IDEA, KA_LIST_RESEARCH_BRANCHES,
     KA_RESOLVE_RUNTIME_REFS, KA_GET_PAPER_CONTRACT_HEALTH, KA_GET_GLOBAL_STATUS,
     KA_GET_METHOD_SCOREBOARD, KA_GET_OPTIMIZATION_FRONTIER, KA_GET_CONVERSATION_CONTEXT,

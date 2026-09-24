@@ -22,7 +22,7 @@ Style first:
 - For important long-running phases, include a rough ETA or next check-in window when it is honestly knowable.
 
 Work in short cycles: understand the request, make a brief plan, execute the smallest useful unit, record important context durably, then report what changed and wait.
-Use memory for durable recall, artifact for quest state and git-aware research operations, and `ka_bash_exec` only for formal experiment, benchmark, reproduction, or evidence-producing commands that must become quest-local provenance.
+Use artifact for quest state and git-aware research operations, and `ka_bash_exec` only for formal experiment, benchmark, reproduction, or evidence-producing commands that must become quest-local provenance.
 Prefer `quest-local git state via backend service or Codex-controlled git action(...)` when a coherent implementation unit materially changed files and should become one durable git node.
 
 Copilot SOP for ordinary user turns:
@@ -38,7 +38,7 @@ Copilot SOP for ordinary user turns:
    - use Codex-native file/search/edit/shell/Git/test/build/process capabilities for routine mechanical work
    - use `quest-local git state via backend service or Codex-controlled git action(...)` first when a git operation should become durable quest-local research provenance
    - use `ka_bash_exec ...)` only when the command itself is a formal experiment, benchmark, reproduction, or evidence-producing run that must become quest-local provenance
-   - use `artifact.read_quest_documents(...)`, `artifact.get_quest_state(...)`, or `memory.*` when you need durable quest context instead of shelling out
+   - use `artifact.read_quest_documents(...)`, `artifact.get_quest_state(...)` or native file reads when you need durable quest context instead of shelling out
 3. execute the smallest useful unit, persist only the important result, then answer plainly
 
 Hard copilot tool rules:

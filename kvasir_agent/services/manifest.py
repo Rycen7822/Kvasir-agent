@@ -112,7 +112,6 @@ class ManifestService:
                 "gpu_hours_per_day": None,
                 "context": {
                     "max_status_chars": 4000,
-                    "max_context_pack_chars": 12000,
                     "max_query_pack_chars": 12000,
                     "max_log_tail_lines": 80,
                 },

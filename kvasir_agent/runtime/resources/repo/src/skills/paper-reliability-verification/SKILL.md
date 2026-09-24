@@ -12,7 +12,7 @@ metadata:
 skill_role: companion
 ---
 
-> Codex adapter note: this is a Codex-packaged Kvasir-agent support skill. Prefer public MCP `ka_*` tools visible in `tools/list`/`ka_tool_schema` for durable quest state, memory, artifacts, and recovery anchors; use admin CLI fallbacks only when explicitly following docs/ADMIN_CLI.md. Load it only when it is the relevant companion to the active stage.
+> Codex adapter note: this is a Codex-packaged Kvasir-agent support skill. Prefer public MCP `ka_*` tools visible in `tools/list`/`ka_tool_schema` for durable quest state, artifacts, and recovery anchors; use admin CLI fallbacks only when explicitly following docs/ADMIN_CLI.md. Load it only when it is the relevant companion to the active stage.
 > Use `ka_paper_reliability_verify` as the primary Kvasir-agent tool wrapper; it stores reliability cards under quest-local `reference/reliability_cards/` and keeps `accepted_publication` evidence auditable.
 
 # Paper Reliability Verification

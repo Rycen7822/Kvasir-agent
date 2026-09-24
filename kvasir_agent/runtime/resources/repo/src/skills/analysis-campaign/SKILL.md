@@ -586,27 +586,6 @@ Weak campaign behavior:
 - ignoring contradictory analysis results
 - reporting every minor slice with equal weight instead of prioritizing the important ones
 
-## Memory rules
-
-Stage-start requirement:
-
-- begin every analysis campaign pass with `ka_memory_search(scope='quest', limit=5)`
-- then run at least one analysis-relevant `ka_memory_search(...)` before launching or resuming slices
-- if several campaigns, parent runs, or idea lines exist, narrow retrieval to the current `campaign_id`, `parent_run_id`, `idea_id`, or `branch` instead of mixing unrelated slice memory
-
-Write to memory only when the campaign yields reusable lessons, such as:
-
-- robust failure patterns
-- evaluation caveats
-- reproducible sensitivity findings
-
-Stage-end requirement:
-
-- if the campaign produced a durable cross-slice lesson, failure pattern, or comparability caveat, write at least one `ka_memory_write(...)` before leaving the stage
-
-The campaign’s main record belongs in run artifacts and the aggregated report.
-When synthesizing the campaign, read the per-slice `evaluation_summary` fields first, then expand into longer evidence only where the short summaries are still ambiguous.
-
 ## Artifact rules
 
 Typical artifact sequence:
@@ -637,3 +616,7 @@ Exit the analysis-campaign stage once one of the following is durably true:
 - the campaign produced enough evidence for writing or decision-making
 - the campaign exposed a problem that requires returning to `experiment` or `idea`
 - the campaign is blocked and the blocker is durably recorded
+
+## Research records
+
+Keep slice outcomes, failures and comparability caveats in the analysis campaign records, with references to their experiment evidence.

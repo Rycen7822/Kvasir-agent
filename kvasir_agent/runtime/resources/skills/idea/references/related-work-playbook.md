@@ -27,11 +27,11 @@ Use several query families and refine them iteratively:
 
 ## 2.1 Source order and de-dup protocol
 
-Before opening a fresh broad search, check durable memory first:
+Before opening a fresh broad search, check existing research records first:
 
 1. recent quest `papers`, `ideas`, and `knowledge`
 2. recent global `papers`, `knowledge`, and `templates`
-3. `ka_memory_search(...)` with the baseline name, task, dataset, mechanism, and current idea labels
+3. search of project research records with the baseline name, task, dataset, mechanism, and current idea labels
 
 Then search externally for the missing neighborhood:
 
@@ -121,7 +121,7 @@ If none of these apply, the candidate is usually not worth promoting.
 Watch for these traps:
 
 - only reading one or two papers
-- repeating the same broad search without checking memory first
+- repeating the same broad search without checking research history first
 - comparing to weak baselines instead of the strongest nearby work
 - declaring novelty from implementation detail rather than research claim
 - mistaking recency for relevance

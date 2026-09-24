@@ -9,7 +9,7 @@ skill_role: stage
 Use this skill for algorithm-first quests where the goal is the strongest justified optimization result rather than paper packaging.
 
 This skill is the lightweight optimization control layer for Kvasir-agent.
-It does not replace the normal quest runtime. It tells you how to use the existing Kvasir-agent artifact, memory, ka_bash_exec, Git, and worktree mechanisms as an optimization system.
+It does not replace the normal quest runtime. It tells you how to use the existing Kvasir-agent artifact, ka_bash_exec, Git, and worktree mechanisms as an optimization system.
 
 ## Interaction discipline
 
@@ -92,8 +92,8 @@ Treat this as the concrete optimize workflow. Do not skip these steps just becau
 At the start of each meaningful optimize pass, use this order unless a stronger local reason exists:
 
 1. `ka_artifact_record / analysis artifact lookup(...)`
-2. `ka_memory_search(scope='quest', limit=5)`
-3. `ka_memory_search(...)`
+2. search of project research records
+3. search of project research records
 4. `artifact.get_quest_state(detail='summary')`
 5. `artifact.read_quest_documents(...)` when exact durable wording matters
 
@@ -295,7 +295,7 @@ When several briefs compete, produce:
 - frontier has been refreshed
 - primary optimize submode chosen
 - current route mode chosen
-- recent optimization memory reviewed
+- recent optimization history reviewed
 - brief slate checked for family diversity
 - candidate briefs updated or confirmed
 - candidate ranking updated
@@ -334,7 +334,7 @@ Do not jump to a rewrite merely because one local patch failed.
 When a candidate fails but still looks strategically valuable, record:
 
 - error
-- retrieved memory
+- retrieved research records
 - root cause
 - minimal fix
 - keep unchanged
@@ -353,7 +353,7 @@ Before opening a fusion candidate, answer:
 
 Do not fuse two weak lines or two same-mechanism lines under different names.
 
-### Optimization memory template
+### Optimization history template
 
 When writing reusable optimization lessons, capture:
 
@@ -386,7 +386,7 @@ For candidate-brief, improve, fusion, and debug prompts, preserve:
 
 - introduction
 - task description
-- memory
+- research records
 - previous solution or previous line
 - instructions
 - explicit response format
@@ -407,7 +407,7 @@ Preserve these reasoning contracts whenever possible:
 - Use `artifact.submit_idea(..., submission_mode='line')` only for directions that deserve a durable optimization line and branch/worktree.
 - Use `ka_artifact_record payload={'kind': 'report', 'report_type': 'optimization_candidate', ...})` for implementation-level candidate attempts inside one durable line.
 - Before deciding the next route, call `ka_artifact_record / analysis artifact lookup(...)` when available and use it as the primary optimization-state summary.
-- Keep all major optimization successes and failures durable through artifacts and memory.
+- Keep all major optimization successes and failures durable through artifacts and research records.
 - Do not drift into paper-outline, bundle, or finalize work by default while this stage is active.
 - Do not convert ranking uncertainty into premature branch creation.
 - Do not treat an implementation-level candidate report as a new durable optimization line.
@@ -453,7 +453,7 @@ Use these three object levels consistently:
 4. Inside a durable line, generate a small candidate pool, then run bounded smoke checks before full evaluations.
 5. Record each implementation-level attempt durably with status, change plan, and result.
 6. After each real result, decide whether to explore, exploit, fuse, debug, or stop.
-7. Write optimization lessons to memory before leaving the stage.
+7. Record optimization outcomes in the experiment history before leaving the stage.
 
 At the start of each meaningful optimize pass, update `OPTIMIZE_CHECKLIST.md` before spending significant code or compute.
 
@@ -462,7 +462,7 @@ At the start of each meaningful optimize pass, update `OPTIMIZE_CHECKLIST.md` be
 At the start of a meaningful optimize pass, use this order unless a stronger local reason exists:
 
 1. `ka_artifact_record / analysis artifact lookup(...)`
-2. `ka_memory_search(...)`
+2. search of project research records
 3. `artifact.get_quest_state(detail='summary')`
 4. `artifact.read_quest_documents(...)` when exact durable wording matters
 
@@ -472,8 +472,8 @@ Do not start generating new candidates before the frontier and recent optimizati
 
 Stage-start requirement:
 
-- run `ka_memory_search(scope='quest', limit=5)`
-- run at least one `ka_memory_search(...)`
+- search project research records
+- inspect relevant research records
 - read `ka_artifact_record / analysis artifact lookup(...)`
 - update `OPTIMIZE_CHECKLIST.md`
 
@@ -763,8 +763,8 @@ Default active-pool rule:
 
 Use `loop` when a durable line and implementation-candidate pool already exist and the main need is bounded forward motion.
 
-Before changing code in `loop`, inspect the same-line local attempt memory for the current line.
-Treat recent sibling attempts on the same line as the first memory surface, ahead of broader quest memory.
+Before changing code in `loop`, inspect the same-line local attempt history for the current line.
+Treat recent sibling attempts on the same line as the first source of history, ahead of broader project research records.
 
 When running `loop`, choose one primary action:
 
@@ -810,35 +810,6 @@ Use a branch/family diversity cap during exploitation:
 - do not keep selecting only the locally familiar family because it is easiest to elaborate
 - when several strong candidates are close, prefer the one that preserves frontier diversity
 - if one branch or family already dominates recent attempts, require stronger evidence before selecting another near-duplicate attempt
-
-## Memory protocol
-
-Before broad new search, run at least one `ka_memory_search(...)` using:
-
-- the current task name
-- the active idea id
-- a method keyword
-- the most recent failure mode or successful mechanism
-
-When the search appears too narrow, also retrieve one of:
-
-- a similar failure pattern
-- an orthogonal success pattern
-- a deliberately dissimilar but high-value prior attempt
-
-For `seed`, `loop`, and `debug`, also inspect the same-line local attempt memory from the current leading line before widening to broader quest memory.
-
-Write at least one quest memory card when you learn something reusable, such as:
-
-- a successful optimization pattern
-- a repeated failure pattern
-- a fusion lesson
-- a reason a candidate should not be retried
-
-Use the integrated `optimization memory template` section for the minimum acceptable memory-card shape.
-
-Do not write generic "we tried some optimization" memory cards.
-Each card should be retrieval-friendly and decision-relevant.
 
 ## Artifact protocol
 
@@ -936,7 +907,7 @@ If the proposed change goes beyond the minimal fix and becomes a new mechanism, 
 When a candidate fails:
 
 - classify whether the failure is structural, local, or environmental
-- retrieve similar failure patterns from memory before changing code
+- retrieve similar failure patterns from experiment history before changing code
 - prefer targeted fixes over broad rewrites
 - define the exact post-fix bounded check before editing
 
@@ -983,7 +954,7 @@ For candidate-brief, improve, fusion, and debug prompts, preserve these recurrin
 
 - Introduction
 - Task description
-- Memory
+- Research records
 - Previous solution or previous line
 - Instructions
 - assistant_prefix when a stable response lead-in reduces drift
@@ -1075,7 +1046,7 @@ Preferred recovery order:
 
 1. refresh the frontier
 2. inspect the current candidate board
-3. inspect recent optimization memory
+3. inspect recent optimization history
 4. record one explicit route decision
 5. continue with exactly one concrete next action
 
@@ -1085,12 +1056,12 @@ Do not leave the stage parked without a recorded reason and a concrete reopen co
 
 Stage-end requirement:
 
-- write at least one `ka_memory_write(...)` when the pass produced a reusable success pattern, repeated failure pattern, fusion lesson, or explicit non-retry rule
+- Record relevant outcomes and non-retry reasons in the existing experiment or idea record.
 - update `OPTIMIZE_CHECKLIST.md`
 - update `CANDIDATE_BOARD.md` when the candidate pool changed
 - leave one durable next action or stop condition
 
-If nothing reusable was learned, record why this pass was still necessary instead of writing a fake memory card.
+If nothing reusable was learned, record why this pass was still necessary instead of writing a fake research note.
 
 ## Completion rule
 
@@ -1335,7 +1306,7 @@ Do not go from a vague idea directly into a large patch with no intermediate pla
 
 What concrete error or failure occurred?
 
-## Retrieved Memory
+## Retrieved Research Records
 
 What similar failure pattern or repair lesson should be reused before changing code?
 
@@ -1509,9 +1480,9 @@ What evidence should improve if this works?
 
 Usually `optimize` or `experiment`.
 
-### optimization-memory-template.md
+### optimization-history-template.md
 
-# Optimization Memory Template
+# Optimization History Template
 
 ## Type
 
@@ -1549,7 +1520,7 @@ When should this lesson be reused, and when should it be avoided?
 - [ ] Read `ka_artifact_record / analysis artifact lookup(...)` or equivalent durable frontier summary
 - [ ] Select the primary optimize submode: `brief`, `rank`, `seed`, `loop`, `fusion`, or `debug`
 - [ ] Confirm whether the current pass is `explore`, `exploit`, `fusion`, `debug`, or `stop`
-- [ ] Review recent optimization memory before generating new candidates
+- [ ] Review recent optimization history before generating new candidates
 - [ ] Check whether the current brief slate covers more than one mechanism family
 - [ ] Candidate briefs updated or confirmed
 - [ ] Candidate ranking updated
@@ -1604,7 +1575,7 @@ These prompt structures are worth preserving across optimize subroutines.
 
 - Introduction
 - Task description
-- Memory
+- Research records
 - Previous solution or previous line
 - Instructions
 - assistant_prefix when a stable response lead-in reduces drift
@@ -1643,3 +1614,7 @@ For debugging:
 - state the likely root cause
 - require the minimal targeted fix
 - preserve the original solution intent unless the bug proves the design invalid
+
+## Research records
+
+Consult prior attempts on the same line before choosing a change. Record outcomes, failure reasons, comparability caveats and non-retry decisions in the existing experiment or idea record.

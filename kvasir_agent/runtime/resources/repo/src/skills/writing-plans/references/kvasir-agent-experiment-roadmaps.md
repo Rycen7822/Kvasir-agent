@@ -42,7 +42,7 @@ Use this reference when a user asks for an experiment execution plan derived fro
 - appendix experiments
 - paper-facing figures/tables/claim validation
 - mandatory per-run record format
-- Kvasir-agent artifact/memory rules
+- Kvasir-agent artifact and research-record rules
 - execution discipline
 - first next implementation task
 
@@ -60,5 +60,5 @@ After writing the roadmap, run a small script/check that verifies:
 
 Then record:
 
-- quest memory with path and summary
+- project research records with path and summary
 - milestone artifact with path, line count/byte count, checks, and next action

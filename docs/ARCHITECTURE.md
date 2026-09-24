@@ -13,6 +13,8 @@ manual maintenance CLI -> explicit state creation / migration / repair
 
 The new default chain never calls the legacy global runtime, vendor home setup, quest shims or environment-based project routing. Old runtime modules with offline consumers remain internal. Old generic CLI scripts reject operations. MCP profile/filter machinery and orphan routing modules are removed.
 
+General memory cards, their legacy read/write tools, automatic card injection and session context packs are removed from the implementation. Research documents, paper/idea records, trajectory search and experiment failure history remain. Existing `memory/ideas`, `memory/papers` and historical document paths stay readable; cleanup never deletes project data. Shared Markdown parsing lives independently of memory services.
+
 The state root is `<project>/Kvasir-agent/`. At creation it contains only `research.yaml` and `events/{events.jsonl,write.lock}`. Environment snapshots, `runs/<id>/`, `artifacts/checks/`, `artifacts/imports/` and explicit migration records appear only when needed. Reading state never migrates, repairs, collects or normalizes it on disk.
 
 A run record is authoritative. Its `result.json` and terminal event are idempotent derived data; failure leaves `derivation_status=partial` for explicit reconciliation. Every run freezes the request and environment. Claims resolve those records and recorded seeds. Imported bytes and older evidence never acquire managed execution trust automatically.

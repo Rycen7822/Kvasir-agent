@@ -35,7 +35,7 @@ For each meaningful search pass, record:
 
 Recommended source labels:
 
-- `memory`
+- project research records
 - `arXiv`
 - `benchmark-doc`
 - `official-repo`
@@ -102,7 +102,7 @@ List:
 - quest `knowledge` cards to create or refresh
 - any global lesson that may later be promotable
 
-At least one survey-derived memory card should be written if external search materially changed the frame.
+At least one survey-derived research note should be written if external search materially changed the frame.
 
 ## 8. Next anchor recommendation
 

@@ -72,7 +72,7 @@ from ..shared import (
     write_yaml,
 )
 from ..quest import QuestService
-from ..memory.frontmatter import dump_markdown_document, load_markdown_document
+from ..markdown import dump_markdown_document, load_markdown_document
 from .arxiv import fetch_arxiv_metadata, read_arxiv_content
 from .charts import render_main_experiment_metric_timeline_chart
 from .guidance import build_guidance_for_record, guidance_summary

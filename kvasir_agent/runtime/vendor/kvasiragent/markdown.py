@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from ..shared import require_yaml
+from .shared import require_yaml
 
 
 def load_markdown_document_from_text(text: str) -> tuple[dict, str]:

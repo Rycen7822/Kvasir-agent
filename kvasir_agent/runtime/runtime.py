@@ -81,7 +81,6 @@ class Services:
     resource_repo_root: Path
     quest: Any
     artifact: Any
-    memory: Any
     bash: Any
     config_manager: Any
     baseline_registry: Any
@@ -93,7 +92,6 @@ def _import_services():
     from kvasiragent.bash_exec import BashExecService
     from kvasiragent.config import ConfigManager
     from kvasiragent.home import ensure_home_layout
-    from kvasiragent.memory import MemoryService
     from kvasiragent.quest import QuestService
     from kvasiragent.registries import BaselineRegistry
     from kvasiragent.skills import SkillInstaller
@@ -102,7 +100,6 @@ def _import_services():
         "BashExecService": BashExecService,
         "ConfigManager": ConfigManager,
         "ensure_home_layout": ensure_home_layout,
-        "MemoryService": MemoryService,
         "QuestService": QuestService,
         "BaselineRegistry": BaselineRegistry,
         "SkillInstaller": SkillInstaller,
@@ -124,7 +121,6 @@ def get_services(config: NativeConfig | None = None) -> Services:
         resource_repo_root=repo,
         quest=quest,
         artifact=imports["ArtifactService"](home),
-        memory=imports["MemoryService"](home),
         bash=imports["BashExecService"](home),
         config_manager=imports["ConfigManager"](home),
         baseline_registry=imports["BaselineRegistry"](home),

@@ -10,7 +10,7 @@ metadata:
 skill_role: companion
 ---
 
-> Codex adapter note: this is a Codex-packaged Kvasir-agent support skill. Prefer public MCP `ka_*` tools visible in `tools/list`/`ka_tool_schema` for durable quest state, memory, artifacts, and recovery anchors; use admin CLI fallbacks only when explicitly following docs/ADMIN_CLI.md. Load it only when it is the relevant companion to the active stage.
+> Codex adapter note: this is a Codex-packaged Kvasir-agent support skill. Prefer public MCP `ka_*` tools visible in `tools/list`/`ka_tool_schema` for durable quest state, artifacts, and recovery anchors; use admin CLI fallbacks only when explicitly following docs/ADMIN_CLI.md. Load it only when it is the relevant companion to the active stage.
 > When a handoff becomes durable, record it with `ka_artifact_record` as a milestone/report and include the absolute quest path in the payload.
 
 # Research Quest Handoffs
@@ -28,7 +28,7 @@ Create or update a quest-root `AGENTS.md` unless the project already has a clear
 Include these sections when relevant:
 
 1. quest id, title, source root, synced/root copy paths, and handoff timestamp;
-2. current quest state: status, active anchor/stage, baseline gate, pending messages/decisions, artifact and memory counts;
+2. current quest state: status, active anchor/stage, baseline gate, pending messages/decisions, artifact and research-document counts;
 3. one-minute research/task summary;
 4. authoritative reading order with relative paths;
 5. durable literature/resource/artifact state;

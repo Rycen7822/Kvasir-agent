@@ -6,8 +6,7 @@ from pathlib import Path
 
 from ..config import ConfigManager
 from ..home import repo_root
-from ..memory import MemoryService
-from ..memory.frontmatter import load_markdown_document
+from ..markdown import load_markdown_document
 from ..quest import QuestService
 from ..registries import BaselineRegistry
 from ..shared import read_json, read_text, read_yaml
@@ -20,45 +19,6 @@ STANDARD_SKILLS = stage_skill_ids(repo_root())
 _AUTO_CONTINUE_MONITOR_INTERVAL_SECONDS = 240
 
 COMPANION_SKILLS = companion_skill_ids(repo_root())
-
-STAGE_MEMORY_PLAN = {
-    "scout": {
-        "quest": ("papers", "knowledge", "decisions"),
-        "global": ("papers", "knowledge", "templates"),
-    },
-    "baseline": {
-        "quest": ("papers", "decisions", "episodes", "knowledge"),
-        "global": ("knowledge", "templates", "papers"),
-    },
-    "idea": {
-        "quest": ("papers", "ideas", "decisions", "knowledge"),
-        "global": ("papers", "knowledge", "templates"),
-    },
-    "optimize": {
-        "quest": ("episodes", "decisions", "ideas", "knowledge"),
-        "global": ("knowledge", "templates"),
-    },
-    "experiment": {
-        "quest": ("ideas", "decisions", "episodes", "knowledge"),
-        "global": ("knowledge", "templates"),
-    },
-    "analysis-campaign": {
-        "quest": ("ideas", "decisions", "episodes", "knowledge", "papers"),
-        "global": ("knowledge", "templates", "papers"),
-    },
-    "write": {
-        "quest": ("papers", "decisions", "knowledge", "ideas"),
-        "global": ("templates", "knowledge", "papers"),
-    },
-    "finalize": {
-        "quest": ("decisions", "knowledge", "episodes"),
-        "global": ("knowledge", "templates"),
-    },
-    "decision": {
-        "quest": ("decisions", "knowledge", "episodes", "ideas"),
-        "global": ("knowledge", "templates"),
-    },
-}
 
 
 def current_standard_skills(repo_root_path: Path | None = None) -> tuple[str, ...]:
@@ -106,7 +66,6 @@ class PromptBuilder:
         self.repo_root = repo_root
         self.home = home
         self.quest_service = QuestService(home)
-        self.memory_service = MemoryService(home)
         self.baseline_registry = BaselineRegistry(home)
         self.config_manager = ConfigManager(home)
         self.skill_installer = SkillInstaller(repo_root, home)
@@ -163,7 +122,7 @@ class PromptBuilder:
             f"model: {model}",
             f"conversation_id: quest:{quest_id}",
             f"default_locale: {default_locale}",
-            "built_in_mcp_namespaces: memory, artifact, bash_exec",
+            "built_in_mcp_namespaces: artifact, bash_exec",
             "mcp_namespace_note: **any shell-like command execution must use `bash_exec(...)`, including curl/python/bash/node/git/npm/uv and similar CLI tools; do not use native `shell_command` / `command_execution`.**",
             "",
             "Canonical stage skills root:",
@@ -244,14 +203,6 @@ class PromptBuilder:
                 "",
                 "## Interaction Style",
                 self._interaction_style_block(default_locale=default_locale, user_message=user_message, snapshot=snapshot),
-                "",
-                "## Priority Memory For This Turn",
-                self._priority_memory_block(
-                    quest_root,
-                    skill_id=skill_id,
-                    active_anchor=active_anchor,
-                    user_message=user_message,
-                ),
                 "",
                 "## Recent Conversation Window",
                 self._conversation_block(quest_id),
@@ -562,7 +513,7 @@ class PromptBuilder:
         if str(turn_reason or "").strip() != "auto_continue":
             return "- none"
         lines = [
-            "- resume_spine_rule: on auto_continue turns, first continue from the latest durable user requirement, the latest assistant checkpoint, the latest run summary, and recent memory cues instead of reconstructing intent from scratch",
+            "- resume_spine_rule: on auto_continue turns, first continue from the latest durable user requirement, the latest assistant checkpoint, the latest run summary instead of reconstructing intent from scratch",
         ]
         bash_running_count = int(((snapshot.get("counts") or {}).get("bash_running_count")) or 0)
         latest_bash_session = (
@@ -613,18 +564,6 @@ class PromptBuilder:
                 f"exit_code={latest_run.get('exit_code') if latest_run.get('exit_code') is not None else 'none'} | "
                 f"preview={preview or 'none'}"
             )
-        recent_memory = self.memory_service.list_recent(scope="quest", quest_root=quest_root, limit=3)
-        if recent_memory:
-            lines.append("- recent_memory_cues:")
-            for item in recent_memory:
-                title = str(item.get("title") or "memory").strip() or "memory"
-                card_type = str(item.get("type") or "memory").strip() or "memory"
-                excerpt = " ".join(str(item.get("excerpt") or "").split())
-                if len(excerpt) > 200:
-                    excerpt = excerpt[:197].rstrip() + "..."
-                lines.append(f"  - [{card_type}] {title}: {excerpt or 'no excerpt'}")
-        else:
-            lines.append("- recent_memory_cues: none")
         lines.append("- resume_spine_conflict_rule: if these spine items conflict with newer durable files or artifacts, trust the newer durable state and update the summary rather than replaying the older plan verbatim")
         return "\n".join(lines)
 
@@ -1170,7 +1109,7 @@ class PromptBuilder:
                 "- response_pattern: say what changed -> say what it means -> say what happens next",
                 "- mailbox_protocol: artifact.record(include_recent_inbound_messages=True) remains the queued human-message mailbox and should be checked whenever human continuity matters.",
                 "- planning_rule: before non-trivial execution, make the immediate plan explicit and keep the first step small.",
-                "- tool_rule: use memory for durable recall, artifact for quest state and git-aware research operations, and bash_exec for terminal execution.",
+                "- tool_rule: use artifact for quest state and git-aware research operations, and bash_exec for terminal execution.",
                 "- copilot_sop_rule: classify the request first, choose the narrowest correct tool path, execute the smallest useful unit, persist the important result, then answer plainly.",
                 "- shell_tool_mandate: **for any shell, CLI, Python, bash, node, git, npm, uv, or environment command execution, use `bash_exec(...)`; do not use native `shell_command` or Codex `command_execution`.**",
                 "- git_tool_mandate: for git work inside the current quest repository or worktree, prefer `bash_exec(...) or a Hermes-controlled git action` before raw shell git commands.",
@@ -1225,7 +1164,7 @@ class PromptBuilder:
             f"- auto_continue_monitoring_protocol: if the runtime schedules background-progress auto_continue turns while a real external task is already active, treat them as low-frequency monitoring passes roughly every {_AUTO_CONTINUE_MONITOR_INTERVAL_SECONDS} seconds rather than as a fast polling loop",
             "- auto_continue_prepare_protocol: in autonomous mode before a real long-running external task exists, rapid auto-continue passes around 0.2 seconds apart are acceptable only for active preparation, launch, or durable route closure work; they are not a substitute for starting the real task",
             "- long_run_ownership_protocol: real long-running execution should stay alive in detached bash_exec sessions or the runtime process it launched; do not rely on repeated model turns to simulate continuous execution",
-            "- auto_continue_resume_protocol: on auto_continue turns, read the resume context spine first and continue from the latest durable user requirement, latest assistant checkpoint, latest run summary, recent memory cues, and current bash_exec state before changing route",
+            "- auto_continue_resume_protocol: on auto_continue turns, read the resume context spine first and continue from the latest durable user requirement, latest assistant checkpoint, latest run summary, and current bash_exec state before changing route",
             "- blocking_protocol: use reply_mode='blocking' only for true unresolved user decisions; ordinary progress updates should stay threaded and non-blocking",
             "- credential_blocking_protocol: if continuation requires user-supplied external credentials or secrets such as an API key, GitHub key/token, or Hugging Face key/token, emit one structured blocking decision request that asks the user to provide the credential or choose an alternative route; do not invent placeholders or silently skip the blocked step",
             "- credential_wait_protocol: if that credential request remains unanswered, keep the quest waiting rather than self-resolving; if you are resumed without new credentials and no other work is possible, a long low-frequency park such as `bash_exec(command='sleep 3600', mode='await', timeout_seconds=3700)` is acceptable to avoid busy-looping",
@@ -1372,122 +1311,6 @@ class PromptBuilder:
             )
         return "\n".join(lines)
 
-    def _priority_memory_block(
-        self,
-        quest_root: Path,
-        *,
-        skill_id: str,
-        active_anchor: str,
-        user_message: str,
-    ) -> str:
-        stage = active_anchor if active_anchor in STAGE_MEMORY_PLAN else skill_id
-        plan = STAGE_MEMORY_PLAN.get(stage, STAGE_MEMORY_PLAN["decision"])
-        quest_kinds = ", ".join(plan.get("quest", ())) or "none"
-        global_kinds = ", ".join(plan.get("global", ())) or "none"
-        lines = [
-            f"- stage_memory_rule: for `{stage}`, prefer quest memory kinds [{quest_kinds}] and global memory kinds [{global_kinds}] when memory lookup is needed.",
-            "- memory_lookup_tool: call memory.list_recent(...) to recover context after pause/restart and memory.search(...) before repeating prior work.",
-            "- memory_injection_rule: keep the injected memory compact, but do not drop all continuity on auto_continue turns; reuse a few recent durable cues directly when they materially anchor the next action.",
-        ]
-        selected: list[dict] = []
-        seen_paths: set[str] = set()
-        for kind in plan.get("quest", ())[:2]:
-            for card in self.memory_service.list_recent(scope="quest", quest_root=quest_root, limit=2, kind=kind)[:1]:
-                self._append_priority_memory(
-                    selected,
-                    seen_paths,
-                    card=card,
-                    scope="quest",
-                    quest_root=quest_root,
-                    reason=f"recent quest memory for stage `{stage}`",
-                )
-        for kind in plan.get("global", ())[:2]:
-            for card in self.memory_service.list_recent(scope="global", limit=2, kind=kind)[:1]:
-                self._append_priority_memory(
-                    selected,
-                    seen_paths,
-                    card=card,
-                    scope="global",
-                    quest_root=quest_root,
-                    reason=f"recent global memory for stage `{stage}`",
-                )
-        for query in self._memory_queries(user_message)[:2]:
-            for scope in ("quest", "global"):
-                for card in self.memory_service.search(
-                    query,
-                    scope=scope if scope == "global" else "quest",
-                    quest_root=quest_root if scope == "quest" else None,
-                    limit=1,
-                ):
-                    self._append_priority_memory(
-                        selected,
-                        seen_paths,
-                        card=card,
-                        scope=scope,
-                        quest_root=quest_root,
-                        reason=f"matched current-turn query `{query}`",
-                    )
-        lines.extend(["- selected_memory:", self._format_priority_memory(selected)])
-        return "\n".join(lines)
-
-    def _append_priority_memory(
-        self,
-        selected: list[dict],
-        seen_paths: set[str],
-        *,
-        card: dict,
-        scope: str,
-        quest_root: Path,
-        reason: str,
-    ) -> None:
-        path = str(card.get("path") or "")
-        if not path or path in seen_paths:
-            return
-        full = self.memory_service.read_card(
-            path=path,
-            scope=scope,
-            quest_root=quest_root if scope == "quest" else None,
-        )
-        excerpt = " ".join(str(full.get("body") or "").split())
-        if len(excerpt) > 260:
-            excerpt = excerpt[:257].rstrip() + "..."
-        selected.append(
-            {
-                "scope": scope,
-                "type": full.get("type") or card.get("type") or "memory",
-                "title": full.get("title") or card.get("title") or Path(path).stem,
-                "path": path,
-                "reason": reason,
-                "excerpt": excerpt or str(card.get("excerpt") or ""),
-            }
-        )
-        seen_paths.add(path)
-
-    @staticmethod
-    def _format_priority_memory(selected: list[dict]) -> str:
-        if not selected:
-            return "- none"
-        lines: list[str] = []
-        for item in selected:
-            lines.append(f"- [{item['scope']}|{item['type']}] {item['title']} ({item['path']})")
-            lines.append(f"  reason: {item['reason']}")
-            if item.get("excerpt"):
-                lines.append(f"  excerpt: {item['excerpt']}")
-        return "\n".join(lines)
-
-    @staticmethod
-    def _memory_queries(user_message: str) -> list[str]:
-        tokens: list[str] = []
-        seen: set[str] = set()
-        for token in re.findall(r"[A-Za-z0-9_./:-]{4,}|[\u4e00-\u9fff]{2,}", user_message):
-            cleaned = token.strip().lower()
-            if not cleaned or cleaned in seen:
-                continue
-            seen.add(cleaned)
-            tokens.append(cleaned)
-            if len(tokens) >= 6:
-                break
-        return tokens
 
     def _conversation_block(self, quest_id: str, limit: int = 12) -> str:
         return "\n".join(

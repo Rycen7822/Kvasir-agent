@@ -1,4 +1,4 @@
-# Quest artifact and memory pruning
+# Quest artifact and research-history pruning
 
 Use when a Kvasir-agent quest has accumulated too many local `artifacts/milestones` or `memory/knowledge` cards and the user asks for conservative cleanup.
 
@@ -11,11 +11,11 @@ Use when a Kvasir-agent quest has accumulated too many local `artifacts/mileston
 
 ## Good deletion candidates
 
-- chunk-by-chunk resume/progress memory cards once a final completion memory/result exists;
+- chunk-by-chunk resume/progress research notes once a final completion record/result exists;
 - superseded one-off packaging/handoff milestones when a newer self-contained handoff exists;
 - planned-not-executed, blocked, template-only, preflight-only, or smoke-only milestones that are now represented in a later formal status/result document;
-- old idea-revision memory cards when the current idea/report file and one latest boundary card remain;
-- memory index entries that point to deleted cards.
+- old idea-revision research notes when the current idea/report file and one latest boundary card remain;
+- obsolete links to removed research notes.
 
 ## Keep by default
 
@@ -30,7 +30,7 @@ Use when a Kvasir-agent quest has accumulated too many local `artifacts/mileston
 ## Workflow
 
 1. Record the cleanup request in quest state with `ka_add_user_message`.
-2. Inventory milestones and memory cards from disk; summarize title/status/date/path before deleting.
+2. Inventory milestones and research notes from disk; summarize title/status/date/path before deleting.
 3. Build deletion candidates by rule, not by age alone. Use keep-rules first, then noise-rules.
 4. Delete only the conservative candidates.
 5. Rewrite `memory/knowledge/_index.jsonl` so it has no stale paths.
@@ -44,5 +44,5 @@ Use when a Kvasir-agent quest has accumulated too many local `artifacts/mileston
 - `artifacts/milestones` count decreased but the latest key milestone still exists.
 - `memory/knowledge` count decreased and `memory_cards` in `ka_get_quest_state` is lower.
 - `_index.jsonl` has zero stale entries.
-- Key files still exist: current status/report, final handoff, active requirements, final completion memory, latest milestone.
+- Key files still exist: current status/report, final handoff, active requirements, final completion record, latest milestone.
 - `git status --short artifacts/milestones memory/knowledge` is clean after commit.

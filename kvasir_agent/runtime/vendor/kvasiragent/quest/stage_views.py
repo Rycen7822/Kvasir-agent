@@ -4,7 +4,7 @@ import json
 from pathlib import Path, PurePosixPath
 from typing import Any
 
-from ..memory.frontmatter import load_markdown_document
+from ..markdown import load_markdown_document
 from ..shared import read_json, read_text, read_yaml
 
 _STAGE_KEY_ALIASES = {

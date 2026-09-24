@@ -379,16 +379,10 @@ Weak decisions:
 - pretend blocked states are progress
 - choose a winner without naming the rejected alternatives or criteria
 
-## Memory rules
-
-Write to memory only when the lesson is reusable across future decisions, such as:
-
-- a recurring failure pattern
-- a reliable stop condition
-- a useful branching heuristic
-
-The canonical record of the decision itself belongs in `artifact`.
-
 ## Exit criteria
 
 Exit once the decision is durably recorded and the next stage or action is explicit.
+
+## Research records
+
+Preserve the chosen research route, alternatives and rationale in the project decision record.
