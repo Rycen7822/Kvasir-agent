@@ -25,14 +25,13 @@
           "minLength": 1,
           "maxLength": 1024
         },
-        "sha256": {
+        "version": {
           "type": "string",
-          "pattern": "^[a-f0-9]{64}$"
+          "pattern": "^[A-Za-z0-9_-]{1,80}$"
         }
       },
       "required": [
-        "path",
-        "sha256"
+        "path"
       ],
       "additionalProperties": false
     },
@@ -47,7 +46,7 @@
           },
           "revision": {
             "type": "string",
-            "pattern": "^[a-f0-9]{64}$"
+            "pattern": "^[A-Za-z0-9_-]{1,80}$"
           }
         },
         "required": [
@@ -153,10 +152,6 @@
                     "minLength": 1,
                     "maxLength": 1024
                   },
-                  "sha256": {
-                    "type": "string",
-                    "pattern": "^[a-f0-9]{64}$"
-                  },
                   "start": {
                     "type": "integer",
                     "minimum": 1
@@ -174,7 +169,6 @@
                 "required": [
                   "kind",
                   "path",
-                  "sha256",
                   "start",
                   "end",
                   "excerpt"
@@ -192,10 +186,6 @@
                     "minLength": 1,
                     "maxLength": 1024
                   },
-                  "sha256": {
-                    "type": "string",
-                    "pattern": "^[a-f0-9]{64}$"
-                  },
                   "page": {
                     "type": "integer",
                     "minimum": 1
@@ -209,7 +199,6 @@
                 "required": [
                   "kind",
                   "path",
-                  "sha256",
                   "page",
                   "excerpt"
                 ],

@@ -4,8 +4,7 @@
   "kind": "idea",
   "title": "Test a competing mechanism",
   "content": {
-    "path": "research/hypothesis.md",
-    "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    "path": "research/hypothesis.md"
   },
   "dependencies": [],
   "metadata": {

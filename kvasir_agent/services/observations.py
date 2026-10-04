@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 import math
 
 from .evidence_contracts import EvidenceError, read_json, validate_document
-from .research_state import within, file_hash
+from .research_state import within
 
 
 def timestamp(value):
@@ -23,16 +23,10 @@ def observations(state, record):
         if relative:
             try:
                 path = within(root, relative, exists=True)
-                before = file_hash(path, limit=65536)
                 data = validate_document(read_json(path, limit=65536), kind)
-                if file_hash(path, limit=65536) != before:
-                    raise EvidenceError("observation_changed", "Observation changed during read.")
                 if data["run_id"] != record["run_id"]:
                     raise EvidenceError("observation_identity_mismatch", "Observation belongs to another run.")
-                result = {"status": "reported", "path": str(path), "basis": "program_declared", "sha256": before}
-                saved = record.get("observations_snapshot", {}).get(kind, {})
-                if saved.get("sha256") and saved["sha256"] != before:
-                    result["changed_since_completion"] = True
+                result = {"status": "reported", "path": str(path), "basis": "program_declared"}
                 if kind == "progress":
                     age = (datetime.now(timezone.utc) - timestamp(data["updated_at"])).total_seconds()
                     if age < 0:

@@ -1,7 +1,7 @@
 # Review of a saved version
 
-Saved target path and SHA-256:
-Exact research revisions, run IDs and dependency hashes:
+Saved target path/version:
+Exact research revisions and run IDs:
 Reviewer declaration and actual feedback file:
 Execution, artifact integrity and comparability checks:
 Statistical support evaluated, or explicitly not assessed:

@@ -15,7 +15,7 @@ from kvasir_agent.mcp.tool_registry import call_tool, tools_list_payload
 from kvasir_agent.services.evidence import EvidenceService
 from kvasir_agent.services.evidence_contracts import EvidenceError
 from kvasir_agent.services.explicit_migration import Migration
-from kvasir_agent.services.research_state import ResearchState, alive, file_hash
+from kvasir_agent.services.research_state import ResearchState, alive
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -38,8 +38,8 @@ def project(tmp_path):
     (tmp_path / "evaluate.py").write_text("# pinned evaluator\n")
     (tmp_path / "data.txt").write_text("fixed data\n")
     env = {"schema_version": 1, "env_id": "toy", "baseline": {"repo_path": "."},
-           "protected_files": [{"path": "evaluate.py", "sha256": file_hash(tmp_path / "evaluate.py")}],
-           "datasets": [{"path": "data.txt", "sha256": file_hash(tmp_path / "data.txt")}],
+           "protected_files": [{"path": "evaluate.py"}],
+           "datasets": [{"path": "data.txt", "version": "v1"}],
            "primary_metric": {"name": "score", "direction": "maximize", "parser": "flat_key", "path": "score"}}
     write(tmp_path / "environment.json", env)
     code = "import os,json,pathlib; p=pathlib.Path(os.environ['KVASIR_RUN_DIR']); (p/'metrics.json').write_text(json.dumps({'score':0.75}))"
@@ -115,7 +115,7 @@ def test_success_idempotency_and_claims_use_real_runs(project):
     root, state, spec = project
     run_id = start(project)
     record = finish(state, run_id)
-    assert (record["status"], record["evidence_status"], record["metric"]) == ("completed", "verified", .75)
+    assert (record["status"], record["evidence_status"], record["metric"]) == ("completed", "recorded", .75)
     assert state.path(f"runs/{run_id}/result.json").exists()
     assert start(project) == run_id
     spec["seed"] = 2
@@ -124,7 +124,7 @@ def test_success_idempotency_and_claims_use_real_runs(project):
     assert result["error_type"] == "idempotency_conflict"
     write(root / "check.json", {"schema_version": 1, "target": "claim", "claim": "toy", "run_ids": [run_id], "minimum_seeds": 2})
     checked = EvidenceService(str(root)).check("check.json")
-    assert not checked["ok"] and "insufficient_observed_seeds" in checked["issues"]
+    assert checked["ok"] and checked["status"] == "failed" and "insufficient_observed_seeds" in checked["issues"]
     assert checked["scientific_validity"] == "not_assessed"
     before = snapshot(root)
     assert EvidenceService(str(root)).status(run_id)["status"] == "completed"
@@ -139,12 +139,10 @@ def test_concurrent_same_key_starts_one_process(project):
     assert finish(project[1], ids[0])["status"] == "completed"
 
 
-@pytest.mark.parametrize("change", ["protected", "traversal", "symlink", "baseline", "unknown_field"])
+@pytest.mark.parametrize("change", ["traversal", "symlink", "baseline", "unknown_field"])
 def test_preflight_rejects_without_creating_runs(project, change):
     root, state, spec = project
-    if change == "protected":
-        (root / "evaluate.py").write_text("changed")
-    elif change == "traversal":
+    if change == "traversal":
         spec["outputs"] = ["../outside"]
     elif change == "symlink":
         (root / "outside").symlink_to(root.parent, target_is_directory=True)
@@ -159,12 +157,11 @@ def test_preflight_rejects_without_creating_runs(project, change):
     assert not state.path("runs").exists()
 
 
-@pytest.mark.parametrize("mode,expected", [("failure", "failed"), ("bad_metric", "failed"), ("tamper", "failed"),
+@pytest.mark.parametrize("mode,expected", [("failure", "failed"), ("bad_metric", "completed"),
                                             ("timeout", "timed_out"), ("cancel", "cancelled")])
-def test_failure_timeout_cancel_and_evaluator_tamper(project, mode, expected):
+def test_process_status_and_evidence_are_separate(project, mode, expected):
     root, state, spec = project
     code = {"failure": "raise SystemExit(4)", "bad_metric": spec["command"][2].replace("0.75", "float('nan')"),
-            "tamper": spec["command"][2] + ";pathlib.Path('evaluate.py').write_text('tampered')",
             "timeout": "import time; time.sleep(20)", "cancel": "import time; time.sleep(20)"}[mode]
     spec["command"] = [sys.executable, "-c", code]
     if mode == "timeout":
@@ -187,7 +184,7 @@ def test_connection_exit_does_not_prevent_completion(project):
     result = json.loads(output.stdout)["result"]
     assert set(result) == {"structuredContent", "content", "isError"}
     run_id = result["structuredContent"]["run_id"]
-    assert finish(state, run_id)["evidence_status"] == "verified"
+    assert finish(state, run_id)["evidence_status"] == "recorded"
 
 
 def test_external_import_is_unverified_and_idempotent(project):
@@ -195,7 +192,7 @@ def test_external_import_is_unverified_and_idempotent(project):
     write(root / "external.json", {"score": .9})
     manifest = {"schema_version": 1, "origin": {"type": "external_run", "source": "lab", "run_id": "external-1"},
                 "environment_path": "environment.json", "method_id": "external", "seed": 3,
-                "metrics_path": "external.json", "artifacts": [{"path": "external.json", "sha256": file_hash(root / "external.json")}]}
+                "metrics_path": "external.json", "artifacts": [{"path": "external.json"}]}
     write(root / "import.json", manifest)
     service = EvidenceService(str(root))
     result = service.import_evidence("import.json")
@@ -208,15 +205,15 @@ def test_external_import_is_unverified_and_idempotent(project):
         service.import_evidence("import.json")
 
 
-def test_changed_artifact_fails_run_check(project):
+def test_check_reports_changed_metric(project):
     root, state, _ = project
     run_id = start(project)
     finish(state, run_id)
     state.path(f"runs/{run_id}/metrics.json").write_text('{"score":999}')
     write(root / "check.json", {"schema_version": 1, "target": "run", "run_id": run_id})
     result = EvidenceService(str(root)).check("check.json")
-    assert not result["ok"]
-    assert any("artifact_hash_mismatch" in issue for issue in result["issues"])
+    assert result["ok"] and result["status"] == "failed"
+    assert any("metric_value_mismatch" in issue for issue in result["issues"])
 
 
 def legacy(root, multiple=False):
@@ -336,12 +333,12 @@ def test_real_experiment_requires_matching_baseline(project):
     spec.update(purpose="experiment", baseline_run_id=baseline, method_id="improved")
     write(root / "run.json", spec)
     experiment = start(project, "experiment")
-    assert finish(state, experiment)["evidence_status"] == "verified"
+    assert finish(state, experiment)["evidence_status"] == "recorded"
     write(root / "check.json", {"schema_version": 1, "target": "claim", "claim": "toy", "run_ids": [experiment], "minimum_seeds": 1})
     assert EvidenceService(str(root)).check("check.json")["ok"]
     state.path(f"runs/{baseline}/metrics.json").write_text('{"score":100}')
     checked = EvidenceService(str(root)).check("check.json")
-    assert not checked["ok"]
+    assert checked["ok"] and checked["status"] == "failed"
     assert any("baseline_evidence_invalid" in issue for issue in checked["issues"])
 
 
@@ -377,7 +374,7 @@ def test_partial_import_derivation_can_retry_without_duplicate_events(project, m
     write(root / "external.json", {"score": .5})
     manifest = {"schema_version": 1, "origin": {"type": "external_run", "source": "lab", "run_id": "x"},
                 "environment_path": "environment.json", "method_id": "external", "seed": 1,
-                "metrics_path": "external.json", "artifacts": [{"path": "external.json", "sha256": file_hash(root / "external.json")}]}
+                "metrics_path": "external.json", "artifacts": [{"path": "external.json"}]}
     write(root / "import.json", manifest)
     service = EvidenceService(str(root))
     original = service.state.write
@@ -498,7 +495,7 @@ def test_interleaved_projects_ignore_ambient_routing(project, monkeypatch):
     run_id = start(project)
     assert call_tool("ka_research_status", {"project": str(other)})["project_id"] == other_state.read_manifest()["project_id"]
     assert not call_tool("ka_research_status", {"project": str(other), "run_id": run_id})["ok"]
-    assert finish(state, run_id)["evidence_status"] == "verified"
+    assert finish(state, run_id)["evidence_status"] == "recorded"
     assert call_tool("ka_research_status", {"project": str(root)})["project_id"] == state.read_manifest()["project_id"]
     assert snapshot(other) == before
     assert not ambient_home.exists()

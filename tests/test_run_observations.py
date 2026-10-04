@@ -5,7 +5,6 @@ import pytest
 
 from kvasir_agent.services.evidence import EvidenceService
 from kvasir_agent.services.evidence_contracts import EvidenceError
-from kvasir_agent.services.research_state import file_hash
 from test_evidence_v3 import project, finish, write, start
 
 
@@ -28,7 +27,9 @@ def test_real_run_observations_separate_published_applied_and_cost_basis(project
     assert record["observations_snapshot"]["cost"]["managed_wall_basis"] == "observed"
     progress = state.path(f"runs/{run_id}/progress.json")
     data = json.loads(progress.read_text()); data["step"] = 3; progress.write_text(json.dumps(data))
-    assert service.status(run_id)["observations"]["progress"]["changed_since_completion"]
+    assert service.status(run_id)["observations"]["progress"]["step"] == 3
+    assert record["observations_snapshot"]["progress"]["step"] == 2
+    assert "sha256" not in observed["progress"]
     data["updated_at"] = "2000-01-01T00:00:00+00:00"; progress.write_text(json.dumps(data))
     assert service.status(run_id)["observations"]["progress"]["status"] == "stale"
 
@@ -47,7 +48,7 @@ def test_invalid_progress_does_not_block_stop_or_change_liveness(project):
     assert not state.read_run(run_id).get("observations_snapshot", {}).get("progress", {}).get("liveness") == "alive"
 
 
-def test_oversized_progress_is_rejected_before_unbounded_hashing(project):
+def test_oversized_progress_is_rejected_before_unbounded_reading(project):
     root, state, spec = project
     spec.update(schema_version=2, progress_path="progress.json")
     write(root / "run.json", spec)
@@ -56,9 +57,6 @@ def test_oversized_progress_is_rejected_before_unbounded_hashing(project):
     path = state.path(f"runs/{run_id}/progress.json")
     with path.open("wb") as stream:
         stream.truncate(1024 ** 3)
-    with pytest.raises(EvidenceError) as exc:
-        file_hash(path, limit=65536)
-    assert exc.value.kind == "invalid_file"
     status = EvidenceService(str(root)).status(run_id)
     assert status["status"] == "completed"
     assert status["observations"]["progress"]["status"] == "unavailable_or_invalid"

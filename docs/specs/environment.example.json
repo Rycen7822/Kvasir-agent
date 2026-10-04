@@ -6,14 +6,12 @@
   },
   "protected_files": [
     {
-      "path": "evaluate.py",
-      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      "path": "evaluate.py"
     }
   ],
   "datasets": [
     {
-      "path": "data.json",
-      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      "path": "data.json"
     }
   ],
   "primary_metric": {

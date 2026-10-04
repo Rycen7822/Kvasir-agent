@@ -8,7 +8,7 @@ Kvasir-agent supplies five tools for managed runs and evidence. Codex supplies r
 4. Check the actual terminal record before using metrics. Run a baseline before a comparative experiment, which references that baseline ID.
 5. Use `ka_evidence_check` for versioned environment/run/import/comparison/research checks, or `ka_evidence_import` for external results. Keep scientific interpretation and sources in ordinary project documents.
 
-`completed` and `evidence_status=verified` mean the local process succeeded and declared material checks passed. `failed`, `cancelled`, `timed_out` and `interrupted` remain distinct. A partial derived result does not erase the authoritative run record. External and migrated results retain unverified provenance.
+`completed` records successful process exit; `evidence_status=recorded` means outputs and a metric were recorded. A successful process can have unavailable evidence without being relabeled failed. Ordinary workflows need no hashes and do not prove byte integrity. Checks with issues return completed reports rather than tool errors. `failed`, `cancelled`, `timed_out` and `interrupted` remain distinct. A partial derived result does not erase the authoritative run record. External and migrated results retain unverified provenance.
 
 There is one active skill, `kvasir-agent`. No phase skill, task controller, planning MCP, literature CRUD API or mandatory checkpoint ceremony is needed. Historical domain material is retained under `docs/reference/workflows/` for deliberate human reference, with obsolete tool names labelled as historical.
 

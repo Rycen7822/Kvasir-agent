@@ -6,19 +6,29 @@ from datetime import datetime, timezone
 import math
 
 from .evidence_contracts import EvidenceError, validate_document
-from .research_state import digest, file_hash, within
 
 
-def request_snapshot(spec, environment, protocol=None, candidate=None):
-    result = {"spec": spec, "environment": environment}
-    if protocol is not None:
-        result["protocol"] = protocol
-    if candidate is not None:
-        result["candidate"] = candidate
-    return result
+def file_reference(item):
+    """Compare declared paths/versions, never legacy checksum metadata."""
+    return {key: item[key] for key in ("path", "version") if key in item}
 
 
-def protocol_issues(protocol, spec, environment, project):
+def environment_settings(environment):
+    return {**environment, **{key: sorted(
+        [file_reference(item) for item in environment[key]], key=lambda item: item["path"])
+        for key in ("protected_files", "datasets")}}
+
+
+def protocol_settings(protocol):
+    return {**{key: value for key, value in protocol.items()
+              if key not in {"declared_at", "timing", "environment_digest"}},
+            "datasets": [file_reference(item) for item in protocol["datasets"]],
+            "evaluator": file_reference(protocol["evaluator"]),
+            "method_inputs": {role: [file_reference(item) for item in items]
+                              for role, items in protocol["method_inputs"].items()}}
+
+
+def protocol_issues(protocol, spec, environment):
     validate_document(protocol, "comparison")
     issues = []
     pairs = protocol["pairs"]
@@ -32,11 +42,11 @@ def protocol_issues(protocol, spec, environment, project):
             issues.append("invalid_protocol_time")
     except ValueError:
         issues.append("invalid_protocol_time")
-    if protocol["environment_digest"] != digest(environment):
+    if protocol.get("environment_id", environment["env_id"]) != environment["env_id"]:
         issues.append("protocol_environment_mismatch")
-    if sorted(protocol["datasets"], key=lambda x: x["path"]) != sorted(environment["datasets"], key=lambda x: x["path"]):
+    if sorted([file_reference(item) for item in protocol["datasets"]], key=lambda x: x["path"]) != environment_settings(environment)["datasets"]:
         issues.append("protocol_dataset_mismatch")
-    if protocol["evaluator"] not in environment["protected_files"]:
+    if file_reference(protocol["evaluator"]) not in [file_reference(item) for item in environment["protected_files"]]:
         issues.append("protocol_evaluator_mismatch")
     metric = environment["primary_metric"]
     if any(protocol["metric"][k] != metric[k] for k in ("name", "direction")):
@@ -54,19 +64,13 @@ def protocol_issues(protocol, spec, environment, project):
         issues.append("metric_selection_mismatch")
     if spec["resources"]["timeout_seconds"] != protocol["budget"]["timeout_seconds"]:
         issues.append("protocol_budget_mismatch")
-    for item in [protocol["evaluator"], *protocol["datasets"], *protocol["method_inputs"]["baseline"], *protocol["method_inputs"]["candidate"]]:
-        try:
-            if file_hash(within(project, item["path"], exists=True)) != item["sha256"]:
-                issues.append("protocol_input_changed")
-        except (EvidenceError, OSError):
-            issues.append("protocol_input_unavailable")
     return sorted(set(issues))
 
 
 def compare(service, protocol):
-    """Inspect every attempt bound to this exact protocol, including failures."""
+    """Inspect all attempts under the declared protocol ID/version, including failures."""
     validate_document(protocol, "comparison")
-    key = digest(protocol)
+    key = (protocol["protocol_id"], protocol.get("version"))
     attempts, issues, slots = [], [], defaultdict(list)
     counts = Counter()
     for path in sorted(service.state.path("runs").glob("*/run.json")):
@@ -77,20 +81,21 @@ def compare(service, protocol):
             issues.append(f"{path.parent.name}:unreadable_attempt")
             continue
         saved = record.get("protocol")
-        if not isinstance(saved, dict) or digest(saved) != key:
+        if not isinstance(saved, dict) or (saved.get("protocol_id"), saved.get("version")) != key:
             continue
         spec = record["spec"]
         role = "baseline" if spec["purpose"] == "baseline" else "candidate"
         pair_id = spec["comparison"]["pair_id"]
         failures = service.run_issues(record)
-        integrity_issues = [issue for issue in failures if issue != "run_not_verified"]
+        if protocol_settings(saved) != protocol_settings(protocol):
+            failures.append("protocol_snapshot_mismatch")
         origin = spec.get("result_origin", {"kind": "unknown"})
         if origin["kind"] in {"cached", "replayed"}:
             failures.append("reused_result_not_independent")
-        failures += protocol_issues(protocol, spec, record["environment"], service.state.project)
+        failures += protocol_issues(protocol, spec, record["environment"])
         row = {"run_id": record["run_id"], "pair_id": pair_id, "role": role,
                "seed": spec["seed"], "seed_evidence": "declared", "status": record["status"],
-               "metric": record.get("metric"), "issues": sorted(set(failures)), "integrity_issues": integrity_issues,
+               "metric": record.get("metric"), "issues": sorted(set(failures)),
                "idempotency_key": record.get("idempotency_key"), "result_origin": origin,
                "independence": "not_assessed",
                "created_at": record["created_at"], "finished_at": record.get("finished_at"),
@@ -132,7 +137,7 @@ def compare(service, protocol):
                   origin_unknown=sum(r["result_origin"]["kind"] == "unknown" for r in attempts))
     walls = [row["cost"].get("managed_wall_seconds") for row in attempts]
     known_walls = [value for value in walls if value is not None]
-    evidence = {"protocol_digest": key, "protocol": protocol, "attempts": attempts,
+    evidence = {"protocol_id": protocol["protocol_id"], "protocol": protocol, "attempts": attempts,
                 "denominator": dict(counts), "pairs": paired,
                 "descriptive": {"mean_directional_improvement": sum(x / len(deltas) for x in deltas) if deltas else None},
                 "budget_basis": "wall_timeout_only", "total_cost": "unknown",

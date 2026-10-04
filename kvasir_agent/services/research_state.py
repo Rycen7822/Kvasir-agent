@@ -26,17 +26,11 @@ def digest(data):
                                      ensure_ascii=False, allow_nan=False).encode()).hexdigest()
 
 
-def file_hash(path, *, limit=None):
+def file_hash(path):
     h = hashlib.sha256()
     with Path(path).open("rb") as f:
-        if limit is not None:
-            block = f.read(limit + 1)
-            if len(block) > limit:
-                raise EvidenceError("invalid_file", "Oversized evidence observation.")
+        for block in iter(lambda: f.read(1024 * 1024), b""):
             h.update(block)
-        else:
-            for block in iter(lambda: f.read(1024 * 1024), b""):
-                h.update(block)
     return h.hexdigest()
 
 
@@ -209,7 +203,7 @@ class ResearchState:
             raise EvidenceError("corrupt_run", "Run record is invalid.")
         if record.get("status") not in {"starting", "running", "completed", "failed", "cancelled", "timed_out", "interrupted", "imported"}:
             raise EvidenceError("corrupt_run", "Run status is invalid.")
-        if record.get("evidence_status") not in {"pending", "verified", "invalid", "unverified"}:
+        if record.get("evidence_status") not in {"pending", "recorded", "verified", "invalid", "unverified"}:
             raise EvidenceError("corrupt_run", "Run evidence status is invalid.")
         metric = record.get("metric")
         if metric is not None and (isinstance(metric, bool) or not isinstance(metric, (int, float)) or not math.isfinite(metric)):

@@ -22,9 +22,8 @@ def obj(properties, required=None):
 TEXT = {"type": "string", "minLength": 1, "maxLength": 4096}
 ID = {"type": "string", "pattern": "^[A-Za-z0-9_-]{1,80}$"}
 PATH = {"type": "string", "minLength": 1, "maxLength": 1024}
-SHA = {"type": "string", "pattern": "^[a-f0-9]{64}$"}
 VERSION = {"const": 1}
-HASHED = obj({"path": PATH, "sha256": SHA})
+FILE = obj({"path": PATH, "version": ID}, ["path"])
 METRIC = obj({
     "name": ID, "direction": {"enum": ["maximize", "minimize"]},
     "parser": {"enum": ["json_path", "flat_key"]}, "path": TEXT,
@@ -34,8 +33,8 @@ METRIC = obj({
 ENVIRONMENT = obj({
     "schema_version": VERSION, "env_id": ID,
     "baseline": obj({"repo_path": PATH, "commit": {"type": "string", "pattern": "^[a-f0-9]{40,64}$"}}, ["repo_path"]),
-    "protected_files": {"type": "array", "items": HASHED, "minItems": 1, "maxItems": 200},
-    "datasets": {"type": "array", "items": HASHED, "minItems": 1, "maxItems": 200},
+    "protected_files": {"type": "array", "items": FILE, "minItems": 1, "maxItems": 200},
+    "datasets": {"type": "array", "items": FILE, "minItems": 1, "maxItems": 200},
     "primary_metric": METRIC,
 })
 RUN = obj({
@@ -62,14 +61,14 @@ RUN_CONTRACT = {"oneOf": [RUN, RUN_V2]}
 COMPARISON = obj({
     "schema_version": VERSION, "protocol_id": ID, "declared_at": TEXT,
     "timing": {"enum": ["prospective", "retrospective"]},
-    "environment_digest": SHA, "dataset_id": ID, "split": TEXT,
-    "datasets": {"type": "array", "items": HASHED, "minItems": 1, "maxItems": 200},
-    "evaluator": HASHED,
+    "environment_id": ID, "version": ID, "dataset_id": ID, "split": TEXT,
+    "datasets": {"type": "array", "items": FILE, "minItems": 1, "maxItems": 200},
+    "evaluator": FILE,
     "metric": obj({"name": ID, "unit": TEXT, "direction": {"enum": ["maximize", "minimize"]},
                    "selection": {"enum": ["last", "best", "prespecified"]}}),
     "methods": obj({"baseline": ID, "candidate": ID}),
-    "method_inputs": obj({"baseline": {"type": "array", "items": HASHED, "minItems": 1, "maxItems": 200},
-                          "candidate": {"type": "array", "items": HASHED, "minItems": 1, "maxItems": 200}}),
+    "method_inputs": obj({"baseline": {"type": "array", "items": FILE, "minItems": 1, "maxItems": 200},
+                          "candidate": {"type": "array", "items": FILE, "minItems": 1, "maxItems": 200}}),
     "budget": obj({"basis": {"const": "wall_timeout"},
                    "timeout_seconds": {"type": "number", "exclusiveMinimum": 0, "maximum": 604800}}),
     "pairs": {"type": "array", "minItems": 1, "maxItems": 1000,
@@ -78,6 +77,8 @@ COMPARISON = obj({
     "selection_rule": {"const": "unique_valid_attempt"},
     "statistics": {"const": "descriptive_only"},
 })
+COMPARISON["required"] = [key for key in COMPARISON["required"]
+                          if key not in {"environment_id", "version"}]
 CHECK = {"oneOf": [
     obj({"schema_version": VERSION, "target": {"const": "environment"}, "environment_path": PATH}),
     obj({"schema_version": VERSION, "target": {"const": "run"}, "run_id": ID}),
@@ -94,16 +95,17 @@ IMPORT = obj({
     "origin": obj({"type": {"enum": ["external_run", "published_result"]},
                    "source": TEXT, "run_id": TEXT}),
     "environment_path": PATH, "method_id": ID, "seed": {"type": "integer"},
-    "metrics_path": PATH, "artifacts": {"type": "array", "items": HASHED, "minItems": 1, "maxItems": 100},
+    "metrics_path": PATH, "artifacts": {"type": "array", "items": FILE, "minItems": 1, "maxItems": 100},
 })
-REFERENCE = obj({"record_id": ID, "revision": SHA})
+REFERENCE = obj({"record_id": ID, "revision": ID})
 REFERENCES = {"type": "array", "items": REFERENCE, "maxItems": 100, "uniqueItems": True}
-FILES = {"type": "array", "items": HASHED, "minItems": 1, "maxItems": 200}
+FILES = {"type": "array", "items": FILE, "minItems": 1, "maxItems": 200}
 LOCATOR = {"oneOf": [
-    obj({"kind": {"const": "lines"}, "path": PATH, "sha256": SHA,
-         "start": {"type": "integer", "minimum": 1}, "end": {"type": "integer", "minimum": 1}, "excerpt": TEXT}),
-    obj({"kind": {"const": "page"}, "path": PATH, "sha256": SHA,
-         "page": {"type": "integer", "minimum": 1}, "excerpt": TEXT}),
+    obj({"kind": {"const": "lines"}, "path": PATH,
+         "start": {"type": "integer", "minimum": 1}, "end": {"type": "integer", "minimum": 1}, "excerpt": TEXT},
+        ["kind", "path", "start", "end", "excerpt"]),
+    obj({"kind": {"const": "page"}, "path": PATH,
+         "page": {"type": "integer", "minimum": 1}, "excerpt": TEXT}, ["kind", "path", "page", "excerpt"]),
 ]}
 RESEARCH_METADATA = {
     "source": obj({"source_id": TEXT, "version": TEXT, "url": TEXT, "retrieved_at": TEXT,
@@ -117,14 +119,14 @@ RESEARCH_METADATA = {
                  "distinguishing_experiment": TEXT, "falsification": TEXT}),
     "candidate": obj({"method_id": ID, "files": FILES, "parents": REFERENCES, "rationale": TEXT}),
     "claim": obj({"statement": TEXT, "limitations": TEXT, "status": {"enum": ["proposal", "supported", "inconclusive", "contradicted"]}}),
-    "review": obj({"target": HASHED, "reviewer": TEXT, "outcome": {"enum": ["draft", "partial", "approved", "rejected"]},
+    "review": obj({"target": FILE, "reviewer": TEXT, "outcome": {"enum": ["draft", "partial", "approved", "rejected"]},
                    "issues": {"type": "array", "items": TEXT, "maxItems": 100},
                    "unresolved": {"type": "array", "items": TEXT, "maxItems": 100}}),
     "negative_result": obj({"observation": TEXT, "scope": TEXT, "explanation": TEXT}),
 }
 RESEARCH = {"oneOf": [obj({
     "schema_version": VERSION, "record_id": ID, "kind": {"const": kind}, "title": TEXT,
-    "content": HASHED, "dependencies": REFERENCES,
+    "content": FILE, "dependencies": REFERENCES,
     "run_ids": {"type": "array", "items": ID, "maxItems": 100, "uniqueItems": True},
     "metadata": metadata,
 }, ["schema_version", "record_id", "kind", "title", "content", "dependencies", "metadata"])
@@ -150,6 +152,22 @@ CONTRACTS = {"environment": ENVIRONMENT, "run": RUN_CONTRACT, "check": CHECK,
 
 
 def validate_document(data, kind: str):
+    if kind in {"environment", "comparison", "import", "research"}:
+        # Old checksum fields are read-only compatibility data, not part of the
+        # current schemas, public identities or verification prerequisites.
+        def without_legacy_hashes(value):
+            if isinstance(value, list):
+                return [without_legacy_hashes(item) for item in value]
+            if not isinstance(value, dict):
+                return value
+            file_ref = set(value) <= {"path", "version", "sha256"}
+            locator_ref = value.get("kind") in ("lines", "page")
+            return {key: without_legacy_hashes(item) for key, item in value.items()
+                    if not (key == "sha256" and "path" in value and (file_ref or locator_ref))}
+
+        data = without_legacy_hashes(data)
+        if kind == "comparison" and isinstance(data, dict):
+            data.pop("environment_digest", None)
     errors = Draft202012Validator(CONTRACTS[kind]).iter_errors(data)
     error = next(errors, None)
     if error:

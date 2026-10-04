@@ -10,8 +10,7 @@ import time
 from .evidence import EvidenceService
 from .evidence_contracts import EvidenceError, read_json
 from .metric import extract_metric_value, validate_metric_result
-from .research_state import alive, digest, file_hash, now, process_identity, within
-from .comparison import request_snapshot
+from .research_state import alive, now, process_identity, within
 
 
 def terminate(identity):
@@ -49,10 +48,6 @@ def execute(project, run_id):
             if record.get("worker") != process_identity(os.getpid()):
                 raise EvidenceError("worker_identity_mismatch", "Unexpected worker instance.")
             spec, env = record["spec"], record["environment"]
-            if digest(request_snapshot(spec, env, record.get("protocol"), record.get("candidate"))) != record["request_digest"]:
-                raise EvidenceError("request_digest_mismatch", "Request changed before execution.")
-            service.validate_environment(env)
-            service.validate_run_inputs(record)
             run_dir = state.path(f"runs/{run_id}")
             if record.get("cancel_requested_at"):
                 forced = "cancelled"
@@ -130,18 +125,18 @@ def execute(project, run_id):
                       exit_code=process.returncode if process else None, finished_at=now(),
                       evidence_status="invalid", artifacts=[])
         if record["status"] == "completed":
-            service.validate_environment(record["environment"])
-            service.validate_run_inputs(record)
             for output in sorted(set([spec["metrics_path"], *spec["outputs"]])):
                 path = within(run_dir, output, exists=True)
-                record["artifacts"].append({"path": output, "sha256": file_hash(path)})
+                if not path.is_file():
+                    raise EvidenceError("artifact_unavailable", "Declared output is not a file.")
+                record["artifacts"].append({"path": output, "size_bytes": path.stat().st_size})
             metric = extract_metric_value(read_json(within(run_dir, spec["metrics_path"], exists=True)), env["primary_metric"])
             if not metric["ok"]:
                 raise EvidenceError(metric["error_type"], "Run metric is invalid.")
             valid = validate_metric_result(env["primary_metric"], value=metric["value"], artifacts=spec["outputs"])
             if not valid["ok"]:
                 raise EvidenceError(valid["error_type"], "Run metric violates its contract.")
-            record.update(metric=metric["value"], evidence_status="verified")
+            record.update(metric=metric["value"], evidence_status="recorded")
     except Exception as exc:
         if process and process.returncode is None:
             terminate(process_identity(process.pid))
@@ -151,7 +146,8 @@ def execute(project, run_id):
                 pass
             process.wait(timeout=5)
         record = state.read_run(run_id)
-        record.update(status=forced or "failed", finished_at=now(), evidence_status="invalid",
+        record.update(status=forced or ("completed" if process and process.returncode == 0 else "failed"),
+                      finished_at=now(), evidence_status="invalid",
                       exit_code=process.returncode if process else None,
                       error_type=exc.kind if isinstance(exc, EvidenceError) else "execution_error")
     if execution_started is not None:

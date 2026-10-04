@@ -11,8 +11,7 @@
   "metrics_path": "external/metrics.json",
   "artifacts": [
     {
-      "path": "external/metrics.json",
-      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      "path": "external/metrics.json"
     }
   ]
 }

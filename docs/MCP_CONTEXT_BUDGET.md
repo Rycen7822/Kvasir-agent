@@ -1,16 +1,23 @@
 # Context budget
 
-Version 0.3.0 keeps five tools with file paths instead of embedded specifications. Compact source definitions and the catalog returned by native Codex discovery are **698 o200k_base tokens / 3,118 UTF-8 bytes**. The preceding five-tool source also measured 698 tokens. New research and comparison contracts do not add permanent MCP parameters.
+Current source keeps five tools with file paths instead of embedded specifications: **698 o200k_base tokens / 3,117 UTF-8 bytes**. The earlier published v0.3.0 native Codex catalog measured 698 tokens / 3,118 bytes. Hash simplification adds no permanent MCP parameters; current schemas and examples contain no checksum fields.
 
 These are tokenizer estimates for the measured text, not exact model context or billing. Host wrappers, server names, caching and deferred discovery can change what is sent. The historical 24-tool surface measured 6,408 tokens; that earlier host-wrapper measurement is not identical to the current native catalog measurement.
 
-## Current measurements
+## Current source estimates
 
 | Material | Estimated tokens | UTF-8 bytes |
 | --- | ---: | ---: |
-| Five compact tool definitions / native Codex catalog | 698 | 3,118 |
-| Active skill name and description, compact metadata | 27 | 131 |
-| Active skill file, when explicitly read | 631 | 3,289 |
+| Five compact tool definitions | 698 | 3,117 |
+| Active skill name and description, compact metadata | 25 | 118 |
+| Active skill file, when explicitly read | 630 | 3,277 |
+
+## Earlier host measurements (published v0.3.0)
+
+These measurements predate hash simplification. They are retained as host integration evidence, not a fresh installation or provider-request measurement of the modified source.
+
+| Material | Estimated tokens | UTF-8 bytes |
+| --- | ---: | ---: |
 | Native Pi rendered MCP namespace section, codemode | 46 | 197 |
 | Native Pi rendered skill metadata block, optional skill | 144 | 640 |
 | Empty initialized project status, native Codex call | 153 | 509 |
@@ -27,9 +34,9 @@ Status returns at most five recent runs, ordered by actual creation time, and co
 | --- | ---: |
 | Run v2 example | 187 |
 | Complete run schema, v1 and v2 | 1,623 |
-| Comparison example / schema | 481 / 1,462 |
-| Candidate record schema | 867 |
-| Complete six-kind research schema | 4,896 |
+| Comparison example / schema | 332 / 1,486 |
+| Candidate record schema | 871 |
+| Complete six-kind research schema | 4,838 |
 
 Use the relevant example and the individual record schema linked from [RESEARCH_RECORDS.md](RESEARCH_RECORDS.md). The complete research union is the validation/publication authority; it need not be read for one record kind. Detailed contracts and seven workflow templates are outside automatic skill metadata and MCP definitions.
 

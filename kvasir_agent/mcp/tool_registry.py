@@ -15,7 +15,7 @@ class ToolSpec:
     def as_dict(self):
         return definition(self.name)
 
-def list_tool_specs(profile=None, stage=None):
+def list_tool_specs():
     return [ToolSpec(item["name"]) for item in DEFINITIONS]
 
 def tools_list_payload(args=None):

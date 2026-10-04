@@ -11,8 +11,8 @@ from uuid import uuid4
 
 from .evidence_contracts import EvidenceError, read_json, validate_document
 from .metric import extract_metric_value, validate_metric_result
-from .research_state import ResearchState, alive, digest, file_hash, now, process_identity, within
-from .comparison import compare, protocol_issues, request_snapshot
+from .research_state import ResearchState, alive, file_hash, now, process_identity, within
+from .comparison import compare, environment_settings, file_reference, protocol_issues
 from .observations import observations, timestamp
 
 TERMINAL = {"completed", "failed", "cancelled", "timed_out", "interrupted", "imported"}
@@ -47,9 +47,9 @@ class EvidenceService:
                 raise EvidenceError("baseline_mismatch", "Baseline commit does not match.")
         for item in env["protected_files"] + env["datasets"]:
             path = within(self.state.project, item["path"], exists=True)
-            if not path.is_file() or file_hash(path) != item["sha256"]:
-                raise EvidenceError("protected_hash_mismatch", "Protected input hash does not match.")
-        return {"ok": True, "environment_digest": digest(env)}
+            if not path.is_file():
+                raise EvidenceError("input_unavailable", "Declared input is not a file.")
+        return {"ok": True, "environment_id": env["env_id"], "byte_integrity": "not_assessed"}
 
     def receipt(self, record, *, detail=True):
         run_id = record["run_id"]
@@ -58,7 +58,7 @@ class EvidenceService:
             status = "interrupted"
         out = {"ok": True, "run_id": run_id, "status": status,
                "record_path": f"Kvasir-agent/runs/{run_id}/run.json",
-               "evidence_status": record.get("evidence_status", "pending"),
+               "evidence_status": "recorded" if record.get("evidence_status") == "verified" else record.get("evidence_status", "pending"),
                "integrity_check": "not_performed"}
         if record.get("metric") is not None:
             out["metric"] = record["metric"]
@@ -110,24 +110,23 @@ class EvidenceService:
     def run(self, spec_path, idempotency_key):
         self.ready()
         spec = self.document(spec_path, "run")
-        env = self.document(spec["environment_path"], "environment")
-        protocol = self.document(spec["comparison"]["protocol_path"], "comparison") if spec.get("comparison") else None
-        candidate = self.document(spec["candidate_path"], "research") if spec.get("candidate_path") else None
-        request_digest = digest(request_snapshot(spec, env, protocol, candidate))
         state = self.state
         with state.locked():
             self.ready()
             for path in state.path("runs").glob("*/run.json"):
                 previous = state.read_run(path.parent.name)
                 if previous.get("idempotency_key") == idempotency_key:
-                    if previous.get("request_digest") != request_digest:
+                    if previous.get("spec") != spec:
                         raise EvidenceError("idempotency_conflict", "Key already belongs to a different request.")
                     return self.receipt(previous)
+            env = self.document(spec["environment_path"], "environment")
+            protocol = self.document(spec["comparison"]["protocol_path"], "comparison") if spec.get("comparison") else None
+            candidate = self.document(spec["candidate_path"], "research") if spec.get("candidate_path") else None
             self.validate_environment(env)
             if candidate is not None:
                 self.validate_candidate(candidate, spec, protocol)
             if protocol is not None:
-                problems = protocol_issues(protocol, spec, env, state.project)
+                problems = protocol_issues(protocol, spec, env)
                 if problems:
                     raise EvidenceError("invalid_comparison", ", ".join(problems[:3]))
             cwd = within(state.project, spec["cwd"], exists=True)
@@ -136,9 +135,9 @@ class EvidenceService:
             if spec["purpose"] == "experiment":
                 baseline = state.read_run(spec["baseline_run_id"])
                 if (baseline.get("spec", {}).get("purpose") != "baseline"
-                        or baseline.get("environment_digest") != digest(env)
-                        or self.run_issues(baseline)):
-                    raise EvidenceError("invalid_baseline", "A matching verified baseline run is required.")
+                        or self.run_issues(baseline)
+                        or environment_settings(baseline["environment"]) != environment_settings(env)):
+                    raise EvidenceError("invalid_baseline", "A completed baseline with matching declared settings is required.")
             run_id = "r_" + now().replace("-", "").replace(":", "").split(".")[0] + "_" + uuid4().hex[:12]
             run_dir = state.path(f"runs/{run_id}")
             for output in [spec["metrics_path"], *spec["outputs"],
@@ -150,14 +149,14 @@ class EvidenceService:
                     raise EvidenceError("invalid_output", "Output must name a file.")
             record = {"schema_version": 1, "run_id": run_id, "project_id": state.read_manifest()["project_id"],
                       "status": "starting", "created_at": now(), "idempotency_key": idempotency_key,
-                      "spec": spec, "environment": env, "environment_digest": digest(env),
-                      "request_digest": request_digest, "trust": "managed_local", "evidence_status": "pending"}
+                      "spec": spec, "environment": env, "environment_id": env["env_id"],
+                      "trust": "managed_local", "evidence_status": "pending"}
             if protocol is not None:
-                record.update(protocol=protocol, protocol_digest=digest(protocol), protocol_referenced_at=now())
-                state.write(f"protocols/{digest(protocol)}.json", protocol)
+                record.update(protocol=protocol, protocol_referenced_at=now())
+                state.write(f"protocols/{run_id}.json", protocol)
             if candidate is not None:
-                record.update(candidate=candidate, candidate_digest=digest(candidate))
-            state.write(f"environments/{digest(env)}.json", env)
+                record["candidate"] = candidate
+            state.write(f"environments/{run_id}.json", env)
             state.write(f"runs/{run_id}/run.json", record)
             state.event("run.prepared", {"run_id": run_id}, key=f"prepared:{run_id}")
             worker_script = Path(__file__).resolve().parents[2] / "scripts" / "ka_run_worker.py"
@@ -203,17 +202,18 @@ class EvidenceService:
 
     def run_issues(self, record):
         issues = []
-        if record.get("status") != "completed" or record.get("evidence_status") != "verified":
-            issues.append("run_not_verified")
+        if record.get("status") != "completed" or record.get("evidence_status") not in {"recorded", "verified"}:
+            issues.append("run_evidence_incomplete")
         if record.get("trust") != "managed_local":
             issues.append("unverified_origin")
         spec, env = record.get("spec"), record.get("environment")
         if not isinstance(spec, dict) or not isinstance(env, dict):
             return issues + ["missing_request_snapshot"]
-        if digest(request_snapshot(spec, env, record.get("protocol"), record.get("candidate"))) != record.get("request_digest"):
-            issues.append("request_digest_mismatch")
-        if digest(env) != record.get("environment_digest"):
-            issues.append("environment_digest_mismatch")
+        try:
+            validate_document(spec, "run")
+            validate_document(env, "environment")
+        except EvidenceError as exc:
+            return sorted(set(issues + [exc.kind]))
         try:
             self.validate_run_inputs(record)
         except EvidenceError as exc:
@@ -223,8 +223,8 @@ class EvidenceService:
                 baseline = self.state.read_run(spec.get("baseline_run_id"))
                 baseline_spec = baseline.get("spec")
                 if (not isinstance(baseline_spec, dict) or baseline_spec.get("purpose") != "baseline"
-                        or baseline.get("environment_digest") != record.get("environment_digest")
-                        or self.run_issues(baseline)):
+                        or self.run_issues(baseline)
+                        or environment_settings(baseline["environment"]) != environment_settings(env)):
                     issues.append("baseline_evidence_invalid")
             except EvidenceError:
                 issues.append("baseline_evidence_unavailable")
@@ -233,8 +233,8 @@ class EvidenceService:
         for artifact in record.get("artifacts", []):
             try:
                 p = within(self.state.path(f"runs/{record['run_id']}"), artifact["path"], exists=True)
-                if file_hash(p) != artifact["sha256"]:
-                    issues.append("artifact_hash_mismatch")
+                if not p.is_file():
+                    issues.append("artifact_unavailable")
             except (EvidenceError, OSError):
                 issues.append("artifact_unavailable")
         issues.extend(self.metric_issues(
@@ -245,41 +245,29 @@ class EvidenceService:
     def validate_run_inputs(self, record):
         if record.get("protocol") is not None:
             spec = record["spec"]
-            current = self.document(spec["comparison"]["protocol_path"], "comparison")
-            if digest(current) != record.get("protocol_digest") or digest(record["protocol"]) != record.get("protocol_digest"):
-                raise EvidenceError("protocol_version_changed", "Referenced protocol changed.")
-            failures = protocol_issues(record["protocol"], spec, record["environment"], self.state.project)
+            failures = protocol_issues(record["protocol"], spec, record["environment"])
             if failures:
                 raise EvidenceError("invalid_comparison", ", ".join(failures[:3]))
         if record.get("candidate") is not None:
-            current = self.document(record["spec"]["candidate_path"], "research")
-            if digest(current) != record.get("candidate_digest") or digest(record["candidate"]) != record.get("candidate_digest"):
-                raise EvidenceError("candidate_version_changed", "Referenced candidate changed.")
             self.validate_candidate(record["candidate"], record["spec"], record.get("protocol"))
 
     def validate_candidate(self, candidate, spec, protocol=None):
         from .research_records import ResearchRecords
+        validate_document(candidate, "research")
         if candidate["kind"] != "candidate" or candidate["metadata"]["method_id"] != spec["method_id"]:
             raise EvidenceError("candidate_identity_mismatch", "Candidate and method do not match.")
         records = ResearchRecords(str(self.state.project))
-        failures, _ = records.bytes_issues(candidate)
-        if failures:
-            raise EvidenceError("candidate_input_changed", ", ".join(failures[:3]))
         for reference in records.references(candidate):
-            latest = records.resolve(reference["record_id"])
-            if latest["revision"] != reference["revision"]:
-                raise EvidenceError("candidate_dependency_superseded", reference["record_id"])
-            dependency_issues, _ = records.inspect([reference["record_id"]])
-            if dependency_issues:
-                raise EvidenceError("candidate_dependency_invalid", ", ".join(dependency_issues[:3]))
+            records.resolve(reference["record_id"], reference["revision"])
         if protocol is not None:
             role = "baseline" if spec["purpose"] == "baseline" else "candidate"
-            if any(item not in protocol["method_inputs"][role] for item in candidate["metadata"]["files"]):
+            declared = [file_reference(item) for item in protocol["method_inputs"][role]]
+            if any(file_reference(item) not in declared for item in candidate["metadata"]["files"]):
                 raise EvidenceError("protocol_candidate_mismatch", "Protocol does not pin the candidate inputs.")
 
     @staticmethod
     def metric_issues(root, path, contract, value, artifacts):
-        """Check saved numbers against their hashed original, not just finite values."""
+        """Check saved numbers against the metric file without byte checksums."""
         if not path or path not in {a.get("path") for a in artifacts if isinstance(a, dict)}:
             return ["missing_metric_artifact"]
         try:
@@ -297,8 +285,7 @@ class EvidenceService:
         try:
             manifest = validate_document(record["manifest"], "import")
             env = validate_document(record["environment"], "environment")
-            if (record.get("import_id") != import_id or record.get("trust") != "external_unverified"
-                    or "i_" + digest({"manifest": manifest, "environment": env})[:32] != import_id):
+            if record.get("import_id") != import_id or record.get("trust") != "external_unverified":
                 return ["import_identity_mismatch"]
             artifacts = record["artifacts"]
             if len(artifacts) != len(manifest["artifacts"]):
@@ -306,13 +293,12 @@ class EvidenceService:
             root = self.state.path(f"artifacts/imports/{import_id}")
             issues, metric_path = [], None
             for index, (saved, source) in enumerate(zip(artifacts, manifest["artifacts"])):
-                if (saved.get("path") != f"artifact-{index}" or saved.get("source") != source["path"]
-                        or saved.get("sha256") != source["sha256"]):
+                if saved.get("path") != f"artifact-{index}" or saved.get("source") != source["path"]:
                     issues.append("import_artifact_manifest_mismatch")
                     continue
                 try:
-                    if file_hash(within(root, saved["path"], exists=True)) != source["sha256"]:
-                        issues.append("artifact_hash_mismatch")
+                    if not within(root, saved["path"], exists=True).is_file():
+                        issues.append("artifact_unavailable")
                 except (EvidenceError, OSError):
                     issues.append("artifact_unavailable")
                 if source["path"] == manifest["metrics_path"]:
@@ -326,7 +312,7 @@ class EvidenceService:
     def check(self, spec_path):
         self.ready()
         spec = self.document(spec_path, "check")
-        issues, evidence, integrity_issues = [], [], []
+        issues, evidence = [], []
         assessment = {"execution": "not_assessed", "integrity": "not_assessed",
                       "comparability": "not_assessed", "statistical_support": "not_assessed", "review": "not_assessed"}
         if spec["target"] == "environment":
@@ -335,21 +321,15 @@ class EvidenceService:
                 evidence.append(self.validate_environment(env))
             except EvidenceError as exc:
                 issues.append(exc.kind)
-            integrity_issues = list(issues)
-            assessment["integrity"] = "passed" if not integrity_issues else "failed"
         elif spec["target"] == "comparison":
             protocol = self.document(spec["protocol_path"], "comparison")
             issues, comparison = compare(self, protocol)
             evidence.append(comparison)
-            integrity_issues = [issue for row in comparison["attempts"] for issue in row["integrity_issues"]]
-            integrity_issues += [issue for issue in issues if issue.endswith(":unreadable_attempt")]
             assessment["execution"] = "see_attempts"
-            assessment["integrity"] = ("passed" if not integrity_issues else "failed") if comparison["attempts"] else "not_assessed"
             assessment["comparability"] = "declared_protocol_satisfied" if not issues else "incomplete"
         elif spec["target"] == "research":
             from .research_records import ResearchRecords
             issues, evidence = ResearchRecords(str(self.state.project)).inspect(spec["record_ids"])
-            assessment["integrity"] = "passed" if not issues else "failed"
             if any(row.get("kind") == "review" for row in evidence):
                 assessment["review"] = "saved_bindings_checked" if not issues else "stale_or_invalid"
         elif spec["target"] == "import":
@@ -361,41 +341,41 @@ class EvidenceService:
             except (EvidenceError, OSError):
                 issues.append("import_unavailable")
             assessment["execution"] = "external_unverified"
-            assessment["integrity"] = "passed" if not issues else "failed"
         else:
             ids = spec.get("run_ids", [spec.get("run_id")])
-            records = []
+            records, valid_records = [], []
             for run_id in ids:
                 try:
                     record = self.state.read_run(run_id)
                     records.append(record)
                     failures = self.run_issues(record)
-                    integrity_issues.extend(f"{run_id}:{issue}" for issue in failures if issue != "run_not_verified")
+                    if not failures:
+                        valid_records.append(record)
                     issues.extend(f"{run_id}:{issue}" for issue in failures)
                     evidence.append({"run_id": run_id, "record_path": str(self.state.path(f"runs/{run_id}/run.json")), "issues": failures})
                 except EvidenceError as exc:
                     issues.append(f"{run_id}:{exc.kind}")
-                    integrity_issues.append(f"{run_id}:{exc.kind}")
             assessment["execution"] = "completed" if len(records) == len(ids) and all(r.get("status") == "completed" for r in records) else "incomplete"
-            assessment["integrity"] = "passed" if not integrity_issues else "failed"
             if spec["target"] == "claim" and records:
-                seeds = {r.get("spec", {}).get("seed") for r in records if not self.run_issues(r)} - {None}
+                seeds = {r["spec"]["seed"] for r in valid_records}
                 if len(seeds) < spec["minimum_seeds"]:
                     issues.append("insufficient_observed_seeds")
-                cohorts = {(r.get("environment_digest"), r.get("spec", {}).get("method_id"),
-                            r.get("spec", {}).get("baseline_run_id")) for r in records}
-                if len(cohorts) != 1:
+                first = valid_records[0] if valid_records else None
+                if any(environment_settings(r["environment"]) != environment_settings(first["environment"])
+                       or r["spec"]["method_id"] != first["spec"]["method_id"]
+                       or r["spec"].get("baseline_run_id") != first["spec"].get("baseline_run_id")
+                       for r in valid_records):
                     issues.append("incomparable_runs")
                 assessment["comparability"] = "legacy_cohort_satisfied" if not issues else "incomplete"
         report_id = "c_" + uuid4().hex
         report = {"schema_version": 1, "report_id": report_id, "created_at": now(), "spec": spec,
                   "status": "passed" if not issues else "failed", "issues": issues, "evidence": evidence,
-                  "assessment": assessment, "integrity_check": "fresh", "scientific_validity": "not_assessed"}
+                  "assessment": assessment, "integrity_check": "not_performed", "scientific_validity": "not_assessed"}
         with self.state.locked():
             self.ready()
             path = self.state.write(f"artifacts/checks/{report_id}.json", report)
             self.state.event("evidence.checked", {"report_id": report_id}, key=report_id)
-        return {"ok": not issues, "report_id": report_id, "status": report["status"],
+        return {"ok": True, "report_id": report_id, "status": report["status"],
                 "issues": issues[:5], "omitted_issues": max(0, len(issues) - 5),
                 "report_path": str(path), "scientific_validity": "not_assessed"}
 
@@ -403,43 +383,49 @@ class EvidenceService:
         self.ready()
         manifest = self.document(manifest_path, "import")
         env = self.document(manifest["environment_path"], "environment")
-        self.validate_environment(env)
-        sources = []
-        for item in manifest["artifacts"]:
-            source = within(self.state.project, item["path"], exists=True)
-            if not source.is_file() or file_hash(source) != item["sha256"]:
-                raise EvidenceError("artifact_hash_mismatch", "Imported artifact digest does not match.")
-            sources.append(source)
-        metrics = within(self.state.project, manifest["metrics_path"], exists=True)
-        if metrics not in sources:
-            raise EvidenceError("missing_metric_artifact", "Metrics must be included in hashed artifacts.")
-        extracted = extract_metric_value(read_json(metrics), env["primary_metric"])
-        if not extracted["ok"]:
-            raise EvidenceError(extracted["error_type"], "Invalid imported metric.")
-        checked = validate_metric_result(env["primary_metric"], value=extracted["value"], artifacts=[])
-        if not checked["ok"]:
-            raise EvidenceError(checked["error_type"], "Imported metric violates its contract.")
-        import_id = "i_" + digest({"manifest": manifest, "environment": env})[:32]
-        relative = f"artifacts/imports/{import_id}"
+        request = {**manifest, "artifacts": [file_reference(item) for item in manifest["artifacts"]]}
         with self.state.locked():
             self.ready()
-            final = self.state.path(relative)
-            if final.exists():
-                record = read_json(self.state.path(f"{relative}/record.json"))
-                issues = self.import_issues(import_id, record)
-                if issues:
-                    raise EvidenceError("import_integrity_failed", "Saved import failed verification: " + ", ".join(issues[:3]))
-            else:
+            record, final = None, None
+            for path in sorted(self.state.path("artifacts/imports").glob("i_*/record.json")):
+                saved = read_json(path)
+                saved_request = {**saved["manifest"], "artifacts": [file_reference(item) for item in saved["manifest"]["artifacts"]]}
+                if saved_request == request and environment_settings(saved["environment"]) == environment_settings(env):
+                    record, final = saved, path.parent
+                    issues = self.import_issues(final.name, record)
+                    if issues:
+                        raise EvidenceError("import_record_invalid", "Saved import is inconsistent: " + ", ".join(issues[:3]))
+                    break
+            if record is None:
+                self.validate_environment(env)
+                import_id = "i_" + uuid4().hex[:16]
+                final = self.state.path(f"artifacts/imports/{import_id}")
                 stage = self.state.path(f"artifacts/imports/.{import_id}-{uuid4().hex}")
                 stage.mkdir(parents=True)
                 try:
-                    copied = []
-                    for index, (source, item) in enumerate(zip(sources, manifest["artifacts"])):
+                    copied, metric_path = [], None
+                    for index, item in enumerate(manifest["artifacts"]):
+                        source = within(self.state.project, item["path"], exists=True)
+                        if not source.is_file():
+                            raise EvidenceError("artifact_unavailable", "Imported artifact is not a file.")
+                        # Only copying uses an internal, transient checksum. It is
+                        # neither a public identity nor a future audit prerequisite.
+                        before = file_hash(source)
                         dest = stage / f"artifact-{index}"
                         shutil.copyfile(source, dest)
-                        if file_hash(dest) != item["sha256"]:
+                        if file_hash(dest) != before:
                             raise EvidenceError("artifact_changed", "Source changed while importing.")
-                        copied.append({"path": f"artifact-{index}", "source": item["path"], "sha256": item["sha256"]})
+                        copied.append({"path": dest.name, "source": item["path"], "size_bytes": dest.stat().st_size})
+                        if item["path"] == manifest["metrics_path"]:
+                            metric_path = dest
+                    if metric_path is None:
+                        raise EvidenceError("missing_metric_artifact", "Metrics must be included in artifacts.")
+                    extracted = extract_metric_value(read_json(metric_path), env["primary_metric"])
+                    if not extracted["ok"]:
+                        raise EvidenceError(extracted["error_type"], "Invalid imported metric.")
+                    checked = validate_metric_result(env["primary_metric"], value=extracted["value"], artifacts=[])
+                    if not checked["ok"]:
+                        raise EvidenceError(checked["error_type"], "Imported metric violates its contract.")
                     record = {"schema_version": 1, "import_id": import_id, "manifest": manifest,
                               "environment": env, "created_at": now(), "trust": "external_unverified",
                               "metric": extracted["value"], "artifacts": copied, "derivation_status": "pending"}
@@ -448,6 +434,8 @@ class EvidenceService:
                 finally:
                     if stage.exists():
                         shutil.rmtree(stage)
+            import_id = record["import_id"]
+            relative = f"artifacts/imports/{import_id}"
             try:
                 self.state.write(f"{relative}/result.json", {"import_id": import_id, "metric": record["metric"],
                                  "method_id": manifest["method_id"], "trust": "external_unverified"})

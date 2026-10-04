@@ -88,91 +88,12 @@ def test_stdio_errors_remain_bounded_and_connection_survives(tmp_path):
     assert len(json.dumps(replies[2])) < 1000
 
 
-def test_no_profile_or_environment_can_enable_extra_tools(monkeypatch):
-    monkeypatch.setenv("KVASIR_AGENT_ENABLE_EXECUTOR_MCP", "1")
+def test_public_catalog_is_small_and_explicit():
     expected = tools_list_payload()
-    for profile in ["all", "admin", "executor_local", "core", "literature"]:
-        assert tools_list_payload({"profile": profile}) == expected
     for definition in expected["tools"]:
         assert definition["inputSchema"]["required"]
         assert definition["inputSchema"]["additionalProperties"] is False
     assert len(json.dumps(expected, separators=(",", ":"))) < 5500
-
-
-def test_all_retired_tool_names_fail_without_writes(tmp_path):
-    retired = ['ka_artifact_index',
-     'ka_artifact_record',
-     'ka_bash_exec',
-     'ka_checkpoint',
-     'ka_claim_gate',
-     'ka_confirm_baseline',
-     'ka_context_pack',
-     'ka_cost_status',
-     'ka_create_analysis_campaign',
-     'ka_create_local_baseline',
-     'ka_definitely_missing_for_p4',
-     'ka_environment_register',
-     'ka_environment_validate',
-     'ka_evolutionary_plan_round',
-     'ka_evolutionary_round_submit',
-     'ka_feedback_ingest',
-     'ka_get_analysis_campaign',
-     'ka_get_method_scoreboard',
-     'ka_get_optimization_frontier',
-     'ka_get_quest_state',
-     'ka_goal_next_action',
-     'ka_goal_watchdog',
-     'ka_log_digest',
-     'ka_manifest_init',
-     'ka_manifest_record_baseline',
-     'ka_manifest_validate',
-     'ka_memory_search',
-     'ka_memory_write',
-     'ka_missing_for_stress_regression',
-     'ka_missing_goal_tool',
-     'ka_missing_research_primitive',
-     'ka_missing_tool',
-     'ka_new_quest',
-     'ka_pack_delta',
-     'ka_queue_reconcile',
-     'ka_queue_start_attempt',
-     'ka_queue_status',
-     'ka_queue_submit',
-     'ka_record_analysis_slice',
-     'ka_record_main_experiment',
-     'ka_record_negative_result',
-     'ka_record_user_requirement',
-     'ka_refresh_summary',
-     'ka_resume_brief',
-     'ka_review_status',
-     'ka_runner_start',
-     'ka_runner_status',
-     'ka_scheduler_submit',
-     'ka_soak_accelerated',
-     'ka_soak_crash_resume',
-     'ka_status',
-     'ka_submit_idea',
-     'ka_submit_paper_outline',
-     'ka_tool_schema',
-     'ka_trajectory_record',
-     'ka_trajectory_search',
-     'ka_trajectory_show',
-     'ka_trial_decide',
-     'ka_trial_evaluate',
-     'ka_trial_plan',
-     'ka_trial_propose',
-     'ka_trial_ready',
-     'ka_trial_show',
-     'ka_update_method_scoreboard',
-     'ka_wiki_query_pack',
-     'ka_worker_claim',
-     'ka_worker_collect',
-     'ka_worker_heartbeat',
-     'ka_worker_upload_artifact']
-    for name in retired:
-        result = call_tool(name, {"project": str(tmp_path), "profile": "executor_local"})
-        assert result["error_type"] == "tool_not_registered", name
-    assert list(tmp_path.iterdir()) == []
 
 
 def test_doctor_uses_current_evidence_server_without_initializing(tmp_path):

@@ -7,12 +7,12 @@ A compact research evidence plugin: **five MCP tools, one active skill**, explic
 | Tool | Purpose |
 | --- | --- |
 | `ka_research_status` | Read bounded project/run state without writes |
-| `ka_experiment_run` | Validate and start one reproducible managed run |
+| `ka_experiment_run` | Record declared settings and start one managed run |
 | `ka_experiment_stop` | Stop a run while preserving terminal facts |
 | `ka_evidence_check` | Check versioned run, comparison and research evidence |
 | `ka_evidence_import` | Preserve external results and unverified origin |
 
-Specifications are versioned files, loaded only as needed. Runs retain input hashes, metrics, logs and request snapshots; a detached wrapper completes recording even after MCP disconnects. Verified material integrity is not scientific validity.
+Specifications are versioned files, loaded only as needed. Runs retain declared inputs, metrics, logs and request snapshots; a detached wrapper completes recording even after MCP disconnects. Ordinary research needs no hash identifiers or repeated byte checks. Research versions use automatic `v1`, `v2`, etc. and retain material copies. Execution, available evidence and scientific validity remain separate.
 
 ## Start
 

@@ -1,6 +1,6 @@
 # Paired comparison interpretation
 
-Protocol ID/digest, declared time and prospective/retrospective label:
+Protocol ID/optional version, declared time and prospective/retrospective label:
 Dataset/split/evaluator and exact versions:
 Baseline/candidate inputs and units/direction/selection:
 Expected pairs and actual baseline/candidate run IDs:

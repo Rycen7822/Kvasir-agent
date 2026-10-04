@@ -2,11 +2,11 @@
 from __future__ import annotations
 
 from datetime import datetime
-from pathlib import Path
 import re
+import shutil
 
 from .evidence_contracts import EvidenceError, read_json, validate_document
-from .research_state import ResearchState, digest, file_hash, now, within
+from .research_state import ResearchState, now, within
 
 
 class ResearchRecords:
@@ -21,8 +21,15 @@ class ResearchRecords:
     def read_document(self, path):
         return validate_document(read_json(within(self.state.project, path, exists=True)), "research")
 
-    def bytes_issues(self, document):
+    def material_issues(self, document, materials=None):
         issues, limitations = [], []
+        materials = materials or {}
+
+        def material_path(item):
+            if item["path"] in materials:
+                return self.state.path(materials[item["path"]])
+            return within(self.state.project, item["path"], exists=True)
+
         files = [document["content"]]
         metadata = document["metadata"]
         if document["kind"] == "candidate":
@@ -34,8 +41,8 @@ class ResearchRecords:
             limitations.append("reviewer_and_outcome_are_declared")
         for item in files:
             try:
-                if file_hash(within(self.state.project, item["path"], exists=True)) != item["sha256"]:
-                    issues.append("content_stale:" + item["path"])
+                if not material_path(item).is_file():
+                    issues.append("content_missing:" + item["path"])
             except (EvidenceError, OSError):
                 issues.append("content_missing:" + item["path"])
         if document["kind"] == "source":
@@ -55,10 +62,7 @@ class ResearchRecords:
                 issues.append("source_time_invalid")
             for locator in metadata["locators"]:
                 try:
-                    path = within(self.state.project, locator["path"], exists=True)
-                    if file_hash(path) != locator["sha256"]:
-                        issues.append("locator_source_stale")
-                        continue
+                    path = material_path(locator)
                     if locator["kind"] == "page":
                         limitations.append("page_locator_unresolved")
                         continue
@@ -77,7 +81,7 @@ class ResearchRecords:
     def resolve(self, record_id, revision=None):
         if not re.fullmatch(r"[A-Za-z0-9_-]{1,80}", record_id):
             raise EvidenceError("invalid_record_id", "Invalid research record identity.")
-        if revision is not None and not re.fullmatch(r"[a-f0-9]{64}", revision):
+        if revision is not None and not re.fullmatch(r"[A-Za-z0-9_-]{1,80}", revision):
             raise EvidenceError("invalid_revision", "Invalid research revision.")
         paths = [self.state.path(f"research/records/{record_id}/{revision}.json")] if revision else list(self.state.path(f"research/records/{record_id}").glob("*.json"))
         if not paths:
@@ -86,11 +90,12 @@ class ResearchRecords:
         for path in paths:
             saved = read_json(path)
             document = validate_document(saved["document"], "research")
-            if (document["record_id"] != record_id or saved["revision"] != digest(document)
-                    or path.stem != saved["revision"]):
-                raise EvidenceError("corrupt_research_record", "Research identity or digest mismatch.")
+            if document["record_id"] != record_id or path.stem != saved["revision"]:
+                raise EvidenceError("corrupt_research_record", "Research identity mismatch.")
+            saved["document"] = document
             records.append(saved)
-        return max(records, key=lambda x: (x["registered_at"], x["revision"]))
+        return max(records, key=lambda x: (x["registered_at"],
+                   int(x["revision"][1:]) if re.fullmatch(r"v[0-9]+", x["revision"]) else 0, x["revision"]))
 
     @staticmethod
     def references(document):
@@ -102,10 +107,6 @@ class ResearchRecords:
     def register(self, path):
         self.ready()
         document = self.read_document(path)
-        failures, _ = self.bytes_issues(document)
-        if failures:
-            raise EvidenceError("invalid_research_content", ", ".join(failures[:3]))
-        revision = digest(document)
         record_id = document["record_id"]
         with self.state.locked():
             self.ready()
@@ -113,20 +114,47 @@ class ResearchRecords:
                 self.resolve(reference["record_id"], reference["revision"])
             for run_id in document.get("run_ids", []):
                 self.state.read_run(run_id)
+            folder = self.state.path(f"research/records/{record_id}")
+            versions = [int(path.stem[1:]) for path in folder.glob("v*.json")
+                        if re.fullmatch(r"v[0-9]+", path.stem)]
+            version = max(versions, default=0) + 1
+            while (folder / f"v{version}").exists():
+                version += 1
+            revision = f"v{version}"
             relative = f"research/records/{record_id}/{revision}.json"
             target = self.state.path(relative)
-            reused = target.exists()
-            if reused:
-                self.resolve(record_id, revision)
-            else:
+            snapshot = self.state.path(f"research/records/{record_id}/{revision}")
+            snapshot.mkdir(parents=True)
+            items = [document["content"]]
+            if document["kind"] == "source":
+                items += document["metadata"]["locators"]
+            if document["kind"] == "review":
+                items += [document["metadata"]["target"]]
+            materials = {}
+            try:
+                for item in items:
+                    if item["path"] in materials:
+                        continue
+                    source = within(self.state.project, item["path"], exists=True)
+                    if not source.is_file():
+                        raise EvidenceError("invalid_research_content", "Research material must be a file.")
+                    copy = snapshot / f"material-{len(materials)}{source.suffix[:16]}"
+                    shutil.copyfile(source, copy)
+                    materials[item["path"]] = str(copy.relative_to(self.state.root))
                 self.state.write(relative, {"schema_version": 1, "revision": revision,
-                                           "registered_at": now(), "document": document})
+                                           "registered_at": now(), "document": document, "materials": materials})
+            except Exception:
+                # write() can fail during directory fsync after publishing JSON.
+                # A published record must retain its material copies.
+                if not target.exists():
+                    shutil.rmtree(snapshot)
+                raise
             try:
                 self._write_index()
                 derivation = "complete"
             except (OSError, EvidenceError, ValueError, KeyError, TypeError):
                 derivation = "partial"
-        return {"ok": True, "record_id": record_id, "revision": revision, "reused": reused,
+        return {"ok": True, "record_id": record_id, "revision": revision, "reused": False,
                 "record_path": str(target), "index_path": str(self.state.path("research/index.json")),
                 "derivation_status": derivation}
 
@@ -140,8 +168,10 @@ class ResearchRecords:
                 continue
             latest = self.resolve(folder.name)
             document = latest["document"]
+            copy = latest.get("materials", {}).get(document["content"]["path"])
             entries.append({"record_id": folder.name, "kind": document["kind"], "title": document["title"],
-                            "revision": latest["revision"], "content_path": document["content"]["path"],
+                            "revision": latest["revision"],
+                            "content_path": str(self.state.path(copy)) if copy else document["content"]["path"],
                             "record_path": str(self.state.path(f"research/records/{folder.name}/{latest['revision']}.json")),
                             "history_path": str(folder), "run_ids": document.get("run_ids", [])})
         legacy = []
@@ -178,11 +208,10 @@ class ResearchRecords:
                 if key in memo:
                     return memo[key]
                 document = saved["document"]
-                failures, limitations = self.bytes_issues(document)
+                failures, limitations = self.material_issues(document, saved.get("materials"))
+                if "materials" not in saved:
+                    limitations.append("legacy_materials_not_snapshotted")
                 for reference in self.references(document):
-                    latest = self.resolve(reference["record_id"])
-                    if latest["revision"] != reference["revision"]:
-                        failures.append("dependency_superseded:" + reference["record_id"])
                     dep_issues, dep_limits = visit(reference["record_id"], reference["revision"], (*stack, key))
                     failures.extend("dependency:" + reference["record_id"] + ":" + x for x in dep_issues)
                     limitations.extend(dep_limits)

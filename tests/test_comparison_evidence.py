@@ -6,7 +6,7 @@ import pytest
 
 from kvasir_agent.services.evidence import EvidenceService
 from kvasir_agent.services.evidence_contracts import EvidenceError
-from kvasir_agent.services.research_state import digest, now
+from kvasir_agent.services.research_state import now
 from test_evidence_v3 import project, finish, write
 
 
@@ -14,7 +14,7 @@ def protocol_for(project):
     root, state, spec = project
     env = json.loads((root / "environment.json").read_text())
     protocol = {"schema_version": 1, "protocol_id": "paired", "declared_at": now(), "timing": "prospective",
-                "environment_digest": digest(env), "dataset_id": "data", "split": "heldout",
+                "environment_id": env["env_id"], "dataset_id": "data", "split": "heldout",
                 "datasets": env["datasets"], "evaluator": env["protected_files"][0],
                 "metric": {"name": "score", "unit": "score", "direction": "maximize", "selection": "prespecified"},
                 "methods": {"baseline": "base", "candidate": "candidate"},
@@ -78,7 +78,7 @@ def test_missing_pair_duplicate_valid_and_failed_attempt_have_explicit_denominat
     b = bound_run(project, 1, "baseline", "base")
     bound_run(project, 1, "experiment", "candidate", b)
     result, report = check(project)
-    assert not result["ok"] and "p-2:missing_pair" in result["issues"]
+    assert result["ok"] and result["status"] == "failed" and "p-2:missing_pair" in result["issues"]
     bound_run(project, 1, "experiment", "duplicate", b)
     bound_run(project, 2, "baseline", "failed", change=lambda s: s.update(command=[s["command"][0], "-c", "raise SystemExit(2)"]))
     result, report = check(project)
@@ -87,26 +87,3 @@ def test_missing_pair_duplicate_valid_and_failed_attempt_have_explicit_denominat
     assert report["denominator"]["failed"] == 1
     assert report["denominator"]["excluded"] == 1
     assert len(report["attempts"]) == 4
-
-
-def test_missing_pair_does_not_report_material_corruption(project):
-    protocol_for(project)
-    bound_run(project, 1, "baseline", "baseline-only")
-    result, _ = check(project)
-    report = json.loads(Path(result["report_path"]).read_text())
-    assert not result["ok"]
-    assert report["assessment"]["integrity"] == "passed"
-    assert report["assessment"]["comparability"] == "incomplete"
-    assert report["assessment"]["execution"] == "see_attempts"
-
-
-def test_protocol_edit_changes_idempotency_and_marks_old_run_stale(project):
-    protocol = protocol_for(project)
-    run_id = bound_run(project, 1, "baseline", "base")
-    protocol["split"] = "new-split"
-    write(project[0] / "protocol.json", protocol)
-    service = EvidenceService(str(project[0]))
-    with pytest.raises(EvidenceError) as exc:
-        service.run("base.json", "base")
-    assert exc.value.kind == "idempotency_conflict"
-    assert "protocol_version_changed" in service.run_issues(project[1].read_run(run_id))

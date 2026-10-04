@@ -20,9 +20,13 @@
         "retrospective"
       ]
     },
-    "environment_digest": {
+    "environment_id": {
       "type": "string",
-      "pattern": "^[a-f0-9]{64}$"
+      "pattern": "^[A-Za-z0-9_-]{1,80}$"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,80}$"
     },
     "dataset_id": {
       "type": "string",
@@ -43,14 +47,13 @@
             "minLength": 1,
             "maxLength": 1024
           },
-          "sha256": {
+          "version": {
             "type": "string",
-            "pattern": "^[a-f0-9]{64}$"
+            "pattern": "^[A-Za-z0-9_-]{1,80}$"
           }
         },
         "required": [
-          "path",
-          "sha256"
+          "path"
         ],
         "additionalProperties": false
       },
@@ -65,14 +68,13 @@
           "minLength": 1,
           "maxLength": 1024
         },
-        "sha256": {
+        "version": {
           "type": "string",
-          "pattern": "^[a-f0-9]{64}$"
+          "pattern": "^[A-Za-z0-9_-]{1,80}$"
         }
       },
       "required": [
-        "path",
-        "sha256"
+        "path"
       ],
       "additionalProperties": false
     },
@@ -141,14 +143,13 @@
                 "minLength": 1,
                 "maxLength": 1024
               },
-              "sha256": {
+              "version": {
                 "type": "string",
-                "pattern": "^[a-f0-9]{64}$"
+                "pattern": "^[A-Za-z0-9_-]{1,80}$"
               }
             },
             "required": [
-              "path",
-              "sha256"
+              "path"
             ],
             "additionalProperties": false
           },
@@ -165,14 +166,13 @@
                 "minLength": 1,
                 "maxLength": 1024
               },
-              "sha256": {
+              "version": {
                 "type": "string",
-                "pattern": "^[a-f0-9]{64}$"
+                "pattern": "^[A-Za-z0-9_-]{1,80}$"
               }
             },
             "required": [
-              "path",
-              "sha256"
+              "path"
             ],
             "additionalProperties": false
           },
@@ -246,7 +246,6 @@
     "protocol_id",
     "declared_at",
     "timing",
-    "environment_digest",
     "dataset_id",
     "split",
     "datasets",

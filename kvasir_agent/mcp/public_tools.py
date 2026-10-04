@@ -22,7 +22,7 @@ DEFINITIONS = [{'name': 'ka_research_status',
                   'idempotentHint': True,
                   'openWorldHint': False}},
  {'name': 'ka_experiment_run',
-  'description': 'Validate a file specification and protected inputs, then start one managed run. '
+  'description': 'Validate a file specification and declared inputs, then start one managed run. '
                  'Matching keys reuse the recorded request.',
   'inputSchema': {'type': 'object',
                   'properties': {'project': {'type': 'string',
