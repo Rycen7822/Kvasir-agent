@@ -124,7 +124,7 @@ def test_slash_command_creates_run_and_cli_next_instruction(tmp_path, monkeypatc
     assert result["next_command"] == "plan"
     assert "cli.py plan --run-id" in result["instruction"]
     assert "delegations" in result["instruction"]
-    assert 'role="orchestrator"' in result["instruction"]
-    assert "child_reports" in result["instruction"]
+    assert result["team_effort"] == "max"
+    assert "native" in result["instruction"]
     assert "submit-report" in result["instruction"]
     assert "ponder_forge_" not in result["instruction"]

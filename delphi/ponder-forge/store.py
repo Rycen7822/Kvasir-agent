@@ -184,6 +184,7 @@ class PonderForgeStore:
         role: str,
         input_data: JsonDict | None = None,
         node_id: str | None = None,
+        status: str = "queued",
     ) -> JsonDict:
         ts = now_iso()
         row = {
@@ -192,7 +193,7 @@ class PonderForgeStore:
             "profile": profile,
             "node_type": node_type,
             "role": role,
-            "status": "queued",
+            "status": status,
             "input_json": json_dumps(input_data),
             "output_json": "{}",
             "created_at": ts,
@@ -201,12 +202,22 @@ class PonderForgeStore:
         self._insert("workflow_nodes", row)
         return row
 
+    def update_workflow_node(self, run_id: str, node_id: str, status: str, input_data: JsonDict) -> None:
+        with self.connect() as conn:
+            result = conn.execute(
+                "update workflow_nodes set status = ?, input_json = ?, updated_at = ? "
+                "where run_id = ? and node_id = ?",
+                (status, json_dumps(input_data), now_iso(), run_id, node_id),
+            )
+            if result.rowcount != 1:
+                raise ValueError("board task id does not belong to this run")
+
     def update_run_status(self, run_id: str, status: str) -> None:
         with self.connect() as conn:
             conn.execute("update runs set status = ?, updated_at = ? where run_id = ?", (status, now_iso(), run_id))
 
     def update_task_status(self, task_id: str, status: str, error: str | None = None) -> None:
-        finished_at = now_iso() if status in {"finished", "failed"} else None
+        finished_at = now_iso() if status in {"finished", "failed", "partial", "cancelled"} else None
         with self.connect() as conn:
             conn.execute(
                 "update agent_tasks set status = ?, error = ?, finished_at = ? where task_id = ?",
@@ -503,11 +514,11 @@ class PonderForgeStore:
                 (statement_id, assertion_id, relation),
             )
 
-    def update_final_report(self, run_id: str, final_report_md: str) -> None:
+    def update_final_report(self, run_id: str, final_report_md: str, *, status: str = "completed") -> None:
         with self.connect() as conn:
             conn.execute(
                 "update runs set final_report_md = ?, status = ?, updated_at = ? where run_id = ?",
-                (final_report_md, "completed", now_iso(), run_id),
+                (final_report_md, status, now_iso(), run_id),
             )
 
     @staticmethod
@@ -536,6 +547,8 @@ class PonderForgeStore:
         else:
             sql = f"select * from {table} where run_id = ?"
             params = (run_id,)
+        if table == "reports":
+            sql += " order by created_at, rowid"
         with self.connect() as conn:
             rows = conn.execute(sql, params).fetchall()
         return [dict(row) for row in rows]

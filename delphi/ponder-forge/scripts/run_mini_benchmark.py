@@ -1,138 +1,71 @@
+"""Exercise offline CLI fixtures. This does not run models or native agents."""
 from __future__ import annotations
-
 import argparse
-import importlib.util
 import json
 import os
-import sys
-import tempfile
-from argparse import Namespace
 from pathlib import Path
+import subprocess
+import sys
+import time
 
 ROOT = Path(__file__).resolve().parents[1]
-CASES_DIR = ROOT / "benchmarks" / "mini_cases"
-
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
-
-from gates import evaluate_gate
-import planner
-from planner import plan_run
-from report_ingest import ingest_report
-from store import PonderForgeStore
-from verifier import verify_run
 
 
-def _load_cli():
-    spec = importlib.util.spec_from_file_location("ponder_forge_cli_benchmark", ROOT / "cli.py")
-    if spec is None or spec.loader is None:
-        raise RuntimeError("cannot load cli.py")
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+def run_case(case: dict, directory: Path) -> dict:
+    directory.mkdir(parents=True, exist_ok=True)
+    env = {**os.environ, "HERMES_HOME": str(directory / "state")}
+    def invoke(*args):
+        result = subprocess.run([sys.executable, str(ROOT / "cli.py"), *args],
+                                env=env, text=True, capture_output=True, check=False)
+        payload = json.loads(result.stdout)
+        if result.returncode or not payload["success"]:
+            raise RuntimeError(f"CLI fixture failed: {args[0]}: {payload}")
+        return payload
+    def write(name, payload):
+        path = directory / name
+        path.write_text(json.dumps(payload, ensure_ascii=False))
+        return str(path)
+    started_at = time.monotonic()
+    run = invoke("start", "--goal", case["goal"], "--profile", case["profile"],
+                 "--team-effort", case["team_effort"])
+    rid = run["run_id"]
+    policy = invoke("plan", "--run-id", rid)
+    if not policy["coordinator_prompt"].endswith(f"<team_effort>{case['team_effort']}</team_effort>"):
+        raise RuntimeError("incorrect strategy level")
+    board_file = write("board.json", {"tasks": [{"description": case["goal"]}]})
+    board = invoke("plan", "--run-id", rid, "--file", board_file)["task_board"][0]
+    assignments_file = write("assignments.json", {"tasks": [{"agent": "fixture_researcher",
+        "prompt": case["goal"], "task_ids": [board["id"]]}]})
+    task = invoke("delegations", "--run-id", rid, "--file", assignments_file)["assignments"][0]
+    report_file = write("report.json", {"run_id": rid, "task_id": task["task_id"], **case["report"]})
+    invoke("submit-report", "--file", report_file)
+    if invoke("gate", "--run-id", rid)["pass"]:
+        raise RuntimeError("returned report unexpectedly resolved the question")
+    draft = directory / "draft.md"
+    draft.write_text(case["draft"])
+    verifier = invoke("verify", "--run-id", rid, "--mode", "final", "--file", str(draft))["assignments"][0]
+    verification = write("verification.json", {"run_id": rid, "task_id": verifier["task_id"],
+        "content": "OFFLINE FIXTURE ONLY: expected verification reply; no independent research executed."})
+    invoke("submit-report", "--file", verification)
+    invoke("plan", "--run-id", rid, "--file", write("resolution.json", {
+        "tasks": [{"id": board["id"], "resolution": "resolved"}]}))
+    final = invoke("finalize", "--run-id", rid, "--file", str(draft))
+    return {"profile": case["profile"], "team_effort": case["team_effort"],
+            "run_id": rid, "final_status": final["status"], "artifact_paths": final["artifact_paths"],
+            "elapsed_seconds": round(time.monotonic() - started_at, 3)}
 
 
-CLI = _load_cli()
-
-
-def _store() -> PonderForgeStore:
-    store = PonderForgeStore()
-    store.initialize()
-    return store
-
-
-def run_case(case: dict) -> dict:
-    with tempfile.TemporaryDirectory(prefix=f"pf-{case['profile']}-") as home:
-        old_home = os.environ.get("HERMES_HOME")
-        os.environ["HERMES_HOME"] = home
-        try:
-            start = CLI.start_run(
-                case["goal"],
-                profile=case["profile"],
-                budget={"top_level_runs": 1, "child_concurrency_per_lane": 1},
-            )
-            store = _store()
-            original_child_specs = planner.derive_lane_child_specs
-            planner.derive_lane_child_specs = lambda _run, _profile, _lane_index: [
-                {"role": f"{case['profile']}_mini_worker", "goal": case["goal"], "context": "mini benchmark fixture"}
-            ]
-            try:
-                plan = plan_run(store, start["run_id"])
-            finally:
-                planner.derive_lane_child_specs = original_child_specs
-            lane_task = next(task for task in plan["tasks"] if task["role"] == "swarm_lane_coordinator")
-            child_tasks = [task for task in plan["tasks"] if task["parent_task_id"] == lane_task["task_id"]]
-            if len(child_tasks) != 1:
-                raise RuntimeError(f"mini benchmark expected one planned child, got {len(child_tasks)}")
-            producer_task = child_tasks[0]
-            report_payload = dict(case["report"])
-            report_payload.update({"run_id": start["run_id"], "task_id": producer_task["task_id"], "role": producer_task["role"]})
-            lane_report = {
-                "run_id": start["run_id"],
-                "task_id": lane_task["task_id"],
-                "role": lane_task["role"],
-                "summary": f"mini benchmark lane report for {case['profile']}",
-                "child_reports": [report_payload],
-                "assertions": [],
-                "artifacts": [],
-            }
-            report = ingest_report(store, lane_report)
-            child_report_id = report["child_report_ids"][0]
-            assertion_id = next(
-                assertion["assertion_id"]
-                for assertion in store.list_rows("assertions", start["run_id"])
-                if assertion["report_id"] == child_report_id
-            )
-            review = verify_run(store, start["run_id"], {"run_id": start["run_id"], "mode": "independent_review", "target_id": assertion_id})
-            reviewer_task = review["reviewer_tasks"][0]
-            verify_run(
-                store,
-                start["run_id"],
-                {
-                    "run_id": start["run_id"],
-                    "mode": "independent_review",
-                    "target_id": assertion_id,
-                    "reviewer_task_id": reviewer_task["task_id"],
-                    "reviewer_role": reviewer_task["role"],
-                    "independent_from_task_id": producer_task["task_id"],
-                    "verdict": "accept",
-                    "confidence": 0.9,
-                    "rationale": "mini benchmark fixture review",
-                },
-            )
-            gate = evaluate_gate(store, start["run_id"])
-            final = CLI.cmd_finalize(Namespace(run_id=start["run_id"]))
-            return {
-                "profile": case["profile"],
-                "run_id": start["run_id"],
-                "gate_status": gate["status"],
-                "final_status": final["status"],
-                "artifact_paths": final.get("artifact_paths", {}),
-            }
-        finally:
-            if old_home is None:
-                os.environ.pop("HERMES_HOME", None)
-            else:
-                os.environ["HERMES_HOME"] = old_home
-
-
-def main() -> int:
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
-    cases = [json.loads(path.read_text(encoding="utf-8")) for path in sorted(CASES_DIR.glob("*.json"))]
-    results = [run_case(case) for case in cases]
-    summary = {
-        "cases": results,
-        "summary": {
-            "total": len(results),
-            "final": sum(1 for result in results if result["final_status"] == "final"),
-            "blocked": sum(1 for result in results if result["final_status"] == "blocked"),
-        },
-    }
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8")
-    print(json.dumps(summary["summary"], ensure_ascii=False, sort_keys=True))
+    cases = [json.loads(path.read_text()) for path in sorted((ROOT / "benchmarks/mini_cases").glob("*.json"))]
+    results = [run_case(case, args.output.parent / "offline-cases" / case["profile"]) for case in cases]
+    summary = {"proof": "offline CLI fixtures; no model or native agent execution", "cases": results,
+               "summary": {"total": len(results), "final": sum(x["final_status"] == "final" for x in results)}}
+    args.output.write_text(json.dumps(summary, ensure_ascii=False, indent=2) + "\n")
+    print(json.dumps(summary["summary"]))
     return 0
 
 

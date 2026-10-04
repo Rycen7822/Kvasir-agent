@@ -12,17 +12,6 @@ def test_profiles_define_five_data_records():
         profile = get_profile(profile_id)
         assert profile.profile_id == profile_id
         assert profile.roles
-        assert profile.required_evidence_types
-        assert profile.critical_assertion_types
-        assert profile.gate_name
-
-
-def test_profile_gate_groups_are_advertised_evidence_tokens():
-    for profile_id in PROFILE_IDS:
-        profile = get_profile(profile_id)
-        accepted_tokens = {token for group in profile.required_evidence_groups for token in group}
-
-        assert accepted_tokens <= set(profile.required_evidence_types), profile_id
 
 
 def test_profile_auto_routing_is_deterministic():

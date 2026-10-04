@@ -26,8 +26,9 @@ def start_ponder_forge_command(ctx, raw_args: str) -> str:
     run_id = result["run_id"]
     result["instruction"] = (
         f"Use terminal: python3 {INSTALLED_CLI} plan --run-id {run_id}; "
-        f"then python3 {INSTALLED_CLI} delegations --run-id {run_id}. "
-        "Call native delegate_task with the lane coordinator role=\"orchestrator\" payloads; "
-        "each lane returns one JSON report with child_reports, then submit-report through the CLI."
+        "read the complete default max coordinator strategy, then write a task board "
+        "and scoped assignments for native agents. Use delegations --file assignments.json "
+        "and native host tools; collect full replies and submit-report through the CLI. "
+        "Before completing, verify the full draft and save it using finalize --file draft.md."
     )
     return json.dumps(result, ensure_ascii=False)

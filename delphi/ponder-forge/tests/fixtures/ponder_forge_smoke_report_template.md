@@ -1,32 +1,28 @@
-# Ponder-Forge Smoke Report Template
+# Ponder-Forge Smoke Report
 
 ## Run metadata
 
-- date:
 - source_revision:
 - install_path:
 - install_is_symlink: false
-- benchmark_summary_json:
+- team_effort: high | max
+- offline_cli_summary:
 
-## Metrics
+## Results
 
-- unsupported_assertion_rate:
-- blocked_final_attempts:
+- unresolved_question_count:
 - successful_finalizations:
-- average_case_latency_seconds:
+- partial_finalizations:
 - live_delegate_status: not-run | passed | blocked | unavailable
 
-## Profile results
-
-| profile | status | final artifact | blocked reason |
+| profile | strategy | final artifact | remaining gaps |
 |---|---|---|---|
-| research |  |  |  |
-| coding |  |  |  |
-| design |  |  |  |
-| analysis |  |  |  |
-| math |  |  |  |
+| research | | | |
+| coding | | | |
+| design | | | |
+| analysis | | | |
+| math | | | |
 
-## Notes
-
-- Source-level mocked benchmark proves profile gates and final renderer behavior.
-- Live delegate smoke must be recorded separately; do not claim live readiness when `live_delegate_status` is `not-run` or `unavailable`.
+Offline CLI fixtures prove state transitions and packaging, not research correctness,
+independent model verification, native cancellation or performance.
+Record real native execution separately. Do not label a fixture verifier as a live verifier.

@@ -17,11 +17,9 @@ def test_mini_cases_cover_all_profiles_and_required_contract():
     assert {case["profile"] for case in cases} == set(PROFILE_IDS)
     for case in cases:
         assert case["goal"]
-        assert case["report"]["summary"]
-        assert case["report"]["assertions"]
-        assertion = case["report"]["assertions"][0]
-        assert assertion["critical"] is True
-        assert assertion["evidence"]
+        assert case["report"]["content"]
+        assert case["draft"]
+        assert case["team_effort"] in {"high", "max"}
         assert case["expected_status"] == "final"
 
 
@@ -43,7 +41,7 @@ def test_mini_benchmark_script_runs_all_cases(tmp_path):
 
 def test_smoke_report_template_exists_and_has_metrics():
     text = (ROOT / "tests" / "fixtures" / "ponder_forge_smoke_report_template.md").read_text(encoding="utf-8")
-    for term in ("unsupported_assertion_rate", "blocked_final_attempts", "successful_finalizations", "live_delegate_status"):
+    for term in ("unresolved_question_count", "successful_finalizations", "partial_finalizations", "live_delegate_status"):
         assert term in text
 
 
@@ -53,13 +51,6 @@ def test_bundled_skill_is_cli_first_and_has_no_direct_tool_guidance():
     assert "cli.py" in text
     assert "submit-report --file" in text
     assert "delegate_task" in text
-    assert "code_claim" in text
-    assert "exit_code=0" in text
-    assert "next_required_action=\"complete\"" in text
-    assert "delegate_task_payload_suggestion" in text
-    assert "top_level_runs" in text
-    assert "child_concurrency_per_lane" in text
-    assert "child_reports" in text
-    assert 'role="orchestrator"' in text
-    assert "max_tasks_per_wave" not in text
-    assert "ponder_forge_" not in text
+    assert "--team-effort high" in text
+    assert "complete" in text and "draft" in text
+    assert "--partial --reason" in text

@@ -1,145 +1,86 @@
 ---
 name: ponder-forge-usage
-description: Operate Ponder-Forge complex-problem workflows through the pure CLI.
-version: 0.2.0
-author: Hermes Agent
+description: Use FrontierAgent high/max team strategies for complex work with native agents and Ponder CLI state.
 ---
 
-# Ponder-Forge Usage
+# Ponder-Forge
 
-Use Ponder-Forge for complex problems that need multiple child agents, structured evidence, independent review, gate checks, and graph-backed finalization.
+Use for a complex research, coding, design, analysis or math problem. The host
+owns model execution, delegation, waiting and cancellation. Ponder supplies
+FrontierAgent Apodex 1.1 strategy and keeps the task board and complete reports.
 
-Ponder-Forge is intentionally operated as a skill + CLI workflow. The installed workflow exposes no Ponder-Forge direct model tools or hooks; use native Hermes `delegate_task` for child execution and the Ponder-Forge CLI for state transitions.
+## CLI location
 
-## CLI path
+Hermes installation: `python3 ${HERMES_HOME:-$HOME/.hermes}/plugins/ponder_forge/cli.py`.
+For a source checkout or another host, use the actual absolute `cli.py` path.
+The examples below abbreviate this command as `ponder`.
 
-Use the installed plugin CLI path for normal user-facing work:
+## Workflow
 
-```bash
-PF_CLI="${HERMES_HOME:-$HOME/.hermes}/plugins/ponder_forge/cli.py"
-```
+1. `ponder start --goal "..."` defaults to **max**. Choose **high** with
+   `--team-effort high`. Profiles are context labels, not fixed team rosters.
+2. `ponder plan --run-id R` returns the full coordinator policy. Read it before
+   planning; keep it in the coordinator. Use `status` for subsequent short updates.
+3. Submit a question-driven board with `plan --run-id R --file board.json`:
+   `{"tasks":[{"description":"Question to resolve","owners":[],"resolution":"open"}]}`.
+   Update by returned `id`. States: `open`, `in_progress`, `resolved`, `cancelled`.
+   `owners` are appended; `replace_owners: true` replaces them. Record cancellation
+   reasons in `notes`. A worker report does not automatically resolve its question.
+4. Write scoped assignments with `delegations --run-id R --file assignments.json`:
+   `{"tasks":[{"agent":"method_a","system_prompt":"Independent literature researcher","prompt":"Specific work","task_ids":["board-id"]}]}`.
+   The response contains one complete prompt per assignment. Pass its
+   `system_prompt` and `prompt` together to the native agent (these fields do not
+   imply a host API system-message override). On Hermes, map prompt to native
+   `delegate_task` goal and system_prompt to context; on Codex/Pi, use the native
+   agent tools available in that session. Reuse an existing agent for serial follow-ups. Workers return final
+   text and do not spawn another team or write Ponder state.
+5. After an actual host launch, record it with
+   `delegations --run-id R --started TASK_ID --host-agent-id HOST_ID`.
+   Merely preparing a payload leaves it queued. Without `--file`, `delegations`
+   lists queued work; do not dispatch a task already running on the host.
+6. Wait/collect with the native host, then `submit-report --file report.json`:
+   `{"run_id":"R","task_id":"TASK_ID","content":"Full returned report"}`.
+   Keep all citations, numbers, caveats and negative results. Optional `status`:
+   `finished` (default), `partial`, `failed`, `cancelled`; optional confidence 0..1.
+   Use `status --run-id R --reports` to read complete recorded reports.
+7. Fill gaps, cross-check independent results, and update board resolutions.
+   An assignment prompt can use `<attach agent="method_a"/>` to include that
+   agent's full latest report from this run. Missing attachments are errors.
+   For source arbitration, `verify --run-id R --mode local --file conflict.json`,
+   where `{"conflict":"Specific disagreement","report_ids":["report-a","report-b"]}`.
+   Execute the prepared local verifier on the native host and retain its reply.
+8. Write the **complete** proposed answer to draft.md, then
+   `verify --run-id R --mode final --file draft.md`. Execute the prepared final
+   verifier. Repair any flaws and re-verify as required by the source policy.
+9. `gate --run-id R` checks unresolved board questions. It does not certify
+   scientific correctness or demand that every historical assignment finish.
+   Save the reviewed answer with `finalize --run-id R --file draft.md`.
+   On budget exhaustion/interruption, save `--partial --reason "..."`; unresolved
+   questions are retained in the output. Repeating finalize reads the saved result.
 
-For source-tree development only, use the repository-local `cli.py`.
+## Strategy levels
 
-## Core workflow
+**high** uses the complete base team workflow: understand and decompose, assign
+complementary work, inspect reports and gaps, preserve factual atoms during
+synthesis, obtain independent final verification, repair and submit.
 
-1. Start a run. Omit `--budget-json` for the default 8x4 swarm, or pass positive integer budget keys explicitly:
+**max** adds all five upstream obligations: 2–3 independent axes per nontrivial
+sub-question; reinvest into weak, unresolved or disconfirming work; corroborate
+load-bearing facts with at least two independent agents and arbitrate conflicts;
+run dedicated disproof; final verification re-derives with different queries and
+checks every atom before repair and re-verification. Do not weaken these to a
+fixed shallow roster. This level does not set the model's reasoning effort.
 
-   ```bash
-   python3 "$PF_CLI" start --goal "<complex problem>" --profile auto --budget-json '{"top_level_runs": 8, "child_concurrency_per_lane": 4}'
-   ```
+## Lifecycle and persistence
 
-2. Plan tasks:
+The batch size defaults to 20 (`start --budget '{"delegate_batch_size":10}'` can
+lower it). Actual concurrency and runtime limits belong to the host. `reconcile`
+is diagnostic: it does not infer dead processes from age or create retries.
+At completion or interruption, stop unneeded native work through the host;
+record confirmed cancellations using `delegations --cancelled` before closing the run.
 
-   ```bash
-   python3 "$PF_CLI" plan --run-id <run_id>
-   ```
-
-   `plan` creates queued lane coordinator tasks plus planned lane-child backlog rows. `top_level_runs` controls the number of top-level lane coordinators. `child_concurrency_per_lane` is the maximum number of child subagents a lane coordinator may have in flight at once; it does not cap the total planned child backlog.
-
-3. Produce native delegation payloads for lane coordinators:
-
-   ```bash
-   python3 "$PF_CLI" delegations --run-id <run_id>
-   ```
-
-4. The parent/controller calls native Hermes `delegate_task` with the returned `delegate_task_payload`. Lane coordinator payloads use native `role="orchestrator"`.
-
-5. Each lane coordinator calls native `delegate_task` for only the child tasks in its manifest. Run repeated child waves with at most `child_concurrency_per_lane` child subagents in flight at once. The lane coordinator then returns one lane report JSON with `child_reports`.
-
-6. The parent/controller submits each lane report through the CLI:
-
-   ```bash
-   python3 "$PF_CLI" submit-report --file <report.json>
-   ```
-
-   The lane report JSON must include `run_id`, the lane coordinator `task_id`, `role`, `summary`, `child_reports`, `assertions`, and `artifacts`. Prefer the exact lane report contract embedded in `delegations` output; it contains the active profile's critical assertion type and gate-required evidence groups.
-
-   Lane report contract for manual delegations:
-
-   ```json
-   {
-     "run_id": "<run id>",
-     "task_id": "<lane coordinator task id>",
-     "role": "swarm_lane_coordinator",
-     "summary": "lane-level synthesis",
-     "child_reports": [
-       {
-         "task_id": "<planned child task id>",
-         "role": "<planned child role>",
-         "summary": "short evidence-backed child summary",
-         "assertions": [
-           {
-             "assertion_type": "<profile critical assertion type; never leave this placeholder literal>",
-             "text": "claim to preserve in final reasoning",
-             "importance": 0.9,
-             "critical": true,
-             "confidence": 0.8,
-             "evidence": [
-               {
-                 "evidence_type": "<profile evidence type>",
-                 "source_ref": "path or command source",
-                 "quote_or_observation": "observed value or output",
-                 "command": "exact command if applicable",
-                 "exit_code": 0
-               },
-               {"evidence_type": "<another required profile evidence type>", "source_ref": "path", "quote_or_observation": "consistency check"}
-             ]
-           }
-         ],
-         "artifacts": [
-           {"artifact_type": "report", "path": "path/to/report.md", "summary": "what it contains"}
-         ]
-       }
-     ],
-     "assertions": [],
-     "artifacts": []
-   }
-   ```
-
-   Children return child JSON to their lane coordinator. Lane coordinators return one lane report to the parent/controller. Neither child agents nor lane coordinators call the Ponder-Forge CLI; the parent/controller submits reports and records verdicts. Profile anchors: `research` uses `factual_claim`; `coding` uses `code_claim` with `root_cause_trace` plus successful `passing_test` or `execution_log` with `exit_code=0`; `design` uses `design_decision`; `analysis` uses `data_result` with `metric_output.command` and `exit_code=0`; `math` uses `proof_step` plus `critique` or `proof_check` and only positive/unresolved counterexample evidence blocks.
-
-7. Inspect status until the swarm topology is complete:
-
-   ```bash
-   python3 "$PF_CLI" status --run-id <run_id>
-   ```
-
-   `status.swarm` reports lane count, child backlog count, finished lane/child counts, queued delegation count, and incomplete task count. If `next_required_action` is `delegations`, call `delegations` and native `delegate_task`; if it is `submit-report`, submit missing lane reports.
-
-8. Run independent review or record a verdict after lane and child reports are submitted:
-
-   ```bash
-   python3 "$PF_CLI" verify --run-id <run_id> --mode independent_review --target-id <assertion_id>
-   python3 "$PF_CLI" verify --run-id <run_id> --mode independent_review --target-id <assertion_id> --reviewer-task-id <task_id> --independent-from-task-id <producer_task_id> --verdict accept --confidence 0.9 --rationale "<why>"
-   ```
-
-   The first command creates reviewer tasks and may return a `delegate_task_payload_suggestion`; call native `delegate_task` with that payload, then record each reviewer verdict with the returned reviewer task id and the original producer task id.
-
-9. Check the gate:
-
-   ```bash
-   python3 "$PF_CLI" gate --run-id <run_id>
-   ```
-
-10. Finalize only when the gate allows it:
-
-   ```bash
-   python3 "$PF_CLI" finalize --run-id <run_id>
-   ```
-
-11. Reconcile only stale running/orphan work:
-
-   ```bash
-   python3 "$PF_CLI" reconcile --run-id <run_id>
-   ```
-
-   `status.next_required_action="complete"` is terminal. If tasks are still queued or reports are missing, use `delegations --run-id <run_id>` and native `delegate_task`; use `reconcile` for stale running/orphan tasks and follow any returned retry payload.
-
-## Operating rules
-
-- Do not answer finally before `finalize` returns a final report.
-- Do not let child agents finalize the run; the parent/controller owns verification and finalization.
-- Keep child outputs structured and evidence-backed.
-- Use native Hermes `delegate_task` only for child execution; use the Ponder-Forge CLI for Ponder-Forge state transitions.
-- Treat CLI JSON with `success=false` as a blocker and fix the cause before continuing.
+Completed/partial runs are closed to new work. Existing database rows and saved
+legacy reports remain readable. Retired lane/child queues are not redispatched;
+start a new run for new-strategy work when continuing an old investigation. Outputs include final.md, task_board.json and
+reports.json. No claim/evidence JSON schema, content hashes or claim certificates
+are required by this workflow.
