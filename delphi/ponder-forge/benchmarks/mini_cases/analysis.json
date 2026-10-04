@@ -1,0 +1,21 @@
+{
+  "profile": "analysis",
+  "goal": "verify experiment metric provenance",
+  "expected_status": "final",
+  "report": {
+    "summary": "The metric is reproducible from script, output, and sanity check.",
+    "assertions": [
+      {
+        "assertion_type": "data_result",
+        "text": "The reported accuracy is reproducible from the evaluation script.",
+        "importance": 0.95,
+        "critical": true,
+        "evidence": [
+          {"evidence_type": "metric_output", "source_ref": "metrics.json", "quote_or_observation": "accuracy=0.91", "command": "python eval.py", "exit_code": 0},
+          {"evidence_type": "transform_script", "source_ref": "eval.py", "quote_or_observation": "deterministic transform"},
+          {"evidence_type": "sanity_check", "source_ref": "sanity.log", "quote_or_observation": "row count matches"}
+        ]
+      }
+    ]
+  }
+}

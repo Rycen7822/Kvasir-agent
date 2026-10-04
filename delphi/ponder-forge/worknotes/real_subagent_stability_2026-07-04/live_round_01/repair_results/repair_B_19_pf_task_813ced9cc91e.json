@@ -1,0 +1,81 @@
+{
+  "artifacts": [],
+  "assertions": [
+    {
+      "assertion_type": "data_result",
+      "confidence": 0.94,
+      "critical": true,
+      "evidence": [
+        {
+          "command": "python - <<'PY'\nimport csv, json\nfrom pathlib import Path\nroot = Path('/home/xu/project/loop/DeepScientist/quests/001')\nlarge = json.loads((root / 'experiments/stage10/07_large_eval/LARGE_EVAL_SUMMARY.json').read_text())\nmeta = json.loads((root / 'experiments/stage10/08_meta/STAGE10_META_ANALYSIS.json').read_text())\ndownstream = json.loads((root / 'experiments/stage10/10_downstream/DOWNSTREAM_GATE_STATUS.json').read_text())\nablation = json.loads((root / 'experiments/stage10/09_ablation_patching/STAGE10_COMPONENT_ABLATION_AUDIT.json').read_text())\naudit = json.loads((root / 'experiments/stage10/12_paper_package/REPORT_AUDIT.json').read_text())\nrecovery = json.loads((root / 'experiments/stage10/06_recovery/RECOVERY_TRAIN_EVAL_SUMMARY.json').read_text())\nwith (root / 'experiments/stage10/06_recovery/SEED_ROBUSTNESS.csv').open(newline='', encoding='utf-8') as fh:\n    seed_rows = list(csv.DictReader(fh))\nwith (root / 'experiments/stage10/07_large_eval/TOKEN_WEIGHTED_EVAL.csv').open(newline='', encoding='utf-8') as fh:\n    token_rows = list(csv.DictReader(fh))\nwith (root / 'experiments/stage10/12_paper_package/STAGE10_CLAIM_LEDGER.md').open(encoding='utf-8') as fh:\n    claim_ledger_text = fh.read()\nwith (root / 'experiments/stage10/12_paper_package/STAGE10_ORAL_READY_GATE.md').open(encoding='utf-8') as fh:\n    oral_text = fh.read()\nmetric = {\n    'large_eval_summary_status': large.get('status'),\n    'large_eval_gate_passed': meta['gate_results'].get('large_eval_gate_passed'),\n    'evaluated_endpoint_rows': large.get('evaluated_endpoint_rows'),\n    'expected_formal_endpoint_rows': large.get('expected_formal_endpoint_rows'),\n    'token_weighted_eval_rows': len(token_rows),\n    'seed_robustness_csv_rows': len(seed_rows),\n    'seed_robustness_summary_row_count': recovery.get('seed_robustness_row_count'),\n    'seed_robustness_gate_passed': meta['gate_results'].get('seed_robustness_gate_passed'),\n    'model_family_gate_met': meta['gate_results'].get('model_family_gate_met'),\n    'ce_selection_gate_passed': meta['gate_results'].get('ce_selection_gate_passed'),\n    'downstream_gate_status': downstream.get('downstream_gate_status'),\n    'downstream_run_executed': downstream.get('downstream_run_executed'),\n    'downstream_result_manifest': downstream.get('result_manifest'),\n    'oral_ready_gate_status': meta['gate_results'].get('oral_ready_gate_status'),\n    'component_mechanism_claim_status': ablation.get('mechanism_claim_status'),\n    'component_ablation_count': ablation.get('ablation_count'),\n    'causal_patching_row_count': ablation.get('patching_result_count'),\n    'report_forbidden_claim_hits': audit.get('forbidden_claim_hits'),\n    'audit_model_family_gate_met': audit.get('model_family_gate_met'),\n    'audit_ce_selection_gate_passed': audit.get('ce_selection_gate_passed'),\n    'audit_oral_ready_gate_status': audit.get('oral_ready_gate_status'),\n    'audit_downstream_gate_status': audit.get('downstream_gate_status'),\n    'audit_downstream_run_executed': audit.get('downstream_run_executed'),\n    'claim_ledger_boundaries_present': all(s in claim_ledger_text for s in ['downstream_utility | not_evaluated', 'original_reference_improvement | not_evaluated', 'component_ablation | supported', 'oral_gate | closed']),\n    'oral_boundary_present': 'does not carry venue-readiness, downstream utility, or pretrained-reference superiority claims' in oral_text,\n}\nprint(json.dumps(metric, sort_keys=True))\nPY",
+          "directness": 1.0,
+          "evidence_type": "metric_output",
+          "exit_code": 0,
+          "freshness": 0.9,
+          "metric": {
+            "audit_ce_selection_gate_passed": false,
+            "audit_downstream_gate_status": "closed",
+            "audit_downstream_run_executed": false,
+            "audit_model_family_gate_met": false,
+            "audit_oral_ready_gate_status": "closed",
+            "causal_patching_row_count": 96,
+            "ce_selection_gate_passed": false,
+            "claim_ledger_boundaries_present": true,
+            "component_ablation_count": 11,
+            "component_mechanism_claim_status": "diagnostic_or_mixed",
+            "downstream_gate_status": "closed",
+            "downstream_result_manifest": null,
+            "downstream_run_executed": false,
+            "evaluated_endpoint_rows": 360,
+            "expected_formal_endpoint_rows": 360,
+            "large_eval_gate_passed": true,
+            "large_eval_summary_status": "passed_S10-12_large_heldout_eval_alignment_audit",
+            "model_family_gate_met": false,
+            "oral_boundary_present": true,
+            "oral_ready_gate_status": "closed",
+            "report_forbidden_claim_hits": [],
+            "seed_robustness_csv_rows": 252,
+            "seed_robustness_gate_passed": true,
+            "seed_robustness_summary_row_count": 252,
+            "token_weighted_eval_rows": 366
+          },
+          "quote_or_observation": "Command exited 0 and reported large_eval_gate_passed=true with 360 evaluated / 360 expected rows and 366 token-weighted rows, seed_robustness_gate_passed=true with 252 seed rows, model_family_gate_met=false, ce_selection_gate_passed=false, downstream_gate_status=closed, downstream_run_executed=false, downstream_result_manifest=null, oral_ready_gate_status=closed, component_mechanism_claim_status=diagnostic_or_mixed, forbidden_claim_hits=[], and explicit claim-ledger/oral-boundary markers present.",
+          "relevance": 1.0,
+          "reliability": 0.96,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001 (read-only Python inspection over Stage10 CSV/JSON/Markdown outputs)",
+          "title": "Read-only recomputation of Stage10 narrative-boundary gates"
+        },
+        {
+          "directness": 0.92,
+          "evidence_type": "transform_script",
+          "freshness": 0.86,
+          "quote_or_observation": "stage10_meta_analysis.py computes seed_robustness_gate_passed, ce_selection_gate_passed, model_family_gate_met, downstream_gate_status, oral_ready_gate_status, gate_verdict, and closed_reasons. stage10_downstream_gate.py rejects a closed gate if a downstream result manifest exists and writes downstream_run_executed=false, result_manifest=null, and writes_downstream=false. stage10_component_ablation.py writes mechanism_claim_status='diagnostic_or_mixed' with downstream/oral status carried from meta gates. stage10_paper_package.py renders the claim ledger entries for downstream_utility=not_evaluated and original_reference_improvement=not_evaluated, the oral boundary excluding venue-readiness/downstream utility/pretrained-reference superiority, and the final-report forbidden-claims paragraph.",
+          "relevance": 0.96,
+          "reliability": 0.91,
+          "source_ref": "experiments/stage10/scripts/stage10_meta_analysis.py:396-443; experiments/stage10/scripts/stage10_downstream_gate.py:85-122; experiments/stage10/scripts/stage10_component_ablation.py:458-464; experiments/stage10/scripts/stage10_paper_package.py:322-375,470-472,567-569",
+          "title": "Producing scripts enforce closed gates and conservative narrative boundaries"
+        },
+        {
+          "directness": 0.98,
+          "evidence_type": "sanity_check",
+          "freshness": 0.9,
+          "quote_or_observation": "Independent Stage10 outputs agree on the same boundary: LARGE_EVAL_SUMMARY reports passed S10-12 with 360 evaluated endpoint rows, 360 expected rows, no hard failures, and 366 total rows; RECOVERY_TRAIN_EVAL_SUMMARY reports seed_robustness_row_count=252 and passed recovery status; STAGE10_META_ANALYSIS reports large_eval_gate_passed=true and seed_robustness_gate_passed=true while ce_selection_gate_passed=false, model_family_gate_met=false, downstream_gate_status=closed, and oral_ready_gate_status=closed; DOWNSTREAM_GATE_STATUS records downstream_run_executed=false and result_manifest=null; STAGE10_COMPONENT_ABLATION_AUDIT records mechanism_claim_status=diagnostic_or_mixed; the claim ledger marks downstream utility and original-reference improvement not_evaluated; the oral gate and final report state no venue-readiness, downstream utility, pretrained-reference superiority, or universal recovery certainty claims are made.",
+          "relevance": 1.0,
+          "reliability": 0.95,
+          "source_ref": "experiments/stage10/07_large_eval/LARGE_EVAL_SUMMARY.json:5-7,55-57; experiments/stage10/06_recovery/RECOVERY_TRAIN_EVAL_SUMMARY.json:22-25; experiments/stage10/08_meta/STAGE10_META_ANALYSIS.json:2-15,50-65; experiments/stage10/10_downstream/DOWNSTREAM_GATE_STATUS.json:2-35; experiments/stage10/09_ablation_patching/STAGE10_COMPONENT_ABLATION_AUDIT.json:2-6,14-17; experiments/stage10/12_paper_package/STAGE10_CLAIM_LEDGER.md:7-15; experiments/stage10/12_paper_package/STAGE10_ORAL_READY_GATE.md:5-11; experiments/report_archive/STAGE10_RESULTS_REPORT.md:91-103",
+          "title": "Cross-file consistency check of Stage10 outputs and final narrative boundary"
+        }
+      ],
+      "importance": 0.95,
+      "repairs_assertion_id": "pf_assertion_abb805ad4724",
+      "text": "Read-only Stage10 artifacts support the bounded narrative boundary: S10-12 large heldout evaluation is passed with 360 of 360 expected formal endpoint rows and 366 token-weighted rows including originals, and seed robustness is passed with 252 recorded rows; however model-family and CE-selection gates remain false, downstream utility is not evaluated because the downstream gate is closed with no executed run or result manifest, original-reference improvement is explicitly not evaluated, oral-ready remains closed, and the mechanism/theory surface remains bounded as diagnostic_or_mixed rather than a universal mechanism-success claim."
+    }
+  ],
+  "confidence": 0.94,
+  "role": "gate_gap_repairer",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Repaired the missing analysis-profile evidence gap for pf_assertion_abb805ad4724 by adding read-only metric_output evidence with command and exit_code=0, plus transform_script and sanity_check evidence. No files were created or modified; artifacts is empty.",
+  "target_assertion_id": "pf_assertion_abb805ad4724",
+  "task_id": "pf_task_813ced9cc91e",
+  "title": "Gate-gap repair evidence for pf_assertion_abb805ad4724"
+}

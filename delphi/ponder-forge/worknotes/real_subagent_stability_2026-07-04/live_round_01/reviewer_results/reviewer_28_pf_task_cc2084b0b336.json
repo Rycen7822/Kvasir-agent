@@ -1,0 +1,11 @@
+{
+  "confidence": 0.86,
+  "independent_from_task_id": "pf_task_ddf67df5fafc",
+  "rationale": "Visible evidence supports the row-count/package-volume assertion. Evidence [1] reports independent child read-only count checks with matching counts for recovery, seed, large-eval, selector, ablation, and patching artifacts, and coordinator verification of target_eval_rows=360, large_eval_rows=360, and token_weighted_rows=366. Evidence [2] says the final Stage10 report lists the same major counts, including recovery endpoint rows, target-write ledger rows, seed robustness, token-weighted eval, selector count, target eval rows, component ablation, and causal patching. Evidence [3] further supports artifact sanity for large-eval split integrity. The assertion is appropriately scoped to analysis of existing Stage10 artifacts and explicitly does not overclaim downstream utility.",
+  "required_actions": [],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_cc2084b0b336",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_28b6d01f9e84",
+  "verdict": "accept"
+}

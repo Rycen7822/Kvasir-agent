@@ -1,0 +1,6 @@
+name: ponder-forge
+kind: standalone
+version: 0.1.0
+description: Verification-centric CLI and skill workflow for complex Hermes tasks.
+provides_tools: []
+provides_hooks: []

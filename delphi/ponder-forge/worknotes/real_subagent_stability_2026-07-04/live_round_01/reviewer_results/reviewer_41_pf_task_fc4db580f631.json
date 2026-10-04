@@ -1,0 +1,13 @@
+{
+  "confidence": 0.78,
+  "independent_from_task_id": "pf_task_53e0ffad94a1",
+  "rationale": "The visible evidence supports the core resource-gate portion: MODEL_AVAILABILITY reports model_family_gate_met=false with status=resource_gated_family_gate_failed and six resource-gated model ids; the oral-ready gate evidence says status closed with no venue-readiness, downstream utility, or pretrained-reference superiority claims; and the producer report identifies resource-gated family expansion as a next priority. However, the specific subclaim that active large-eval evidence covers a frozen six-entry, four-family panel is not substantiated by the visible evidence observations, which mention a panel manifest listing active/resource-gated entries but do not show the active count, family count, or large-eval coverage for that panel. The assertion should be narrowed or backed with explicit visible evidence for those counts.",
+  "required_actions": [
+    "Provide explicit visible evidence that the active large-eval panel is frozen, six-entry, and four-family, or revise the assertion to omit/qualify that unsupported subclaim."
+  ],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_fc4db580f631",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_b8718570394d",
+  "verdict": "revise"
+}

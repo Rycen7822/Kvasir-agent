@@ -1,0 +1,7 @@
+{
+  "status": "superseded_by_async_batch_complete",
+  "reason": "The live lane delegation deleg_edd050a1 returned all 8 lane reports before the 30-minute watchdog was needed for a final timeout decision. The controller killed watchdog proc_cab01adca13a to avoid concurrent writes while validating and submitting reports.",
+  "found_lane_count_after_async": 8,
+  "all_valid_after_async": true,
+  "run_id": "pf_run_80cb097d3870"
+}

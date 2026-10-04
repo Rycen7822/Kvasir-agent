@@ -1,0 +1,125 @@
+{
+  "artifacts": [],
+  "assertions": [
+    {
+      "assertion_type": "data_result",
+      "confidence": 0.91,
+      "critical": true,
+      "evidence": [
+        {
+          "command": "python3 read-only cross-check over STAGE10_COMPONENT_ABLATION_AUDIT.json, COMPONENT_ABLATION.csv, SELECTOR_METRICS.csv, and CAUSAL_PATCHING_RESULTS.csv; printed summary JSON",
+          "directness": 0.98,
+          "evidence_type": "metric_output",
+          "exit_code": 0,
+          "freshness": 0.95,
+          "locator": "experiments/stage10/09_ablation_patching/STAGE10_COMPONENT_ABLATION_AUDIT.json; experiments/stage10/09_ablation_patching/COMPONENT_ABLATION.csv; experiments/stage10/08_meta/SELECTOR_METRICS.csv; experiments/stage10/09_ablation_patching/CAUSAL_PATCHING_RESULTS.csv",
+          "metric": {
+            "causal_patching_file_checks": {
+              "all_source_write_flags_false": true,
+              "primary_failure_types": [
+                "coda-readout failure",
+                "core-orbit failure"
+              ],
+              "row_count": 96,
+              "source_uses_target_values": [
+                "False"
+              ]
+            },
+            "component_audit": {
+              "ablation_count": 11,
+              "downstream_gate_status": "closed",
+              "mechanism_claim_status": "diagnostic_or_mixed",
+              "oral_ready_gate_status": "closed",
+              "patching_result_count": 96,
+              "status": "passed_S10-14_component_ablation_causal_patching_failure_taxonomy",
+              "target_eval_rows": 360,
+              "taxonomy_counts": {
+                "coda incompatible": 96,
+                "gauge misalignment": 92,
+                "large-eval reversal": 360,
+                "low-rank non-repairable": 1,
+                "stability collapse": 0,
+                "training instability": 1380
+              },
+              "uses_target": true,
+              "writes": {
+                "writes_Y_frozen": false,
+                "writes_Y_recover": false,
+                "writes_downstream": false
+              }
+            },
+            "s10_13_selector_cfc_only": {
+              "macro_normalized_regret_at3": 0.044697468910847644,
+              "mean_cost_to_contain_winner": 13.833333333333334,
+              "missing_rank_count": 328,
+              "top3_containment_rate": 0.5,
+              "top3_containments": 3
+            },
+            "s10_14_component_ablation_cfc_only": {
+              "macro_normalized_regret_at3": 0.02586997418303535,
+              "mean_cost_to_contain_winner": 6.833333333333333,
+              "missing_score_count": 317,
+              "top3_containment_rate": 0.5,
+              "top3_containments": 3
+            },
+            "surface_delta_s10_14_minus_s10_13_for_cfc_only": {
+              "macro_normalized_regret_at3": -0.018827494727812293,
+              "mean_cost_to_contain_winner": -7.000000000000001
+            }
+          },
+          "quote_or_observation": "Computed summary showed S10-14 audit status passed_S10-14_component_ablation_causal_patching_failure_taxonomy, mechanism_claim_status diagnostic_or_mixed, downstream/oral gates closed, ablation_count 11, patching_result_count 96, target_eval_rows 360, all source write flags false, and divergent CFC-only numeric surfaces between S10-13 and S10-14.",
+          "relevance": 0.98,
+          "reliability": 0.95,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001",
+          "title": "Read-only metric cross-check for S10-14 audit, ablation CSV, selector CSV, and causal patching CSV"
+        },
+        {
+          "command": "PYTHONDONTWRITEBYTECODE=1 /home/xu/project/loop/.venv/bin/python experiments/stage10/scripts/stage10_component_ablation.py --quest-root /home/xu/project/loop/DeepScientist/quests/001",
+          "directness": 0.94,
+          "evidence_type": "reproduction_log",
+          "exit_code": 0,
+          "freshness": 0.9,
+          "locator": "meta.json lines 15, 28-35; terminal.log lines 2-3",
+          "quote_or_observation": "The recorded S10-14 command completed with exit_code=0 and emitted audit JSON with ablation_count=11, patching_result_count=96, mechanism_claim_status=diagnostic_or_mixed, downstream_gate_status=closed, oral_ready_gate_status=closed, and write flags false for Y_frozen, Y_recover, and downstream.",
+          "relevance": 0.96,
+          "reliability": 0.94,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/.ds/bash_exec/bash-f186947c/meta.json and terminal.log",
+          "title": "Existing S10-14 reproduction log completed successfully"
+        },
+        {
+          "directness": 0.9,
+          "evidence_type": "sanity_check",
+          "freshness": 0.9,
+          "locator": "FAILURE_TAXONOMY.md lines 3-9; REVIEWER_ATTACK_EVIDENCE.md lines 3-10 and 20-22",
+          "quote_or_observation": "The failure taxonomy states mechanism claim diagnostic_or_mixed, downstream/oral gates closed, and that S10-14 does not convert diagnostic component relations into a mechanism-success claim. Reviewer attack evidence says CFC-only and LoopCert-only both have top3 containment 3/6 in the component-ablation surface and that component ablations are diagnostic ranking summaries, not a success claim.",
+          "relevance": 0.95,
+          "reliability": 0.9,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/09_ablation_patching/FAILURE_TAXONOMY.md and REVIEWER_ATTACK_EVIDENCE.md",
+          "title": "Narrative boundary sanity check keeps S10-14 diagnostic rather than success-claiming"
+        },
+        {
+          "directness": 0.86,
+          "evidence_type": "transform_script",
+          "freshness": 0.9,
+          "locator": "lines 27-32 and 38-50",
+          "quote_or_observation": "The script writes COMPONENT_ABLATION.csv, CAUSAL_PATCHING_RESULTS.csv, FAILURE_TAXONOMY.md, REVIEWER_ATTACK_EVIDENCE.md, and STAGE10_COMPONENT_ABLATION_AUDIT.json, and its REQUIRED_ABLATIONS list includes CFC-only, LoopCert-only, CFC+LoopCert, OrbitRepair-Proxy, risk penalty off, and family balancing off.",
+          "relevance": 0.88,
+          "reliability": 0.88,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/scripts/stage10_component_ablation.py",
+          "title": "S10-14 transform script defines the component-ablation and causal-patching outputs"
+        }
+      ],
+      "importance": 0.88,
+      "supersedes_assertion_id": "pf_assertion_e91a9c725b93",
+      "text": "Read-only inspection supports a conservative S10-14 diagnostic result: STAGE10_COMPONENT_ABLATION_AUDIT reports mechanism_claim_status=diagnostic_or_mixed with downstream_gate_status=closed and oral_ready_gate_status=closed, 11 component-ablation rows, 96 causal-patching rows, and no writes to Y_frozen, Y_recover, or downstream artifacts. The CFC-only label is not numerically interchangeable across stages: S10-13 selector metrics record CFC-only regret@3=0.044697468910847644 and mean cost-to-contain=13.833333333333334, while S10-14 component ablation records CFC-only regret@3=0.02586997418303535 and mean cost-to-contain=6.833333333333333; therefore the next report should reconcile or rename that label before making stronger CFC/LoopCert mechanism claims."
+    }
+  ],
+  "confidence": 0.91,
+  "profile": "analysis",
+  "role": "gate_gap_repairer",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Read-only repair narrows the target assertion to evidence-backed S10-14 diagnostics: component ablation and causal patching remain diagnostic_or_mixed, downstream/oral gates stay closed, and the CFC-only label uses different numeric surfaces in S10-13 selector metrics versus S10-14 component ablation, so it should be reconciled before stronger claim-making. No source files were modified.",
+  "target_assertion_id": "pf_assertion_e91a9c725b93",
+  "task_id": "pf_task_3ab99bb83bd8",
+  "title": "Gate-gap repair for S10-14 diagnostic ablation and patching assertion"
+}

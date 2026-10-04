@@ -1,0 +1,11 @@
+{
+  "confidence": 0.9,
+  "independent_from_task_id": "pf_task_d46b1ff89eaa",
+  "rationale": "The visible producer evidence directly supports the asserted row-count consistency: evidence [1] reports target_write_ledger_rows=1380, recovery_endpoint_rows=1380, seed_robustness_rows=252, token_weighted_eval_rows=366, large_eval_evaluated_expected=[360,360], active_substage=Stage10_complete, and report audit markers passed. Evidence [2] further supports large-eval validity with split summary status=passed and no hard failures. No visible evidence contradicts the assertion.",
+  "required_actions": [],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_be8e1fc28345",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_11e1ee14a368",
+  "verdict": "accept"
+}

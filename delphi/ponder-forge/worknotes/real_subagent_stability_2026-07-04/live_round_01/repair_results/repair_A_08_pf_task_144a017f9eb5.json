@@ -1,0 +1,104 @@
+{
+  "artifacts": [],
+  "assertions": [
+    {
+      "assertion_type": "data_result_repair",
+      "confidence": 0.96,
+      "critical": false,
+      "evidence": [
+        {
+          "command": "python - <<'PY'\nimport csv, json, pathlib\nroot = pathlib.Path('/home/xu/project/loop/DeepScientist/quests/001')\nrel = lambda p: root / p\ndef csv_rows(path):\n    with rel(path).open(newline='', encoding='utf-8') as f:\n        return sum(1 for _ in csv.DictReader(f))\ndef jsonl_rows(path):\n    with rel(path).open(encoding='utf-8') as f:\n        return sum(1 for line in f if line.strip())\nstate = json.loads(rel('experiments/stage10/00_freeze/STAGE10_STATE.json').read_text(encoding='utf-8'))\nlarge = json.loads(rel('experiments/stage10/07_large_eval/LARGE_EVAL_SUMMARY.json').read_text(encoding='utf-8'))\naudit = json.loads(rel('experiments/stage10/12_paper_package/REPORT_AUDIT.json').read_text(encoding='utf-8'))\nmetrics = {\n    'recovery_endpoints_rows': csv_rows('experiments/stage10/06_recovery/RECOVERY_ENDPOINTS.csv'),\n    'target_write_ledger_rows': jsonl_rows('experiments/stage10/06_recovery/TARGET_WRITE_LEDGER.jsonl'),\n    'seed_robustness_rows': csv_rows('experiments/stage10/06_recovery/SEED_ROBUSTNESS.csv'),\n    'token_weighted_eval_rows': csv_rows('experiments/stage10/07_large_eval/TOKEN_WEIGHTED_EVAL.csv'),\n    'large_eval_evaluated_endpoint_rows': large.get('evaluated_endpoint_rows'),\n    'large_eval_expected_formal_endpoint_rows': large.get('expected_formal_endpoint_rows'),\n    'large_eval_total_table_rows_including_original': large.get('total_table_rows_including_original'),\n    'state_active_substage': state.get('active_substage'),\n    'state_target_write_ledger_rows': state.get('target_write_ledger_rows'),\n    'report_audit_records': {rec['label']: {'lines': rec['lines'], 'path': rec['path']} for rec in audit.get('artifact_records', []) if rec.get('label') in {'recovery_endpoints','target_write_ledger','seed_robustness','token_weighted_eval','large_eval_summary','state'}},\n    'report_audit_status_fields': {'ce_selection_gate_passed': audit.get('ce_selection_gate_passed'), 'model_family_gate_met': audit.get('model_family_gate_met'), 'oral_ready_gate_status': audit.get('oral_ready_gate_status')}\n}\nchecks = {\n    'recovery_vs_ledger_1380': metrics['recovery_endpoints_rows'] == metrics['target_write_ledger_rows'] == 1380,\n    'seed_robustness_252': metrics['seed_robustness_rows'] == 252,\n    'token_weighted_366': metrics['token_weighted_eval_rows'] == metrics['large_eval_total_table_rows_including_original'] == 366,\n    'large_eval_360_of_360': metrics['large_eval_evaluated_endpoint_rows'] == metrics['large_eval_expected_formal_endpoint_rows'] == 360,\n    'audit_line_counts_match_data_rows_plus_headers_or_jsonl': metrics['report_audit_records']['recovery_endpoints']['lines'] == metrics['recovery_endpoints_rows'] + 1 and metrics['report_audit_records']['seed_robustness']['lines'] == metrics['seed_robustness_rows'] + 1 and metrics['report_audit_records']['token_weighted_eval']['lines'] == metrics['token_weighted_eval_rows'] + 1 and metrics['report_audit_records']['target_write_ledger']['lines'] == metrics['target_write_ledger_rows']\n}\nprint(json.dumps({'metrics': metrics, 'checks': checks}, sort_keys=True))\nif not all(checks.values()):\n    raise SystemExit(1)\nPY",
+          "directness": 0.98,
+          "evidence_type": "metric_output",
+          "exit_code": 0,
+          "freshness": 0.95,
+          "metric": {
+            "checks": {
+              "audit_line_counts_match_data_rows_plus_headers_or_jsonl": true,
+              "large_eval_360_of_360": true,
+              "recovery_vs_ledger_1380": true,
+              "seed_robustness_252": true,
+              "token_weighted_366": true
+            },
+            "counts": {
+              "LARGE_EVAL_SUMMARY.evaluated_endpoint_rows": 360,
+              "LARGE_EVAL_SUMMARY.expected_formal_endpoint_rows": 360,
+              "LARGE_EVAL_SUMMARY.total_table_rows_including_original": 366,
+              "RECOVERY_ENDPOINTS.csv:data_rows": 1380,
+              "SEED_ROBUSTNESS.csv:data_rows": 252,
+              "STAGE10_STATE.active_substage": "Stage10_complete",
+              "STAGE10_STATE.target_write_ledger_rows": 1380,
+              "TARGET_WRITE_LEDGER.jsonl:records": 1380,
+              "TOKEN_WEIGHTED_EVAL.csv:data_rows": 366
+            },
+            "report_audit_line_counts": {
+              "LARGE_EVAL_SUMMARY.json": 59,
+              "RECOVERY_ENDPOINTS.csv": 1381,
+              "SEED_ROBUSTNESS.csv": 253,
+              "STAGE10_STATE.json": 876,
+              "TARGET_WRITE_LEDGER.jsonl": 1380,
+              "TOKEN_WEIGHTED_EVAL.csv": 367
+            }
+          },
+          "quote_or_observation": "Command exited 0 and printed all checks true: recovery_vs_ledger_1380, seed_robustness_252, token_weighted_366, large_eval_360_of_360, and audit_line_counts_match_data_rows_plus_headers_or_jsonl.",
+          "relevance": 0.97,
+          "reliability": 0.95,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001",
+          "title": "Read-only Stage10 row-count recomputation"
+        },
+        {
+          "directness": 0.9,
+          "evidence_type": "reproduction_log",
+          "freshness": 0.95,
+          "quote_or_observation": "The verification command opened existing CSV, JSON, JSONL, Markdown audit/report files under the read-only quest tree and emitted a stdout JSON summary; no write-producing Stage10 runner was invoked.",
+          "relevance": 0.92,
+          "reliability": 0.93,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001",
+          "title": "Read-only command provenance"
+        },
+        {
+          "directness": 0.94,
+          "evidence_type": "sanity_check",
+          "freshness": 0.95,
+          "metric": {
+            "all_sanity_checks_passed": true,
+            "checked_against": [
+              "REPORT_AUDIT.json",
+              "STAGE10_RESULTS_REPORT.md",
+              "LARGE_EVAL_SUMMARY.json",
+              "STAGE10_STATE.json"
+            ]
+          },
+          "quote_or_observation": "REPORT_AUDIT line counts match recomputed data rows plus CSV headers or JSONL records: RECOVERY_ENDPOINTS.csv 1381 lines -> 1380 data rows, SEED_ROBUSTNESS.csv 253 -> 252, TOKEN_WEIGHTED_EVAL.csv 367 -> 366, TARGET_WRITE_LEDGER.jsonl 1380 -> 1380. STAGE10_RESULTS_REPORT.md independently states endpoint rows 1380, target write ledger rows 1380, seed robustness rows 252, evaluated endpoint rows 360, and token-weighted eval rows 366. LARGE_EVAL_SUMMARY.json reports 360 evaluated endpoint rows, 360 expected formal endpoint rows, and 366 total table rows including originals. STAGE10_STATE.json has active_substage=Stage10_complete and target_write_ledger_rows=1380.",
+          "relevance": 0.95,
+          "reliability": 0.94,
+          "source_ref": "experiments/stage10/12_paper_package/REPORT_AUDIT.json; experiments/report_archive/STAGE10_RESULTS_REPORT.md; experiments/stage10/07_large_eval/LARGE_EVAL_SUMMARY.json; experiments/stage10/00_freeze/STAGE10_STATE.json",
+          "title": "Report audit and final report line-count consistency"
+        }
+      ],
+      "importance": 0.7,
+      "target_assertion_id": "pf_assertion_11e1ee14a368",
+      "text": "Read-only recomputation supports the bounded Stage10 row-count consistency claim for target assertion pf_assertion_11e1ee14a368: recovery endpoints=1380 data rows, target-write ledger=1380 JSONL records, seed robustness=252 data rows, token-weighted eval=366 data rows, and large eval=360 evaluated endpoint rows out of 360 expected formal endpoint rows. This repair is limited to row-count/audit consistency and does not strengthen closed CE-selection, model-family, downstream, oral-ready, or utility claims."
+    }
+  ],
+  "files_created_or_modified": [],
+  "issues_encountered": [
+    "Full git status over the large quest tree timed out after 60 seconds; the required read-only metric verification completed successfully and no write commands were run against the quest."
+  ],
+  "repairs": [
+    {
+      "gap_types": [
+        "missing_profile_evidence"
+      ],
+      "repair_status": "metric_output_with_command_exit_code_0_plus_reproduction_log_and_sanity_check_supplied",
+      "revised_scope": "row-count and audit consistency only; no CE-selection, model-family, downstream, oral-ready, or utility-strengthening claim is added",
+      "target_assertion_id": "pf_assertion_11e1ee14a368"
+    }
+  ],
+  "role": "gate_gap_repairer",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Selected repair task pf_task_144a017f9eb5 from the generated payload and performed read-only inspection of /home/xu/project/loop/DeepScientist/quests/001. The computed evidence supports the bounded row-count/audit consistency claim for pf_assertion_11e1ee14a368: RECOVERY_ENDPOINTS.csv and TARGET_WRITE_LEDGER.jsonl both have 1380 records, SEED_ROBUSTNESS.csv has 252 rows, TOKEN_WEIGHTED_EVAL.csv has 366 rows, and LARGE_EVAL_SUMMARY.json reports 360 evaluated endpoint rows versus 360 expected formal endpoint rows. No source quest or autoscidelphi files were created or modified.",
+  "target_assertion_id": "pf_assertion_11e1ee14a368",
+  "task_id": "pf_task_144a017f9eb5",
+  "title": "Gate-gap repair evidence for Stage10 row-count consistency"
+}

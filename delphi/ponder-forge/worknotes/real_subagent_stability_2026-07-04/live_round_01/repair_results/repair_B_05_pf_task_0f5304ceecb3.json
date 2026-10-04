@@ -1,0 +1,69 @@
+{
+  "artifacts": [],
+  "assertions": [
+    {
+      "assertion_type": "data_result",
+      "confidence": 0.96,
+      "evidence": [
+        {
+          "command": "jq -n --slurpfile state experiments/stage10/00_freeze/STAGE10_STATE.json --slurpfile meta experiments/stage10/08_meta/STAGE10_META_ANALYSIS.json --slurpfile audit experiments/stage10/12_paper_package/REPORT_AUDIT.json --slurpfile down experiments/stage10/10_downstream/DOWNSTREAM_GATE_STATUS.json '{active_substage:$state[0].active_substage,stage10_completion_status:$state[0].stage10_completion_status,model_family_gate_met:$state[0].model_family_gate_met,ce_selection_gate_passed:$meta[0].gate_results.ce_selection_gate_passed,downstream_gate_status:$down[0].downstream_gate_status,oral_ready_gate_status:$meta[0].gate_results.oral_ready_gate_status,downstream_run_executed:$down[0].downstream_run_executed,audit_status:$audit[0].status,forbidden_claim_scan_passed:$audit[0].forbidden_claim_scan_passed}'",
+          "directness": 1.0,
+          "evidence_type": "metric_output",
+          "exit_code": 0,
+          "freshness": 0.95,
+          "locator": "experiments/stage10/00_freeze/STAGE10_STATE.json; experiments/stage10/08_meta/STAGE10_META_ANALYSIS.json; experiments/stage10/10_downstream/DOWNSTREAM_GATE_STATUS.json; experiments/stage10/12_paper_package/REPORT_AUDIT.json",
+          "metric": {
+            "active_substage": "Stage10_complete",
+            "audit_status": "passed_S10-15b_paper_package_final_report_handoff",
+            "ce_selection_gate_passed": false,
+            "downstream_gate_status": "closed",
+            "downstream_run_executed": false,
+            "forbidden_claim_scan_passed": true,
+            "model_family_gate_met": false,
+            "oral_ready_gate_status": "closed",
+            "stage10_completion_status": "complete_with_failed_model_family_gate_and_closed_downstream_oral_gates"
+          },
+          "quote_or_observation": "The read-only jq command exited 0 and returned active_substage=Stage10_complete, stage10_completion_status=complete_with_failed_model_family_gate_and_closed_downstream_oral_gates, model_family_gate_met=false, ce_selection_gate_passed=false, downstream_gate_status=closed, oral_ready_gate_status=closed, downstream_run_executed=false, audit_status=passed_S10-15b_paper_package_final_report_handoff, and forbidden_claim_scan_passed=true.",
+          "relevance": 1.0,
+          "reliability": 0.98,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001",
+          "title": "Read-only jq extraction of Stage10 gate values"
+        },
+        {
+          "directness": 0.95,
+          "evidence_type": "reproduction_log",
+          "exit_code": 0,
+          "freshness": 0.9,
+          "locator": "meta.json lines 19 and 32-34; terminal.log lines 2-4",
+          "quote_or_observation": "The S10-15c formal validation log is completed with exit_code=0. Its recorded jq predicate validates Stage10_complete, next_required_substage=none, status_compression_status=passed_S10-15c_status_compression_index_update, stage10_completion_status=complete_with_failed_model_family_gate_and_closed_downstream_oral_gates, model_family_gate_met=false, downstream_gate_status=closed, oral_ready_gate_status=closed, and target_write_ledger_rows=1380.",
+          "relevance": 0.96,
+          "reliability": 0.96,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/.ds/bash_exec/bash-6d051ba0/meta.json and terminal.log",
+          "title": "S10-15c status compression validation log"
+        },
+        {
+          "directness": 0.96,
+          "evidence_type": "sanity_check",
+          "freshness": 0.9,
+          "locator": "CURRENT_STATUS.md lines 21-26; DOWNSTREAM_GATE_STATUS.json lines 2-23; STAGE10_ORAL_READY_GATE.md lines 5-11",
+          "quote_or_observation": "CURRENT_STATUS says Stage10 is complete through S10-15c and lists current gates as ce_selection_gate_passed=false, model_family_gate_met=false, downstream_gate_status=closed, oral_ready_gate_status=closed, with no downstream run or result manifest. DOWNSTREAM_GATE_STATUS independently records downstream_gate_status=closed, downstream_run_executed=false, result_manifest=null, and closed reasons from CE-selection and model-family gates. STAGE10_ORAL_READY_GATE records Status: closed with the same CE-selection and resource-gated family reasons, bounding against venue-readiness, downstream utility, and pretrained-reference superiority claims.",
+          "relevance": 0.98,
+          "reliability": 0.94,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/CURRENT_STATUS.md; experiments/stage10/10_downstream/DOWNSTREAM_GATE_STATUS.json; experiments/stage10/12_paper_package/STAGE10_ORAL_READY_GATE.md",
+          "title": "Independent status index and downstream/oral gate consistency check"
+        }
+      ],
+      "importance": 0.95,
+      "repairs_assertion_id": "pf_assertion_ea9ba7e73e33",
+      "text": "Read-only Stage10 artifacts support the narrowed gate-state result: Stage10 is complete as a conservative evidence package, while model_family_gate_met=false, ce_selection_gate_passed=false, downstream_gate_status=closed, oral_ready_gate_status=closed, and downstream_run_executed=false; therefore downstream utility and oral/venue-readiness claims remain closed."
+    }
+  ],
+  "confidence": 0.96,
+  "profile": "analysis",
+  "role": "gate_gap_repairer",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Repaired the analysis-profile gate gap for pf_assertion_ea9ba7e73e33 by adding direct metric_output evidence with command/exit_code=0 plus reproduction-log and sanity-check evidence from read-only Stage10 artifacts. No source files were modified.",
+  "target_assertion_id": "pf_assertion_ea9ba7e73e33",
+  "task_id": "pf_task_0f5304ceecb3",
+  "title": "Stage10 complete-but-closed gate state evidence repair"
+}

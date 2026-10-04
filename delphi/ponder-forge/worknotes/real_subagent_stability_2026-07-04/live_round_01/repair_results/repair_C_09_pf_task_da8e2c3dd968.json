@@ -1,0 +1,145 @@
+{
+  "artifacts": [],
+  "assertions": [
+    {
+      "assertion_type": "data_result",
+      "confidence": 0.94,
+      "critical": true,
+      "evidence": [
+        {
+          "command": "python3 -c \"import json,csv,pathlib; root=pathlib.Path('/home/xu/project/loop/DeepScientist/quests/001'); le=json.loads((root/'experiments/stage10/07_large_eval/LARGE_EVAL_SUMMARY.json').read_text()); meta=json.loads((root/'experiments/stage10/08_meta/STAGE10_META_ANALYSIS.json').read_text()); ds=json.loads((root/'experiments/stage10/10_downstream/DOWNSTREAM_GATE_STATUS.json').read_text()); selectors={r['selector_name']: r for r in csv.DictReader((root/'experiments/stage10/08_meta/SELECTOR_METRICS.csv').open())}; names=['LoopCert-only','family-balanced blend','risk-calibrated blend','Pareto-front','CFC-only','OrbitRepair-Proxy']; out={'large_eval_status': le['status'], 'evaluated_endpoint_rows': le['evaluated_endpoint_rows'], 'expected_formal_endpoint_rows': le['expected_formal_endpoint_rows'], 'total_table_rows_including_original': le['total_table_rows_including_original'], 'meta_gate_results': meta['gate_results'], 'model_availability_status': meta['model_availability']['status'], 'downstream_gate_status': ds['downstream_gate_status'], 'downstream_run_executed': ds['downstream_run_executed'], 'downstream_closed_reasons': ds['closed_reasons'], 'selector_comparison': {n: {'regret_at3': selectors[n]['macro_normalized_regret_at3'], 'mean_cost_to_contain': selectors[n]['mean_cost_to_contain_winner'], 'beats_cfc_regret_at3': selectors[n]['beats_cfc_only_on_macro_normalized_regret_at3'], 'beats_cfc_cost': selectors[n]['beats_cfc_only_on_mean_cost_to_contain_winner']} for n in names}}; print(json.dumps(out, sort_keys=True))\"",
+          "directness": 1.0,
+          "evidence_type": "metric_output",
+          "exit_code": 0,
+          "freshness": 0.95,
+          "locator": "terminal command executed from /home/xu/project/autosci-delphi/ponder-forge",
+          "metric": {
+            "downstream": {
+              "closed_reasons": [
+                "CE selection gate did not beat CFC-only on both macro regret@3 and cost-to-contain",
+                "Model-family gate is resource-gated"
+              ],
+              "downstream_gate_status": "closed",
+              "downstream_run_executed": false
+            },
+            "evaluated_endpoint_rows": 360,
+            "expected_formal_endpoint_rows": 360,
+            "gate_results": {
+              "ce_selection_gate_passed": false,
+              "cfc_baseline_retained": true,
+              "closed_reasons": [
+                "CE selection gate did not beat CFC-only on both macro regret@3 and cost-to-contain",
+                "Model-family gate is resource-gated"
+              ],
+              "downstream_gate_status": "closed",
+              "gate_verdict": "closed",
+              "large_eval_gate_passed": true,
+              "model_family_gate_met": false,
+              "oral_ready_gate_status": "closed",
+              "seed_robustness_gate_passed": true
+            },
+            "large_eval_status": "passed_S10-12_large_heldout_eval_alignment_audit",
+            "selector_comparison": {
+              "CFC-only": {
+                "beats_cfc_cost": false,
+                "beats_cfc_regret_at3": false,
+                "mean_cost_to_contain": 13.833333333333334,
+                "regret_at3": 0.044697468910847644
+              },
+              "LoopCert-only": {
+                "beats_cfc_cost": false,
+                "beats_cfc_regret_at3": true,
+                "mean_cost_to_contain": 16.666666666666668,
+                "regret_at3": 0.03223671717595801
+              },
+              "OrbitRepair-Proxy": {
+                "beats_cfc_cost": true,
+                "beats_cfc_regret_at3": true,
+                "mean_cost_to_contain": 4.833333333333333,
+                "regret_at3": 0.0058068827370489386
+              },
+              "Pareto-front": {
+                "beats_cfc_cost": false,
+                "beats_cfc_regret_at3": true,
+                "mean_cost_to_contain": 16.5,
+                "regret_at3": 0.03313607480648891
+              },
+              "family-balanced blend": {
+                "beats_cfc_cost": false,
+                "beats_cfc_regret_at3": true,
+                "mean_cost_to_contain": 16.666666666666668,
+                "regret_at3": 0.03223671717595801
+              },
+              "risk-calibrated blend": {
+                "beats_cfc_cost": false,
+                "beats_cfc_regret_at3": true,
+                "mean_cost_to_contain": 16.666666666666668,
+                "regret_at3": 0.03223671717595801
+              }
+            },
+            "total_table_rows_including_original": 366
+          },
+          "quote_or_observation": "Command returned exit_code=0. LARGE_EVAL_SUMMARY reports status=passed_S10-12_large_heldout_eval_alignment_audit, evaluated_endpoint_rows=360, expected_formal_endpoint_rows=360, total_table_rows_including_original=366. STAGE10_META_ANALYSIS gate_results report ce_selection_gate_passed=false, cfc_baseline_retained=true, large_eval_gate_passed=true, model_family_gate_met=false, downstream_gate_status=closed, oral_ready_gate_status=closed, and gate_verdict=closed. DOWNSTREAM_GATE_STATUS reports downstream_gate_status=closed and downstream_run_executed=false. SELECTOR_METRICS shows LoopCert-only, family-balanced blend, risk-calibrated blend, and Pareto-front beat CFC-only on regret@3 but not cost, while CFC-only cost is 13.833333333333334 and the LoopCert/blend/Pareto costs are 16.666666666666668 or 16.5.",
+          "relevance": 1.0,
+          "reliability": 0.97,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/{07_large_eval/LARGE_EVAL_SUMMARY.json,08_meta/STAGE10_META_ANALYSIS.json,08_meta/SELECTOR_METRICS.csv,10_downstream/DOWNSTREAM_GATE_STATUS.json}",
+          "title": "Read-only Stage10 large-eval, meta-gate, downstream, and selector metric extraction"
+        },
+        {
+          "directness": 0.98,
+          "evidence_type": "transform_script",
+          "freshness": 0.95,
+          "quote_or_observation": "The gate_results function sets contender_names to LoopCert-only, Pareto-front, risk-calibrated blend, and family-balanced blend; ce_gate_passed is true only when a retained CFC baseline exists and at least one contender beats CFC-only on both macro_normalized_regret_at3 and mean_cost_to_contain_winner. It then opens downstream only if CE, large-eval, and seed gates pass, and opens oral readiness only if downstream is open and model_family_gate_met is true.",
+          "relevance": 1.0,
+          "reliability": 0.95,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/scripts/stage10_meta_analysis.py:410-426",
+          "title": "S10-13 gate logic identifies CE contenders and two-criterion CFC comparison"
+        },
+        {
+          "directness": 0.98,
+          "evidence_type": "sanity_check",
+          "freshness": 0.95,
+          "locator": "GATE_DECISION.md lines 5-12 and 16-28; DOWNSTREAM_GATE_STATUS.json lines 2-16; STAGE10_CLAIM_LEDGER.md lines 7-13",
+          "quote_or_observation": "GATE_DECISION.md independently lists downstream gate=closed, oral ready gate=closed, ce_selection_gate_passed=False, large_eval_gate_passed=True, model_family_gate_met=False, and closed reasons for CE selection and resource-gated model family coverage. Its selector table shows CFC-only regret@3=0.0446974689108 and cost=13.8333333333, while LoopCert-only/family-balanced/risk-calibrated have regret@3=0.032236717176 but cost=16.6666666667 and beat-cost=False; Pareto-front has regret@3=0.0331360748065 but cost=16.5 and beat-cost=False. DOWNSTREAM_GATE_STATUS.json confirms downstream_run_executed=false and result_manifest=null; the claim ledger marks model_family_gate and ce_selection_gate failed and downstream_utility not_evaluated.",
+          "relevance": 1.0,
+          "reliability": 0.95,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/08_meta/GATE_DECISION.md; /home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/10_downstream/DOWNSTREAM_GATE_STATUS.json; /home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/12_paper_package/STAGE10_CLAIM_LEDGER.md",
+          "title": "Gate decision and downstream status cross-check"
+        },
+        {
+          "directness": 0.9,
+          "evidence_type": "independent_verdict",
+          "freshness": 0.95,
+          "locator": "reviewer_66_pf_task_7aef51ba9a11.json lines 2-7",
+          "quote_or_observation": "The prior reviewer gave verdict=revise because the visible observations did not state model_family_gate_met=false or the CE-vs-CFC criteria result, and requested either visible gate/meta-analysis evidence for those points or a narrowed claim. This repair adds direct metric_output, transform_script, and sanity_check evidence for exactly those missing model-family and CE-vs-CFC gate details.",
+          "relevance": 0.95,
+          "reliability": 0.9,
+          "source_ref": "/home/xu/project/autosci-delphi/ponder-forge/worknotes/real_subagent_stability_2026-07-04/live_round_01/reviewer_results/reviewer_66_pf_task_7aef51ba9a11.json",
+          "title": "Prior independent-review objection addressed by added visible evidence"
+        }
+      ],
+      "importance": 0.95,
+      "supersedes_assertion_id": "pf_assertion_90bfbbb3bac2",
+      "text": "Revised S10-12/S10-13 gate result: Stage10 S10-12 large heldout evaluation passed with evaluated_endpoint_rows=360 and expected_formal_endpoint_rows=360. The subsequent S10-13 gate is closed because STAGE10_META_ANALYSIS/GATE_DECISION record ce_selection_gate_passed=false and model_family_gate_met=false; the CE gate logic evaluates LoopCert-only, Pareto-front, risk-calibrated blend, and family-balanced blend as contenders, and those contenders improve regret@3 versus CFC-only but do not beat CFC-only on mean cost-to-contain. DOWNSTREAM_GATE_STATUS records downstream_gate_status=closed and downstream_run_executed=false, so the downstream/oral boundary remains closed despite the passed large-eval result."
+    }
+  ],
+  "confidence": 0.94,
+  "files_created_or_modified": [],
+  "gap_repairs": [
+    {
+      "gap_type": "missing_independent_verdict",
+      "previous_independent_from_task_id": "pf_task_0853c80bfd5d",
+      "previous_reviewer_task_id": "pf_task_7aef51ba9a11",
+      "previous_verdict": "revise",
+      "resolution": "Replacement assertion keeps the supported 360/360 large-eval result and adds direct gate/meta/script evidence for model_family_gate_met=false and CE contender failure against CFC-only on the cost criterion, resolving the stated reviewer objection for follow-up independent review.",
+      "target_assertion_id": "pf_assertion_90bfbbb3bac2"
+    }
+  ],
+  "issues_encountered": [],
+  "role": "gate_gap_repairer",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Read the selected batch-C payload and inspected /home/xu/project/loop/DeepScientist/quests/001 read-only. Repaired the prior independent-review gap by adding direct Stage10 evidence for model_family_gate_met=false and the CE-vs-CFC two-criterion gate result, while preserving the supported 360/360 large-heldout-eval claim. No files were created or modified; no issues encountered.",
+  "target_assertion_id": "pf_assertion_90bfbbb3bac2",
+  "task_id": "pf_task_da8e2c3dd968",
+  "title": "Gate-gap repair for pf_assertion_90bfbbb3bac2"
+}

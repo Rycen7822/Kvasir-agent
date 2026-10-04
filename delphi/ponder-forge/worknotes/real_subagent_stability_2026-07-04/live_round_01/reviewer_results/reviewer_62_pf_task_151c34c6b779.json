@@ -1,0 +1,11 @@
+{
+  "confidence": 0.86,
+  "independent_from_task_id": "pf_task_58e12364159a",
+  "rationale": "The visible producer report and evidence support the assertion: the aggregate verification command exited 0 over the named Stage10 JSON/CSV artifacts and reports recovery_endpoint_count=1380, large_evaluated_endpoint_rows=360 matching expected formal endpoint rows, seed_robustness_rows=252, report markers and forbidden-claim scan passed, and 29 report artifact hashes. The same evidence explicitly keeps ce_selection_gate_passed=false, model_family_gate_met=false, downstream_gate_status=closed, oral_ready_gate_status=closed, and gate_verdict=closed. Additional sanity-check evidence says the claim ledger marks CE selection failed, downstream utility not evaluated, and oral gate closed. No visible evidence contradicts the conservative closed-gate consensus.",
+  "required_actions": [],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_151c34c6b779",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_d073d37f907d",
+  "verdict": "accept"
+}

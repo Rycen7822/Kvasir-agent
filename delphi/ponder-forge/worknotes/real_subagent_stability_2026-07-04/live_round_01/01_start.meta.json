@@ -1,0 +1,16 @@
+{
+  "returncode": 0,
+  "args": [
+    "start",
+    "--goal",
+    "Read-only real task: deeply understand /home/xu/project/loop/DeepScientist/quests/001, analyze the project's STAGE10 results, and produce next-step improvement recommendations. Do not modify any code or document under /home/xu/project/loop/DeepScientist/quests/001.",
+    "--profile",
+    "analysis",
+    "--constraint",
+    "Quest path /home/xu/project/loop/DeepScientist/quests/001 is strictly read-only; do not write, patch, format, delete, or clean anything there.",
+    "--constraint",
+    "Use Ponder-Forge full workflow: start, plan, delegations, live lane reports, independent verification, gate, finalize, reconcile, status.",
+    "--constraint",
+    "Final analysis must distinguish verified Stage10 evidence, conservative boundaries, and next improvement priorities."
+  ]
+}

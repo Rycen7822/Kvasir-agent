@@ -1,0 +1,128 @@
+{
+  "artifacts": [],
+  "assertions": [
+    {
+      "assertion_type": "data_result",
+      "confidence": 0.96,
+      "critical": true,
+      "evidence": [
+        {
+          "command": "python - <<'PY'\nimport ast, csv, json, re\nfrom pathlib import Path\nroot = Path('/home/xu/project/loop/DeepScientist/quests/001')\nmetrics_path = root / 'experiments/stage10/08_meta/SELECTOR_METRICS.csv'\nmeta_path = root / 'experiments/stage10/08_meta/STAGE10_META_ANALYSIS.json'\nscript_path = root / 'experiments/stage10/scripts/stage10_meta_analysis.py'\nwith metrics_path.open(newline='', encoding='utf-8') as fh:\n    rows = list(csv.DictReader(fh))\nmeta = json.loads(meta_path.read_text(encoding='utf-8'))\nscript = script_path.read_text(encoding='utf-8')\nmatch = re.search(r\"contender_names\\s*=\\s*(\\[[^\\]]+\\])\", script)\ncontenders = ast.literal_eval(match.group(1)) if match else []\nwant = ['OrbitRepair-Proxy', 'LoopCert-only', 'family-balanced blend', 'risk-calibrated blend', 'Pareto-front', 'CFC-only']\nsummary = {}\nfor name in want:\n    row = next(r for r in rows if r['selector_name'] == name)\n    summary[name] = {\n        'macro_normalized_regret_at3': float(row['macro_normalized_regret_at3']),\n        'mean_cost_to_contain_winner': float(row['mean_cost_to_contain_winner']),\n        'beats_cfc_only_on_macro_normalized_regret_at3': row['beats_cfc_only_on_macro_normalized_regret_at3'] == 'True',\n        'beats_cfc_only_on_mean_cost_to_contain_winner': row['beats_cfc_only_on_mean_cost_to_contain_winner'] == 'True',\n    }\nloopcert_family_beat_both = any(\n    summary[name]['beats_cfc_only_on_macro_normalized_regret_at3']\n    and summary[name]['beats_cfc_only_on_mean_cost_to_contain_winner']\n    for name in contenders\n)\nout = {\n    'selector_metrics_rows': len(rows),\n    'gate_contender_names_from_script': contenders,\n    'orbitrepair_proxy_in_gate_contenders': 'OrbitRepair-Proxy' in contenders,\n    'orbitrepair_proxy_beats_both_recorded_selector_metrics': summary['OrbitRepair-Proxy']['beats_cfc_only_on_macro_normalized_regret_at3'] and summary['OrbitRepair-Proxy']['beats_cfc_only_on_mean_cost_to_contain_winner'],\n    'loopcert_family_contenders_beat_cfc_on_both_gate_metrics': loopcert_family_beat_both,\n    'ce_selection_gate_passed': meta['gate_results']['ce_selection_gate_passed'],\n    'cfc_baseline_retained': meta['gate_results']['cfc_baseline_retained'],\n    'closed_reasons': meta['gate_results']['closed_reasons'],\n    'selector_summary': summary,\n}\nprint(json.dumps(out, ensure_ascii=False, sort_keys=True))\nPY",
+          "directness": 1.0,
+          "evidence_type": "metric_output",
+          "exit_code": 0,
+          "freshness": 0.95,
+          "metric": {
+            "ce_selection_gate_passed": false,
+            "cfc_baseline_retained": true,
+            "closed_reasons": [
+              "CE selection gate did not beat CFC-only on both macro regret@3 and cost-to-contain",
+              "Model-family gate is resource-gated"
+            ],
+            "gate_contender_names_from_script": [
+              "LoopCert-only",
+              "Pareto-front",
+              "risk-calibrated blend",
+              "family-balanced blend"
+            ],
+            "loopcert_family_contenders_beat_cfc_on_both_gate_metrics": false,
+            "orbitrepair_proxy_beats_both_recorded_selector_metrics": true,
+            "orbitrepair_proxy_in_gate_contenders": false,
+            "selector_metrics_rows": 6,
+            "selector_summary": {
+              "CFC-only": {
+                "beats_cfc_only_on_macro_normalized_regret_at3": false,
+                "beats_cfc_only_on_mean_cost_to_contain_winner": false,
+                "macro_normalized_regret_at3": 0.044697468910847644,
+                "mean_cost_to_contain_winner": 13.833333333333334
+              },
+              "LoopCert-only": {
+                "beats_cfc_only_on_macro_normalized_regret_at3": true,
+                "beats_cfc_only_on_mean_cost_to_contain_winner": false,
+                "macro_normalized_regret_at3": 0.03223671717595801,
+                "mean_cost_to_contain_winner": 16.666666666666668
+              },
+              "OrbitRepair-Proxy": {
+                "beats_cfc_only_on_macro_normalized_regret_at3": true,
+                "beats_cfc_only_on_mean_cost_to_contain_winner": true,
+                "macro_normalized_regret_at3": 0.0058068827370489386,
+                "mean_cost_to_contain_winner": 4.833333333333333
+              },
+              "Pareto-front": {
+                "beats_cfc_only_on_macro_normalized_regret_at3": true,
+                "beats_cfc_only_on_mean_cost_to_contain_winner": false,
+                "macro_normalized_regret_at3": 0.03313607480648891,
+                "mean_cost_to_contain_winner": 16.5
+              },
+              "family-balanced blend": {
+                "beats_cfc_only_on_macro_normalized_regret_at3": true,
+                "beats_cfc_only_on_mean_cost_to_contain_winner": false,
+                "macro_normalized_regret_at3": 0.03223671717595801,
+                "mean_cost_to_contain_winner": 16.666666666666668
+              },
+              "risk-calibrated blend": {
+                "beats_cfc_only_on_macro_normalized_regret_at3": true,
+                "beats_cfc_only_on_mean_cost_to_contain_winner": false,
+                "macro_normalized_regret_at3": 0.03223671717595801,
+                "mean_cost_to_contain_winner": 16.666666666666668
+              }
+            }
+          },
+          "quote_or_observation": "Command exited 0 and reported selector_metrics_rows=6, gate_contender_names_from_script=['LoopCert-only','Pareto-front','risk-calibrated blend','family-balanced blend'], orbitrepair_proxy_in_gate_contenders=false, orbitrepair_proxy_beats_both_recorded_selector_metrics=true, loopcert_family_contenders_beat_cfc_on_both_gate_metrics=false, ce_selection_gate_passed=false, and closed_reasons include CE selection not beating CFC-only on both macro regret@3 and cost-to-contain.",
+          "relevance": 1.0,
+          "reliability": 0.97,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001 (read-only command over Stage10 selector CSV/JSON/script)",
+          "title": "Read-only CE gate selector metric recomputation"
+        },
+        {
+          "directness": 0.96,
+          "evidence_type": "transform_script",
+          "freshness": 0.9,
+          "quote_or_observation": "aggregate_selector_metrics computes beats_cfc_only_on_macro_normalized_regret_at3 and beats_cfc_only_on_mean_cost_to_contain_winner against CFC-only. gate_results then sets contender_names to ['LoopCert-only', 'Pareto-front', 'risk-calibrated blend', 'family-balanced blend'], excluding OrbitRepair-Proxy, and sets selector_beats_cfc only if any contender beats CFC-only on both booleans; ce_gate_passed is cfc_baseline_retained and selector_beats_cfc.",
+          "relevance": 1.0,
+          "reliability": 0.94,
+          "source_ref": "experiments/stage10/scripts/stage10_meta_analysis.py:255-267,402-423",
+          "title": "Gate script defines LoopCert-family contenders and two-metric criterion"
+        },
+        {
+          "command": "PYTHONDONTWRITEBYTECODE=1 /home/xu/project/loop/.venv/bin/python experiments/stage10/scripts/stage10_meta_analysis.py --quest-root /home/xu/project/loop/DeepScientist/quests/001",
+          "directness": 0.92,
+          "evidence_type": "reproduction_log",
+          "exit_code": 0,
+          "freshness": 0.88,
+          "quote_or_observation": "The recorded command PYTHONDONTWRITEBYTECODE=1 /home/xu/project/loop/.venv/bin/python experiments/stage10/scripts/stage10_meta_analysis.py --quest-root /home/xu/project/loop/DeepScientist/quests/001 completed with exit_code=0 and emitted gate_results with ce_selection_gate_passed=false, cfc_baseline_retained=true, downstream/oral gates closed, and the closed reason 'CE selection gate did not beat CFC-only on both macro regret@3 and cost-to-contain'.",
+          "relevance": 0.96,
+          "reliability": 0.95,
+          "source_ref": ".ds/bash_exec/bash-9f40a7ab/meta.json:15-30; .ds/bash_exec/bash-9f40a7ab/terminal.log:2-3",
+          "title": "Recorded S10-13 meta-analysis run completed successfully"
+        },
+        {
+          "directness": 0.97,
+          "evidence_type": "sanity_check",
+          "freshness": 0.93,
+          "metric": {
+            "gate_decision_ce_selection_gate_passed": false,
+            "loopcert_family_rows_true_false_on_cost": true,
+            "orbitrepair_proxy_row_true_true": true,
+            "selector_metrics_and_gate_decision_consistent": true
+          },
+          "quote_or_observation": "SELECTOR_METRICS and GATE_DECISION both show OrbitRepair-Proxy has beats-CFC regret=True and beats-CFC cost=True, while LoopCert-only, family-balanced blend, risk-calibrated blend, and Pareto-front all have beats-CFC regret=True but beats-CFC cost=False. STAGE10_META_ANALYSIS and GATE_DECISION both record ce_selection_gate_passed=false, cfc_baseline_retained=true, and the CE-selection closed reason.",
+          "relevance": 1.0,
+          "reliability": 0.96,
+          "source_ref": "experiments/stage10/08_meta/SELECTOR_METRICS.csv:1-7; experiments/stage10/08_meta/STAGE10_META_ANALYSIS.json:2-15,67-277; experiments/stage10/08_meta/GATE_DECISION.md:3-28",
+          "title": "Stage10 selector table and gate decision agree"
+        }
+      ],
+      "importance": 0.95,
+      "repairs_assertion_id": "pf_assertion_0ab1d0dad0f3",
+      "text": "Read-only Stage10 evidence supports the conservative CE gate clarification: OrbitRepair-Proxy beats CFC-only on both recorded selector metrics (macro normalized regret@3 0.0058068827370489386 vs CFC-only 0.044697468910847644, and mean cost-to-contain 4.833333333333333 vs CFC-only 13.833333333333334), but stage10_meta_analysis.py excludes OrbitRepair-Proxy from the CE gate contender set. The gate contenders are LoopCert-only, Pareto-front, risk-calibrated blend, and family-balanced blend; each beats CFC-only on macro regret@3 but fails to beat CFC-only on mean cost-to-contain, so the LoopCert-family contender set does not beat CFC-only on both gate metrics and ce_selection_gate_passed remains false."
+    }
+  ],
+  "confidence": 0.96,
+  "role": "gate_gap_repairer",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Resolved the missing analysis-profile evidence gap for pf_assertion_0ab1d0dad0f3 by adding read-only metric_output evidence with command and exit_code=0, plus transform_script, reproduction_log, and sanity_check evidence. The repair supports only the conservative CE gate wording; no source files were edited and artifacts is empty.",
+  "target_assertion_id": "pf_assertion_0ab1d0dad0f3",
+  "task_id": "pf_task_67c20c182d62",
+  "title": "Repair profile evidence for CE gate clarification"
+}

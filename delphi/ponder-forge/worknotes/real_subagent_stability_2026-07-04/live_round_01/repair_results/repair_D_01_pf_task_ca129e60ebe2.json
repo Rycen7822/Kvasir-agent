@@ -1,0 +1,72 @@
+{
+  "artifacts": [],
+  "assertions": [
+    {
+      "assertion_type": "data_result",
+      "confidence": 0.96,
+      "critical": true,
+      "evidence": [
+        {
+          "command": "python3 -c \"import hashlib,json,pathlib; root=pathlib.Path('.'); rel='experiments/stage10/00_freeze/STAGE10_STATE.json'; audit=json.loads((root/'experiments/stage10/12_paper_package/REPORT_AUDIT.json').read_text()); state=json.loads((root/rel).read_text()); rec=next(r for r in audit['artifact_records'] if r.get('path')==rel); raw=(root/rel).read_bytes(); actual={'bytes':len(raw),'lines':raw.count(b'\\n'),'sha256':hashlib.sha256(raw).hexdigest()}; print(json.dumps({'audit_record_for_stage10_state':{k:rec.get(k) for k in ('bytes','lines','sha256')},'current_stage10_state':actual,'report_audit_generated_at':audit.get('generated_at'),'report_audit_status':audit.get('status'),'report_audit_next_required_substage':audit.get('next_required_substage'),'current_stage10_state_active_substage':state.get('active_substage'),'current_stage10_state_status_compression_status':state.get('status_compression_status'),'current_stage10_state_status_compression_validated_at':state.get('status_compression_validated_at'),'stale_audit_record':actual!={k:rec.get(k) for k in ('bytes','lines','sha256')}}, sort_keys=True))\"",
+          "directness": 1.0,
+          "evidence_type": "metric_output",
+          "exit_code": 0,
+          "freshness": 1.0,
+          "metric": {
+            "audit_record_for_stage10_state": {
+              "bytes": 36868,
+              "lines": 876,
+              "sha256": "a1c66af5f4b672df76b5fe8d717f63cea297811bc7b7dd7ff057ad7469723a12"
+            },
+            "current_stage10_state": {
+              "bytes": 37714,
+              "lines": 887,
+              "sha256": "7ac2f0bebeab991fe01ce3fa07fc1ed16b796382bb8249bf4de93d587383feee"
+            },
+            "current_stage10_state_active_substage": "Stage10_complete",
+            "current_stage10_state_status_compression_status": "passed_S10-15c_status_compression_index_update",
+            "current_stage10_state_status_compression_validated_at": "2026-06-22T07:12:00+08:00",
+            "report_audit_generated_at": "2026-06-21T22:54:00+00:00",
+            "report_audit_next_required_substage": "S10-15c_status_compression_index_update",
+            "report_audit_status": "passed_S10-15b_paper_package_final_report_handoff",
+            "stale_audit_record": true
+          },
+          "quote_or_observation": "Command output showed stale_audit_record=true: REPORT_AUDIT generated at 2026-06-21T22:54:00+00:00 records STAGE10_STATE.json as 36,868 bytes, 876 lines, sha256 a1c66af5f4b672df76b5fe8d717f63cea297811bc7b7dd7ff057ad7469723a12; the current file is 37,714 bytes, 887 lines, sha256 7ac2f0bebeab991fe01ce3fa07fc1ed16b796382bb8249bf4de93d587383feee and has status_compression_status passed_S10-15c_status_compression_index_update.",
+          "relevance": 1.0,
+          "reliability": 0.98,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001",
+          "title": "Read-only hash/line/byte comparison for REPORT_AUDIT STAGE10_STATE record"
+        },
+        {
+          "directness": 0.95,
+          "evidence_type": "reproduction_log",
+          "freshness": 1.0,
+          "locator": "REPORT_AUDIT.json lines 4-13 and 409-412; STAGE10_STATE.json lines 839-845",
+          "quote_or_observation": "REPORT_AUDIT.json records the state artifact at lines 4-13 and marks the audit as passed_S10-15b_paper_package_final_report_handoff at lines 409-412; STAGE10_STATE.json lines 839-845 now mark Stage10_complete plus passed_S10-15c_status_compression_index_update validated at 2026-06-22T07:12:00+08:00.",
+          "relevance": 0.95,
+          "reliability": 0.95,
+          "source_ref": "experiments/stage10/12_paper_package/REPORT_AUDIT.json and experiments/stage10/00_freeze/STAGE10_STATE.json"
+        },
+        {
+          "directness": 0.9,
+          "evidence_type": "sanity_check",
+          "freshness": 1.0,
+          "quote_or_observation": "The mismatch is expected to be a stale ledger issue, not evidence that Stage10 failed: the audit itself predates the S10-15c status compression update and names that update as next_required_substage, while the current state records the update as passed and the active_substage as Stage10_complete. The conservative cleanup is to refresh REPORT_AUDIT.json before relying on the final report ledger as current.",
+          "relevance": 0.95,
+          "reliability": 0.92,
+          "source_ref": "read-only consistency check over audit-vs-current state metadata"
+        }
+      ],
+      "importance": 0.93,
+      "revises_assertion_id": "pf_assertion_dc6162ca92f3",
+      "text": "The Stage10 final report hash ledger should not be treated as current until REPORT_AUDIT.json is refreshed: its STAGE10_STATE.json artifact record is stale relative to the current post-S10-15c state file (audit record 36,868 bytes/876 lines/sha256 a1c66af5... vs current 37,714 bytes/887 lines/sha256 7ac2f0be...), while the current state reports Stage10_complete and passed_S10-15c_status_compression_index_update."
+    }
+  ],
+  "profile": "analysis",
+  "role": "gate_gap_repairer",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Read-only inspection repaired the profile-evidence gap for pf_assertion_dc6162ca92f3: REPORT_AUDIT.json records STAGE10_STATE.json as 36,868 bytes/876 lines/sha256 a1c66a..., while the current state file is 37,714 bytes/887 lines/sha256 7ac2f0... and records S10-15c status compression as passed. No source files were modified.",
+  "target_assertion_id": "pf_assertion_dc6162ca92f3",
+  "task_id": "pf_task_ca129e60ebe2",
+  "title": "Stage10 report audit ledger stale-state evidence repair"
+}

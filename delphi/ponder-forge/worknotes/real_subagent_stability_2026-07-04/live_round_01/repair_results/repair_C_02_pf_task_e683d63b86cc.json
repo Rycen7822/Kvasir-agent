@@ -1,0 +1,100 @@
+{
+  "artifacts": [],
+  "assertions": [
+    {
+      "assertion_type": "data_result",
+      "confidence": 0.94,
+      "evidence": [
+        {
+          "command": "python - <<'PY'\nimport hashlib,json,pathlib\nroot=pathlib.Path('.')\naudit_path=root/'experiments/stage10/12_paper_package/REPORT_AUDIT.json'\nstate_path=root/'experiments/stage10/00_freeze/STAGE10_STATE.json'\naudit=json.loads(audit_path.read_text())\nstate_bytes=state_path.read_bytes()\naudit_state=next(r for r in audit['artifact_records'] if r['path']=='experiments/stage10/00_freeze/STAGE10_STATE.json')\nexts={'.png','.svg','.pdf','.jpg','.jpeg'}\nstage10=root/'experiments/stage10'\nnative_plots=sorted(str(p.relative_to(root)) for p in stage10.rglob('*') if p.is_file() and p.suffix.lower() in exts)\nout={'report_audit_status':audit.get('status'),'report_audit_artifact_hash_count':audit.get('artifact_hash_count'),'forbidden_claim_scan_passed':audit.get('forbidden_claim_scan_passed'),'forbidden_claim_hit_count':len(audit.get('forbidden_claim_hits',[])),'claim_ledger_rows':audit.get('claim_ledger_rows'),'downstream_gate_status':audit.get('downstream_gate_status'),'downstream_run_executed':audit.get('downstream_run_executed'),'oral_ready_gate_status':audit.get('oral_ready_gate_status'),'audit_recorded_state_sha256':audit_state.get('sha256'),'audit_recorded_state_bytes':audit_state.get('bytes'),'audit_recorded_state_lines':audit_state.get('lines'),'current_state_sha256':hashlib.sha256(state_bytes).hexdigest(),'current_state_bytes':len(state_bytes),'current_state_lines':state_bytes.count(b'\\n'),'state_sha256_matches_audit':hashlib.sha256(state_bytes).hexdigest()==audit_state.get('sha256'),'native_stage10_plot_artifact_count':len(native_plots),'native_stage10_plot_artifacts':native_plots}\nprint(json.dumps(out, sort_keys=True))\nPY",
+          "directness": 1.0,
+          "evidence_type": "metric_output",
+          "exit_code": 0,
+          "freshness": 1.0,
+          "metric": "stage10_report_package_audit_refresh_check",
+          "metrics": {
+            "audit_recorded_state_bytes": 36868,
+            "audit_recorded_state_lines": 876,
+            "audit_recorded_state_sha256": "a1c66af5f4b672df76b5fe8d717f63cea297811bc7b7dd7ff057ad7469723a12",
+            "claim_ledger_rows": 9,
+            "current_state_bytes": 37714,
+            "current_state_lines": 887,
+            "current_state_sha256": "7ac2f0bebeab991fe01ce3fa07fc1ed16b796382bb8249bf4de93d587383feee",
+            "downstream_gate_status": "closed",
+            "downstream_run_executed": false,
+            "forbidden_claim_hit_count": 0,
+            "forbidden_claim_scan_passed": true,
+            "native_stage10_plot_artifact_count": 0,
+            "native_stage10_plot_artifacts": [],
+            "oral_ready_gate_status": "closed",
+            "report_audit_artifact_hash_count": 29,
+            "report_audit_status": "passed_S10-15b_paper_package_final_report_handoff",
+            "state_sha256_matches_audit": false
+          },
+          "quote_or_observation": "A read-only Python inspection of REPORT_AUDIT.json, the live STAGE10_STATE.json, and Stage10 plot-file extensions returned the required audit status, forbidden-claim scan result, hash mismatch, and zero native plot artifacts.",
+          "relevance": 1.0,
+          "reliability": 0.95,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001",
+          "title": "Read-only Stage10 report audit/hash/plot check"
+        },
+        {
+          "artifact_path": "experiments/stage10/12_paper_package/REPORT_AUDIT.json",
+          "directness": 0.95,
+          "evidence_type": "artifact_digest",
+          "freshness": 0.9,
+          "locator": "lines 2-3, 327-333, 409-412",
+          "quote_or_observation": "REPORT_AUDIT.json records artifact_hash_count=29, status=passed_S10-15b_paper_package_final_report_handoff, forbidden_claim_hits=[], and forbidden_claim_scan_passed=true.",
+          "relevance": 0.95,
+          "reliability": 0.9,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/12_paper_package/REPORT_AUDIT.json",
+          "title": "REPORT_AUDIT records passed audit status, 29 hashes, and forbidden-claim scan pass"
+        },
+        {
+          "artifact_path": "experiments/stage10/12_paper_package/STAGE10_CLAIM_LEDGER.md",
+          "directness": 0.9,
+          "evidence_type": "artifact_digest",
+          "freshness": 0.9,
+          "locator": "lines 7-17",
+          "quote_or_observation": "The claim ledger marks model_family_gate and ce_selection_gate as failed, downstream_utility as not_evaluated, oral_gate as closed, original_reference_improvement as not_evaluated, and states that the package reads existing Stage10 artifacts only without writing Y_frozen, Y_recover, or downstream artifacts.",
+          "relevance": 0.9,
+          "reliability": 0.9,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/12_paper_package/STAGE10_CLAIM_LEDGER.md",
+          "title": "Claim ledger preserves closed-gate reporting boundaries"
+        },
+        {
+          "artifact_path": "experiments/report_archive/STAGE10_RESULTS_REPORT.md",
+          "directness": 0.9,
+          "evidence_type": "artifact_digest",
+          "freshness": 0.85,
+          "locator": "lines 15-18 and 93-103",
+          "quote_or_observation": "The final report input-hash table lists STAGE10_STATE.json sha256 a1c66af5f4b672df76b5fe8d717f63cea297811bc7b7dd7ff057ad7469723a12, while the report later states downstream gate status=closed, downstream_run_executed=False, model-family gate=failed, CE selection gate=failed, oral gate status=closed, and no claims of downstream utility, venue-readiness, pretrained-reference superiority, or universal recovery certainty.",
+          "relevance": 0.9,
+          "reliability": 0.9,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/report_archive/STAGE10_RESULTS_REPORT.md",
+          "title": "Final report uses stale STAGE10_STATE hash table entry and explicit claim limitations"
+        },
+        {
+          "artifact_path": "experiments/stage10/12_paper_package/STAGE10_ORAL_READY_GATE.md",
+          "directness": 0.85,
+          "evidence_type": "artifact_digest",
+          "freshness": 0.85,
+          "locator": "lines 5-11",
+          "quote_or_observation": "STAGE10_ORAL_READY_GATE.md states Status: closed, with reasons that CE selection did not beat CFC-only on both macro regret@3 and cost-to-contain and the model-family gate is resource-gated; it also says Stage10 does not carry venue-readiness, downstream utility, or pretrained-reference superiority claims.",
+          "relevance": 0.85,
+          "reliability": 0.9,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/12_paper_package/STAGE10_ORAL_READY_GATE.md",
+          "title": "Oral-ready gate remains closed"
+        }
+      ],
+      "importance": 0.88,
+      "target_assertion_id": "pf_assertion_96b73e0c0d31",
+      "text": "The final Stage10 communication package is claim-safe only within its recorded closed-gate boundaries and needs an audit refresh before being treated as fully current: REPORT_AUDIT has status passed_S10-15b_paper_package_final_report_handoff with 29 artifact hashes, forbidden_claim_scan_passed=true, and 0 forbidden claim hits, but its recorded STAGE10_STATE.json sha256 a1c66af5f4b672df76b5fe8d717f63cea297811bc7b7dd7ff057ad7469723a12 no longer matches the live state file sha256 7ac2f0bebeab991fe01ce3fa07fc1ed16b796382bb8249bf4de93d587383feee. The Stage10 tree contains 0 native plot artifacts with .png/.svg/.pdf/.jpg/.jpeg extensions, so reporting work should refresh the audit hash table and add Stage10-specific selector/failure visuals only if needed, without expanding claim-ledger boundaries."
+    }
+  ],
+  "confidence": 0.94,
+  "role": "gate_gap_repairer",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Read-only inspection of /home/xu/project/loop/DeepScientist/quests/001 confirms the Stage10 paper package remains claim-bounded but should not be treated as fully current until its audit hash table is refreshed: REPORT_AUDIT passed with 29 artifact hashes and forbidden_claim_scan_passed=true/0 hits, while the live STAGE10_STATE.json hash and size no longer match the audit record. No files were created or modified; artifacts is empty.",
+  "task_id": "pf_task_e683d63b86cc",
+  "title": "Repair evidence for Stage10 final communication package audit freshness"
+}

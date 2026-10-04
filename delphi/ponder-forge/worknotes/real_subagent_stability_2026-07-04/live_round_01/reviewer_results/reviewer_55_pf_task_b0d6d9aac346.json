@@ -1,0 +1,11 @@
+{
+  "confidence": 0.92,
+  "independent_from_task_id": "pf_task_b09694afd44f",
+  "rationale": "Visible evidence supports the assertion: SELECTOR_METRICS shows OrbitRepair-Proxy numerically ahead of CFC-only on top3 containment, cost-to-contain, and regret@3, while LoopCert/blend contenders only improve regret and do not beat CFC-only on cost-to-contain. The cited gate logic requires a LoopCert/blend contender to beat CFC-only on both regret@3 and cost-to-contain, and the claim ledger explicitly marks ce_selection_gate failed, so Stage10 should not claim CE-selector success over CFC-only.",
+  "required_actions": [],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_b0d6d9aac346",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_4368ddf3220c",
+  "verdict": "accept"
+}

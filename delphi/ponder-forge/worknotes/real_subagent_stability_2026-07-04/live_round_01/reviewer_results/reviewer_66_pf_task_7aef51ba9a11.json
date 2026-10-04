@@ -1,0 +1,13 @@
+{
+  "confidence": 0.78,
+  "independent_from_task_id": "pf_task_0853c80bfd5d",
+  "rationale": "The visible evidence supports that the large heldout eval passed with evaluated_endpoint_rows=360 and expected_formal_endpoint_rows=360, and it supports that the downstream gate is closed with downstream_run_executed=false. However, the visible observations do not state the asserted causal details that model_family_gate_met=false or that CE selection failed to beat CFC-only on both required criteria, so the assertion overclaims beyond the provided evidence.",
+  "required_actions": [
+    "Add visible evidence from the gate/meta-analysis outputs showing model_family_gate_met=false and the CE-vs-CFC criteria result, or revise the assertion to only claim the supported passed 360/360 large eval and closed downstream gate."
+  ],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_7aef51ba9a11",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_90bfbbb3bac2",
+  "verdict": "revise"
+}

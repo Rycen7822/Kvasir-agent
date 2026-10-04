@@ -1,0 +1,11 @@
+{
+  "confidence": 0.96,
+  "independent_from_task_id": "pf_task_2ad276aad6dc",
+  "rationale": "The visible producer repair report directly supports the bounded assertion. The metric_output evidence has exit_code 0 and reports TOKEN_WEIGHTED_EVAL.csv row counts of 366 total rows, source_endpoint_type_counts of 360 Y_recover and 6 original_reference, and y_recover_budget_counts of 360 rows at 100000000 tokens. It also reports LARGE_EVAL_SUMMARY fields matching the assertion: evaluated_endpoint_rows=360, expected_formal_endpoint_rows=360, total_table_rows_including_original=366, status=passed_S10-12_large_heldout_eval_alignment_audit, and hard_failures=[]. For STAGE10_META_ANALYSIS, the same metric output records primary_target as S10-12 large-eval 100M Y_recover token-weighted CE, panel_N_by_model_sum=360, selector panel rows unique=[360], and downstream_gate_status/oral_ready_gate_status both closed. The transform_script and sanity_check evidence further corroborate the row-count and closed-gate boundaries. The assertion is explicitly limited to row-count consistency and does not overclaim downstream or oral-ready results.",
+  "required_actions": [],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_221109c20d4d",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_bd7d7f152ed8",
+  "verdict": "accept"
+}

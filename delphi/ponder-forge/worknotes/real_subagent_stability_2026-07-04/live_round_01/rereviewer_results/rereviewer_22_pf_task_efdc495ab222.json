@@ -1,0 +1,13 @@
+{
+  "confidence": 0.78,
+  "independent_from_task_id": "pf_task_67c20c182d62",
+  "rationale": "The visible producer evidence supports the conservative qualitative CE-gate clarification: the metric_output reports exit_code=0, OrbitRepair-Proxy is not in the gate contender set, OrbitRepair-Proxy beats both recorded selector metrics, the configured contenders are LoopCert-only, Pareto-front, risk-calibrated blend, and family-balanced blend, those contenders do not beat CFC-only on both gate metrics, and ce_selection_gate_passed=false. Transform-script, reproduction-log, and sanity-check evidence also support the gate-contender exclusion and closed-gate logic. However, the assertion includes exact numeric selector values for OrbitRepair-Proxy and CFC-only, and those exact values appear only in the assertion text, not in the visible evidence observations or untruncated metric payload. Therefore the qualitative claim is supported, but the exact numeric-value claim needs visible backing or removal.",
+  "required_actions": [
+    "Add visible metric_output or source excerpts showing the exact SELECTOR_METRICS values for OrbitRepair-Proxy and CFC-only, including macro normalized regret@3 and mean cost-to-contain, or revise the assertion to state only the boolean comparisons already visible in the evidence."
+  ],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_efdc495ab222",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_4557b883c0f8",
+  "verdict": "revise"
+}

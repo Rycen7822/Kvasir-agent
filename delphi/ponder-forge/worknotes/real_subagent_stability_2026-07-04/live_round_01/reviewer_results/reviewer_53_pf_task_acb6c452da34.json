@@ -1,0 +1,11 @@
+{
+  "confidence": 0.94,
+  "independent_from_task_id": "pf_task_7ec691757d6e",
+  "rationale": "The provided metric_output evidence reports exit_code=0 and directly matches every row-count claim in the assertion: recovery endpoint_rows=1380, target_write_rows=1380, seed_rows=252, large_eval evaluated_endpoint_rows=360, token_weighted_rows=366, split_ledger_rows=18789, and recovery_overlap_count=0. Additional visible dataset and sanity_check evidence corroborate the 18789 split-ledger records, zero recovery overlap, and 360 evaluated endpoint rows with no hard failures. No visible evidence contradicts the assertion.",
+  "required_actions": [],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_acb6c452da34",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_f31d9cf5b478",
+  "verdict": "accept"
+}

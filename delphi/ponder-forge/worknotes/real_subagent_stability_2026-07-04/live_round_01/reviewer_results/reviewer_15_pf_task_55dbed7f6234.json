@@ -1,0 +1,11 @@
+{
+  "confidence": 0.88,
+  "independent_from_task_id": "pf_task_513452dc039d",
+  "rationale": "The visible evidence supports the assertion. Evidence [1] reports CFC-only macro_normalized_regret_at3=0.044697468910847644 and mean_cost_to_contain_winner=13.833333333333334, while LoopCert-style variants have better/lower macro_normalized_regret_at3=0.03223671717595801 but worse/higher mean_cost_to_contain_winner=16.666666666666668. Evidence [2] states the CE gate requires a contender to beat CFC-only on both macro regret@3 and mean cost-to-contain. Evidence [3] records ce_selection_gate_passed=False and gate_verdict=closed. Together these support that LoopCert-style contenders improve regret but fail the cost requirement and that the formal gate remains closed because the configured contenders do not beat CFC-only on both required metrics.",
+  "required_actions": [],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_55dbed7f6234",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_2019cdb81c3d",
+  "verdict": "accept"
+}

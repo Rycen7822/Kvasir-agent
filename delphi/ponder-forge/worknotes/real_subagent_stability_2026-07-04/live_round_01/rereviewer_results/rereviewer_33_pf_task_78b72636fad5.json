@@ -1,0 +1,11 @@
+{
+  "confidence": 0.9,
+  "independent_from_task_id": "pf_task_c7869f2e4ed4",
+  "rationale": "Visible producer evidence supports the assertion. The metric_output evidence reports exit_code=0 and directly counts the stated Stage10 row surfaces: panel=360, recovery endpoints=1380, target write ledger=1380, token-weighted large eval=366, selector metrics=6, component ablations=11, causal patching=96, and theory stress tests=7. The same evidence reports ce_selection_gate_passed=false and shows LoopCert-only/family-balanced/risk-calibrated selectors and Pareto-front improve macro regret@3 versus CFC-only while having higher mean cost-to-contain, matching the bounded metric-priority claim. The reproduction_log and sanity_check evidence corroborate completed S10-13/S10-14/S10-15a steps, closed gate status, retained CFC baseline, and matching ledger/state counts. No visible artifacts contradict the claim.",
+  "required_actions": [],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_78b72636fad5",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_4f7a4fc2c730",
+  "verdict": "accept"
+}

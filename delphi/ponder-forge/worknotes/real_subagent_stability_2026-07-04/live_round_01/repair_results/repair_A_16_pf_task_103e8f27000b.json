@@ -1,0 +1,79 @@
+{
+  "artifacts": [],
+  "assertions": [
+    {
+      "assertion_type": "data_result",
+      "confidence": 0.96,
+      "critical": true,
+      "evidence": [
+        {
+          "command": "python3 - <<'PY'\nimport csv, json\nfrom pathlib import Path\nroot = Path('/home/xu/project/loop/DeepScientist/quests/001')\nstage = root / 'experiments/stage10'\ndef csv_rows(rel):\n    with (stage / rel).open('r', encoding='utf-8', newline='') as handle:\n        return sum(1 for _ in csv.DictReader(handle))\ndef jsonl_rows(rel):\n    with (stage / rel).open('r', encoding='utf-8') as handle:\n        return sum(1 for line in handle if line.strip())\nlarge = json.loads((stage / '07_large_eval/LARGE_EVAL_SUMMARY.json').read_text(encoding='utf-8'))\ncomponent = json.loads((stage / '09_ablation_patching/STAGE10_COMPONENT_ABLATION_AUDIT.json').read_text(encoding='utf-8'))\nrecovery = json.loads((stage / '06_recovery/RECOVERY_TRAIN_EVAL_SUMMARY.json').read_text(encoding='utf-8'))\nmetrics = {\n    'recovery_endpoints_csv_rows': csv_rows('06_recovery/RECOVERY_ENDPOINTS.csv'),\n    'target_write_ledger_jsonl_rows': jsonl_rows('06_recovery/TARGET_WRITE_LEDGER.jsonl'),\n    'recovery_summary_total_endpoint_count': recovery['total_endpoint_count'],\n    'recovery_summary_target_write_ledger_rows': recovery['target_write_ledger_rows'],\n    'recovery_summary_target_write_matches_endpoint_rows': recovery['target_write_ledger_matches_endpoint_rows'],\n    'seed_robustness_csv_rows': csv_rows('06_recovery/SEED_ROBUSTNESS.csv'),\n    'recovery_summary_seed_robustness_row_count': recovery['seed_robustness_row_count'],\n    'token_weighted_eval_csv_rows': csv_rows('07_large_eval/TOKEN_WEIGHTED_EVAL.csv'),\n    'large_eval_total_table_rows_including_original': large['total_table_rows_including_original'],\n    'large_eval_evaluated_endpoint_rows': large['evaluated_endpoint_rows'],\n    'large_eval_expected_formal_endpoint_rows': large['expected_formal_endpoint_rows'],\n    'large_eval_hard_failure_count': len(large['hard_failures']),\n    'large_eval_status': large['status'],\n    'component_ablation_csv_rows': csv_rows('09_ablation_patching/COMPONENT_ABLATION.csv'),\n    'component_ablation_audit_count': component['ablation_count'],\n    'causal_patching_results_csv_rows': csv_rows('09_ablation_patching/CAUSAL_PATCHING_RESULTS.csv'),\n    'component_audit_patching_result_count': component['patching_result_count'],\n}\nprint(json.dumps(metrics, sort_keys=True))\nPY",
+          "directness": 1.0,
+          "evidence_type": "metric_output",
+          "exit_code": 0,
+          "freshness": 0.95,
+          "metric": {
+            "causal_patching_results_csv_rows": 96,
+            "component_ablation_audit_count": 11,
+            "component_ablation_csv_rows": 11,
+            "component_audit_patching_result_count": 96,
+            "large_eval_evaluated_endpoint_rows": 360,
+            "large_eval_expected_formal_endpoint_rows": 360,
+            "large_eval_hard_failure_count": 0,
+            "large_eval_status": "passed_S10-12_large_heldout_eval_alignment_audit",
+            "large_eval_total_table_rows_including_original": 366,
+            "recovery_endpoints_csv_rows": 1380,
+            "recovery_summary_seed_robustness_row_count": 252,
+            "recovery_summary_target_write_ledger_rows": 1380,
+            "recovery_summary_target_write_matches_endpoint_rows": true,
+            "recovery_summary_total_endpoint_count": 1380,
+            "seed_robustness_csv_rows": 252,
+            "target_write_ledger_jsonl_rows": 1380,
+            "token_weighted_eval_csv_rows": 366
+          },
+          "quote_or_observation": "Command output: {\"causal_patching_results_csv_rows\": 96, \"component_ablation_audit_count\": 11, \"component_ablation_csv_rows\": 11, \"component_audit_patching_result_count\": 96, \"large_eval_evaluated_endpoint_rows\": 360, \"large_eval_expected_formal_endpoint_rows\": 360, \"large_eval_hard_failure_count\": 0, \"large_eval_status\": \"passed_S10-12_large_heldout_eval_alignment_audit\", \"large_eval_total_table_rows_including_original\": 366, \"recovery_endpoints_csv_rows\": 1380, \"recovery_summary_seed_robustness_row_count\": 252, \"recovery_summary_target_write_ledger_rows\": 1380, \"recovery_summary_target_write_matches_endpoint_rows\": true, \"recovery_summary_total_endpoint_count\": 1380, \"seed_robustness_csv_rows\": 252, \"target_write_ledger_jsonl_rows\": 1380, \"token_weighted_eval_csv_rows\": 366}",
+          "relevance": 1.0,
+          "reliability": 0.98,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10",
+          "title": "Read-only Stage10 row/count recomputation"
+        },
+        {
+          "directness": 0.9,
+          "evidence_type": "transform_script",
+          "freshness": 0.9,
+          "quote_or_observation": "Transform provenance is explicit in the checked-in Stage10 scripts: stage10_large_eval.py names TOKEN_WEIGHTED_EVAL.csv, LARGE_EVAL_SUMMARY.json, PANEL_ROWS.csv, RECOVERY_RUN_MANIFEST.json, and RECOVERY_ENDPOINTS.csv; stage10_component_ablation.py names RECOVERY_ENDPOINTS.csv, TOKEN_WEIGHTED_EVAL.csv, COMPONENT_ABLATION.csv, CAUSAL_PATCHING_RESULTS.csv, and STAGE10_COMPONENT_ABLATION_AUDIT.json; stage10_final_report_audit.py is an audit-only reader that prints audit_report(report.read_text(...)) without regenerating the package.",
+          "relevance": 0.94,
+          "reliability": 0.95,
+          "source_ref": "experiments/stage10/scripts/stage10_large_eval.py; experiments/stage10/scripts/stage10_component_ablation.py; experiments/stage10/scripts/stage10_final_report_audit.py"
+        },
+        {
+          "directness": 0.98,
+          "evidence_type": "sanity_check",
+          "freshness": 0.95,
+          "metric": {
+            "causal_patching_audit_matches_csv": true,
+            "component_ablation_audit_matches_csv": true,
+            "large_eval_expected_equals_evaluated": true,
+            "large_eval_hard_failures_empty": true,
+            "recovery_endpoints_equals_target_ledger": true,
+            "seed_robustness_summary_matches_csv": true,
+            "token_weighted_eval_summary_matches_csv": true
+          },
+          "quote_or_observation": "Independent Stage10 summaries/audits agree with the recomputation: RECOVERY_TRAIN_EVAL_SUMMARY reports total_endpoint_count=1380, target_write_ledger_rows=1380, target_write_ledger_matches_endpoint_rows=true, seed_robustness_row_count=252; LARGE_EVAL_SUMMARY reports evaluated_endpoint_rows=360, expected_formal_endpoint_rows=360, total_table_rows_including_original=366, hard_failures=[]; STAGE10_COMPONENT_ABLATION_AUDIT reports ablation_count=11 and patching_result_count=96; REPORT_AUDIT line counts are consistent with the same data-row counts after CSV headers are accounted for.",
+          "relevance": 1.0,
+          "reliability": 0.97,
+          "source_ref": "experiments/stage10/06_recovery/RECOVERY_TRAIN_EVAL_SUMMARY.json; experiments/stage10/07_large_eval/LARGE_EVAL_SUMMARY.json; experiments/stage10/09_ablation_patching/STAGE10_COMPONENT_ABLATION_AUDIT.json; experiments/stage10/12_paper_package/REPORT_AUDIT.json"
+        }
+      ],
+      "importance": 0.9,
+      "supersedes_assertion_id": "pf_assertion_dd32286c9e3a",
+      "text": "The Stage10 evaluation-volume counts are internally consistent under read-only inspection: RECOVERY_ENDPOINTS.csv and TARGET_WRITE_LEDGER.jsonl both contain 1380 records; SEED_ROBUSTNESS.csv contains 252 records; TOKEN_WEIGHTED_EVAL.csv contains 366 records; COMPONENT_ABLATION.csv contains 11 records; CAUSAL_PATCHING_RESULTS.csv contains 96 records; and LARGE_EVAL_SUMMARY.json reports 360 evaluated endpoint rows versus 360 expected formal endpoint rows with zero hard failures."
+    }
+  ],
+  "confidence": 0.96,
+  "role": "gate_gap_repairer",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Read-only repair for pf_assertion_dd32286c9e3a: recomputed Stage10 row/count metrics from quest artifacts, cross-checked them against summary/audit JSON records, and produced a replacement supported data_result. No files were created or modified; git status in ponder-forge still only showed the pre-existing untracked ../CODEX_STATE.md.",
+  "task_id": "pf_task_103e8f27000b",
+  "title": "Repair evidence for Stage10 evaluation-volume consistency"
+}

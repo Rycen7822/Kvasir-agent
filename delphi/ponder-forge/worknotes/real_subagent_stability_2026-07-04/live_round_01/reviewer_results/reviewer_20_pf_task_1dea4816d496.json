@@ -1,0 +1,11 @@
+{
+  "confidence": 0.92,
+  "independent_from_task_id": "pf_task_2b3d84e57650",
+  "rationale": "Visible evidence directly supports the asserted Stage10 volume consistency: evidence [1] reports recovery_endpoints=1380, target_write_ledger=1380, seed_robustness=252, token_weighted_eval=366, component_ablation=11, causal_patching_results=96, and large_eval passed with 360 evaluated endpoint rows versus 360 expected; evidence [2] reports all six large-eval splits passed; evidence [3] says the final report independently lists the same counts. No visible evidence contradicts the assertion.",
+  "required_actions": [],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_1dea4816d496",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_dd32286c9e3a",
+  "verdict": "accept"
+}

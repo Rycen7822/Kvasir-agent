@@ -1,0 +1,11 @@
+{
+  "confidence": 0.84,
+  "independent_from_task_id": "pf_task_5887e57900e4",
+  "rationale": "The visible producer report and evidence support the assertion's scoped structural/count-consistency claims. Evidence pf_evidence_b8f169e142c6 reports stage10_dirs_all_present=true, artifact_hash_count=29, and concrete row/count totals for token-weighted eval, split ledger, recovery/target-write ledgers, seed robustness, component ablation, causal patching, and stress tests from a read-only consistency audit with exit_code=0. Evidence pf_evidence_1fe8bc4b4f1b independently confirms REPORT_AUDIT artifact_hash_count=29 and passed report marker/forbidden-claim scans. The reproduction log evidence reports a final no-edit audit exit_code=0 and 75 passed tests. The noted model_family_gate_met state-hygiene conflict is a caveat outside the assertion's enumerated directory/hash/row-count consistency claims, so it does not require rejecting this assertion.",
+  "required_actions": [],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_29ba8d9ede85",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_d955bf03008d",
+  "verdict": "accept"
+}

@@ -1,0 +1,13 @@
+{
+  "confidence": 0.78,
+  "independent_from_task_id": "pf_task_54b46b52daa9",
+  "rationale": "The visible evidence supports the mixed-result structure: large/heldout and seed gates passed with target_eval_rows=360, CE selection is closed, and selector metrics show LoopCert-only does not beat CFC-only on both regret@3 and cost while OrbitRepair-Proxy does beat CFC-only on both. However, the payload does not explicitly substantiate the stronger causal/narrative reason that OrbitRepair-Proxy is an inherited proxy/baseline rather than merely a distinct selector; that clause should either be directly evidenced or softened.",
+  "required_actions": [
+    "Add visible evidence that OrbitRepair-Proxy is an inherited proxy/baseline, or revise the assertion to say only that OrbitRepair-Proxy is distinct from LoopCert-only and therefore should not be narrated as LoopCert-only/LoopCert-GAAS success."
+  ],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_c0c8aed5858a",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_60b7b1f9cfb2",
+  "verdict": "revise"
+}

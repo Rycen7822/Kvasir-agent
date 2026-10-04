@@ -1,0 +1,11 @@
+{
+  "confidence": 0.82,
+  "independent_from_task_id": "pf_task_3bf4d8a0bc46",
+  "rationale": "The visible evidence supports the bounded-prose assertion. Evidence pf_evidence_5a8090c3341e reports exit_code=0 with missing_report_markers=[], report_markers_passed=true, forbidden_claim_hits=[], and forbidden_claim_scan_passed=true. Evidence pf_evidence_0d657d9f2d75 shows the audit script explicitly treats downstream utility improvement, oral-ready claims, pretrained superiority, and guaranteed recovery as forbidden phrases. Evidence pf_evidence_6bd553806eca directly supports closed oral-readiness/CE-selection/model-family gates by recording the oral-ready gate as closed because CE selection did not beat CFC-only on both macro regret@3 and cost-to-contain and model-family coverage is resource-gated. The support for downstream utility and pretrained-reference superiority is primarily via forbidden-claim coverage and absence of hits rather than a separate gate artifact, so confidence is not maximal, but the assertion about the report/package prose being conservatively bounded is supported.",
+  "required_actions": [],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_67c95754289c",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_ed0104d32788",
+  "verdict": "accept"
+}

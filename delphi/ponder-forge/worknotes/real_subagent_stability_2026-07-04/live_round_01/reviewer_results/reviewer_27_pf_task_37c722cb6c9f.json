@@ -1,0 +1,11 @@
+{
+  "confidence": 0.9,
+  "independent_from_task_id": "pf_task_ddf67df5fafc",
+  "rationale": "The visible evidence supports the assertion: gate aggregation reports large_eval_gate_passed=true and seed_robustness_gate_passed=true while ce_selection_gate_passed=false, model_family_gate_met=false, downstream_gate_status=closed, and oral_ready_gate_status=closed. It also reports cfc_baseline_retained=true. Selector metrics show LoopCert-only has lower regret@3 than CFC-only but higher mean cost-to-contain and beats_cfc_cost=false, while OrbitRepair-Proxy has stronger metrics and beats CFC cost. The cited gate logic requires an eligible LoopCert-family contender to beat CFC-only on both regret and cost, and the gate decision corroborates CE-selection failure plus closed downstream/oral-ready gates, supporting the claim that OrbitRepair-Proxy did not open the CE gate as an eligible LoopCert-family contender.",
+  "required_actions": [],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_37c722cb6c9f",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_27e985aaa9a3",
+  "verdict": "accept"
+}

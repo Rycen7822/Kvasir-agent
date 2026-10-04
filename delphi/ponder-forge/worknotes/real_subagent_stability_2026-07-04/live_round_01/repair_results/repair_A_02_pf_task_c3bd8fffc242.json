@@ -1,0 +1,78 @@
+{
+  "artifacts": [],
+  "assertions": [
+    {
+      "assertion_type": "data_result",
+      "confidence": 0.94,
+      "critical": true,
+      "evidence": [
+        {
+          "command": "python3 - <<'PY'\nimport csv, json, pathlib\nroot = pathlib.Path('/home/xu/project/loop/DeepScientist/quests/001')\nstage10 = root / 'experiments/stage10'\nstate = json.loads((stage10 / '00_freeze/STAGE10_STATE.json').read_text())\nmeta = json.loads((stage10 / '08_meta/STAGE10_META_ANALYSIS.json').read_text())\nrows = list(csv.DictReader((stage10 / '07_large_eval/TOKEN_WEIGHTED_EVAL.csv').open(newline='')))\nformal = [r for r in rows if r.get('source_endpoint_type') == 'Y_recover']\nnegative = [r for r in formal if float(r['recovered_fraction']) < 0]\nplot_exts = {'.png', '.pdf', '.svg'}\nplots = sorted(str(p.relative_to(stage10)) for p in stage10.rglob('*') if p.is_file() and p.suffix.lower() in plot_exts)\nprint(json.dumps({\n  'stage10_state_coverage_model_family_gate_met': state['coverage']['model_family_gate_met'],\n  'stage10_state_top_level_model_family_gate_met': state['model_family_gate_met'],\n  'stage10_meta_model_family_gate_met': meta['gate_results']['model_family_gate_met'],\n  'token_weighted_eval_rows': len(rows),\n  'formal_heldout_y_recover_rows': len(formal),\n  'negative_formal_heldout_recovered_fraction_rows': len(negative),\n  'negative_recovered_fraction_min': min(float(r['recovered_fraction']) for r in negative),\n  'negative_recovered_fraction_max': max(float(r['recovered_fraction']) for r in negative),\n  'stage10_png_pdf_svg_plot_artifact_count': len(plots),\n  'stage10_png_pdf_svg_plot_artifacts': plots,\n}, sort_keys=True))\nPY",
+          "directness": 0.98,
+          "evidence_type": "metric_output",
+          "exit_code": 0,
+          "freshness": 0.9,
+          "metric": {
+            "formal_heldout_y_recover_rows": 360,
+            "negative_formal_heldout_recovered_fraction_rows": 28,
+            "negative_recovered_fraction_max": -0.02645926822707973,
+            "negative_recovered_fraction_min": -5.907575301080904,
+            "stage10_meta_model_family_gate_met": false,
+            "stage10_png_pdf_svg_plot_artifact_count": 0,
+            "stage10_png_pdf_svg_plot_artifacts": [],
+            "stage10_state_coverage_model_family_gate_met": true,
+            "stage10_state_top_level_model_family_gate_met": false,
+            "token_weighted_eval_rows": 366
+          },
+          "quote_or_observation": "Output: {\"formal_heldout_y_recover_rows\": 360, \"negative_formal_heldout_recovered_fraction_rows\": 28, \"negative_recovered_fraction_max\": -0.02645926822707973, \"negative_recovered_fraction_min\": -5.907575301080904, \"stage10_meta_model_family_gate_met\": false, \"stage10_png_pdf_svg_plot_artifact_count\": 0, \"stage10_png_pdf_svg_plot_artifacts\": [], \"stage10_state_coverage_model_family_gate_met\": true, \"stage10_state_top_level_model_family_gate_met\": false, \"token_weighted_eval_rows\": 366}.",
+          "relevance": 0.98,
+          "reliability": 0.95,
+          "source_ref": "read-only Python inspection over /home/xu/project/loop/DeepScientist/quests/001/experiments/stage10",
+          "title": "Read-only Stage10 caveat metrics"
+        },
+        {
+          "directness": 0.86,
+          "evidence_type": "transform_script",
+          "freshness": 0.8,
+          "quote_or_observation": "stage10_large_eval.py declares TOKEN_WEIGHTED_EVAL and includes source_endpoint_type, final/frozen/original CE fields, recovery_gain, and recovered_fraction in the token-weighted output schema, which is the table inspected by the metric command.",
+          "relevance": 0.9,
+          "reliability": 0.9,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/scripts/stage10_large_eval.py",
+          "title": "Large-eval table producer exposes recovered_fraction and Y_recover fields"
+        },
+        {
+          "directness": 0.84,
+          "evidence_type": "transform_script",
+          "freshness": 0.8,
+          "quote_or_observation": "stage10_meta_analysis.py computes model_family_gate_met from MODEL_AVAILABILITY, emits STAGE10_META_ANALYSIS.json and GATE_DECISION.md, and lists 'Model-family gate is resource-gated' when that gate is not met.",
+          "relevance": 0.88,
+          "reliability": 0.9,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/scripts/stage10_meta_analysis.py",
+          "title": "Meta-analysis gate logic consumes model availability for model-family gate"
+        },
+        {
+          "directness": 0.9,
+          "evidence_type": "sanity_check",
+          "freshness": 0.85,
+          "quote_or_observation": "GATE_DECISION.md records downstream gate=closed, oral ready gate=closed, gate verdict=closed, model_family_gate_met=False, and closed reason 'Model-family gate is resource-gated', so the STAGE10_STATE coverage.model_family_gate_met=true field should be treated as a state consistency caveat rather than evidence of an open gate.",
+          "relevance": 0.94,
+          "reliability": 0.92,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/08_meta/GATE_DECISION.md",
+          "title": "Gate decision corroborates the closed model-family gate"
+        }
+      ],
+      "importance": 0.94,
+      "repairs_assertion_id": "pf_assertion_9bae40f9a8a0",
+      "text": "Read-only Stage10 sanity repair: core accounting can support only the conservative closed-gate conclusion, because STAGE10_STATE contains an internal model-family gate conflict (coverage.model_family_gate_met=true while top-level model_family_gate_met=false and STAGE10_META_ANALYSIS gate_results.model_family_gate_met=false), 28 of 360 formal heldout Y_recover rows have negative recovered_fraction values, and no PNG/PDF/SVG plot artifacts exist under experiments/stage10."
+    }
+  ],
+  "confidence": 0.94,
+  "files_created_or_modified": [],
+  "issues_encountered": [],
+  "role": "gate_gap_repairer",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Read-only Stage10 inspection repaired the missing analysis-profile evidence gap for pf_assertion_9bae40f9a8a0. A successful metric command confirms the internal model-family gate conflict in STAGE10_STATE (coverage true vs top-level false, with meta false), 28/360 formal heldout Y_recover rows with negative recovered_fraction, and zero PNG/PDF/SVG plot artifacts under experiments/stage10. No source quest files were edited.",
+  "target_assertion_id": "pf_assertion_9bae40f9a8a0",
+  "task_id": "pf_task_c3bd8fffc242",
+  "title": "Repair evidence for Stage10 core accounting sanity caveats"
+}

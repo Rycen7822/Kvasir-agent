@@ -1,0 +1,11 @@
+{
+  "confidence": 0.86,
+  "independent_from_task_id": "pf_task_3b215b28ade2",
+  "rationale": "The visible producer report and evidence support the assertion: the recovery runner evidence states it performs adapter training/checkpoint copying and writes recovery CSVs, a ledger, summaries, and state; the large-eval runner evidence states it writes manifests, audit/summary JSON, and state in normal modes. The report explicitly says no full reproduction was attempted because these surfaces would write under experiments/stage10, and evidence [3] identifies the final-report audit as a safe non-regenerating command. This is sufficient to accept the read-only constraint conclusion, though the exact boundary of all possible safe stdout-only checks is supported mainly by the producer summary rather than separate artifact evidence.",
+  "required_actions": [],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_9377f7099a21",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_1e184b937609",
+  "verdict": "accept"
+}

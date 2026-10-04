@@ -1,0 +1,69 @@
+{
+  "artifacts": [],
+  "assertions": [
+    {
+      "assertion_type": "reproduction_log",
+      "confidence": 0.94,
+      "critical": true,
+      "evidence": [
+        {
+          "command": "python experiments/stage10/scripts/stage10_final_report_audit.py --quest-root /home/xu/project/loop/DeepScientist/quests/001",
+          "directness": 0.95,
+          "evidence_type": "metric_output",
+          "exit_code": 0,
+          "freshness": 1.0,
+          "metric": {
+            "stdout_json": {
+              "forbidden_claim_hits": [],
+              "forbidden_claim_scan_passed": true,
+              "missing_report_markers": [],
+              "report_markers_passed": true,
+              "status": "passed"
+            }
+          },
+          "quote_or_observation": "The command printed {\"forbidden_claim_hits\": [], \"forbidden_claim_scan_passed\": true, \"missing_report_markers\": [], \"report_markers_passed\": true, \"status\": \"passed\"} and exited 0; it was run from the quest root and did not regenerate Stage10 artifacts.",
+          "relevance": 0.96,
+          "reliability": 0.98,
+          "source_ref": "terminal:/home/xu/project/loop/DeepScientist/quests/001",
+          "title": "Stdout-only Stage10 final-report audit completed successfully"
+        },
+        {
+          "directness": 0.96,
+          "evidence_type": "reproduction_log",
+          "freshness": 0.95,
+          "locator": "stage10_recovery_train_eval.py:681-858; stage10_large_eval.py:1358-1410,1478-1539; stage10_paper_package.py:652-704",
+          "quote_or_observation": "Source inspection shows stage10_recovery_train_eval updates STAGE10_STATE and writes run manifests, recovery curves/endpoints, seed robustness, TARGET_WRITE_LEDGER, summary JSON/MD, then prints a summary; stage10_large_eval writes LARGE_EVAL_MANIFEST/LARGE_EVAL_SUMMARY and aggregate outputs plus STAGE10_STATE; stage10_paper_package writes the claim ledger, reviewer attack packs, oral gate, final report, REPORT_AUDIT, and updates STAGE10_STATE. These are not safe to rerun in a read-only quest.",
+          "relevance": 0.97,
+          "reliability": 0.97,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/scripts",
+          "title": "Primary Stage10 runners are write-producing and state-updating"
+        },
+        {
+          "directness": 0.95,
+          "evidence_type": "sanity_check",
+          "freshness": 0.95,
+          "locator": "stage10_final_report_audit.py:1-2,33-50; REPORT_AUDIT.json:409-416; STAGE10_RESULTS_REPORT.md:11",
+          "quote_or_observation": "The audit script docstring says it audits a generated Stage10 final report without regenerating the package; main resolves the report path, reads text, and prints audit JSON. Existing REPORT_AUDIT status is passed_S10-15b_paper_package_final_report_handoff with uses_target=false, writes_Y_frozen=false, writes_Y_recover=false, writes_downstream=false, and the final report states that the package reads frozen Stage10 artifacts and does not rerun training or target evaluation.",
+          "relevance": 0.95,
+          "reliability": 0.97,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/scripts/stage10_final_report_audit.py; /home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/12_paper_package/REPORT_AUDIT.json; /home/xu/project/loop/DeepScientist/quests/001/experiments/report_archive/STAGE10_RESULTS_REPORT.md",
+          "title": "Safe audit path is read-only/stdout-only and existing report audit is non-target-writing"
+        }
+      ],
+      "importance": 0.9,
+      "supersedes_assertion_id": "pf_assertion_1e184b937609",
+      "text": "Under the read-only quest constraint, full Stage10 reproduction should not be attempted here: Stage10 recovery, large-eval, and paper-package runners create or overwrite run manifests, CSV/JSON/MD outputs, package reports, and STAGE10_STATE under experiments/stage10, while the safe check exercised for this repair was the stdout-only final-report audit command, which exited 0 with status passed."
+    }
+  ],
+  "confidence": 0.94,
+  "files_created_or_modified": [],
+  "issues_encountered": [
+    "Read-only quest git status check timed out after 60s; no write commands were run against the quest. Ponder-forge git status showed only an existing untracked ../CODEX_STATE.md outside this repair."
+  ],
+  "role": "gate_gap_repairer",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Repaired pf_assertion_1e184b937609 by narrowing it to a read-only reproduction-log assertion and adding reviewer-visible analysis evidence: a metric_output command with exit_code 0 from the stdout-only final-report audit, reproduction-log source inspection showing full Stage10 runners write under experiments/stage10 and update state, and a sanity check confirming the final-report audit path is read-only/stdout-only. No files were created or modified.",
+  "target_assertion_id": "pf_assertion_1e184b937609",
+  "task_id": "pf_task_190423812ad2",
+  "title": "Repair profile-evidence gap for Stage10 read-only reproduction boundary assertion"
+}

@@ -1,0 +1,10 @@
+{
+  "artifacts": [],
+  "assertions": [],
+  "confidence": 1.0,
+  "role": "gate_gap_repairer",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Bookkeeping closeout: this generic reconcile-created repair task for pf_assertion_0f109738e077 was superseded by final independent reviewer verdicts recorded in 57_final_reviewer_record_summary.json; no new assertion or evidence is added.",
+  "task_id": "pf_task_eb5c7b43f48f",
+  "title": "No-op closeout for superseded reconcile task pf_task_eb5c7b43f48f"
+}

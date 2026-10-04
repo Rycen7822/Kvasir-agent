@@ -1,0 +1,11 @@
+{
+  "confidence": 0.91,
+  "independent_from_task_id": "pf_task_ea582a8376db",
+  "rationale": "Visible evidence supports the assertion: the consistency command reports closed verdict with core row counts present (target_rows=360, recovery_rows=1380, token_weighted_rows=366), CE gate false, conflicting model-family gate fields (coverage true while top-level false), 28 negative recovered_fraction values with minimum -5.907575301080904, and plot artifact searches for png/pdf/svg returning total_count=0. The producer report and audit evidence align with a conservative closed-gate conclusion and caveated narrative use.",
+  "required_actions": [],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_adfe06fb2b25",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_9bae40f9a8a0",
+  "verdict": "accept"
+}

@@ -1,0 +1,11 @@
+{
+  "confidence": 0.96,
+  "independent_from_task_id": "pf_task_d8d64ef0c037",
+  "rationale": "The visible producer evidence supports the narrowed selector claim. The metric_output evidence exited 0 and reports ce_selection_gate_passed=false; CFC-only regret@3=0.044697468910847644 and cost=13.833333333333334; OrbitRepair-Proxy regret@3=0.0058068827370489386 and cost=4.833333333333333 with both beats-CFC flags true; LoopCert-only, Pareto-front, risk-calibrated blend, and family-balanced blend improve regret versus CFC-only but fail the cost-to-contain criterion. The dataset evidence repeats the selector metric values, the transform_script evidence identifies exactly those four names as the CE gate contender set requiring both flags, and the GATE_DECISION sanity check records ce_selection_gate_passed=False with the same closed reason. No visible evidence contradicts the assertion.",
+  "required_actions": [],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_441f7e3542e1",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_c8ed5d1db11c",
+  "verdict": "accept"
+}

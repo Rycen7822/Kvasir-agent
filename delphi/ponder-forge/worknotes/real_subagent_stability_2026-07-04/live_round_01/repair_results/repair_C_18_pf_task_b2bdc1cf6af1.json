@@ -1,0 +1,114 @@
+{
+  "artifacts": [],
+  "assertions": [
+    {
+      "assertion_type": "data_result",
+      "confidence": 0.91,
+      "evidence": [
+        {
+          "artifact_path": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/08_meta/SELECTOR_METRICS.csv",
+          "command": "python3 - <<'PY'\nimport csv, json\nfrom pathlib import Path\nroot = Path('/home/xu/project/loop/DeepScientist/quests/001')\nmetrics_path = root/'experiments/stage10/08_meta/SELECTOR_METRICS.csv'\nmeta_path = root/'experiments/stage10/08_meta/STAGE10_META_ANALYSIS.json'\nwith metrics_path.open(newline='') as f:\n    rows = list(csv.DictReader(f))\nmeta = json.loads(meta_path.read_text())\nloopcert_family = ['LoopCert-only','family-balanced blend','risk-calibrated blend','Pareto-front']\nselected = {r['selector_name']: {\n    'macro_normalized_regret_at3': float(r['macro_normalized_regret_at3']),\n    'mean_cost_to_contain_winner': float(r['mean_cost_to_contain_winner']),\n    'delta_macro_normalized_regret_at3_vs_cfc_only': float(r['delta_macro_normalized_regret_at3_vs_cfc_only']),\n    'delta_mean_cost_to_contain_winner_vs_cfc_only': float(r['delta_mean_cost_to_contain_winner_vs_cfc_only']),\n    'beats_cfc_only_on_macro_normalized_regret_at3': r['beats_cfc_only_on_macro_normalized_regret_at3'] == 'True',\n    'beats_cfc_only_on_mean_cost_to_contain_winner': r['beats_cfc_only_on_mean_cost_to_contain_winner'] == 'True',\n    'top3_containments': int(r['top3_containments']),\n    'model_count': int(r['model_count']),\n    'panel_rows': int(r['panel_rows'])\n} for r in rows if r['selector_name'] in loopcert_family + ['CFC-only','OrbitRepair-Proxy']}\nresult = {\n    'selector_metric_rows': len(rows),\n    'gate_results': meta['gate_results'],\n    'cfc_baseline': selected['CFC-only'],\n    'loopcert_pareto_blend_selectors': {name: selected[name] for name in loopcert_family},\n    'all_loopcert_pareto_blend_improve_regret': all(selected[name]['beats_cfc_only_on_macro_normalized_regret_at3'] for name in loopcert_family),\n    'all_loopcert_pareto_blend_fail_cost': all(not selected[name]['beats_cfc_only_on_mean_cost_to_contain_winner'] for name in loopcert_family),\n    'stage9_proxy_row_for_contrast': selected['OrbitRepair-Proxy'],\n}\nprint(json.dumps(result, indent=2, sort_keys=True))\nPY",
+          "directness": 0.98,
+          "evidence_type": "metric_output",
+          "exit_code": 0,
+          "freshness": 0.9,
+          "metric": {
+            "all_loopcert_pareto_blend_fail_cost": true,
+            "all_loopcert_pareto_blend_improve_regret": true,
+            "cfc_baseline": {
+              "macro_normalized_regret_at3": 0.044697468910847644,
+              "mean_cost_to_contain_winner": 13.833333333333334,
+              "model_count": 6,
+              "panel_rows": 360,
+              "top3_containments": 3
+            },
+            "gate_results": {
+              "ce_selection_gate_passed": false,
+              "cfc_baseline_retained": true,
+              "closed_reasons": [
+                "CE selection gate did not beat CFC-only on both macro regret@3 and cost-to-contain",
+                "Model-family gate is resource-gated"
+              ],
+              "downstream_gate_status": "closed",
+              "gate_verdict": "closed",
+              "large_eval_gate_passed": true,
+              "model_family_gate_met": false,
+              "oral_ready_gate_status": "closed",
+              "seed_robustness_gate_passed": true
+            },
+            "loopcert_pareto_blend_selectors": {
+              "LoopCert-only": {
+                "beats_cfc_only_on_macro_normalized_regret_at3": true,
+                "beats_cfc_only_on_mean_cost_to_contain_winner": false,
+                "delta_macro_normalized_regret_at3_vs_cfc_only": -0.012460751734889634,
+                "delta_mean_cost_to_contain_winner_vs_cfc_only": 2.833333333333334,
+                "macro_normalized_regret_at3": 0.03223671717595801,
+                "mean_cost_to_contain_winner": 16.666666666666668
+              },
+              "Pareto-front": {
+                "beats_cfc_only_on_macro_normalized_regret_at3": true,
+                "beats_cfc_only_on_mean_cost_to_contain_winner": false,
+                "delta_macro_normalized_regret_at3_vs_cfc_only": -0.011561394104358733,
+                "delta_mean_cost_to_contain_winner_vs_cfc_only": 2.666666666666666,
+                "macro_normalized_regret_at3": 0.03313607480648891,
+                "mean_cost_to_contain_winner": 16.5
+              },
+              "family-balanced blend": {
+                "beats_cfc_only_on_macro_normalized_regret_at3": true,
+                "beats_cfc_only_on_mean_cost_to_contain_winner": false,
+                "delta_macro_normalized_regret_at3_vs_cfc_only": -0.012460751734889634,
+                "delta_mean_cost_to_contain_winner_vs_cfc_only": 2.833333333333334,
+                "macro_normalized_regret_at3": 0.03223671717595801,
+                "mean_cost_to_contain_winner": 16.666666666666668
+              },
+              "risk-calibrated blend": {
+                "beats_cfc_only_on_macro_normalized_regret_at3": true,
+                "beats_cfc_only_on_mean_cost_to_contain_winner": false,
+                "delta_macro_normalized_regret_at3_vs_cfc_only": -0.012460751734889634,
+                "delta_mean_cost_to_contain_winner_vs_cfc_only": 2.833333333333334,
+                "macro_normalized_regret_at3": 0.03223671717595801,
+                "mean_cost_to_contain_winner": 16.666666666666668
+              }
+            },
+            "selector_metric_rows": 6
+          },
+          "quote_or_observation": "Command completed with exit_code=0. It found 6 selector metric rows; all LoopCert/Pareto/blend rows beat CFC-only on macro_normalized_regret_at3 and all fail to beat CFC-only on mean_cost_to_contain_winner. Gate results include ce_selection_gate_passed=false, large_eval_gate_passed=true, downstream_gate_status=closed, and cfc_baseline_retained=true.",
+          "relevance": 0.98,
+          "reliability": 0.95,
+          "source_ref": "read-only command over /home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/08_meta/SELECTOR_METRICS.csv and STAGE10_META_ANALYSIS.json",
+          "title": "Selector regret/cost recomputation from Stage10 metrics"
+        },
+        {
+          "artifact_path": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/08_meta/GATE_DECISION.md",
+          "directness": 0.95,
+          "evidence_type": "reproduction_log",
+          "freshness": 0.88,
+          "quote_or_observation": "The recorded selector summary lists CFC-only regret@3=0.0446974689108 and cost=13.8333333333; LoopCert-only/family-balanced/risk-calibrated have lower regret@3=0.032236717176 but higher cost=16.6666666667; Pareto-front has lower regret@3=0.0331360748065 but higher cost=16.5. The closed reason is that CE selection did not beat CFC-only on both macro regret@3 and cost-to-contain.",
+          "relevance": 0.96,
+          "reliability": 0.9,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/08_meta/GATE_DECISION.md:16-28",
+          "title": "Recorded Stage10 S10-13 gate decision"
+        },
+        {
+          "artifact_path": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/10_downstream/DOWNSTREAM_GATE_STATUS.json",
+          "directness": 0.9,
+          "evidence_type": "sanity_check",
+          "freshness": 0.88,
+          "quote_or_observation": "Independent Stage10 gate artifacts agree that CE selection is closed, downstream_gate_status is closed, large_eval_gate_passed=true, and seed_robustness_gate_passed=true. That makes the priority inference conservative: fix selector regret/cost against CFC-only before downstream/oral claims, rather than extending large-eval plumbing.",
+          "relevance": 0.94,
+          "reliability": 0.9,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/10_downstream/DOWNSTREAM_GATE_STATUS.json:1-16 and /home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/08_meta/STAGE10_META_ANALYSIS.json:2-14",
+          "title": "Gate-boundary sanity check"
+        }
+      ],
+      "importance": 0.94,
+      "text": "Stage10's current LoopCert/Pareto/blend selector family beats CFC-only on macro normalized regret@3 but fails the cost-to-contain criterion: LoopCert-only, family-balanced blend, and risk-calibrated blend have regret@3=0.03223671717595801 versus CFC-only 0.044697468910847644 but cost=16.666666666666668 versus CFC-only 13.833333333333334, while Pareto-front has regret@3=0.03313607480648891 and cost=16.5. Because ce_selection_gate_passed=false while large_eval_gate_passed=true, the next improvement priority should be a Stage10-valid LoopCert/Pareto/blend selector that beats CFC-only on both regret@3 and cost-to-contain, not additional large-eval plumbing."
+    }
+  ],
+  "role": "gate_gap_repairer",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Repaired the analysis-profile gate gap for pf_assertion_cda1fbb9376c by adding metric_output, reproduction_log, and sanity_check evidence from read-only Stage10 selector/gate artifacts. No source files were edited or created.",
+  "target_assertion_id": "pf_assertion_cda1fbb9376c",
+  "task_id": "pf_task_b2bdc1cf6af1",
+  "title": "Repair evidence for Stage10 CE selector priority assertion"
+}

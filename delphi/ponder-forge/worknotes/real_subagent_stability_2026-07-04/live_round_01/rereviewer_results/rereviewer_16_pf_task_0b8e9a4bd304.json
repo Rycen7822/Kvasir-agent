@@ -1,0 +1,11 @@
+{
+  "confidence": 0.93,
+  "independent_from_task_id": "pf_task_41528e7a3fb0",
+  "rationale": "The visible producer evidence supports the bounded assertion. metric_output pf_evidence_fe9a767b0d44 has exit_code=0 and reports the asserted counts: 360 formal target eval rows, 366 token-weighted rows including 6 original-reference rows, 1380 recovery endpoint rows, 1380 target-write ledger rows, 252 seed-robustness rows, 6 selector rows/count, 11 component-ablation rows, and 96 causal-patching rows. The sanity_check evidence also supports the boundary condition by reporting downstream_gate_status=closed, downstream_run_executed=false, result_manifest=null, and downstream_utility=not_evaluated. The assertion is appropriately limited to artifact-level Stage10 package analysis and does not overclaim downstream utility.",
+  "required_actions": [],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_0b8e9a4bd304",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_3bb2ab600bf1",
+  "verdict": "accept"
+}

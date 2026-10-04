@@ -1,0 +1,11 @@
+{
+  "confidence": 0.91,
+  "independent_from_task_id": "pf_task_c30a7bbc8a49",
+  "rationale": "The visible producer report and evidence support the narrowed assertion. Evidence [2] and [3] show the S10-15b package/report are conservative and closed-gate: report markers and forbidden-claim scan pass, forbidden hits are empty, downstream/oral gates are closed, model-family/CE gates are false, and write-safety flags are false. Evidence [1] supports the stale STAGE10_STATE cleanup gap by reporting a current state hash/size/line count that no longer matches the REPORT_AUDIT/final-report state rows, while [2] and [3] give the old recorded hash a1c66af5f4b672df76b5fe8d717f63cea297811bc7b7dd7ff057ad7469723a12 with 36868 bytes and 876 lines. Evidence [1] and [4] support the training-instability predicate issue: the audit records 1380 training-instability rows because the predicate does not treat completed_without_oom_restart as benign despite the completed recovery endpoint statuses. The assertion is appropriately bounded as a cleanup-before-reuse claim rather than an overclaim about immutable final evidence.",
+  "required_actions": [],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_50d6b6c2ec9b",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_fb42a6e66505",
+  "verdict": "accept"
+}

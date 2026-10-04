@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+
+# Local runtime state
+*.sqlite3
+*.db
+.idea-spark-runtime/
+
+# Local experiments and scratch material
+local-test/
+tmp/
+.idea_spark_phase_ledger.md
+idea_spark_phase_ledger.md
+idea_spark_handoffs/

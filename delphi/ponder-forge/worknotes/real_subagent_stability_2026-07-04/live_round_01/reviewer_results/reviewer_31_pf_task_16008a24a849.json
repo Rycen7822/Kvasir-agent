@@ -1,0 +1,11 @@
+{
+  "confidence": 0.94,
+  "independent_from_task_id": "pf_task_21147cd23356",
+  "rationale": "The visible evidence supports the assertion: all 1380 recovery endpoint rows are completed_recovery_eval with oom_restart_status=completed_without_oom_restart, while the component audit reports taxonomy_counts.training instability=1380. The cited transform-script evidence states count_training_instability() only treats none, no_oom_restart, and completed_without_oom as benign, excluding the observed completed_without_oom_restart value, which explains the likely miscount. The recovery summary also confirms the endpoint row accounting matches 1380 rows.",
+  "required_actions": [],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_16008a24a849",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_331c9ae377eb",
+  "verdict": "accept"
+}

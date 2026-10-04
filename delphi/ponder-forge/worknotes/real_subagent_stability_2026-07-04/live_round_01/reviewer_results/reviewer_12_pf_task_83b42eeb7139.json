@@ -1,0 +1,14 @@
+{
+  "confidence": 0.78,
+  "independent_from_task_id": "pf_task_bc25101de55b",
+  "rationale": "Visible evidence supports the closed CE selection gate, closed/resource-gated model-family gate, closed downstream/oral boundary, no downstream execution, large-eval gate passed, and conservative/forbidden-claim framing via the producer report and evidence [1]-[3]. However, the assertion overstates the visible evidence by saying the seed-robustness gate passed: evidence [1] only reports seed_robustness_rows=252, not a seed_robustness_gate_passed=true result. The universal-recovery exclusion is also only indirectly supported by forbidden_claim_scan_passed/forbidden-claims sections rather than an explicit visible boundary statement. A narrower assertion would be supported.",
+  "required_actions": [
+    "Revise the assertion to avoid claiming seed-robustness gate passage unless a visible gate-pass metric is provided.",
+    "If retaining the universal-recovery framing limitation, cite visible evidence that the forbidden-claim scan or claim ledger explicitly included universal-recovery claims."
+  ],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_83b42eeb7139",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_9afb56206de3",
+  "verdict": "revise"
+}

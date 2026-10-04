@@ -1,0 +1,11 @@
+{
+  "confidence": 0.9,
+  "independent_from_task_id": "pf_task_d1d51b47b065",
+  "rationale": "The visible evidence supports the clarification: evidence [1] states OrbitRepair-Proxy beats CFC-only on both recorded selector metrics while LoopCert-only, risk-calibrated, family-balanced, and Pareto-front contenders do not beat CFC on cost-to-contain; evidence [2] states the CE gate contender_names exclude OrbitRepair-Proxy and include only the Stage10 LoopCert-family/Pareto contender set; evidence [3] shows the closed CE gate wording refers to not beating CFC-only on both metrics. No visible evidence contradicts the assertion.",
+  "required_actions": [],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_4b0891fa39bc",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_0ab1d0dad0f3",
+  "verdict": "accept"
+}

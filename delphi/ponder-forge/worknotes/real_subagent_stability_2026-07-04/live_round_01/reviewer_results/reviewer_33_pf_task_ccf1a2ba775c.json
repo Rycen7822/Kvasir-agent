@@ -1,0 +1,13 @@
+{
+  "confidence": 0.86,
+  "independent_from_task_id": "pf_task_bc3265e7932c",
+  "rationale": "The visible evidence supports the large heldout evaluation portions: LARGE_EVAL_SUMMARY reports status=passed_S10-12_large_heldout_eval_alignment_audit, evaluated_endpoint_rows=360, expected_formal_endpoint_rows=360, total_table_rows_including_original=366, and hard_failures=[]. The split summary and alignment audit further support passed split-boundary/overlap checks for the active model splits. However, no visible evidence item or artifact substantiates the assertion's seed robustness claim that 252 rows were recorded. The producer summary mentions seed-robustness checks, but the provided evidence list does not include a seed robustness artifact, row count, or command output. The assertion therefore overclaims relative to the visible reviewer context.",
+  "required_actions": [
+    "Provide visible seed robustness evidence showing 252 recorded rows, or revise the assertion to limit it to the supported large heldout evaluation claims."
+  ],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_ccf1a2ba775c",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_768d80bff48e",
+  "verdict": "revise"
+}

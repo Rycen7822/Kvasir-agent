@@ -1,0 +1,11 @@
+{
+  "confidence": 0.91,
+  "independent_from_task_id": "pf_task_0d476d8d8e1a",
+  "rationale": "The visible evidence supports the assertion: evidence [1] reports gate_verdict=closed, ce_selection_gate_passed=false, model_family_gate_met=false, downstream_gate_status=closed, oral_ready_gate_status=closed, target/evaluated endpoint rows matching 360, and a passed Stage10 large heldout alignment audit; evidence [2] reports downstream_run_executed=false; evidence [3] records the Stage10 formal route complete through S10-15c with final regression and no next required Stage10 experiment. These points substantiate both Stage10 completion/internal audit and the stated closed authoritative gate outcome.",
+  "required_actions": [],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_9663f8768f88",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_37bc07a8e86c",
+  "verdict": "accept"
+}

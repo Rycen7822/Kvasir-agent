@@ -1,0 +1,85 @@
+{
+  "artifacts": [],
+  "assertions": [
+    {
+      "assertion_type": "data_result",
+      "confidence": 0.95,
+      "evidence": [
+        {
+          "artifact_path": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/12_paper_package/REPORT_AUDIT.json",
+          "command": "python3 -c \"import json; from pathlib import Path; root=Path('/home/xu/project/loop/DeepScientist/quests/001'); audit=json.loads((root/'experiments/stage10/12_paper_package/REPORT_AUDIT.json').read_text()); ledger=(root/'experiments/stage10/12_paper_package/STAGE10_CLAIM_LEDGER.md').read_text().splitlines(); report=(root/'experiments/report_archive/STAGE10_RESULTS_REPORT.md').read_text(); rows=[l for l in ledger if l.startswith('| ') and not l.startswith('|---') and not l.startswith('| claim ')]; assert audit['status']=='passed_S10-15b_paper_package_final_report_handoff'; assert audit['artifact_hash_count']==len(audit['artifact_records'])==29; assert audit['claim_ledger_rows']==len(rows)==9; assert audit['report_markers_passed'] and audit['missing_report_markers']==[]; assert audit['forbidden_claim_hits']==[] and audit['forbidden_claim_scan_passed']; assert audit['uses_target'] is False and audit['writes_Y_frozen'] is False and audit['writes_Y_recover'] is False and audit['writes_downstream'] is False; assert all(m in report for m in audit['required_report_markers']); print(json.dumps({'audit_status':audit['status'],'artifact_hash_count':audit['artifact_hash_count'],'artifact_record_count':len(audit['artifact_records']),'claim_ledger_rows_reported':audit['claim_ledger_rows'],'claim_ledger_rows_counted':len(rows),'report_markers_passed':audit['report_markers_passed'],'missing_report_markers':audit['missing_report_markers'],'forbidden_claim_hits':audit['forbidden_claim_hits'],'forbidden_claim_scan_passed':audit['forbidden_claim_scan_passed'],'uses_target':audit['uses_target'],'writes_Y_frozen':audit['writes_Y_frozen'],'writes_Y_recover':audit['writes_Y_recover'],'writes_downstream':audit['writes_downstream']}, sort_keys=True))\"",
+          "directness": 1.0,
+          "evidence_type": "metric_output",
+          "exit_code": 0,
+          "freshness": 0.95,
+          "metric": {
+            "artifact_hash_count": 29,
+            "artifact_record_count": 29,
+            "audit_status": "passed_S10-15b_paper_package_final_report_handoff",
+            "claim_ledger_rows_counted": 9,
+            "claim_ledger_rows_reported": 9,
+            "forbidden_claim_hits": [],
+            "forbidden_claim_scan_passed": true,
+            "missing_report_markers": [],
+            "report_markers_passed": true,
+            "uses_target": false,
+            "writes_Y_frozen": false,
+            "writes_Y_recover": false,
+            "writes_downstream": false
+          },
+          "quote_or_observation": "The command exited with code 0 after asserting audit status, artifact record count, claim-ledger row count, report marker presence, forbidden-claim scan status, and package write flags.",
+          "relevance": 1.0,
+          "reliability": 0.96,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001",
+          "title": "Read-only Stage10 paper-package audit metric check"
+        },
+        {
+          "artifact_path": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/12_paper_package/REPORT_AUDIT.json",
+          "directness": 1.0,
+          "evidence_type": "sanity_check",
+          "freshness": 0.95,
+          "locator": "lines 2, 327-333, 389-416",
+          "quote_or_observation": "REPORT_AUDIT.json records artifact_hash_count=29; attack_pack_alias_sha256_equal=true; claim_ledger_rows=9; downstream_gate_status=closed; downstream_run_executed=false; forbidden_claim_hits=[]; forbidden_claim_scan_passed=true; report_markers_passed=true; status=passed_S10-15b_paper_package_final_report_handoff; uses_target=false; writes_Y_frozen=false; writes_Y_recover=false; writes_downstream=false.",
+          "relevance": 1.0,
+          "reliability": 0.95,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/12_paper_package/REPORT_AUDIT.json",
+          "title": "REPORT_AUDIT recorded conservative package status and write-safety fields"
+        },
+        {
+          "artifact_path": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/12_paper_package/STAGE10_CLAIM_LEDGER.md",
+          "directness": 0.98,
+          "evidence_type": "source_excerpt",
+          "freshness": 0.95,
+          "locator": "lines 5-17",
+          "quote_or_observation": "The claim ledger table contains 9 claim rows: model_family_gate, ce_selection_gate, large_eval_alignment, seed_robustness, component_ablation, downstream_utility, oral_gate, original_reference_improvement, and theory_package. Line 17 states: 'Write-safety boundary: this package reads existing Stage10 artifacts only; it does not write $Y_{frozen}$, $Y_{recover}$, or downstream result artifacts.'",
+          "relevance": 0.98,
+          "reliability": 0.94,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/12_paper_package/STAGE10_CLAIM_LEDGER.md",
+          "title": "Claim ledger has 9 claim rows and explicit write-safety boundary"
+        },
+        {
+          "artifact_path": "/home/xu/project/loop/DeepScientist/quests/001/experiments/report_archive/STAGE10_RESULTS_REPORT.md",
+          "directness": 0.94,
+          "evidence_type": "source_excerpt",
+          "freshness": 0.95,
+          "locator": "lines 101-103",
+          "quote_or_observation": "The final report's forbidden-claims section states that it does not claim downstream utility evidence, venue-readiness, pretrained-reference superiority, or universal recovery certainty, and that closed/not-evaluated gates remain closed or not evaluated in the claim ledger.",
+          "relevance": 0.94,
+          "reliability": 0.94,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/report_archive/STAGE10_RESULTS_REPORT.md",
+          "title": "Final report forbidden-claim boundary"
+        }
+      ],
+      "importance": 0.92,
+      "target_assertion_id": "pf_assertion_6d594e8c27bd",
+      "text": "The S10-15b Stage10 paper-package audit record supports a conservative claim boundary: REPORT_AUDIT.json has status passed_S10-15b_paper_package_final_report_handoff, records 29 artifact hash records, records and the current claim ledger contains 9 claim rows, report markers pass with no missing markers, forbidden_claim_hits is [], forbidden_claim_scan_passed is true, uses_target is false, and the package-level write flags for Y_frozen, Y_recover, and downstream are false. This is evidence for the report/package audit state, not a fresh claim that every archived hash still matches files after later S10-15c updates."
+    }
+  ],
+  "profile": "analysis",
+  "role": "gate_gap_repairer",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Repaired the missing analysis-profile evidence gap by adding metric_output evidence with command and exit_code=0 plus direct source excerpts. The assertion is narrowed to the S10-15b REPORT_AUDIT/package record and does not claim fresh hash validity after later S10-15c updates. No source files were edited and no artifacts were created.",
+  "target_assertion_id": "pf_assertion_6d594e8c27bd",
+  "task_id": "pf_task_fa5c0e427f96",
+  "title": "Stage10 S10-15b paper-package conservative-claim audit evidence"
+}

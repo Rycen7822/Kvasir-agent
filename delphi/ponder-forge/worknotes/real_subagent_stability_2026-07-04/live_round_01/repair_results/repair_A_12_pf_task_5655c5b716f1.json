@@ -1,0 +1,79 @@
+{
+  "artifacts": [],
+  "assertions": [
+    {
+      "assertion_type": "data_result",
+      "confidence": 0.96,
+      "critical": true,
+      "evidence": [
+        {
+          "command": "PYTHONDONTWRITEBYTECODE=1 python -c \"import json; from pathlib import Path; root=Path('/home/xu/project/loop/DeepScientist/quests/001'); state=json.loads((root/'experiments/stage10/00_freeze/STAGE10_STATE.json').read_text()); downstream=json.loads((root/'experiments/stage10/10_downstream/DOWNSTREAM_GATE_STATUS.json').read_text()); audit=json.loads((root/'experiments/stage10/12_paper_package/REPORT_AUDIT.json').read_text()); ledger=(root/'experiments/stage10/12_paper_package/STAGE10_CLAIM_LEDGER.md').read_text(); manifest=root/'experiments/stage10/10_downstream/DOWNSTREAM_RESULT_MANIFEST.json'; print(json.dumps({'state_downstream_gate_status': state.get('downstream_gate_status'), 'state_downstream_sanity_status': state.get('downstream_sanity_status'), 'state_stage10_completion_status': state.get('stage10_completion_status'), 'downstream_gate_status': downstream.get('downstream_gate_status'), 'downstream_run_executed': downstream.get('downstream_run_executed'), 'result_manifest': downstream.get('result_manifest'), 'writes_downstream': downstream.get('writes_downstream'), 'writes_Y_frozen': downstream.get('writes_Y_frozen'), 'writes_Y_recover': downstream.get('writes_Y_recover'), 'result_manifest_exists': manifest.exists(), 'audit_downstream_gate_status': audit.get('downstream_gate_status'), 'audit_downstream_run_executed': audit.get('downstream_run_executed'), 'audit_forbidden_claim_scan_passed': audit.get('forbidden_claim_scan_passed'), 'claim_ledger_downstream_line': next(line for line in ledger.splitlines() if line.startswith('| downstream_utility '))}, sort_keys=True))\"",
+          "directness": 0.99,
+          "evidence_type": "metric_output",
+          "exit_code": 0,
+          "freshness": 0.95,
+          "metric": {
+            "audit_downstream_gate_status": "closed",
+            "audit_downstream_run_executed": false,
+            "audit_forbidden_claim_scan_passed": true,
+            "claim_ledger_downstream_line": "| downstream_utility | not_evaluated | downstream_gate_status=closed; downstream_run_executed=False | No downstream result manifest exists under a closed gate. |",
+            "downstream_gate_status": "closed",
+            "downstream_run_executed": false,
+            "result_manifest": null,
+            "result_manifest_exists": false,
+            "state_downstream_gate_status": "closed",
+            "state_downstream_sanity_status": "passed_S10-13_downstream_sanity_gate_closed_status",
+            "state_stage10_completion_status": "complete_with_failed_model_family_gate_and_closed_downstream_oral_gates",
+            "writes_Y_frozen": false,
+            "writes_Y_recover": false,
+            "writes_downstream": false
+          },
+          "quote_or_observation": "{\"audit_downstream_gate_status\": \"closed\", \"audit_downstream_run_executed\": false, \"audit_forbidden_claim_scan_passed\": true, \"claim_ledger_downstream_line\": \"| downstream_utility | not_evaluated | downstream_gate_status=closed; downstream_run_executed=False | No downstream result manifest exists under a closed gate. |\", \"downstream_gate_status\": \"closed\", \"downstream_run_executed\": false, \"result_manifest\": null, \"result_manifest_exists\": false, \"state_downstream_gate_status\": \"closed\", \"state_downstream_sanity_status\": \"passed_S10-13_downstream_sanity_gate_closed_status\", \"state_stage10_completion_status\": \"complete_with_failed_model_family_gate_and_closed_downstream_oral_gates\", \"writes_Y_frozen\": false, \"writes_Y_recover\": false, \"writes_downstream\": false}",
+          "relevance": 0.99,
+          "reliability": 0.97,
+          "source_ref": "read-only aggregation of experiments/stage10/00_freeze/STAGE10_STATE.json, experiments/stage10/10_downstream/DOWNSTREAM_GATE_STATUS.json, experiments/stage10/12_paper_package/REPORT_AUDIT.json, and experiments/stage10/12_paper_package/STAGE10_CLAIM_LEDGER.md"
+        },
+        {
+          "directness": 0.98,
+          "evidence_type": "sanity_check",
+          "freshness": 0.95,
+          "quote_or_observation": "DOWNSTREAM_GATE_STATUS.json records downstream_gate_status=closed, downstream_run_executed=false, result_manifest=null, writes_downstream=false, writes_Y_frozen=false, writes_Y_recover=false; closed_reasons list CE selection and resource-gated model-family failures.",
+          "relevance": 0.98,
+          "reliability": 0.95,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/10_downstream/DOWNSTREAM_GATE_STATUS.json:2-35"
+        },
+        {
+          "directness": 0.99,
+          "evidence_type": "sanity_check",
+          "freshness": 0.95,
+          "quote_or_observation": "The claim ledger row for downstream_utility has status not_evaluated with evidence 'downstream_gate_status=closed; downstream_run_executed=False' and boundary 'No downstream result manifest exists under a closed gate.' The write-safety boundary states the package does not write downstream result artifacts.",
+          "relevance": 0.99,
+          "reliability": 0.95,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/12_paper_package/STAGE10_CLAIM_LEDGER.md:7-17"
+        },
+        {
+          "directness": 0.92,
+          "evidence_type": "reproduction_log",
+          "freshness": 0.9,
+          "quote_or_observation": "Logged command bash-4555e82f ran stage10_downstream_gate.py and passed S10-13 downstream sanity gate closed-status, writing DOWNSTREAM_GATE_STATUS.json with downstream_gate_status=closed, downstream_run_executed=false, result_manifest=null, all write flags false, and no DOWNSTREAM_RESULT_MANIFEST.json; the following regression bash-12444679 reported Pytest: 72 passed.",
+          "relevance": 0.95,
+          "reliability": 0.92,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/正式实验命令.md:1007-1008"
+        }
+      ],
+      "importance": 0.93,
+      "repairs_assertion_id": "pf_assertion_98db7a5c7a65",
+      "text": "Stage10 downstream utility is explicitly not evaluated under the current closed gate: DOWNSTREAM_GATE_STATUS.json and STAGE10_STATE.json report downstream_gate_status=closed, downstream_run_executed=false, result_manifest=null/no manifest file, and write-safety flags false; STAGE10_CLAIM_LEDGER.md marks downstream_utility as not_evaluated. This supports only a no-downstream-utility-claim boundary, not any downstream utility result."
+    }
+  ],
+  "confidence": 0.96,
+  "files_modified": [],
+  "issues": [],
+  "profile": "analysis",
+  "role": "gate_gap_repairer",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Added read-only analysis-profile evidence for pf_assertion_98db7a5c7a65: a metric_output command exited 0 and confirms the downstream gate is closed, no downstream run was executed, result_manifest is null/no manifest file exists, write-safety flags are false, and the claim ledger marks downstream_utility as not_evaluated. No source files were modified.",
+  "target_assertion_id": "pf_assertion_98db7a5c7a65",
+  "task_id": "pf_task_5655c5b716f1",
+  "title": "Repair profile evidence for closed downstream utility boundary"
+}

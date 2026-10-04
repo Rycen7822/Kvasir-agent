@@ -1,0 +1,92 @@
+{
+  "artifacts": [],
+  "assertions": [
+    {
+      "assertion_type": "data_result",
+      "confidence": 0.93,
+      "critical": true,
+      "evidence": [
+        {
+          "command": "python - <<'PY'\nimport csv, json, pathlib\nroot = pathlib.Path('/home/xu/project/loop/DeepScientist/quests/001')\nrows = list(csv.DictReader((root / 'experiments/stage10/08_meta/SELECTOR_METRICS.csv').open(newline='')))\nmeta = json.loads((root / 'experiments/stage10/08_meta/STAGE10_META_ANALYSIS.json').read_text())\norbit = next(r for r in rows if r['selector_name'] == 'OrbitRepair-Proxy')\ncfc = next(r for r in rows if r['selector_name'] == 'CFC-only')\norder = [r['selector_name'] for r in sorted(rows, key=lambda r: (-int(r['top3_containments']), float(r['macro_normalized_regret_at3']), float(r['mean_cost_to_contain_winner'])))]\nassert len(rows) == 6 and order[0] == 'OrbitRepair-Proxy'\nassert orbit['top3_containments'] + '/' + orbit['model_count'] == '5/6'\nassert abs(float(orbit['macro_normalized_regret_at3']) - 0.0058068827370489386) < 1e-18\nassert abs(float(orbit['mean_cost_to_contain_winner']) - 4.833333333333333) < 1e-15\nassert float(orbit['macro_normalized_regret_at3']) < float(cfc['macro_normalized_regret_at3'])\nassert float(orbit['mean_cost_to_contain_winner']) < float(cfc['mean_cost_to_contain_winner'])\nassert meta['gate_results']['ce_selection_gate_passed'] is False and meta['gate_results']['model_family_gate_met'] is False\nprint(json.dumps({'selector_count': len(rows), 'order': order, 'orbitrepair_proxy': {'top3': '5/6', 'macro_normalized_regret_at3': float(orbit['macro_normalized_regret_at3']), 'mean_cost_to_contain_winner': float(orbit['mean_cost_to_contain_winner'])}, 'cfc_only': {'top3': cfc['top3_containments'] + '/' + cfc['model_count'], 'macro_normalized_regret_at3': float(cfc['macro_normalized_regret_at3']), 'mean_cost_to_contain_winner': float(cfc['mean_cost_to_contain_winner'])}, 'gate_results': meta['gate_results']}, sort_keys=True))\nPY",
+          "directness": 1.0,
+          "evidence_type": "metric_output",
+          "exit_code": 0,
+          "freshness": 0.95,
+          "locator": "terminal command run from /home/xu/project/loop/DeepScientist/quests/001",
+          "metric": {
+            "cfc_only": {
+              "macro_normalized_regret_at3": 0.044697468910847644,
+              "mean_cost_to_contain_winner": 13.833333333333334,
+              "top3": "3/6"
+            },
+            "gate_results": {
+              "ce_selection_gate_passed": false,
+              "cfc_baseline_retained": true,
+              "closed_reasons": [
+                "CE selection gate did not beat CFC-only on both macro regret@3 and cost-to-contain",
+                "Model-family gate is resource-gated"
+              ],
+              "downstream_gate_status": "closed",
+              "gate_verdict": "closed",
+              "large_eval_gate_passed": true,
+              "model_family_gate_met": false,
+              "oral_ready_gate_status": "closed",
+              "seed_robustness_gate_passed": true
+            },
+            "orbitrepair_proxy": {
+              "macro_normalized_regret_at3": 0.0058068827370489386,
+              "mean_cost_to_contain_winner": 4.833333333333333,
+              "top3": "5/6"
+            },
+            "order": [
+              "OrbitRepair-Proxy",
+              "LoopCert-only",
+              "family-balanced blend",
+              "risk-calibrated blend",
+              "Pareto-front",
+              "CFC-only"
+            ],
+            "selector_count": 6
+          },
+          "quote_or_observation": "The command exited 0 after asserting selector_count=6, OrbitRepair-Proxy is the first ranked selector under the stated ordering, the claimed OrbitRepair-Proxy metrics match SELECTOR_METRICS.csv, CFC-only is weaker on regret@3 and cost-to-contain, and ce_selection_gate_passed/model_family_gate_met are both false.",
+          "relevance": 1.0,
+          "reliability": 0.98,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/08_meta/SELECTOR_METRICS.csv and /home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/08_meta/STAGE10_META_ANALYSIS.json",
+          "title": "Read-only S10-13 selector/gate verification command"
+        },
+        {
+          "directness": 0.88,
+          "evidence_type": "reproduction_log",
+          "freshness": 0.9,
+          "locator": "lines 1003-1004",
+          "quote_or_observation": "The experiment log records `bash-9f40a7ab` running `stage10_meta_analysis.py --quest-root /home/xu/project/loop/DeepScientist/quests/001`, passing with `passed_S10-13_meta_analysis_portfolio_gate_decision`, writing STAGE10_META_ANALYSIS.json, SELECTOR_METRICS.csv with 6 selector data rows, FAMILY_BOOTSTRAP.csv, RECOVERY_AUC_METRICS.csv, and GATE_DECISION.md, and analyzing 360 S10-12 large-eval target rows across 6 selectors. The same log records large_eval_gate_passed=true, seed_robustness_gate_passed=true, cfc_baseline_retained=true, ce_selection_gate_passed=false, model_family_gate_met=false, downstream_gate_status=closed, and oral_ready_gate_status=closed.",
+          "relevance": 0.95,
+          "reliability": 0.9,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/正式实验命令.md",
+          "title": "Recorded S10-13 meta-analysis provenance"
+        },
+        {
+          "directness": 0.95,
+          "evidence_type": "sanity_check",
+          "freshness": 0.9,
+          "locator": "GATE_DECISION.md lines 3-12 and 16-28; SELECTOR_METRICS.csv lines 1-7",
+          "quote_or_observation": "GATE_DECISION.md independently lists OrbitRepair-Proxy with top3=5/6, regret@3=0.00580688273705, cost=4.83333333333 and CFC-only with top3=3/6, regret@3=0.0446974689108, cost=13.8333333333; it also records ce_selection_gate_passed=False, model_family_gate_met=False, downstream/oral gates closed, and closed reasons. SELECTOR_METRICS.csv line 2 and line 7 provide the same OrbitRepair-Proxy and CFC-only numeric values at full precision.",
+          "relevance": 1.0,
+          "reliability": 0.94,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/08_meta/GATE_DECISION.md and /home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/08_meta/SELECTOR_METRICS.csv",
+          "title": "Gate-decision table and CSV agree on selector metrics and closed gates"
+        }
+      ],
+      "importance": 0.97,
+      "supersedes_assertion_id": "pf_assertion_5f38aac41805",
+      "text": "Read-only S10-13 evidence supports the narrowed selector-metric claim: OrbitRepair-Proxy ranks first among six selectors by top3 containment, macro normalized regret@3, and mean cost-to-contain, with top3 containment 5/6, macro_normalized_regret_at3=0.0058068827370489386, and mean_cost_to_contain_winner=4.833333333333333. CFC-only is weaker on those same metrics (top3 3/6, regret@3=0.044697468910847644, cost=13.833333333333334), while STAGE10_META_ANALYSIS keeps ce_selection_gate_passed=false and model_family_gate_met=false with overall gate_verdict=closed."
+    }
+  ],
+  "confidence": 0.93,
+  "role": "gate_gap_repairer",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Repaired the missing analysis-profile evidence gap for pf_assertion_5f38aac41805 by attaching a read-only metric_output item with a non-empty command and exit_code=0, plus reproduction_log and sanity_check evidence. No source files were modified; no artifacts were created.",
+  "target_assertion_id": "pf_assertion_5f38aac41805",
+  "task_id": "pf_task_9a7ff6c455b8",
+  "title": "S10-13 selector metric profile-evidence repair"
+}

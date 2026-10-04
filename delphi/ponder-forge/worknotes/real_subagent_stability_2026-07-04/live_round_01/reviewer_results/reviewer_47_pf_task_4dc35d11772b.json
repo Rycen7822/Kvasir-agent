@@ -1,0 +1,11 @@
+{
+  "confidence": 0.86,
+  "independent_from_task_id": "pf_task_bb47dc4e66cb",
+  "rationale": "The visible producer evidence directly supports the asserted Stage10 narrative boundary: the claim ledger marks model_family_gate and ce_selection_gate as failed, large_eval_alignment and seed_robustness as passed, downstream_utility and original_reference_improvement as not_evaluated, and oral_gate as closed. REPORT_AUDIT also records downstream_gate_status=closed, downstream_run_executed=false, oral_ready_gate_status=closed, and forbidden_claim_scan_passed=true. The diagnostic/mixed boundary is supported by the ledger's component_ablation diagnostic/mixed note and the producer summary's conservative theory-limit framing. The Phase1/E10 source-path caveat for an adjacent figure does not contradict the specific assertion under review.",
+  "required_actions": [],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_4dc35d11772b",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_abb805ad4724",
+  "verdict": "accept"
+}

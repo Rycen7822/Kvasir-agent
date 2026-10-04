@@ -1,0 +1,11 @@
+{
+  "confidence": 0.88,
+  "independent_from_task_id": "pf_task_4497883d81c0",
+  "rationale": "The visible producer report and evidence support the conservative boundary. The meta-analysis extraction records downstream_gate_status=closed, oral_ready_gate_status=closed, ce_selection_gate_passed=false, and model_family_gate_met=false, while only large_eval and seed robustness passed. The oral-ready gate evidence explicitly says status is closed and forbids venue-readiness, downstream utility, and pretrained-reference superiority claims; the report evidence also lists downstream, model-family, CE-selection, and oral gates as closed or failed. These closed gates support describing Stage10 as a closed-gate evidence package rather than an overclaimed venue-ready, downstream-useful, pretrained-reference-superior, or universal recovery result.",
+  "required_actions": [],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_145e21e63bf3",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_1e110a87c99d",
+  "verdict": "accept"
+}

@@ -1,0 +1,76 @@
+{
+  "artifacts": [],
+  "assertions": [
+    {
+      "assertion_type": "data_result",
+      "confidence": 0.93,
+      "critical": true,
+      "evidence": [
+        {
+          "command": "python - <<'PY2'\nimport csv, json\nfrom pathlib import Path\nroot=Path('/home/xu/project/loop/DeepScientist/quests/001')\ndef csv_rows(rel):\n    with (root/rel).open(newline='', encoding='utf-8') as f:\n        return list(csv.DictReader(f))\ntw=csv_rows('experiments/stage10/07_large_eval/TOKEN_WEIGHTED_EVAL.csv')\nsummary=json.loads((root/'experiments/stage10/07_large_eval/LARGE_EVAL_SUMMARY.json').read_text())\nmeta=json.loads((root/'experiments/stage10/08_meta/STAGE10_META_ANALYSIS.json').read_text())\nresult={\n 'token_weighted_total_rows_including_original':len(tw),\n 'formal_target_eval_rows':sum(1 for r in tw if r.get('source_endpoint_type')=='Y_recover' and r.get('status')=='completed_s10_12_eval'),\n 'original_reference_rows':sum(1 for r in tw if r.get('source_endpoint_type')=='original_reference'),\n 'large_summary_evaluated_endpoint_rows':summary.get('evaluated_endpoint_rows'),\n 'large_summary_expected_formal_endpoint_rows':summary.get('expected_formal_endpoint_rows'),\n 'large_summary_total_table_rows_including_original':summary.get('total_table_rows_including_original'),\n 'recovery_endpoint_rows':len(csv_rows('experiments/stage10/06_recovery/RECOVERY_ENDPOINTS.csv')),\n 'target_write_ledger_jsonl_rows':sum(1 for _ in (root/'experiments/stage10/06_recovery/TARGET_WRITE_LEDGER.jsonl').open(encoding='utf-8')),\n 'seed_robustness_rows':len(csv_rows('experiments/stage10/06_recovery/SEED_ROBUSTNESS.csv')),\n 'seed_robustness_meta_by_budget_rows':{k:v.get('row_count') for k,v in meta.get('seed_robustness_summary',{}).get('by_budget',{}).items()},\n 'selector_rows':len(csv_rows('experiments/stage10/08_meta/SELECTOR_METRICS.csv')),\n 'selector_count_in_meta':meta.get('selector_count'),\n 'component_ablation_rows':len(csv_rows('experiments/stage10/09_ablation_patching/COMPONENT_ABLATION.csv')),\n 'causal_patching_rows':len(csv_rows('experiments/stage10/09_ablation_patching/CAUSAL_PATCHING_RESULTS.csv'))\n}\nprint(json.dumps(result, sort_keys=True))\nPY2",
+          "directness": 0.98,
+          "evidence_type": "metric_output",
+          "exit_code": 0,
+          "freshness": 0.9,
+          "locator": "TOKEN_WEIGHTED_EVAL.csv; RECOVERY_ENDPOINTS.csv; TARGET_WRITE_LEDGER.jsonl; SEED_ROBUSTNESS.csv; SELECTOR_METRICS.csv; COMPONENT_ABLATION.csv; CAUSAL_PATCHING_RESULTS.csv; LARGE_EVAL_SUMMARY.json; STAGE10_META_ANALYSIS.json",
+          "metric": {
+            "causal_patching_rows": 96,
+            "component_ablation_rows": 11,
+            "formal_target_eval_rows": 360,
+            "large_summary_evaluated_endpoint_rows": 360,
+            "large_summary_expected_formal_endpoint_rows": 360,
+            "large_summary_total_table_rows_including_original": 366,
+            "original_reference_rows": 6,
+            "recovery_endpoint_rows": 1380,
+            "seed_robustness_meta_by_budget_rows": {
+              "100000000": 126,
+              "30000000": 126
+            },
+            "seed_robustness_rows": 252,
+            "selector_count_in_meta": 6,
+            "selector_rows": 6,
+            "target_write_ledger_jsonl_rows": 1380,
+            "token_weighted_total_rows_including_original": 366
+          },
+          "quote_or_observation": "{\"causal_patching_rows\": 96, \"component_ablation_rows\": 11, \"formal_target_eval_rows\": 360, \"large_summary_evaluated_endpoint_rows\": 360, \"large_summary_expected_formal_endpoint_rows\": 360, \"large_summary_total_table_rows_including_original\": 366, \"original_reference_rows\": 6, \"recovery_endpoint_rows\": 1380, \"seed_robustness_meta_by_budget_rows\": {\"100000000\": 126, \"30000000\": 126}, \"seed_robustness_rows\": 252, \"selector_count_in_meta\": 6, \"selector_rows\": 6, \"target_write_ledger_jsonl_rows\": 1380, \"token_weighted_total_rows_including_original\": 366}",
+          "relevance": 0.98,
+          "reliability": 0.95,
+          "source_ref": "read-only Python row-count audit over /home/xu/project/loop/DeepScientist/quests/001 Stage10 CSV/JSON/JSONL artifacts",
+          "title": "Stage10 row-count audit returned expected counts"
+        },
+        {
+          "directness": 0.86,
+          "evidence_type": "transform_script",
+          "freshness": 0.9,
+          "locator": "stage10_large_eval.py:1238-1264; stage10_meta_analysis.py:520-598; stage10_component_ablation.py:437-475; stage10_paper_package.py:297-317",
+          "quote_or_observation": "stage10_large_eval.py lines 1238-1264 summarize completed TOKEN_WEIGHTED_EVAL rows into expected/evaluated/total counts; stage10_meta_analysis.py lines 520-598 derives selector_count, target_eval_rows, model_count, and seed_robustness_summary from TOKEN_WEIGHTED_EVAL, RECOVERY_ENDPOINTS, and SEED_ROBUSTNESS; stage10_component_ablation.py lines 437-475 computes ablation_count, patching_result_count, target_eval_rows, and no downstream writes; stage10_paper_package.py lines 297-317 packages recovery_endpoint_rows, seed_robustness_rows, token_weighted_eval_rows, selector_metrics_rows, component_ablation_rows, and patching_rows.",
+          "relevance": 0.92,
+          "reliability": 0.88,
+          "source_ref": "experiments/stage10/scripts/stage10_large_eval.py; experiments/stage10/scripts/stage10_meta_analysis.py; experiments/stage10/scripts/stage10_component_ablation.py; experiments/stage10/scripts/stage10_paper_package.py",
+          "title": "Generation scripts define the counted outputs and summaries"
+        },
+        {
+          "directness": 0.9,
+          "evidence_type": "sanity_check",
+          "freshness": 0.9,
+          "locator": "STAGE10_CLAIM_LEDGER.md:9-17; DOWNSTREAM_GATE_STATUS.json:6-7,22,32-35; STAGE10_COMPONENT_ABLATION_AUDIT.json:2-33",
+          "quote_or_observation": "STAGE10_CLAIM_LEDGER.md lines 9-12 record evaluated_endpoint_rows=360, seed_robustness_rows=252, ablation_rows=11, patching_rows=96, and downstream_utility=not_evaluated; line 17 states the package reads existing Stage10 artifacts only. DOWNSTREAM_GATE_STATUS.json lines 6-7 and 22 show downstream_gate_status=closed, downstream_run_executed=false, and result_manifest=null. STAGE10_COMPONENT_ABLATION_AUDIT.json lines 2, 14, 19, and 30-33 report ablation_count=11, patching_result_count=96, target_eval_rows=360, uses_target=true, and writes_Y_frozen/writes_Y_recover/writes_downstream=false.",
+          "relevance": 0.95,
+          "reliability": 0.9,
+          "source_ref": "experiments/stage10/12_paper_package/STAGE10_CLAIM_LEDGER.md; experiments/stage10/10_downstream/DOWNSTREAM_GATE_STATUS.json; experiments/stage10/09_ablation_patching/STAGE10_COMPONENT_ABLATION_AUDIT.json",
+          "title": "Narrative boundary and downstream non-utility sanity check"
+        }
+      ],
+      "importance": 0.9,
+      "supersedes_assertion_id": "pf_assertion_28b6d01f9e84",
+      "text": "Stage10 package-volume counts are internally consistent for the existing read-only artifacts: 360 completed S10-12 formal Y_recover target-eval rows, 366 token-weighted eval rows including 6 original-reference rows, 1380 recovery endpoint rows, 1380 target-write ledger rows, 252 seed-robustness rows, 6 selector-metric rows, 11 component-ablation rows, and 96 causal-patching rows. These counts support artifact-level analysis of the Stage10 package only; downstream utility remains unevaluated under the closed downstream gate."
+    }
+  ],
+  "profile": "analysis",
+  "role": "gate_gap_repairer",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Read-only repair for target assertion pf_assertion_28b6d01f9e84: added analysis-profile evidence groups metric_output, transform_script, and sanity_check. The row-count audit command exited 0 and confirmed 360 formal target eval rows, 366 token-weighted rows including original references, 1380 recovery endpoints, 1380 target-write ledger rows, 252 seed-robustness rows, 6 selector rows, 11 component-ablation rows, and 96 causal-patching rows. No artifacts were created and no source files were modified.",
+  "target_assertion_id": "pf_assertion_28b6d01f9e84",
+  "task_id": "pf_task_41528e7a3fb0",
+  "title": "Stage10 row-count profile-evidence repair for pf_assertion_28b6d01f9e84"
+}

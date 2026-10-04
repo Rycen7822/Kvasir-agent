@@ -1,0 +1,96 @@
+{
+  "artifacts": [],
+  "assertions": [
+    {
+      "assertion_type": "data_result",
+      "confidence": 0.94,
+      "critical": true,
+      "evidence": [
+        {
+          "command": "PYTHONDONTWRITEBYTECODE=1 python3 -c \"import csv,json,pathlib,re; r=pathlib.Path('/home/xu/project/loop/DeepScientist/quests/001'); state=json.load(open(r/'experiments/stage10/00_freeze/STAGE10_STATE.json')); report=json.load(open(r/'experiments/stage10/12_paper_package/REPORT_AUDIT.json')); large=json.load(open(r/'experiments/stage10/07_large_eval/LARGE_EVAL_SUMMARY.json')); meta=json.load(open(r/'experiments/stage10/08_meta/STAGE10_META_ANALYSIS.json')); count_csv=lambda p: sum(1 for _ in csv.DictReader(open(p, newline=''))); log=(r/'.ds/bash_exec/bash-fea5dc5f/terminal.log').read_text(); out={'active_substage':state.get('active_substage'),'stage10_completion_status':state.get('stage10_completion_status'),'target_write_ledger_rows_state':state.get('target_write_ledger_rows'),'target_write_ledger_jsonl_rows':sum(1 for _ in open(r/'experiments/stage10/06_recovery/TARGET_WRITE_LEDGER.jsonl')),'recovery_endpoint_rows':count_csv(r/'experiments/stage10/06_recovery/RECOVERY_ENDPOINTS.csv'),'seed_robustness_rows':count_csv(r/'experiments/stage10/06_recovery/SEED_ROBUSTNESS.csv'),'token_weighted_eval_rows':count_csv(r/'experiments/stage10/07_large_eval/TOKEN_WEIGHTED_EVAL.csv'),'large_eval_evaluated_endpoint_rows':large.get('evaluated_endpoint_rows'),'large_eval_expected_formal_endpoint_rows':large.get('expected_formal_endpoint_rows'),'large_eval_total_table_rows_including_original':large.get('total_table_rows_including_original'),'large_eval_status':large.get('status'),'meta_gate_results':meta.get('gate_results'),'report_audit_status':report.get('status'),'report_markers_passed':report.get('report_markers_passed'),'forbidden_claim_scan_passed':report.get('forbidden_claim_scan_passed'),'report_artifact_hash_count':report.get('artifact_hash_count'),'final_test_log_exit_code_0':'exit_code=0' in log,'final_test_log_pytest':'Pytest: 75 passed' in log}; print(json.dumps(out, sort_keys=True))\"",
+          "directness": 1.0,
+          "evidence_type": "metric_output",
+          "exit_code": 0,
+          "freshness": 0.9,
+          "metric": {
+            "active_substage": "Stage10_complete",
+            "final_test_log_exit_code_0": true,
+            "final_test_log_pytest": true,
+            "forbidden_claim_scan_passed": true,
+            "large_eval_evaluated_endpoint_rows": 360,
+            "large_eval_expected_formal_endpoint_rows": 360,
+            "large_eval_status": "passed_S10-12_large_heldout_eval_alignment_audit",
+            "large_eval_total_table_rows_including_original": 366,
+            "meta_gate_results": {
+              "ce_selection_gate_passed": false,
+              "cfc_baseline_retained": true,
+              "closed_reasons": [
+                "CE selection gate did not beat CFC-only on both macro regret@3 and cost-to-contain",
+                "Model-family gate is resource-gated"
+              ],
+              "downstream_gate_status": "closed",
+              "gate_verdict": "closed",
+              "large_eval_gate_passed": true,
+              "model_family_gate_met": false,
+              "oral_ready_gate_status": "closed",
+              "seed_robustness_gate_passed": true
+            },
+            "recovery_endpoint_rows": 1380,
+            "report_artifact_hash_count": 29,
+            "report_audit_status": "passed_S10-15b_paper_package_final_report_handoff",
+            "report_markers_passed": true,
+            "seed_robustness_rows": 252,
+            "stage10_completion_status": "complete_with_failed_model_family_gate_and_closed_downstream_oral_gates",
+            "target_write_ledger_jsonl_rows": 1380,
+            "target_write_ledger_rows_state": 1380,
+            "token_weighted_eval_rows": 366
+          },
+          "quote_or_observation": "The read-only command printed JSON with active_substage=Stage10_complete; stage10_completion_status=complete_with_failed_model_family_gate_and_closed_downstream_oral_gates; target_write_ledger_rows_state=1380; target_write_ledger_jsonl_rows=1380; recovery_endpoint_rows=1380; seed_robustness_rows=252; token_weighted_eval_rows=366; large_eval_evaluated_endpoint_rows=360; large_eval_expected_formal_endpoint_rows=360; large_eval_total_table_rows_including_original=366; report_audit_status=passed_S10-15b_paper_package_final_report_handoff; report_markers_passed=true; forbidden_claim_scan_passed=true; report_artifact_hash_count=29; final_test_log_pytest=true; final_test_log_exit_code_0=true; and meta_gate_results.gate_verdict=closed with ce_selection_gate_passed=false, model_family_gate_met=false, downstream_gate_status=closed, oral_ready_gate_status=closed, large_eval_gate_passed=true, and seed_robustness_gate_passed=true.",
+          "relevance": 1.0,
+          "reliability": 0.96,
+          "source_ref": "read-only metric command over /home/xu/project/loop/DeepScientist/quests/001 Stage10 artifacts"
+        },
+        {
+          "command": "jq empty experiments/stage10/00_freeze/STAGE10_STATE.json structure.json experiments/stage10/12_paper_package/REPORT_AUDIT.json && jq -e state/status checks && rtk pytest experiments/stage10/tests -q",
+          "directness": 0.9,
+          "evidence_type": "reproduction_log",
+          "exit_code": 0,
+          "freshness": 0.85,
+          "quote_or_observation": "The S10-15c final no-edit completion audit log completed with exit_code=0 and terminal output included two true checks followed by 'Pytest: 75 passed'. The recorded command checked Stage10_complete, next_required_substage=none, status_compression_status passed, target_write_ledger_rows==1380, model_family_gate_met=false, downstream_gate_status=closed, oral_ready_gate_status=closed, and then ran the Stage10 pytest suite.",
+          "relevance": 0.95,
+          "reliability": 0.95,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/.ds/bash_exec/bash-fea5dc5f/meta.json and terminal.log"
+        },
+        {
+          "directness": 0.85,
+          "evidence_type": "transform_script",
+          "freshness": 0.85,
+          "locator": "lines 16-23, 96-102, 530-545, 608-648",
+          "quote_or_observation": "The paper package script consumes STAGE10_STATE.json, recovery endpoints, seed robustness, large eval summary, token-weighted eval, and meta-analysis; renders recovery target write ledger rows, seed robustness rows, large-eval rows, and meta metrics; and builds REPORT_AUDIT fields for report_markers_passed, forbidden_claim_scan_passed, artifact_hash_count, downstream_gate_status, oral_ready_gate_status, model_family_gate_met, and ce_selection_gate_passed.",
+          "relevance": 0.9,
+          "reliability": 0.9,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/scripts/stage10_paper_package.py"
+        },
+        {
+          "directness": 0.95,
+          "evidence_type": "sanity_check",
+          "freshness": 0.85,
+          "locator": "lines 1-12 and 25-32",
+          "quote_or_observation": "Gate decision status is passed_S10-13_meta_analysis_portfolio_gate_decision but downstream gate, oral ready gate, and gate verdict are all closed; ce_selection_gate_passed is False, large_eval_gate_passed is True, seed_robustness_gate_passed is True, model_family_gate_met is False, and the closed reasons are CE selection not beating CFC-only on both required metrics plus a resource-gated model-family gate.",
+          "relevance": 0.95,
+          "reliability": 0.93,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/08_meta/GATE_DECISION.md"
+        }
+      ],
+      "importance": 0.95,
+      "text": "Stage10 is auditable as complete within a closed-gate boundary: STAGE10_STATE reports active_substage=Stage10_complete and target_write_ledger_rows=1380; the target write ledger and recovery endpoint table both have 1380 rows, seed robustness has 252 rows, token-weighted eval has 366 rows, large eval reports 360/360 expected endpoints and 366 total rows including originals, the final no-edit audit log reports Pytest: 75 passed with exit_code=0, and the gate verdict remains closed because CE selection and model-family gates did not pass."
+    }
+  ],
+  "confidence": 0.94,
+  "role": "gate_gap_repairer",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Repaired the evidence gap for target assertion pf_assertion_edf0983aadce by rechecking Stage10 state, row counts, final audit/test logs, and closed-gate status from read-only quest artifacts. No quest or Ponder-Forge files were modified.",
+  "target_assertion_id": "pf_assertion_edf0983aadce",
+  "task_id": "pf_task_fc00b59230d2",
+  "title": "Repair evidence for Stage10 completion and closed-gate auditability"
+}

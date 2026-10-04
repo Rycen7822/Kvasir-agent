@@ -1,0 +1,11 @@
+{
+  "confidence": 0.92,
+  "independent_from_task_id": "pf_task_ac3c66ed7626",
+  "rationale": "Visible evidence supports the assertion: the producer evidence reports target_rows=360 and token_weighted_rows=366 from TOKEN_WEIGHTED_EVAL, with split_count=6 and status=passed in the split summary; 360 rows across six splits/models yields 60 target rows per model. The same evidence reports better_than_frozen=332, supporting recovery-from-frozen evidence, while better_than_original=0 and the claim ledger states original_reference_improvement is not_evaluated and recovered endpoints are not claimed to improve on pretrained reference, supporting the non-superiority boundary.",
+  "required_actions": [],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_108f987d974a",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_116c91c722e6",
+  "verdict": "accept"
+}

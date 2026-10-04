@@ -1,0 +1,14 @@
+{
+  "confidence": 0.78,
+  "independent_from_task_id": "pf_task_e5d5c717b377",
+  "rationale": "The visible producer summary supports part of the assertion: it states REPORT_AUDIT passed, forbidden-claim scan passed with zero hits, downstream/oral gates are closed, downstream execution did not run, and the ledger/final report avoid downstream utility and venue-readiness claims. However, the visible evidence records are insufficient for the full assertion: the only metric_output has an empty source, a truncated command, and a blank observation despite exit_code=0, while the four file_inspection items also have empty source/command/observation fields. The producer summary also does not explicitly support the asserted avoidance of pretrained-reference superiority and universal recovery-certainty claims. Therefore the claim should be revised to the subset directly visible in the summary, or backed with non-empty evidence showing the exact audit/gate fields and claim-ledger/final-report scans for all four prohibited claim categories.",
+  "required_actions": [
+    "Attach or expose non-empty metric_output observation showing REPORT_AUDIT status, report_markers_passed, forbidden_claim_scan_passed=true, forbidden hit count=0, downstream_gate_status=closed, downstream_run_executed=false, and oral_ready_gate_status=closed.",
+    "Attach or expose file/scan evidence for the claim ledger and final report demonstrating absence of downstream utility, venue-readiness, pretrained-reference superiority, and universal recovery-certainty claims, or narrow the assertion to only the categories currently supported by visible evidence."
+  ],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_8fde6574558b",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_725dfbf86494",
+  "verdict": "revise"
+}

@@ -1,0 +1,11 @@
+{
+  "confidence": 0.9,
+  "independent_from_task_id": "pf_task_3ca62dd74937",
+  "rationale": "The visible producer report and evidence directly support the assertion: evidence [1] reports large-eval status passed with total_table_rows_including_original=366, recovery endpoint rows=1380, and seed robustness rows=252; evidence [2] reports record_count=18789, split_count=6, and status=passed; evidence [3] states the script writes the relevant primary tables; and evidence [4] reports passed split-boundary/alignment checks with six active model rows. No visible evidence contradicts the claimed counts or internal consistency.",
+  "required_actions": [],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_b45e865d9dfb",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_b12f4019a4b4",
+  "verdict": "accept"
+}

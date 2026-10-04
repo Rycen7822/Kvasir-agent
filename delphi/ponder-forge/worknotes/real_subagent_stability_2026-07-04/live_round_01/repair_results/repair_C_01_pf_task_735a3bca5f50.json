@@ -1,0 +1,84 @@
+{
+  "artifacts": [],
+  "assertions": [
+    {
+      "assertion_type": "data_result",
+      "confidence": 0.94,
+      "evidence": [
+        {
+          "command": "python3 -c 'import csv,json,pathlib; root=pathlib.Path(\"experiments/stage10/09_ablation_patching\"); audit=json.loads((root/\"STAGE10_COMPONENT_ABLATION_AUDIT.json\").read_text()); count=lambda p: sum(1 for _ in csv.DictReader((root/p).open(newline=\"\"))); print(json.dumps({\"status\":audit[\"status\"],\"mechanism_claim_status\":audit[\"mechanism_claim_status\"],\"ablation_count_field\":audit[\"ablation_count\"],\"ablation_csv_rows\":count(\"COMPONENT_ABLATION.csv\"),\"patching_result_count_field\":audit[\"patching_result_count\"],\"patching_csv_rows\":count(\"CAUSAL_PATCHING_RESULTS.csv\"),\"taxonomy_counts\":audit[\"taxonomy_counts\"]}, sort_keys=True))'",
+          "directness": 1.0,
+          "evidence_type": "metric_output",
+          "exit_code": 0,
+          "freshness": 0.95,
+          "locator": "STAGE10_COMPONENT_ABLATION_AUDIT.json lines 2-29; COMPONENT_ABLATION.csv has 11 data rows; CAUSAL_PATCHING_RESULTS.csv has 96 data rows",
+          "metric": {
+            "ablation_count_field": 11,
+            "ablation_csv_rows": 11,
+            "mechanism_claim_status": "diagnostic_or_mixed",
+            "patching_csv_rows": 96,
+            "patching_result_count_field": 96,
+            "status": "passed_S10-14_component_ablation_causal_patching_failure_taxonomy",
+            "taxonomy_counts": {
+              "coda incompatible": 96,
+              "family-specific artifact": 1,
+              "gauge misalignment": 92,
+              "large-eval reversal": 360,
+              "low-rank non-repairable": 1,
+              "panel resource-gated": 6,
+              "stability collapse": 0,
+              "training instability": 1380
+            }
+          },
+          "quote_or_observation": "The executed read-only command returned status=passed_S10-14_component_ablation_causal_patching_failure_taxonomy, mechanism_claim_status=diagnostic_or_mixed, ablation_count_field=11, ablation_csv_rows=11, patching_result_count_field=96, patching_csv_rows=96, and taxonomy_counts including training instability=1380, large-eval reversal=360, coda incompatible=96, and gauge misalignment=92.",
+          "relevance": 1.0,
+          "reliability": 0.96,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/09_ablation_patching/STAGE10_COMPONENT_ABLATION_AUDIT.json; COMPONENT_ABLATION.csv; CAUSAL_PATCHING_RESULTS.csv",
+          "title": "Read-only metric extraction from S10-14 audit and CSV outputs"
+        },
+        {
+          "directness": 0.9,
+          "evidence_type": "transform_script",
+          "freshness": 0.9,
+          "locator": "lines 318-341 and 451-475",
+          "quote_or_observation": "build_taxonomy_counts maps patch rows to gauge/coda/low-rank/stability categories, counts resource-gated models, training instability, and positive delta_ce_recover large-eval reversals. The summary sets status=passed_S10-14_component_ablation_causal_patching_failure_taxonomy, mechanism_claim_status=diagnostic_or_mixed, ablation_count=len(ablation_rows), patching_result_count=len(patch_summary_rows), target_eval_rows=len(target_rows), and writes_Y_frozen/writes_Y_recover/writes_downstream all false.",
+          "relevance": 0.95,
+          "reliability": 0.9,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/scripts/stage10_component_ablation.py",
+          "title": "S10-14 transform script computes the cited counts and preserves diagnostic boundaries"
+        },
+        {
+          "directness": 0.85,
+          "evidence_type": "reproduction_log",
+          "freshness": 0.85,
+          "locator": "line 1005",
+          "quote_or_observation": "The execution ledger records bash-f186947c running stage10_component_ablation.py --quest-root /home/xu/project/loop/DeepScientist/quests/001, producing passed_S10-14_component_ablation_causal_patching_failure_taxonomy, writing STAGE10_COMPONENT_ABLATION_AUDIT.json, COMPONENT_ABLATION.csv with 11 ablation data rows, CAUSAL_PATCHING_RESULTS.csv with 96 patching data rows, FAILURE_TAXONOMY.md, and REVIEWER_ATTACK_EVIDENCE.md, with mechanism_claim_status=diagnostic_or_mixed and write-safety flags false.",
+          "relevance": 0.95,
+          "reliability": 0.9,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/正式实验命令.md",
+          "title": "Formal S10-14 execution ledger entry"
+        },
+        {
+          "directness": 0.9,
+          "evidence_type": "sanity_check",
+          "freshness": 0.9,
+          "locator": "FAILURE_TAXONOMY.md lines 3-20; REVIEWER_ATTACK_EVIDENCE.md lines 3-22",
+          "quote_or_observation": "FAILURE_TAXONOMY.md states mechanism claim=diagnostic_or_mixed, downstream gate=closed, oral ready gate=closed, and says S10-14 does not convert diagnostic component relations into a mechanism-success claim. Its table lists gauge misalignment=92, coda incompatible=96, training instability=1380, and large-eval reversal=360. REVIEWER_ATTACK_EVIDENCE.md reiterates the diagnostic boundary and closed gates.",
+          "relevance": 0.95,
+          "reliability": 0.9,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/09_ablation_patching/FAILURE_TAXONOMY.md; REVIEWER_ATTACK_EVIDENCE.md",
+          "title": "Failure taxonomy and reviewer evidence bound the claim to diagnostics"
+        }
+      ],
+      "importance": 0.9,
+      "text": "Repaired evidence-backed assertion for pf_assertion_a74f4282d1f4: Stage10 S10-14 mechanism evidence remains diagnostic_or_mixed rather than theorem-strength. The component-ablation/causal-patching audit passed with 11 component-ablation rows and 96 causal-patching rows, while the failure taxonomy is dominated by training instability=1380 and large-eval reversal=360, with coda incompatible=96 and gauge misalignment=92. Further work should target those failure categories before claiming a stronger mechanism theorem."
+    }
+  ],
+  "profile": "analysis",
+  "role": "gate_gap_repairer",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Read the exact batch payload, selected pf_task_735a3bca5f50, and performed read-only inspection of /home/xu/project/loop/DeepScientist/quests/001. A read-only metric extraction command exited 0 and confirms the S10-14 diagnostic/mixed mechanism claim, row counts, and failure-taxonomy counts. No source files, worknotes, commits, or artifacts were created or modified.",
+  "target_assertion_id": "pf_assertion_a74f4282d1f4",
+  "task_id": "pf_task_735a3bca5f50",
+  "title": "Gate-gap repair for S10-14 diagnostic mechanism evidence"
+}

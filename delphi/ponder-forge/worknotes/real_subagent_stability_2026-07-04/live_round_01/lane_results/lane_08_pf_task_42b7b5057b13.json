@@ -1,0 +1,342 @@
+{
+  "artifacts": [],
+  "assertions": [
+    {
+      "assertion_type": "data_result",
+      "confidence": 0.96,
+      "critical": true,
+      "evidence": [
+        {
+          "command": "python3 -c \"import csv,json,pathlib; r=pathlib.Path('/home/xu/project/loop/DeepScientist/quests/001'); m=json.load(open(r/'experiments/stage10/08_meta/STAGE10_META_ANALYSIS.json')); l=json.load(open(r/'experiments/stage10/07_large_eval/LARGE_EVAL_SUMMARY.json')); t=sum(1 for _ in csv.DictReader(open(r/'experiments/stage10/07_large_eval/TOKEN_WEIGHTED_EVAL.csv', newline=''))); rec=sum(1 for _ in csv.DictReader(open(r/'experiments/stage10/06_recovery/RECOVERY_ENDPOINTS.csv', newline=''))); seed=sum(1 for _ in csv.DictReader(open(r/'experiments/stage10/06_recovery/SEED_ROBUSTNESS.csv', newline=''))); print(json.dumps({'evaluated':l['evaluated_endpoint_rows'],'expected':l['expected_formal_endpoint_rows'],'token_rows':t,'recovery_rows':rec,'seed_rows':seed,'gate':m['gate_results']}, sort_keys=True))\"",
+          "evidence_type": "metric_output",
+          "exit_code": 0,
+          "quote_or_observation": "Output: evaluated=360, expected=360, token_rows=366, recovery_rows=1380, seed_rows=252, gate={ce_selection_gate_passed:false, cfc_baseline_retained:true, large_eval_gate_passed:true, seed_robustness_gate_passed:true, model_family_gate_met:false, downstream_gate_status:'closed', oral_ready_gate_status:'closed', gate_verdict:'closed'}.",
+          "source_ref": "lane coordinator read-only verification command"
+        },
+        {
+          "evidence_type": "transform_script",
+          "quote_or_observation": "The meta-analysis transform consumes recovery, seed robustness, token-weighted eval, bootstrap CI, and large-eval summary inputs, then writes STAGE10_META_ANALYSIS.json, SELECTOR_METRICS.csv, FAMILY_BOOTSTRAP.csv, RECOVERY_AUC_METRICS.csv, and GATE_DECISION.md.",
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/scripts/stage10_meta_analysis.py"
+        },
+        {
+          "evidence_type": "sanity_check",
+          "quote_or_observation": "Gate decision records the same closed downstream/oral state and identifies the two closure reasons: CE selection failed versus CFC-only on both required metrics, and model-family gate is resource-gated.",
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/08_meta/GATE_DECISION.md"
+        }
+      ],
+      "importance": 0.99,
+      "text": "Lane-side verification confirms Stage10's core quantitative status: 360/360 expected formal endpoints evaluated, 366 token-weighted large-eval rows, 1,380 recovery endpoint rows, 252 seed-robustness rows, large_eval_gate_passed=true, seed_robustness_gate_passed=true, but ce_selection_gate_passed=false, model_family_gate_met=false, downstream_gate_status=closed, oral_ready_gate_status=closed, and gate_verdict=closed."
+    },
+    {
+      "assertion_type": "data_result",
+      "confidence": 0.91,
+      "critical": true,
+      "evidence": [
+        {
+          "evidence_type": "metric_output",
+          "quote_or_observation": "CFC-only top3=3/6, regret@3=0.044697468910847644, cost=13.833333333333334; LoopCert-only/family-balanced/risk-calibrated top3=3/6, regret@3=0.03223671717595801, cost=16.666666666666668; Pareto-front regret@3=0.03313607480648891, cost=16.5; OrbitRepair-Proxy is stronger but is not the Stage10 LoopCert contender gate.",
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/08_meta/SELECTOR_METRICS.csv"
+        },
+        {
+          "evidence_type": "transform_script",
+          "quote_or_observation": "The CE selector gate is passed only if a contender beats CFC-only on both macro_normalized_regret_at3 and mean_cost_to_contain_winner.",
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/scripts/stage10_meta_analysis.py"
+        },
+        {
+          "evidence_type": "sanity_check",
+          "quote_or_observation": "Oral-ready status is closed with CE-selection and model-family resource-gate reasons, so selector improvement is a prerequisite for downstream/oral claims.",
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/12_paper_package/STAGE10_ORAL_READY_GATE.md"
+        }
+      ],
+      "importance": 0.94,
+      "text": "The most important next improvement priority is not more large-eval plumbing; it is to make a Stage10-valid LoopCert/Pareto/blend selector beat CFC-only on both macro regret@3 and cost-to-contain, because current LoopCert-family selectors improve regret but fail the cost criterion."
+    },
+    {
+      "assertion_type": "data_result",
+      "confidence": 0.89,
+      "critical": true,
+      "evidence": [
+        {
+          "evidence_type": "metric_output",
+          "quote_or_observation": "active_entry_count=6, active_family_count=4, model_family_gate_met=false, status=resource_gated_family_gate_failed, resource_gated_model_ids=[gemma-2-2b, smollm2-1.7b, opt-1.3b, falcon-rw-1b, stablelm-2-1.6b, mistral-7b-score-side-stress].",
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/00_freeze/MODEL_AVAILABILITY.json"
+        },
+        {
+          "evidence_type": "dataset",
+          "quote_or_observation": "Active panel models are llama-3.2-1b, olmo-2-1b, pythia-160m, pythia-1b, pythia-410m, and qwen2.5-1.5b, with precommit/no-target boundaries recorded.",
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/05_panel_precommit/PANEL_MANIFEST.json"
+        },
+        {
+          "evidence_type": "sanity_check",
+          "quote_or_observation": "The final report records Active family count=4, Active entry count=6, Model-family gate met=False, and lists model-family gate failure among final failures.",
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/report_archive/STAGE10_RESULTS_REPORT.md"
+        }
+      ],
+      "importance": 0.9,
+      "text": "The second major next priority is model-family expansion: active Stage10 evidence covers six active entries across four active families while six candidate/resource-gated model IDs remain outside the active gate, so family-general and oral-ready claims remain unsupported."
+    },
+    {
+      "assertion_type": "data_result",
+      "confidence": 0.88,
+      "critical": true,
+      "evidence": [
+        {
+          "evidence_type": "metric_output",
+          "quote_or_observation": "status=passed_S10-14_component_ablation_causal_patching_failure_taxonomy, ablation_count=11, patching_result_count=96, mechanism_claim_status=diagnostic_or_mixed, taxonomy_counts include large-eval reversal=360 and training instability=1380.",
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/09_ablation_patching/STAGE10_COMPONENT_ABLATION_AUDIT.json"
+        },
+        {
+          "evidence_type": "metric_output",
+          "quote_or_observation": "status=passed_S10-15a_theory_package_stress_tests, stress_test_count=7, mechanism_claim_status=diagnostic_or_mixed.",
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/11_theory/STAGE10_THEORY_AUDIT.json"
+        },
+        {
+          "evidence_type": "sanity_check",
+          "quote_or_observation": "Counterexamples bound the certificate and distinguish diagnostic relations from conclusive recovery/mechanism claims.",
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/11_theory/COUNTEREXAMPLES.md"
+        }
+      ],
+      "importance": 0.9,
+      "text": "Stage10 component/theory artifacts support diagnostic or mixed mechanism evidence, not a universal mechanism-success theorem: ablation_count=11, patching_result_count=96, stress_test_count=7, mechanism_claim_status=diagnostic_or_mixed, with large-eval reversal and training instability prominent in the failure taxonomy."
+    },
+    {
+      "assertion_type": "data_result",
+      "confidence": 0.95,
+      "critical": true,
+      "evidence": [
+        {
+          "evidence_type": "metric_output",
+          "quote_or_observation": "state_hash_matches_audit=false; audit record sha256=a1c66af5f4b672df76b5fe8d717f63cea297811bc7b7dd7ff057ad7469723a12, bytes=36868, lines=876; current state sha256=7ac2f0bebeab991fe01ce3fa07fc1ed16b796382bb8249bf4de93d587383feee, bytes=37714, lines=887.",
+          "source_ref": "lane coordinator read-only hash verification"
+        },
+        {
+          "evidence_type": "reproduction_log",
+          "quote_or_observation": "A later final no-edit completion audit after status compression printed Pytest: 75 passed, explaining why the current state can differ from the earlier report audit record.",
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/.ds/bash_exec/bash-fea5dc5f/terminal.log"
+        },
+        {
+          "evidence_type": "sanity_check",
+          "quote_or_observation": "REPORT_AUDIT still records status=passed_S10-15b_paper_package_final_report_handoff, forbidden_claim_scan_passed=true, artifact_hash_count=29, but its state-file artifact record should be regenerated or superseded after status compression.",
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/12_paper_package/REPORT_AUDIT.json"
+        }
+      ],
+      "importance": 0.93,
+      "text": "A concrete reproducibility cleanup is needed before treating the final report hash ledger as current: REPORT_AUDIT.json passed when generated, but its STAGE10_STATE.json artifact record is stale relative to the current compressed state file."
+    },
+    {
+      "assertion_type": "data_result",
+      "confidence": 0.84,
+      "critical": false,
+      "evidence": [
+        {
+          "evidence_type": "plot_artifact",
+          "quote_or_observation": "Lane-side and child searches found no .png/.svg/.pdf/.jpg plot artifacts under experiments/stage10.",
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10"
+        },
+        {
+          "evidence_type": "plot_artifact",
+          "quote_or_observation": "Six PNG paper figures are present: contact_sheet.png, fig1_problem_floorplan.png, fig2_gaas_components_ranking.png, fig3_frozen_benchmark.png, fig4_recoverability_100m.png, and fig5_claim_boundary_taxonomy.png.",
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/paper_main_results/figures"
+        },
+        {
+          "evidence_type": "sanity_check",
+          "quote_or_observation": "REPORT_AUDIT artifact records are JSON/CSV/MD-oriented and do not by themselves establish Stage10-local plot reproducibility.",
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/12_paper_package/REPORT_AUDIT.json"
+        }
+      ],
+      "importance": 0.82,
+      "text": "Plot/narrative evidence boundary: no plot artifacts were found under experiments/stage10, but six PNG paper figures exist under experiments/paper_main_results/figures; next reporting should either reference the paper-figure path explicitly or add reproducible Stage10-local figure generation."
+    }
+  ],
+  "child_reports": [
+    {
+      "artifacts": [],
+      "assertions": [
+        {
+          "assertion_type": "data_result",
+          "confidence": 0.9,
+          "critical": true,
+          "evidence": [
+            {
+              "evidence_type": "metric_output",
+              "quote_or_observation": "large eval status passed; evaluated_endpoint_rows=360; expected_formal_endpoint_rows=360; total_table_rows_including_original=366; recovery endpoint rows=1380; seed robustness rows=252.",
+              "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/07_large_eval/LARGE_EVAL_SUMMARY.json and related CSVs"
+            },
+            {
+              "evidence_type": "dataset",
+              "quote_or_observation": "record_count=18789, split_count=6, status=passed, recovery_overlap_count=0.",
+              "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/07_large_eval/D_EVAL_STAGE10_V1_SPLIT_SUMMARY.json"
+            },
+            {
+              "evidence_type": "transform_script",
+              "quote_or_observation": "The large-eval script defines split materialization and writes SPLIT_LEDGER, SPLIT_SUMMARY, TOKEN_WEIGHTED_EVAL, DOMAIN_EVAL, BOOTSTRAP_CI, ALIGNMENT_AUDIT, and SUMMARY_JSON outputs.",
+              "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/scripts/stage10_large_eval.py"
+            },
+            {
+              "evidence_type": "sanity_check",
+              "quote_or_observation": "status=passed, split_boundary_status=passed, recovery_overlap_count=0, six active model rows passed with max original CE diff 0.",
+              "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/07_large_eval/ALIGNMENT_AUDIT.md"
+            }
+          ],
+          "importance": 0.94,
+          "text": "Stage10's primary result tables are present and internally count-consistent: 366 token-weighted large-eval rows, 1,380 recovery endpoint rows, 252 seed-robustness rows, and six active model splits covering 18,789 heldout records."
+        }
+      ],
+      "role": "data_inspector",
+      "summary": "Inspected Stage10 data/result artifacts read-only. Found six heldout large-eval splits, 18,789 split-ledger records, 366 token-weighted large-eval rows, 1,380 recovery endpoint rows, 252 seed-robustness rows, and closed gate boundaries recorded in Stage10 meta/report artifacts.",
+      "task_id": "pf_task_3ca62dd74937"
+    },
+    {
+      "artifacts": [],
+      "assertions": [
+        {
+          "assertion_type": "data_result",
+          "confidence": 0.95,
+          "critical": true,
+          "evidence": [
+            {
+              "evidence_type": "metric_output",
+              "quote_or_observation": "gate_results show ce_selection_gate_passed=false, cfc_baseline_retained=true, large_eval_gate_passed=true, seed_robustness_gate_passed=true, model_family_gate_met=false, downstream_gate_status=closed, oral_ready_gate_status=closed, gate_verdict=closed.",
+              "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/08_meta/STAGE10_META_ANALYSIS.json"
+            },
+            {
+              "evidence_type": "metric_output",
+              "quote_or_observation": "CFC-only top3=3/6, regret@3=0.044697468910847644, cost=13.833333333333334; LoopCert-only top3=3/6, regret@3=0.03223671717595801, cost=16.666666666666668, beating CFC on regret but not cost.",
+              "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/08_meta/SELECTOR_METRICS.csv"
+            },
+            {
+              "evidence_type": "transform_script",
+              "quote_or_observation": "The gate logic requires a contender to beat CFC-only on both macro_normalized_regret_at3 and mean_cost_to_contain_winner; downstream opens only if CE, large-eval, and seed gates pass; oral readiness also requires the model-family gate.",
+              "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/scripts/stage10_meta_analysis.py"
+            },
+            {
+              "evidence_type": "sanity_check",
+              "quote_or_observation": "Gate decision records downstream gate closed, oral ready gate closed, ce_selection_gate_passed False, large_eval_gate_passed True, seed_robustness_gate_passed True, model_family_gate_met False.",
+              "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/08_meta/GATE_DECISION.md"
+            }
+          ],
+          "importance": 0.98,
+          "text": "The metric decision boundary is closed: large_eval_gate_passed=true and seed_robustness_gate_passed=true, but ce_selection_gate_passed=false and model_family_gate_met=false, so downstream_gate_status and oral_ready_gate_status are closed."
+        }
+      ],
+      "role": "metric_analyst",
+      "summary": "Analyzed Stage10 metric outputs. Verified that large-eval and seed robustness passed, but the CE selector gate stayed closed because LoopCert-family selectors did not beat CFC-only on both macro regret@3 and cost-to-contain; downstream and oral gates therefore remain closed.",
+      "task_id": "pf_task_9a62d59c3f6c"
+    },
+    {
+      "artifacts": [],
+      "assertions": [
+        {
+          "assertion_type": "data_result",
+          "confidence": 0.94,
+          "critical": true,
+          "evidence": [
+            {
+              "evidence_type": "metric_output",
+              "quote_or_observation": "REPORT_AUDIT records STAGE10_STATE sha256=a1c66af5f4b672df76b5fe8d717f63cea297811bc7b7dd7ff057ad7469723a12, bytes=36868, lines=876; current STAGE10_STATE is sha256=7ac2f0bebeab991fe01ce3fa07fc1ed16b796382bb8249bf4de93d587383feee, bytes=37714, lines=887.",
+              "source_ref": "read-only artifact hash comparison against REPORT_AUDIT.json"
+            },
+            {
+              "evidence_type": "reproduction_log",
+              "quote_or_observation": "stage10_meta_analysis.py ran from the quest root with status completed and exit_code=0, printing the closed gate_results.",
+              "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/.ds/bash_exec/bash-9f40a7ab/meta.json and terminal.log"
+            },
+            {
+              "evidence_type": "reproduction_log",
+              "quote_or_observation": "stage10_large_eval.py --mode aggregate completed with exit_code=0 and reported evaluated_endpoint_rows=360, expected_formal_endpoint_rows=360, total_table_rows_including_original=366, status=passed_S10-12_large_heldout_eval_alignment_audit.",
+              "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/.ds/bash_exec/bash-f76a85c1/meta.json and terminal.log"
+            },
+            {
+              "evidence_type": "sanity_check",
+              "quote_or_observation": "Final no-edit completion audit ran after report generation and printed Pytest: 75 passed, consistent with later state compression after the older report audit hash.",
+              "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/.ds/bash_exec/bash-fea5dc5f/terminal.log"
+            }
+          ],
+          "importance": 0.96,
+          "text": "Recorded Stage10 reproduction logs show key metric-producing commands completed successfully, but the final report audit's STAGE10_STATE.json hash is stale relative to the current state file."
+        }
+      ],
+      "role": "reproduction_runner",
+      "summary": "Gathered reproduction evidence from existing artifacts and .ds logs without rerunning writers. Existing CSV/JSON artifacts reproduce the main S10-13 metrics and closed gate decision. Found one reproducibility/integrity blocker: REPORT_AUDIT.json records a stale hash/size/line count for STAGE10_STATE.json after later status compression.",
+      "task_id": "pf_task_257ecb24de81"
+    },
+    {
+      "artifacts": [],
+      "assertions": [
+        {
+          "assertion_type": "data_result",
+          "confidence": 0.9,
+          "critical": true,
+          "evidence": [
+            {
+              "evidence_type": "metric_output",
+              "quote_or_observation": "Child inspection found 28 TOKEN_WEIGHTED_EVAL rows with negative recovered_fraction; worst inspected row had recovered_fraction=-5.907575301080904 for pythia-1b, so recovered_fraction must be treated as a signed improvement ratio, not a bounded probability.",
+              "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/07_large_eval/TOKEN_WEIGHTED_EVAL.csv"
+            },
+            {
+              "evidence_type": "transform_script",
+              "quote_or_observation": "recovered_fraction is computed from recovery_gain divided by frozen-original gap, so values can be negative when recovered CE is worse than frozen CE.",
+              "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/scripts/stage10_large_eval.py"
+            },
+            {
+              "evidence_type": "sanity_check",
+              "quote_or_observation": "No-target audits report uses_target=false and no Y_frozen/Y_recover/downstream writes for hidden-bank and LoopCert score surfaces.",
+              "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/01_hidden_bank/NO_TARGET_AUDIT.json and 04_loopcert_scores/NO_TARGET_AUDIT.json"
+            },
+            {
+              "evidence_type": "sanity_check",
+              "quote_or_observation": "Claim ledger bounds mechanism status as diagnostic or mixed, downstream utility as not evaluated, and original-reference improvement as not evaluated.",
+              "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/12_paper_package/STAGE10_CLAIM_LEDGER.md"
+            }
+          ],
+          "importance": 0.92,
+          "text": "Stage10 has meaningful leakage/split controls but also clear overclaiming risks: downstream/oral gates are closed, some recovered_fraction values are negative, and mechanism claims remain diagnostic_or_mixed rather than universal."
+        }
+      ],
+      "role": "sanity_reviewer",
+      "summary": "Stress-checked Stage10 claims and boundaries. Found documented no-target/split controls and passed large-eval alignment, but emphasized that Stage10 must not be presented as downstream utility, pretrained-reference superiority, universal recovery, or oral-ready evidence. Also flagged negative recovered_fraction rows, stale state hash, gate-field ambiguity, and absent Stage10-local plot artifacts.",
+      "task_id": "pf_task_f6e845dd156f"
+    },
+    {
+      "artifacts": [],
+      "assertions": [
+        {
+          "assertion_type": "data_result",
+          "confidence": 0.93,
+          "critical": true,
+          "evidence": [
+            {
+              "evidence_type": "metric_output",
+              "quote_or_observation": "status=passed_S10-15b_paper_package_final_report_handoff, report_markers_passed=true, forbidden_claim_scan_passed=true, forbidden_claim_hits=[], artifact_hash_count=29, claim_ledger_rows=9, ce_selection_gate_passed=false, model_family_gate_met=false, downstream_gate_status=closed.",
+              "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/12_paper_package/REPORT_AUDIT.json"
+            },
+            {
+              "evidence_type": "transform_script",
+              "quote_or_observation": "The paper-package script defines forbidden phrases and renders claim ledger/oral gate sections with failed model-family and CE-selection gates, downstream utility not evaluated, oral gate closed, and theory bounded by assumptions/counterexamples.",
+              "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/scripts/stage10_paper_package.py"
+            },
+            {
+              "evidence_type": "sanity_check",
+              "quote_or_observation": "Status closed; reasons are CE selection did not beat CFC-only on both macro regret@3 and cost-to-contain, and model-family gate is resource-gated; boundary excludes venue-readiness, downstream utility, and pretrained-reference superiority claims.",
+              "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/12_paper_package/STAGE10_ORAL_READY_GATE.md"
+            },
+            {
+              "evidence_type": "plot_artifact",
+              "quote_or_observation": "Child search found no .png, .pdf, .svg, .jpg, or similar plot artifacts under experiments/stage10, so Stage10-local narrative figures are absent.",
+              "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10"
+            }
+          ],
+          "importance": 0.95,
+          "text": "The narrative package is internally framed as conservative and closed-gate: report audit passed, forbidden-claim scan passed, but oral-ready and downstream utility claims remain explicitly unsupported."
+        }
+      ],
+      "role": "narrative_reviewer",
+      "summary": "Audited the Stage10 narrative/report package read-only. The package supports a conservative evidence narrative with passed report markers and forbidden-claim scan, but not venue readiness, downstream utility, pretrained-reference superiority, universal recovery, or a universal mechanism theorem. Recommended gate-driven next steps and adding reproducible narrative figures/tables.",
+      "task_id": "pf_task_83f75fa25dfa"
+    }
+  ],
+  "role": "swarm_lane_coordinator",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Coordinated lane_08 for the analysis profile by delegating all five planned child tasks in two waves under the required at-most-four-concurrent cap. Child reports and lane-side read-only verification agree that Stage10 is a substantial conservative evidence package: large-heldout evaluation and seed robustness passed, but CE selection, model-family, downstream, and oral-ready gates remain closed. Main next-step priorities are selector cost-to-contain improvement against CFC-only, resource-gated family expansion, stale report-audit/state-hash cleanup, and clearer diagnostic-only narrative boundaries. No files were created or modified; lane-level artifacts are empty.",
+  "task_id": "pf_task_42b7b5057b13"
+}

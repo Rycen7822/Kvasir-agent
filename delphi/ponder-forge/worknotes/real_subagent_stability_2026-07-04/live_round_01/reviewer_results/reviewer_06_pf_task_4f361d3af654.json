@@ -1,0 +1,11 @@
+{
+  "confidence": 0.9,
+  "independent_from_task_id": "pf_task_8e1d1df7c429",
+  "rationale": "Visible evidence supports the conservative boundary claim: STAGE10_META_ANALYSIS gate_results show large_eval_gate_passed=true and seed_robustness_gate_passed=true while ce_selection_gate_passed=false, cfc_baseline_retained=true, model_family_gate_met=false, downstream_gate_status=closed, gate_verdict=closed, and oral_ready_gate_status=closed. The transform-script evidence states CE requires beating CFC-only on both required metrics, supporting the CE-selection limitation. Downstream evidence explicitly shows downstream_run_executed=false. The producer report frames model-family coverage as resource-gated and recommends expanding evidence rather than strengthening claims, so the assertion is supported without material overclaim.",
+  "required_actions": [],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_4f361d3af654",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_1607fa5493e0",
+  "verdict": "accept"
+}

@@ -1,0 +1,13 @@
+{
+  "confidence": 0.82,
+  "independent_from_task_id": "pf_task_0d476d8d8e1a",
+  "rationale": "The visible evidence supports much of the assertion: recovery/seed/meta/ablation/theory-related datasets are reported as observed, the paper package reports artifact_hash_count=29, and claim-boundary/forbidden-claim scans are recorded as passing. However, the specific numeric claim that the large heldout eval covers exactly 360 formal Y_recover endpoint rows is not directly supported by the provided evidence; evidence [1] is a summarized child-report observation and does not include the 360 row count or a directly visible table/count artifact. Because the assertion includes this unsupported numeric detail, it should be narrowed or supplemented rather than accepted as written.",
+  "required_actions": [
+    "Provide direct visible evidence for the exact 360 formal Y_recover endpoint row count, or revise the assertion to remove/narrow that numeric claim."
+  ],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_9969db1b212e",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_5dc0cf494653",
+  "verdict": "revise"
+}

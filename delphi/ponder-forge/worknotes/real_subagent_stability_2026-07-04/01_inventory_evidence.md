@@ -1,0 +1,23 @@
+# PF-REAL-021 Inventory and Evidence Notes
+
+- source/installed status checked at 2026-07-04T22:39:32+0800:
+  - `/home/xu/.hermes/plugins/ponder_forge` exists and is a copied install, not symlink.
+  - `plugins.enabled` contains `ponder-forge`.
+  - source and installed hashes match for `cli.py`, `delegation.py`, `report_ingest.py`, `verifier.py`, `store.py`, and `plugin.yaml`.
+  - repo `HEAD == origin/main == eb40d045aae8ab935d360260cde7c44c8b2c924f`.
+  - only untracked repo file is `CODEX_STATE.md`; do not stage it.
+- quest baseline signature:
+  - file_count: 175707
+  - latest_mtime_ns: 1782083849137958327
+  - latest_path: `.ds/bash_exec/summary.json`
+  - broad `git status` inside the quest timed out, so use this signature and targeted reads for no-write checks.
+- current Ponder-Forge tested surface from collected tests:
+  - CLI commands: `start`, `plan`, `delegations`, `submit-report`, `status`, `verify`, `gate`, `finalize`, `reconcile`.
+  - installed copy full test suite has 71 tests and passed after PF-REAL-020.
+- remaining proof gap:
+  - controller-generated report rounds are not a substitute for actual Hermes `delegate_task` subagents executing lane coordinator and child roles.
+  - one late live lane report proved a single lane can return useful JSON but also exposed PF-REAL-020.
+  - no post-PF-REAL-020 run has yet proven all eight lane coordinator orchestrators and verifier leaf subagents can execute from the actual generated payloads without manual report synthesis.
+- operational constraint:
+  - `delegate_task` is asynchronous; final completion language is forbidden while lane/reviewer subagents are pending.
+  - child agents cannot ask the user; delegate contexts must be self-contained and explicitly say read-only quest path.

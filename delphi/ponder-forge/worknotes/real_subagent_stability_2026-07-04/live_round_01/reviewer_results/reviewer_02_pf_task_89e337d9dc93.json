@@ -1,0 +1,13 @@
+{
+  "confidence": 0.82,
+  "independent_from_task_id": "pf_task_f2fc585032cf",
+  "rationale": "The visible evidence supports successful logged reproduction for large eval and meta-analysis: evidence [2] reports stage10_large_eval.py --mode aggregate completed with exit_code=0 and emitted expected/evaluated endpoint row counts, and evidence [3] reports stage10_meta_analysis.py completed with exit_code=0 and closed-gate metadata. It also supports the closed-gate/not-downstream-utility characterization via evidence [1] and [5], and supports that recovery artifacts/scripts were inspected rather than rerun via the producer report and evidence [4]. However, the assertion overclaims traceability to successful logged reproduction commands for paper packaging and tests: the visible evidence includes a claim ledger artifact from the paper package but no successful logged paper-packaging command, and no visible successful test command/log evidence. Therefore the assertion should be narrowed or supplemented.",
+  "required_actions": [
+    "Either provide visible evidence of successful logged reproduction commands for paper packaging and tests, or revise the assertion to claim only the large-eval/meta-analysis logged commands plus inspected paper-package ledger and closed-gate status."
+  ],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_89e337d9dc93",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_523d954d3b3f",
+  "verdict": "revise"
+}

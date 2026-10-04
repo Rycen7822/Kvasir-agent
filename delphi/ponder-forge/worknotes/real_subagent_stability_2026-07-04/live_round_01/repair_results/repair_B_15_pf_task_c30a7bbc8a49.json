@@ -1,0 +1,115 @@
+{
+  "artifacts": [],
+  "assertions": [
+    {
+      "assertion_type": "data_result",
+      "confidence": 0.93,
+      "critical": true,
+      "evidence": [
+        {
+          "command": "python - <<'PY'  # read-only script over STAGE10_STATE.json, REPORT_AUDIT.json, STAGE10_RESULTS_REPORT.md, STAGE10_COMPONENT_ABLATION_AUDIT.json, and RECOVERY_ENDPOINTS.csv; computes current state hash/bytes/lines, stale audit/report state rows, S10-14 training-instability predicate count, endpoint status/OOM distributions, and conservative audit flags\nPY",
+          "directness": 0.98,
+          "evidence_type": "metric_output",
+          "exit_code": 0,
+          "freshness": 0.95,
+          "metric": {
+            "component_audit_status": "passed_S10-14_component_ablation_causal_patching_failure_taxonomy",
+            "component_audit_training_instability_recorded": 1380,
+            "computed_training_instability_by_s10_14_predicate": 1380,
+            "current_state_file": {
+              "bytes": 37714,
+              "lines": 887,
+              "sha256": "7ac2f0bebeab991fe01ce3fa07fc1ed16b796382bb8249bf4de93d587383feee"
+            },
+            "final_report_state_hash_row": {
+              "bytes": 36868,
+              "lines": 876,
+              "sha256": "a1c66af5f4b672df76b5fe8d717f63cea297811bc7b7dd7ff057ad7469723a12"
+            },
+            "oom_restart_status_counts": {
+              "completed_without_oom_restart": 1380
+            },
+            "recovery_endpoint_data_rows": 1380,
+            "recovery_status_counts": {
+              "completed_recovery_eval": 1380
+            },
+            "report_audit_conservative_flags": {
+              "artifact_hash_count": 29,
+              "ce_selection_gate_passed": false,
+              "downstream_gate_status": "closed",
+              "forbidden_claim_hits": [],
+              "forbidden_claim_scan_passed": true,
+              "model_family_gate_met": false,
+              "oral_ready_gate_status": "closed",
+              "report_markers_passed": true,
+              "status": "passed_S10-15b_paper_package_final_report_handoff",
+              "writes_Y_frozen": false,
+              "writes_Y_recover": false,
+              "writes_downstream": false
+            },
+            "report_audit_state_record": {
+              "bytes": 36868,
+              "lines": 876,
+              "sha256": "a1c66af5f4b672df76b5fe8d717f63cea297811bc7b7dd7ff057ad7469723a12"
+            },
+            "state_hash_records_stale": true
+          },
+          "quote_or_observation": "The computed output directly supports both cleanup gaps: current STAGE10_STATE.json no longer matches the state hash recorded by REPORT_AUDIT/final report, and the S10-14 taxonomy predicate counts all 1380 completed recovery endpoints as training instability because completed_without_oom_restart is not included in the predicate's benign OOM statuses.",
+          "relevance": 0.98,
+          "reliability": 0.96,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001",
+          "title": "Read-only metric/hash inspection of Stage10 package cleanup items"
+        },
+        {
+          "directness": 0.95,
+          "evidence_type": "sanity_check",
+          "freshness": 0.92,
+          "quote_or_observation": "REPORT_AUDIT records artifact_hash_count=29 and state sha256=a1c66af5f4b672df76b5fe8d717f63cea297811bc7b7dd7ff057ad7469723a12, bytes=36868, lines=876. It also records report_markers_passed=true, forbidden_claim_scan_passed=true, forbidden_claim_hits=[], model_family_gate_met=false, ce_selection_gate_passed=false, downstream_gate_status=closed, oral_ready_gate_status=closed, and all write-safety flags false.",
+          "relevance": 0.96,
+          "reliability": 0.94,
+          "source_ref": "experiments/stage10/12_paper_package/REPORT_AUDIT.json:2-14,327-416",
+          "title": "REPORT_AUDIT remains conservative but records stale state hash"
+        },
+        {
+          "directness": 0.94,
+          "evidence_type": "sanity_check",
+          "freshness": 0.92,
+          "quote_or_observation": "The final report's input hash table records state sha256=a1c66af5f4b672df76b5fe8d717f63cea297811bc7b7dd7ff057ad7469723a12 with 36868 bytes and 876 lines; later sections keep mechanism status diagnostic_or_mixed, downstream gate closed, downstream_run_executed=False, oral gate closed, and forbidden claims explicitly closed.",
+          "relevance": 0.96,
+          "reliability": 0.94,
+          "source_ref": "experiments/report_archive/STAGE10_RESULTS_REPORT.md:15-18,57-59,93-103",
+          "title": "Final report has the same stale STAGE10_STATE hash row while preserving conservative narrative boundaries"
+        },
+        {
+          "directness": 0.96,
+          "evidence_type": "transform_script",
+          "freshness": 0.9,
+          "quote_or_observation": "count_training_instability increments when status is not completed_recovery_eval, or when oom_restart_status is not one of {'none','no_oom_restart','completed_without_oom'}. The observed RECOVERY_ENDPOINTS value is completed_without_oom_restart, which is semantically benign but not in that allowlist, explaining the all-rows count.",
+          "relevance": 0.97,
+          "reliability": 0.93,
+          "source_ref": "experiments/stage10/scripts/stage10_component_ablation.py:306-315,318-341",
+          "title": "S10-14 training-instability predicate source"
+        },
+        {
+          "directness": 0.9,
+          "evidence_type": "reproduction_log",
+          "freshness": 0.9,
+          "quote_or_observation": "The command ledger records S10-14 component ablation/failure taxonomy passed via bash-f186947c, S10-15b paper package/final report/handoff passed via bash-7eaf338b, an independent final-report audit passed via bash-e6da214f, and S10-15c status compression/index validation advanced active_substage=Stage10_complete while keeping model_family_gate_met=false, downstream_gate_status=closed, and oral_ready_gate_status=closed.",
+          "relevance": 0.94,
+          "reliability": 0.91,
+          "source_ref": "experiments/正式实验命令.md:1005,1011-1014",
+          "title": "Existing Stage10 logs establish S10-14/S10-15b/S10-15c status sequence"
+        }
+      ],
+      "importance": 0.9,
+      "repairs_assertion_id": "pf_assertion_d52a5749707d",
+      "text": "Narrowed repair for pf_assertion_d52a5749707d: Stage10's S10-15b report/package is conservative on the inspected evidence (REPORT_AUDIT passed markers and forbidden-claim scan, downstream/oral gates remain closed, and write-safety flags are false), but it should not be reused as immutable final evidence until two cleanup items are handled. First, both REPORT_AUDIT.json and STAGE10_RESULTS_REPORT.md still record the pre-S10-15c STAGE10_STATE.json hash a1c66af5f4b672df76b5fe8d717f63cea297811bc7b7dd7ff057ad7469723a12 with 36868 bytes and 876 lines, while the current STAGE10_STATE.json is sha256 7ac2f0bebeab991fe01ce3fa07fc1ed16b796382bb8249bf4de93d587383feee with 37714 bytes and 887 lines. Second, S10-14's training-instability taxonomy count of 1380 is a predicate/counting artifact: all 1380 RECOVERY_ENDPOINTS rows have status=completed_recovery_eval and oom_restart_status=completed_without_oom_restart, but the S10-14 predicate does not treat completed_without_oom_restart as benign, so it counts every endpoint as training instability. Therefore the evidence-backed action is to refresh the package/report hashes after S10-15c and fix or explicitly annotate the training-instability taxonomy count before reuse."
+    }
+  ],
+  "role": "gate_gap_repairer",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Read-only repair evidence for pf_assertion_d52a5749707d: inspected the assigned payload, then checked Stage10 package/audit, S10-14 taxonomy, S10-15b/S10-15c status evidence, and current STAGE10_STATE.json hash/size/line counts under /home/xu/project/loop/DeepScientist/quests/001. No source files were edited and no artifacts were created. The original assertion is supported with a narrower framing: the package narrative remains conservative/audited, but reuse should first refresh stale STAGE10_STATE hash rows in REPORT_AUDIT/final report and fix or annotate the S10-14 training-instability count predicate.",
+  "target_assertion_id": "pf_assertion_d52a5749707d",
+  "task_id": "pf_task_c30a7bbc8a49",
+  "title": "Gate-gap repair for Stage10 package cleanup assertion"
+}

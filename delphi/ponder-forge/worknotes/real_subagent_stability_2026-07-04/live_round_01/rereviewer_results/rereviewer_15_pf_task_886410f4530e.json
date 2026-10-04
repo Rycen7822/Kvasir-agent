@@ -1,0 +1,11 @@
+{
+  "confidence": 0.93,
+  "independent_from_task_id": "pf_task_014ed163c07f",
+  "rationale": "The visible producer evidence supports the narrowed claim. The metric_output evidence has exit_code=0 and reports forbidden_claim_scan_passed=true, forbidden_claim_hits=[], report_markers_passed=true, downstream_gate_status=closed, downstream_run_executed=false, oral_ready_gate_status=closed, all four boundary checks true, and write flags false. The reproduction log records the final-report audit command completed with status passed. The transform-script and sanity-check evidence explicitly tie the final report, claim ledger, oral-ready gate, and report audit to conservative boundaries: downstream utility not evaluated/closed, oral or venue readiness closed/not claimed, pretrained-reference superiority not evaluated, and universal recovery not claimed. The assertion is appropriately bounded to audited Stage10 paper-package artifacts and does not add downstream or oral-readiness claims.",
+  "required_actions": [],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_886410f4530e",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_923eb142785f",
+  "verdict": "accept"
+}

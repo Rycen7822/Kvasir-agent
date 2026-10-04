@@ -1,0 +1,127 @@
+{
+  "artifacts": [],
+  "assertions": [
+    {
+      "assertion_type": "data_result",
+      "confidence": 0.92,
+      "critical": true,
+      "evidence": [
+        {
+          "command": "PYTHONDONTWRITEBYTECODE=1 python - <<'PY_METRIC'\nimport csv, json\nfrom pathlib import Path\nq = Path('/home/xu/project/loop/DeepScientist/quests/001')\npaths = {\n    'panel_rows': q/'experiments/stage10/05_panel_precommit/PANEL_ROWS.csv',\n    'recovery_endpoint_rows': q/'experiments/stage10/06_recovery/RECOVERY_ENDPOINTS.csv',\n    'target_write_ledger_rows': q/'experiments/stage10/06_recovery/TARGET_WRITE_LEDGER.jsonl',\n    'token_weighted_large_eval_rows': q/'experiments/stage10/07_large_eval/TOKEN_WEIGHTED_EVAL.csv',\n    'selector_metric_rows': q/'experiments/stage10/08_meta/SELECTOR_METRICS.csv',\n    'component_ablation_rows': q/'experiments/stage10/09_ablation_patching/COMPONENT_ABLATION.csv',\n    'causal_patching_rows': q/'experiments/stage10/09_ablation_patching/CAUSAL_PATCHING_RESULTS.csv',\n    'theory_stress_test_rows': q/'experiments/stage10/11_theory/STRESS_TESTS.csv',\n}\ndef csv_rows(p):\n    with p.open(newline='', encoding='utf-8') as f:\n        return sum(1 for _ in csv.DictReader(f))\ndef jsonl_rows(p):\n    with p.open(encoding='utf-8') as f:\n        return sum(1 for line in f if line.strip())\ncounts = {name: (jsonl_rows(path) if path.suffix == '.jsonl' else csv_rows(path)) for name, path in paths.items()}\nmeta = json.loads((q/'experiments/stage10/08_meta/STAGE10_META_ANALYSIS.json').read_text(encoding='utf-8'))\nselectors = {}\nwith (q/'experiments/stage10/08_meta/SELECTOR_METRICS.csv').open(newline='', encoding='utf-8') as f:\n    for r in csv.DictReader(f):\n        selectors[r['selector_name']] = {\n            'macro_normalized_regret_at3': float(r['macro_normalized_regret_at3']),\n            'mean_cost_to_contain_winner': float(r['mean_cost_to_contain_winner']),\n            'delta_macro_normalized_regret_at3_vs_cfc_only': float(r['delta_macro_normalized_regret_at3_vs_cfc_only']),\n            'delta_mean_cost_to_contain_winner_vs_cfc_only': float(r['delta_mean_cost_to_contain_winner_vs_cfc_only']),\n            'beats_cfc_regret_at3': r['beats_cfc_only_on_macro_normalized_regret_at3'] == 'True',\n            'beats_cfc_cost': r['beats_cfc_only_on_mean_cost_to_contain_winner'] == 'True',\n        }\npriority_set = {k:v for k,v in selectors.items() if k in ['CFC-only','LoopCert-only','family-balanced blend','risk-calibrated blend','Pareto-front']}\nout = {\n    'row_counts': counts,\n    'gate_results': meta['gate_results'],\n    'priority_selector_metrics': priority_set,\n}\nprint(json.dumps(out, sort_keys=True, indent=2))\nPY_METRIC",
+          "directness": 0.99,
+          "evidence_type": "metric_output",
+          "exit_code": 0,
+          "freshness": 0.9,
+          "locator": "PANEL_ROWS.csv row count; RECOVERY_ENDPOINTS.csv row count; TARGET_WRITE_LEDGER.jsonl line count; TOKEN_WEIGHTED_EVAL.csv row count; SELECTOR_METRICS.csv lines 1-7; COMPONENT_ABLATION.csv lines 1-12; CAUSAL_PATCHING_RESULTS.csv row count; STRESS_TESTS.csv lines 1-8; STAGE10_META_ANALYSIS.json lines 2-15 and selector metrics section",
+          "metric": {
+            "gate_results": {
+              "ce_selection_gate_passed": false,
+              "cfc_baseline_retained": true,
+              "closed_reasons": [
+                "CE selection gate did not beat CFC-only on both macro regret@3 and cost-to-contain",
+                "Model-family gate is resource-gated"
+              ],
+              "downstream_gate_status": "closed",
+              "gate_verdict": "closed",
+              "large_eval_gate_passed": true,
+              "model_family_gate_met": false,
+              "oral_ready_gate_status": "closed",
+              "seed_robustness_gate_passed": true
+            },
+            "priority_selector_metrics": {
+              "CFC-only": {
+                "beats_cfc_cost": false,
+                "beats_cfc_regret_at3": false,
+                "delta_macro_normalized_regret_at3_vs_cfc_only": 0.0,
+                "delta_mean_cost_to_contain_winner_vs_cfc_only": 0.0,
+                "macro_normalized_regret_at3": 0.044697468910847644,
+                "mean_cost_to_contain_winner": 13.833333333333334
+              },
+              "LoopCert-only": {
+                "beats_cfc_cost": false,
+                "beats_cfc_regret_at3": true,
+                "delta_macro_normalized_regret_at3_vs_cfc_only": -0.012460751734889634,
+                "delta_mean_cost_to_contain_winner_vs_cfc_only": 2.833333333333334,
+                "macro_normalized_regret_at3": 0.03223671717595801,
+                "mean_cost_to_contain_winner": 16.666666666666668
+              },
+              "Pareto-front": {
+                "beats_cfc_cost": false,
+                "beats_cfc_regret_at3": true,
+                "delta_macro_normalized_regret_at3_vs_cfc_only": -0.011561394104358733,
+                "delta_mean_cost_to_contain_winner_vs_cfc_only": 2.666666666666666,
+                "macro_normalized_regret_at3": 0.03313607480648891,
+                "mean_cost_to_contain_winner": 16.5
+              },
+              "family-balanced blend": {
+                "beats_cfc_cost": false,
+                "beats_cfc_regret_at3": true,
+                "delta_macro_normalized_regret_at3_vs_cfc_only": -0.012460751734889634,
+                "delta_mean_cost_to_contain_winner_vs_cfc_only": 2.833333333333334,
+                "macro_normalized_regret_at3": 0.03223671717595801,
+                "mean_cost_to_contain_winner": 16.666666666666668
+              },
+              "risk-calibrated blend": {
+                "beats_cfc_cost": false,
+                "beats_cfc_regret_at3": true,
+                "delta_macro_normalized_regret_at3_vs_cfc_only": -0.012460751734889634,
+                "delta_mean_cost_to_contain_winner_vs_cfc_only": 2.833333333333334,
+                "macro_normalized_regret_at3": 0.03223671717595801,
+                "mean_cost_to_contain_winner": 16.666666666666668
+              }
+            },
+            "row_counts": {
+              "causal_patching_rows": 96,
+              "component_ablation_rows": 11,
+              "panel_rows": 360,
+              "recovery_endpoint_rows": 1380,
+              "selector_metric_rows": 6,
+              "target_write_ledger_rows": 1380,
+              "theory_stress_test_rows": 7,
+              "token_weighted_large_eval_rows": 366
+            }
+          },
+          "quote_or_observation": "The read-only metric command returned exit_code=0 and counted the stated Stage10 evidence surface: panel=360, recovery endpoints=1380, target write ledger=1380, token-weighted large eval=366, selector metrics=6, component ablations=11, causal patching=96, and theory stress tests=7. It also found ce_selection_gate_passed=false with the closed reason that CE selection did not beat CFC-only on both macro regret@3 and cost-to-contain. LoopCert-only/family-balanced/risk-calibrated selectors have regret@3=0.03223671717595801 versus CFC-only 0.044697468910847644 but cost=16.666666666666668 versus CFC-only 13.833333333333334; Pareto-front has regret@3=0.03313607480648891 and cost=16.5, also failing the cost criterion.",
+          "relevance": 0.99,
+          "reliability": 0.95,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/05_panel_precommit/PANEL_ROWS.csv; /home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/06_recovery/RECOVERY_ENDPOINTS.csv; /home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/06_recovery/TARGET_WRITE_LEDGER.jsonl; /home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/07_large_eval/TOKEN_WEIGHTED_EVAL.csv; /home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/08_meta/SELECTOR_METRICS.csv; /home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/09_ablation_patching/COMPONENT_ABLATION.csv; /home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/09_ablation_patching/CAUSAL_PATCHING_RESULTS.csv; /home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/11_theory/STRESS_TESTS.csv; /home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/08_meta/STAGE10_META_ANALYSIS.json",
+          "title": "Read-only row-count and CE-priority metric extraction"
+        },
+        {
+          "command": "PYTHONDONTWRITEBYTECODE=1 /home/xu/project/loop/.venv/bin/python experiments/stage10/scripts/stage10_meta_analysis.py --quest-root /home/xu/project/loop/DeepScientist/quests/001",
+          "directness": 0.91,
+          "evidence_type": "reproduction_log",
+          "exit_code": 0,
+          "freshness": 0.85,
+          "locator": "bash-9f40a7ab/meta.json lines 15 and 28-35; terminal.log lines 1-3; bash-f186947c/meta.json lines 15 and 28-35; bash-76334859/meta.json lines 15 and 28-35",
+          "quote_or_observation": "The recorded S10-13 meta-analysis command completed with exit_code=0 and emitted gate_results showing ce_selection_gate_passed=false, large_eval_gate_passed=true, and seed_robustness_gate_passed=true. The recorded S10-14 component-ablation and S10-15a theory-stress-test commands are also marked status=completed with exit_code=0 in their meta logs, supporting that the counted ablation and theory artifacts come from completed Stage10 generation steps.",
+          "relevance": 0.93,
+          "reliability": 0.94,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/.ds/bash_exec/bash-9f40a7ab/meta.json; /home/xu/project/loop/DeepScientist/quests/001/.ds/bash_exec/bash-9f40a7ab/terminal.log; /home/xu/project/loop/DeepScientist/quests/001/.ds/bash_exec/bash-f186947c/meta.json; /home/xu/project/loop/DeepScientist/quests/001/.ds/bash_exec/bash-76334859/meta.json",
+          "title": "Recorded Stage10 generation commands completed successfully"
+        },
+        {
+          "directness": 0.95,
+          "evidence_type": "sanity_check",
+          "freshness": 0.85,
+          "locator": "GATE_DECISION.md lines 3-32; STAGE10_CLAIM_LEDGER.md lines 5-17; REPORT_AUDIT.json lines 140-148; STAGE10_STATE.json lines 874-883; STRESS_TESTS.csv lines 1-8",
+          "quote_or_observation": "GATE_DECISION.md marks the gate verdict closed, cfc_baseline_retained=True, ce_selection_gate_passed=False, and shows LoopCert-only/family-balanced/risk-calibrated/Pareto-front beating CFC on regret@3 but not cost. STAGE10_CLAIM_LEDGER.md records selector_count=6, evaluated_endpoint_rows=360, ablation_rows=11, patching_rows=96, and stress_test_count=7. REPORT_AUDIT.json records the target_write_ledger artifact with 1380 lines, and STAGE10_STATE.json records target_write_ledger_rows=1380 plus the theory package outputs/status.",
+          "relevance": 0.97,
+          "reliability": 0.93,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/08_meta/GATE_DECISION.md; /home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/12_paper_package/STAGE10_CLAIM_LEDGER.md; /home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/12_paper_package/REPORT_AUDIT.json; /home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/00_freeze/STAGE10_STATE.json; /home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/11_theory/STRESS_TESTS.csv",
+          "title": "Gate decision, claim ledger, state, and audit consistency check"
+        }
+      ],
+      "importance": 0.94,
+      "repairs_assertion_id": "pf_assertion_414080ece9dd",
+      "text": "Stage10 has a substantial, internally count-consistent quantitative evidence surface: panel rows=360, recovery endpoint rows=1380, target write ledger rows=1380, token-weighted large-eval rows=366, selector metric rows=6, component ablation rows=11, causal patching rows=96, and theory stress-test rows=7. The metric-priority claim should remain bounded: LoopCert-only, family-balanced blend, risk-calibrated blend, and Pareto-front all improve macro normalized regret@3 versus CFC-only, but none beats CFC-only on mean cost-to-contain, so the direct next step is to reduce LoopCert/blend/Pareto cost-to-contain while preserving regret gains before reopening the CE selection gate; the current CE selection gate remains closed."
+    }
+  ],
+  "confidence": 0.91,
+  "role": "gate_gap_repairer",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Read-only repair for pf_assertion_414080ece9dd. I inspected the generated repair payload and Stage10 quest artifacts without editing source files. The repaired assertion keeps the quantitative row-count surface and narrows the metric-priority claim to the supported CE gate evidence: LoopCert-only/blend/Pareto contenders improve macro regret@3 against CFC-only but do not beat CFC-only on mean cost-to-contain, so CE selection remains closed until cost-to-contain is reduced while preserving regret gains.",
+  "target_assertion_id": "pf_assertion_414080ece9dd",
+  "task_id": "pf_task_c7869f2e4ed4",
+  "title": "Stage10 quantitative evidence-surface gate-gap repair"
+}

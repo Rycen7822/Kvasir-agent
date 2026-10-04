@@ -1,0 +1,13 @@
+{
+  "confidence": 0.86,
+  "independent_from_task_id": "pf_task_77d20867b2b0",
+  "rationale": "The visible evidence supports only part of the assertion: evidence [1] supports the large-eval aggregate exit_code=0 with 360 evaluated/expected endpoint rows and 366 total rows, and evidence [2] supports the final Stage10 pytest result of 75 passed. Evidence [3] supports an alignment audit status but does not establish the claimed meta-analysis closed gate decision, downstream gate status with no result manifest, component ablation counts of 11 ablations and 96 patching rows, or theory stress tests passing 7 stress tests. The producer summary mentions these areas generally, but the reviewer-visible evidence does not substantiate those specific claims.",
+  "required_actions": [
+    "Revise the assertion to include only the large-eval aggregate and final pytest claims supported by visible evidence, or provide reviewer-visible evidence for the meta-analysis, downstream gate, component ablation, and theory stress-test claims."
+  ],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_148e5ce5f9a4",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_12bc0abf20b1",
+  "verdict": "revise"
+}

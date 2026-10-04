@@ -1,0 +1,16 @@
+{
+  "attempt": 3,
+  "elapsed_seconds": 127.56,
+  "record_summary": {
+    "all_found": true,
+    "all_valid": true,
+    "expected_reviewer_count": 55,
+    "found_reviewer_count": 55,
+    "missing_reviewer_task_ids": [],
+    "verdict_counts": {
+      "accept": 48,
+      "revise": 7
+    }
+  },
+  "status": "recorded"
+}

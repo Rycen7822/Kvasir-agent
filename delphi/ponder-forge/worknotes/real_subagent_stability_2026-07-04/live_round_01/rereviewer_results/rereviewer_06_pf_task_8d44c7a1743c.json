@@ -1,0 +1,11 @@
+{
+  "confidence": 0.88,
+  "independent_from_task_id": "pf_task_b5b8e4f16e9b",
+  "rationale": "The visible producer report and evidence support the bounded assertion. The report says a read-only metric command exited 0 and verified 1,380 recovery rows, 252 seed-robustness rows, 366 token-weighted eval rows, 360/360 large-eval endpoints, 18,789 heldout split records across 6 passed splits, and zero recovery-overlap hashes. The metric/sanity evidence further shows LARGE_EVAL_SUMMARY total rows=366, 360 Y_recover target rows plus 6 original-reference rows, empty hard_failures, all six model statuses passed, split_summary hard_failures empty with recovery_overlap_count=0/recovery_overlap_hashes=0, and conservative gate context with ce_selection_gate_passed=false, model_family_gate_met=false, downstream_gate_status=closed, oral_ready_gate_status=closed, and gate_verdict=closed. No artifacts or contrary evidence are visible.",
+  "required_actions": [],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_8d44c7a1743c",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_c77c999c50d7",
+  "verdict": "accept"
+}

@@ -1,0 +1,11 @@
+{
+  "confidence": 0.93,
+  "independent_from_task_id": "pf_task_847083d9f88e",
+  "rationale": "The visible evidence supports the assertion: REPORT_AUDIT is reported as passed with artifact_hash_count=29, claim_ledger_rows=9, and forbidden_claim_scan_passed=true; the hash comparison explicitly reports state_report_audit_hash_matches_current=false with different current and audit STAGE10_STATE.json sha256 values; and the plot artifact evidence reports stage10_plot_artifact_count=0 for common plot file types. The recommended actions follow from these supported conditions.",
+  "required_actions": [],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_a9c28f734f8b",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_96b73e0c0d31",
+  "verdict": "accept"
+}

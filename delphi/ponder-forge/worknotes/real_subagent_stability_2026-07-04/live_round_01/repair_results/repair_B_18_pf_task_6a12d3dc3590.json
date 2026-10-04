@@ -1,0 +1,128 @@
+{
+  "artifacts": [],
+  "assertions": [
+    {
+      "assertion_type": "data_result",
+      "confidence": 0.98,
+      "critical": true,
+      "evidence": [
+        {
+          "command": "python - <<'PY'\n# read-only verifier: compute STAGE10_STATE sha/bytes/lines, compare REPORT_AUDIT state record, and cross-check Stage10 row counts across recovery, large-eval, and meta summaries\nPY",
+          "directness": 1.0,
+          "evidence_type": "metric_output",
+          "exit_code": 0,
+          "freshness": 1.0,
+          "locator": "terminal command run from quest root",
+          "metric": {
+            "report_audit_state_record": {
+              "bytes": 36868,
+              "exists": true,
+              "lines": 876,
+              "path": "experiments/stage10/00_freeze/STAGE10_STATE.json",
+              "sha256": "a1c66af5f4b672df76b5fe8d717f63cea297811bc7b7dd7ff057ad7469723a12"
+            },
+            "row_checks_passed": {
+              "large_eval_rows_match_summary": true,
+              "panel_rows_match_large_eval_endpoint_rows": true,
+              "recovery_rows_match_ledger_and_summary": true,
+              "seed_rows_match_summary": true
+            },
+            "row_consistency": {
+              "gate_results": {
+                "ce_selection_gate_passed": false,
+                "downstream_gate_status": "closed",
+                "gate_verdict": "closed",
+                "large_eval_gate_passed": true,
+                "model_family_gate_met": false,
+                "oral_ready_gate_status": "closed",
+                "seed_robustness_gate_passed": true
+              },
+              "large_eval_evaluated_endpoint_rows": 360,
+              "large_eval_expected_formal_endpoint_rows": 360,
+              "large_eval_total_table_rows_including_original": 366,
+              "meta_model_count": 6,
+              "meta_panel_rows_sum": 360,
+              "recovery_endpoint_csv_rows": 1380,
+              "recovery_summary_seed_robustness_row_count": 252,
+              "recovery_summary_target_write_ledger_matches_endpoint_rows": true,
+              "recovery_summary_target_write_ledger_rows": 1380,
+              "recovery_summary_total_endpoint_count": 1380,
+              "seed_robustness_csv_rows": 252,
+              "selector_metrics_count": 6,
+              "target_write_ledger_jsonl_rows": 1380,
+              "token_weighted_eval_csv_rows": 366
+            },
+            "stage10_state_current": {
+              "bytes": 37714,
+              "lines": 887,
+              "path": "experiments/stage10/00_freeze/STAGE10_STATE.json",
+              "sha256": "7ac2f0bebeab991fe01ce3fa07fc1ed16b796382bb8249bf4de93d587383feee"
+            },
+            "state_record_is_stale": {
+              "bytes_mismatch": true,
+              "lines_mismatch": true,
+              "sha256_mismatch": true
+            }
+          },
+          "quote_or_observation": "The verifier exited 0 and reported state_record_is_stale={sha256_mismatch:true, bytes_mismatch:true, lines_mismatch:true}. Current STAGE10_STATE.json is sha256 7ac2f0bebeab991fe01ce3fa07fc1ed16b796382bb8249bf4de93d587383feee, 37714 bytes, 887 lines; REPORT_AUDIT.json records sha256 a1c66af5f4b672df76b5fe8d717f63cea297811bc7b7dd7ff057ad7469723a12, 36868 bytes, 876 lines. Row checks all passed: recovery rows match ledger and summary, seed rows match summary, large-eval rows match summary, and panel rows match large-eval endpoint rows.",
+          "relevance": 1.0,
+          "reliability": 0.99,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001",
+          "title": "Read-only Stage10 hash and row-consistency verifier"
+        },
+        {
+          "directness": 0.9,
+          "evidence_type": "transform_script",
+          "freshness": 0.9,
+          "locator": "lines 77-116 and 181-201",
+          "quote_or_observation": "SOURCE_ARTIFACTS includes the state artifact at experiments/stage10/00_freeze/STAGE10_STATE.json, and artifact_record computes sha256, bytes, and line_count for each selected artifact record. This establishes that REPORT_AUDIT.json's state row is intended to be a hash/size/line snapshot of STAGE10_STATE.json.",
+          "relevance": 0.95,
+          "reliability": 0.95,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/stage10/scripts/stage10_paper_package.py",
+          "title": "Paper-package script hashes source artifact records with sha/bytes/lines"
+        },
+        {
+          "directness": 0.85,
+          "evidence_type": "reproduction_log",
+          "freshness": 0.9,
+          "locator": "lines 1011-1015",
+          "quote_or_observation": "The recorded S10-15b paper package run wrote REPORT_AUDIT.json, while the later S10-15c status-compression/index validation formally checked STAGE10_STATE.json, structure.json, REPORT_AUDIT.json, compact line limits, and Stage10/report_archive index entries, ending with active_substage=Stage10_complete and target_write_ledger_rows=1380. This is consistent with REPORT_AUDIT.json containing a pre-S10-15c hash/size/line snapshot for STAGE10_STATE.json.",
+          "relevance": 0.9,
+          "reliability": 0.9,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001/experiments/正式实验命令.md",
+          "title": "Existing Stage10 execution log explains audit then later state refresh"
+        },
+        {
+          "command": "python experiments/stage10/scripts/stage10_final_report_audit.py --quest-root /home/xu/project/loop/DeepScientist/quests/001",
+          "directness": 0.8,
+          "evidence_type": "sanity_check",
+          "exit_code": 0,
+          "freshness": 1.0,
+          "locator": "terminal command run from quest root",
+          "metric": {
+            "forbidden_claim_hits": [],
+            "forbidden_claim_scan_passed": true,
+            "missing_report_markers": [],
+            "report_markers_passed": true,
+            "status": "passed"
+          },
+          "quote_or_observation": "Command output: {\"forbidden_claim_hits\": [], \"forbidden_claim_scan_passed\": true, \"missing_report_markers\": [], \"report_markers_passed\": true, \"status\": \"passed\"}. This sanity check does not remove the stale state hash finding; it confirms the final-report narrative audit remains passing while the repaired assertion is specifically about the stale REPORT_AUDIT state artifact record.",
+          "relevance": 0.85,
+          "reliability": 0.95,
+          "source_ref": "/home/xu/project/loop/DeepScientist/quests/001",
+          "title": "Final report audit still passes narrative-marker and forbidden-claim checks"
+        }
+      ],
+      "importance": 0.95,
+      "supersedes_assertion_id": "pf_assertion_7f031a563876",
+      "text": "Major Stage10 row-count surfaces checked here are internally consistent, while REPORT_AUDIT.json's artifact record for experiments/stage10/00_freeze/STAGE10_STATE.json is stale. Read-only verification found recovery endpoints, target-write ledger, seed robustness, token-weighted large-eval rows, and meta panel rows matching their summaries; it also found current STAGE10_STATE.json sha256=7ac2f0bebeab991fe01ce3fa07fc1ed16b796382bb8249bf4de93d587383feee, bytes=37714, lines=887, whereas REPORT_AUDIT.json records sha256=a1c66af5f4b672df76b5fe8d717f63cea297811bc7b7dd7ff057ad7469723a12, bytes=36868, lines=876 for that same path."
+    }
+  ],
+  "profile": "analysis",
+  "role": "gate_gap_repairer",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Read the delegated payload, selected task pf_task_6a12d3dc3590, and inspected /home/xu/project/loop/DeepScientist/quests/001 read-only. The repaired assertion is supported by a successful metric-output command showing Stage10 row-count consistency and the stale REPORT_AUDIT.json record for STAGE10_STATE.json. No source files were created or modified; artifacts is empty.",
+  "target_assertion_id": "pf_assertion_7f031a563876",
+  "task_id": "pf_task_6a12d3dc3590",
+  "title": "Repair evidence for stale Stage10 state audit record"
+}

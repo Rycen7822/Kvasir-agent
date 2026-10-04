@@ -1,0 +1,11 @@
+{
+  "confidence": 0.92,
+  "independent_from_task_id": "pf_task_8e1d1df7c429",
+  "rationale": "The provided evidence directly supports each listed next-step priority: model-family gate failure with six resource-gated models supports expanded/rerun coverage; selector metrics show eligible LoopCert selectors improve regret but not cost while OrbitRepair-Proxy is the only option beating both, supporting CE-selection improvement and proxy/baseline labeling; STAGE10_STATE has an explicit top-level versus coverage model_family_gate_met inconsistency; TOKEN_WEIGHTED_EVAL includes 28 negative recovered_fraction values requiring caveats; and plot searches found no Stage10 plot artifacts, so auditable plots are only needed if visual claims are made. The assertion is framed as priorities rather than completed results and is consistent with the producer report and evidence.",
+  "required_actions": [],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_422595f4a046",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_ad806f761136",
+  "verdict": "accept"
+}

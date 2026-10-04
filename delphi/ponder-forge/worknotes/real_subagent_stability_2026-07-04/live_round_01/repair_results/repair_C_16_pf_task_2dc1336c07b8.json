@@ -1,0 +1,99 @@
+{
+  "artifacts": [],
+  "assertions": [
+    {
+      "assertion_type": "data_result",
+      "confidence": 0.9,
+      "critical": true,
+      "evidence": [
+        {
+          "command": "python - <<'PY'\nimport csv, json, pathlib\nroot = pathlib.Path('/home/xu/project/loop/DeepScientist/quests/001')\nstage = root / 'experiments/stage10'\nstate = json.loads((stage / '00_freeze/STAGE10_STATE.json').read_text())\ndownstream = json.loads((stage / '10_downstream/DOWNSTREAM_GATE_STATUS.json').read_text())\ncomponent = json.loads((stage / '09_ablation_patching/STAGE10_COMPONENT_ABLATION_AUDIT.json').read_text())\nhidden_no_target = json.loads((stage / '01_hidden_bank/NO_TARGET_AUDIT.json').read_text())\nloopcert_no_target = json.loads((stage / '04_loopcert_scores/NO_TARGET_AUDIT.json').read_text())\nrows = list(csv.DictReader((stage / '06_recovery/RECOVERY_ENDPOINTS.csv').open(newline='')))\nrecovered = [float(r['recovered_fraction']) for r in rows if r.get('recovered_fraction') not in (None, '')]\nnegative = [v for v in recovered if v < 0]\nresult = {\n    'state_downstream_gate_status': state.get('downstream_gate_status'),\n    'state_downstream_run_executed': state.get('downstream_run_executed'),\n    'state_oral_ready_gate_status': state.get('oral_ready_gate_status'),\n    'downstream_gate_status': downstream.get('downstream_gate_status'),\n    'downstream_run_executed': downstream.get('downstream_run_executed'),\n    'downstream_closed_reasons': downstream.get('closed_reasons'),\n    'mechanism_claim_status': component.get('mechanism_claim_status'),\n    'component_ablation_status': component.get('status'),\n    'ablation_count': component.get('ablation_count'),\n    'patching_result_count': component.get('patching_result_count'),\n    'recovery_endpoint_rows': len(rows),\n    'recovered_fraction_count': len(recovered),\n    'negative_recovered_fraction_count': len(negative),\n    'min_recovered_fraction': min(recovered),\n    'max_recovered_fraction': max(recovered),\n    'hidden_no_target': {k: hidden_no_target.get(k) for k in ['status','uses_target','writes_Y_frozen','writes_Y_recover','writes_downstream']},\n    'loopcert_no_target': {k: loopcert_no_target.get(k) for k in ['policy','uses_target','writes_Y_frozen','writes_Y_recover','writes_downstream']},\n}\nprint(json.dumps(result, sort_keys=True))\nPY",
+          "directness": 0.98,
+          "evidence_type": "metric_output",
+          "exit_code": 0,
+          "freshness": 0.95,
+          "metric": {
+            "ablation_count": 11,
+            "component_ablation_status": "passed_S10-14_component_ablation_causal_patching_failure_taxonomy",
+            "downstream_closed_reasons": [
+              "CE selection gate did not beat CFC-only on both macro regret@3 and cost-to-contain",
+              "Model-family gate is resource-gated"
+            ],
+            "downstream_gate_status": "closed",
+            "downstream_run_executed": false,
+            "hidden_no_target": {
+              "status": "passed",
+              "uses_target": false,
+              "writes_Y_frozen": false,
+              "writes_Y_recover": false,
+              "writes_downstream": false
+            },
+            "loopcert_no_target": {
+              "policy": "score_builder_uses_only_score_side_cfc_and_loopcert_component_ledgers",
+              "uses_target": false,
+              "writes_Y_frozen": false,
+              "writes_Y_recover": false,
+              "writes_downstream": false
+            },
+            "max_recovered_fraction": 0.9829474503169311,
+            "mechanism_claim_status": "diagnostic_or_mixed",
+            "min_recovered_fraction": 0.033709821134986155,
+            "negative_recovered_fraction_count": 0,
+            "patching_result_count": 96,
+            "recovered_fraction_count": 1380,
+            "recovery_endpoint_rows": 1380,
+            "state_downstream_gate_status": "closed",
+            "state_downstream_run_executed": false,
+            "state_oral_ready_gate_status": "closed"
+          },
+          "quote_or_observation": "The read-only metric command exited 0 and returned closed downstream/oral gate status, downstream_run_executed=false, mechanism_claim_status=diagnostic_or_mixed, passed/no-write no-target audit values, and 0 negative recovered_fraction values among 1,380 recovery endpoints (min=0.033709821134986155, max=0.9829474503169311).",
+          "relevance": 0.98,
+          "reliability": 0.96,
+          "source_ref": "experiments/stage10/00_freeze/STAGE10_STATE.json; experiments/stage10/10_downstream/DOWNSTREAM_GATE_STATUS.json; experiments/stage10/09_ablation_patching/STAGE10_COMPONENT_ABLATION_AUDIT.json; experiments/stage10/01_hidden_bank/NO_TARGET_AUDIT.json; experiments/stage10/04_loopcert_scores/NO_TARGET_AUDIT.json; experiments/stage10/06_recovery/RECOVERY_ENDPOINTS.csv",
+          "title": "Read-only recomputation of Stage10 gate, mechanism, no-target, and recovery_fraction metrics"
+        },
+        {
+          "command": "python - <<'PY'\nimport csv, json, pathlib\nroot = pathlib.Path('/home/xu/project/loop/DeepScientist/quests/001')\nstage = root / 'experiments/stage10'\nstate = json.loads((stage / '00_freeze/STAGE10_STATE.json').read_text())\ndownstream = json.loads((stage / '10_downstream/DOWNSTREAM_GATE_STATUS.json').read_text())\ncomponent = json.loads((stage / '09_ablation_patching/STAGE10_COMPONENT_ABLATION_AUDIT.json').read_text())\nhidden_no_target = json.loads((stage / '01_hidden_bank/NO_TARGET_AUDIT.json').read_text())\nloopcert_no_target = json.loads((stage / '04_loopcert_scores/NO_TARGET_AUDIT.json').read_text())\nrows = list(csv.DictReader((stage / '06_recovery/RECOVERY_ENDPOINTS.csv').open(newline='')))\nrecovered = [float(r['recovered_fraction']) for r in rows if r.get('recovered_fraction') not in (None, '')]\nnegative = [v for v in recovered if v < 0]\nresult = {\n    'state_downstream_gate_status': state.get('downstream_gate_status'),\n    'state_downstream_run_executed': state.get('downstream_run_executed'),\n    'state_oral_ready_gate_status': state.get('oral_ready_gate_status'),\n    'downstream_gate_status': downstream.get('downstream_gate_status'),\n    'downstream_run_executed': downstream.get('downstream_run_executed'),\n    'downstream_closed_reasons': downstream.get('closed_reasons'),\n    'mechanism_claim_status': component.get('mechanism_claim_status'),\n    'component_ablation_status': component.get('status'),\n    'ablation_count': component.get('ablation_count'),\n    'patching_result_count': component.get('patching_result_count'),\n    'recovery_endpoint_rows': len(rows),\n    'recovered_fraction_count': len(recovered),\n    'negative_recovered_fraction_count': len(negative),\n    'min_recovered_fraction': min(recovered),\n    'max_recovered_fraction': max(recovered),\n    'hidden_no_target': {k: hidden_no_target.get(k) for k in ['status','uses_target','writes_Y_frozen','writes_Y_recover','writes_downstream']},\n    'loopcert_no_target': {k: loopcert_no_target.get(k) for k in ['policy','uses_target','writes_Y_frozen','writes_Y_recover','writes_downstream']},\n}\nprint(json.dumps(result, sort_keys=True))\nPY",
+          "directness": 0.84,
+          "evidence_type": "reproduction_log",
+          "exit_code": 0,
+          "freshness": 0.95,
+          "quote_or_observation": "The metric extraction was run from the quest root and only read existing Stage10 JSON/CSV artifacts; no source artifacts were edited, committed, or pushed.",
+          "relevance": 0.86,
+          "reliability": 0.9,
+          "source_ref": "Hermes terminal in /home/xu/project/loop/DeepScientist/quests/001",
+          "title": "Read-only reproduction command completed successfully"
+        },
+        {
+          "directness": 0.9,
+          "evidence_type": "sanity_check",
+          "freshness": 0.9,
+          "metric": {
+            "claim_ledger_downstream_status": "not_evaluated_closed",
+            "claim_ledger_mechanism_boundary": "diagnostic_or_mixed_not_universal",
+            "hidden_bank_no_target_passed": true,
+            "loopcert_uses_target": false,
+            "loopcert_writes_Y_frozen": false,
+            "loopcert_writes_Y_recover": false,
+            "recovery_overlap_count": 0,
+            "split_boundary_status": "passed"
+          },
+          "quote_or_observation": "Hidden-bank NO_TARGET_AUDIT has status=passed, uses_target=false, writes_Y_frozen=false, writes_Y_recover=false, writes_downstream=false; LoopCert NO_TARGET_AUDIT records score-side-only policy with uses_target=false and no Y/downstream writes; ALIGNMENT_AUDIT records split_boundary_status=passed and recovery_overlap_count=0; the claim ledger bounds component_ablation as diagnostic/mixed, downstream_utility as not_evaluated with downstream_gate_status=closed/downstream_run_executed=False, and oral_gate as closed.",
+          "relevance": 0.94,
+          "reliability": 0.92,
+          "source_ref": "experiments/stage10/01_hidden_bank/NO_TARGET_AUDIT.json lines 1-8; experiments/stage10/04_loopcert_scores/NO_TARGET_AUDIT.json lines 16-21; experiments/stage10/07_large_eval/ALIGNMENT_AUDIT.md lines 6-13; experiments/stage10/12_paper_package/STAGE10_CLAIM_LEDGER.md lines 11-17",
+          "title": "Claim-boundary and leakage-control sanity checks"
+        }
+      ],
+      "importance": 0.92,
+      "supersedes_assertion_id": "pf_assertion_01c4a374794c",
+      "text": "Repaired/narrowed result for pf_assertion_01c4a374794c: Stage10 has meaningful leakage/split controls via no-target/no-write audits and split-boundary evidence, but should still be framed conservatively because downstream_gate_status and oral_ready_gate_status are closed and mechanism_claim_status is diagnostic_or_mixed. The original clause that some recovered_fraction values are negative is not supported by the current RECOVERY_ENDPOINTS.csv (0 negatives across 1,380 rows; minimum recovered_fraction=0.033709821134986155), so that clause is removed rather than claimed."
+    }
+  ],
+  "role": "gate_gap_repairer",
+  "run_id": "pf_run_80cb097d3870",
+  "summary": "Read-only repair for pf_assertion_01c4a374794c: recomputed Stage10 gate/recovery/mechanism facts from existing quest artifacts, added analysis-profile metric_output evidence with exit_code=0, and narrowed the original wording by removing the unsupported negative recovered_fraction subclaim (0/1380 negatives observed). No source files were modified.",
+  "target_assertion_id": "pf_assertion_01c4a374794c",
+  "task_id": "pf_task_2dc1336c07b8",
+  "title": "Repair pf_assertion_01c4a374794c with analysis-profile metric evidence"
+}

@@ -1,0 +1,31 @@
+{
+  "budget": null,
+  "delegation_keys": [
+    "delegate_task_payload",
+    "instruction",
+    "native_tool_to_call_next",
+    "remaining_queued_tasks",
+    "run_id",
+    "success"
+  ],
+  "hermes_home": "/home/xu/project/autosci-delphi/ponder-forge/worknotes/real_subagent_stability_2026-07-04/hermes_home_live_01",
+  "plan_keys": [
+    "profile",
+    "run_id",
+    "success",
+    "swarm_budget",
+    "tasks",
+    "workflow_nodes"
+  ],
+  "round_dir": "/home/xu/project/autosci-delphi/ponder-forge/worknotes/real_subagent_stability_2026-07-04/live_round_01",
+  "run_id": "pf_run_80cb097d3870",
+  "start_keys": [
+    "next_command",
+    "ok",
+    "profile",
+    "run_id",
+    "status",
+    "success"
+  ],
+  "task_count": 8
+}

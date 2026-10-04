@@ -1,0 +1,20 @@
+{
+  "profile": "coding",
+  "goal": "fix a failing pytest with causal evidence",
+  "expected_status": "final",
+  "report": {
+    "summary": "The code fix is backed by root cause and passing tests.",
+    "assertions": [
+      {
+        "assertion_type": "code_claim",
+        "text": "The failing pytest is fixed by a causal code change.",
+        "importance": 0.95,
+        "critical": true,
+        "evidence": [
+          {"evidence_type": "root_cause_trace", "source_ref": "bug.md", "quote_or_observation": "bad branch caused failure"},
+          {"evidence_type": "passing_test", "source_ref": "pytest.log", "quote_or_observation": "1 passed", "command": "pytest", "exit_code": 0}
+        ]
+      }
+    ]
+  }
+}

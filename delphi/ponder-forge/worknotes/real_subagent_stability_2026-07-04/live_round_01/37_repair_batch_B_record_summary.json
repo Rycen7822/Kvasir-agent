@@ -1,0 +1,438 @@
+{
+  "all_found": true,
+  "all_valid": true,
+  "batch": "B",
+  "expected_report_count": 20,
+  "found_report_count": 20,
+  "missing_task_ids": [],
+  "quest_signature": {
+    "file_count": 175707,
+    "latest_mtime_ns": 1782083849137958327,
+    "latest_path": ".ds/bash_exec/summary.json",
+    "total_size": 625172277988
+  },
+  "reports": {
+    "pf_task_014ed163c07f": {
+      "assertion_count": 1,
+      "errors": [],
+      "index": 1,
+      "saved_path": "/home/xu/project/autosci-delphi/ponder-forge/worknotes/real_subagent_stability_2026-07-04/live_round_01/repair_results/repair_B_01_pf_task_014ed163c07f.json",
+      "source_ref": "state_db:messages:380787:20260705_003244_23bc09:assistant",
+      "submit_result": {
+        "artifact_ids": [],
+        "assertion_ids": [
+          "pf_assertion_923eb142785f"
+        ],
+        "evidence_ids": [
+          "pf_evidence_1b446c558e33",
+          "pf_evidence_1de97fe91f74",
+          "pf_evidence_757a4849bb35",
+          "pf_evidence_23f355a442bc"
+        ],
+        "report_id": "pf_report_2059d96efffb",
+        "success": true
+      }
+    },
+    "pf_task_040d2c59f466": {
+      "assertion_count": 2,
+      "errors": [],
+      "index": 14,
+      "saved_path": "/home/xu/project/autosci-delphi/ponder-forge/worknotes/real_subagent_stability_2026-07-04/live_round_01/repair_results/repair_B_14_pf_task_040d2c59f466.json",
+      "source_ref": "state_db:messages:380789:20260705_003249_036788:assistant",
+      "submit_result": {
+        "artifact_ids": [],
+        "assertion_ids": [
+          "pf_assertion_d32ff702a109",
+          "pf_assertion_2231e5ec48dc"
+        ],
+        "evidence_ids": [
+          "pf_evidence_069bb68bb461",
+          "pf_evidence_1f80be017b5e",
+          "pf_evidence_2de60709e131",
+          "pf_evidence_1aad555d95e7"
+        ],
+        "report_id": "pf_report_313ce2d8ad75",
+        "success": true
+      }
+    },
+    "pf_task_0f5304ceecb3": {
+      "assertion_count": 1,
+      "errors": [],
+      "index": 5,
+      "saved_path": "/home/xu/project/autosci-delphi/ponder-forge/worknotes/real_subagent_stability_2026-07-04/live_round_01/repair_results/repair_B_05_pf_task_0f5304ceecb3.json",
+      "source_ref": "state_db:messages:380602:20260705_003245_c250ee:assistant",
+      "submit_result": {
+        "artifact_ids": [],
+        "assertion_ids": [
+          "pf_assertion_5a424f246c1f"
+        ],
+        "evidence_ids": [
+          "pf_evidence_c9330819d8b0",
+          "pf_evidence_f4881cb194dc",
+          "pf_evidence_711f3f34e89d"
+        ],
+        "report_id": "pf_report_79811cd3d888",
+        "success": true
+      }
+    },
+    "pf_task_168ab133300e": {
+      "assertion_count": 1,
+      "errors": [],
+      "index": 0,
+      "saved_path": "/home/xu/project/autosci-delphi/ponder-forge/worknotes/real_subagent_stability_2026-07-04/live_round_01/repair_results/repair_B_00_pf_task_168ab133300e.json",
+      "source_ref": "state_db:messages:380710:20260705_003244_027338:assistant",
+      "submit_result": {
+        "artifact_ids": [],
+        "assertion_ids": [
+          "pf_assertion_ae1453518e84"
+        ],
+        "evidence_ids": [
+          "pf_evidence_b37e578b45e6",
+          "pf_evidence_8360d1a951fb",
+          "pf_evidence_ae0c8d81fa62",
+          "pf_evidence_e95356a953ce"
+        ],
+        "report_id": "pf_report_f1543765ec99",
+        "success": true
+      }
+    },
+    "pf_task_1a255c21305c": {
+      "assertion_count": 1,
+      "errors": [],
+      "index": 4,
+      "saved_path": "/home/xu/project/autosci-delphi/ponder-forge/worknotes/real_subagent_stability_2026-07-04/live_round_01/repair_results/repair_B_04_pf_task_1a255c21305c.json",
+      "source_ref": "state_db:messages:380700:20260705_003245_a4aa23:assistant",
+      "submit_result": {
+        "artifact_ids": [],
+        "assertion_ids": [
+          "pf_assertion_3ef8f6e22961"
+        ],
+        "evidence_ids": [
+          "pf_evidence_dd902706560a",
+          "pf_evidence_44667705e7b1",
+          "pf_evidence_518211da4c55",
+          "pf_evidence_76d5e3012630",
+          "pf_evidence_ff78f91b515e"
+        ],
+        "report_id": "pf_report_a23196f79a8f",
+        "success": true
+      }
+    },
+    "pf_task_3ab99bb83bd8": {
+      "assertion_count": 1,
+      "errors": [],
+      "index": 10,
+      "saved_path": "/home/xu/project/autosci-delphi/ponder-forge/worknotes/real_subagent_stability_2026-07-04/live_round_01/repair_results/repair_B_10_pf_task_3ab99bb83bd8.json",
+      "source_ref": "state_db:messages:380582:20260705_003248_728559:assistant",
+      "submit_result": {
+        "artifact_ids": [],
+        "assertion_ids": [
+          "pf_assertion_1b08250ddcdd"
+        ],
+        "evidence_ids": [
+          "pf_evidence_66a29f75496b",
+          "pf_evidence_fe535ba164d9",
+          "pf_evidence_43b3ed9b3052",
+          "pf_evidence_0285f70bbd5a"
+        ],
+        "report_id": "pf_report_e61b14ca362d",
+        "success": true
+      }
+    },
+    "pf_task_41528e7a3fb0": {
+      "assertion_count": 1,
+      "errors": [],
+      "index": 3,
+      "saved_path": "/home/xu/project/autosci-delphi/ponder-forge/worknotes/real_subagent_stability_2026-07-04/live_round_01/repair_results/repair_B_03_pf_task_41528e7a3fb0.json",
+      "source_ref": "state_db:messages:380778:20260705_003245_5ad1c9:assistant",
+      "submit_result": {
+        "artifact_ids": [],
+        "assertion_ids": [
+          "pf_assertion_3bb2ab600bf1"
+        ],
+        "evidence_ids": [
+          "pf_evidence_fe9a767b0d44",
+          "pf_evidence_b2ce17c8b0d4",
+          "pf_evidence_7d20c155c1ce"
+        ],
+        "report_id": "pf_report_bf72716300e8",
+        "success": true
+      }
+    },
+    "pf_task_58ec2e500d53": {
+      "assertion_count": 1,
+      "errors": [],
+      "index": 12,
+      "saved_path": "/home/xu/project/autosci-delphi/ponder-forge/worknotes/real_subagent_stability_2026-07-04/live_round_01/repair_results/repair_B_12_pf_task_58ec2e500d53.json",
+      "source_ref": "state_db:messages:380585:20260705_003248_908a47:assistant",
+      "submit_result": {
+        "artifact_ids": [],
+        "assertion_ids": [
+          "pf_assertion_dda5d9e93d0b"
+        ],
+        "evidence_ids": [
+          "pf_evidence_0cde870cac4d",
+          "pf_evidence_b2e1bcff2509",
+          "pf_evidence_b872b25fc11d",
+          "pf_evidence_d24a00c6dcb8"
+        ],
+        "report_id": "pf_report_3adf6047d3c1",
+        "success": true
+      }
+    },
+    "pf_task_67c20c182d62": {
+      "assertion_count": 1,
+      "errors": [],
+      "index": 9,
+      "saved_path": "/home/xu/project/autosci-delphi/ponder-forge/worknotes/real_subagent_stability_2026-07-04/live_round_01/repair_results/repair_B_09_pf_task_67c20c182d62.json",
+      "source_ref": "state_db:messages:380788:20260705_003247_8a7fd0:assistant",
+      "submit_result": {
+        "artifact_ids": [],
+        "assertion_ids": [
+          "pf_assertion_4557b883c0f8"
+        ],
+        "evidence_ids": [
+          "pf_evidence_d2639d8664e7",
+          "pf_evidence_481dd5ba38d9",
+          "pf_evidence_27488ece8cd0",
+          "pf_evidence_21eb1827ba84"
+        ],
+        "report_id": "pf_report_05b8954da27b",
+        "success": true
+      }
+    },
+    "pf_task_6a12d3dc3590": {
+      "assertion_count": 1,
+      "errors": [],
+      "index": 18,
+      "saved_path": "/home/xu/project/autosci-delphi/ponder-forge/worknotes/real_subagent_stability_2026-07-04/live_round_01/repair_results/repair_B_18_pf_task_6a12d3dc3590.json",
+      "source_ref": "state_db:messages:380701:20260705_003251_be4122:assistant",
+      "submit_result": {
+        "artifact_ids": [],
+        "assertion_ids": [
+          "pf_assertion_4ba2e467116d"
+        ],
+        "evidence_ids": [
+          "pf_evidence_a4a97002070f",
+          "pf_evidence_41af4434e3bb",
+          "pf_evidence_e035c01b0cfa",
+          "pf_evidence_250b16eb176e"
+        ],
+        "report_id": "pf_report_321e2c397491",
+        "success": true
+      }
+    },
+    "pf_task_783f1e56c7fc": {
+      "assertion_count": 1,
+      "errors": [],
+      "index": 2,
+      "saved_path": "/home/xu/project/autosci-delphi/ponder-forge/worknotes/real_subagent_stability_2026-07-04/live_round_01/repair_results/repair_B_02_pf_task_783f1e56c7fc.json",
+      "source_ref": "state_db:messages:380744:20260705_003244_3f3814:assistant",
+      "submit_result": {
+        "artifact_ids": [],
+        "assertion_ids": [
+          "pf_assertion_59454e3efeb3"
+        ],
+        "evidence_ids": [
+          "pf_evidence_3336fdb38df3",
+          "pf_evidence_4f2399ca79cf",
+          "pf_evidence_80b53fbeed3d",
+          "pf_evidence_e76d360f4f96"
+        ],
+        "report_id": "pf_report_6a8d9aef7381",
+        "success": true
+      }
+    },
+    "pf_task_7ff017230785": {
+      "assertion_count": 1,
+      "errors": [],
+      "index": 16,
+      "saved_path": "/home/xu/project/autosci-delphi/ponder-forge/worknotes/real_subagent_stability_2026-07-04/live_round_01/repair_results/repair_B_16_pf_task_7ff017230785.json",
+      "source_ref": "state_db:messages:380699:20260705_003250_01a698:assistant",
+      "submit_result": {
+        "artifact_ids": [],
+        "assertion_ids": [
+          "pf_assertion_adcef1fb315c"
+        ],
+        "evidence_ids": [
+          "pf_evidence_9b3bc9c7e492",
+          "pf_evidence_4e469d420142",
+          "pf_evidence_71a8bbb056ba",
+          "pf_evidence_94cb56dd3256"
+        ],
+        "report_id": "pf_report_ced7b0bbbaad",
+        "success": true
+      }
+    },
+    "pf_task_813ced9cc91e": {
+      "assertion_count": 1,
+      "errors": [],
+      "index": 19,
+      "saved_path": "/home/xu/project/autosci-delphi/ponder-forge/worknotes/real_subagent_stability_2026-07-04/live_round_01/repair_results/repair_B_19_pf_task_813ced9cc91e.json",
+      "source_ref": "state_db:messages:380524:20260705_003251_1bf55d:assistant",
+      "submit_result": {
+        "artifact_ids": [],
+        "assertion_ids": [
+          "pf_assertion_d50de44400b5"
+        ],
+        "evidence_ids": [
+          "pf_evidence_396619bf51b1",
+          "pf_evidence_c2d311e2af50",
+          "pf_evidence_f3725d214bd2"
+        ],
+        "report_id": "pf_report_274ecc8cb14a",
+        "success": true
+      }
+    },
+    "pf_task_93f3e65c8d0c": {
+      "assertion_count": 1,
+      "errors": [],
+      "index": 17,
+      "saved_path": "/home/xu/project/autosci-delphi/ponder-forge/worknotes/real_subagent_stability_2026-07-04/live_round_01/repair_results/repair_B_17_pf_task_93f3e65c8d0c.json",
+      "source_ref": "state_db:messages:380895:20260705_005635_444ca1:assistant",
+      "submit_result": {
+        "artifact_ids": [],
+        "assertion_ids": [
+          "pf_assertion_4352fb5869b0"
+        ],
+        "evidence_ids": [
+          "pf_evidence_d6b526fdd2b9",
+          "pf_evidence_18c00976c8e3",
+          "pf_evidence_8ac189315a60",
+          "pf_evidence_de1c2919f8cd",
+          "pf_evidence_41ecbcaadbf3"
+        ],
+        "report_id": "pf_report_19b6a1285a6a",
+        "success": true
+      }
+    },
+    "pf_task_9d709dde4580": {
+      "assertion_count": 1,
+      "errors": [],
+      "index": 13,
+      "saved_path": "/home/xu/project/autosci-delphi/ponder-forge/worknotes/real_subagent_stability_2026-07-04/live_round_01/repair_results/repair_B_13_pf_task_9d709dde4580.json",
+      "source_ref": "state_db:messages:380664:20260705_003249_65d9ea:assistant",
+      "submit_result": {
+        "artifact_ids": [],
+        "assertion_ids": [
+          "pf_assertion_0d786bf92499"
+        ],
+        "evidence_ids": [
+          "pf_evidence_770e3ea2520c",
+          "pf_evidence_ff8da143ec15",
+          "pf_evidence_be9279a156ed",
+          "pf_evidence_7236bc3a4f35"
+        ],
+        "report_id": "pf_report_23b7f37003ed",
+        "success": true
+      }
+    },
+    "pf_task_c30a7bbc8a49": {
+      "assertion_count": 1,
+      "errors": [],
+      "index": 15,
+      "saved_path": "/home/xu/project/autosci-delphi/ponder-forge/worknotes/real_subagent_stability_2026-07-04/live_round_01/repair_results/repair_B_15_pf_task_c30a7bbc8a49.json",
+      "source_ref": "state_db:messages:380565:20260705_003250_fec99a:assistant",
+      "submit_result": {
+        "artifact_ids": [],
+        "assertion_ids": [
+          "pf_assertion_fb42a6e66505"
+        ],
+        "evidence_ids": [
+          "pf_evidence_8e90108ad959",
+          "pf_evidence_0c3da660ac42",
+          "pf_evidence_5716be8d4807",
+          "pf_evidence_f148f0462c68",
+          "pf_evidence_38361a8d565f"
+        ],
+        "report_id": "pf_report_c899c5d11700",
+        "success": true
+      }
+    },
+    "pf_task_d8d64ef0c037": {
+      "assertion_count": 1,
+      "errors": [],
+      "index": 6,
+      "saved_path": "/home/xu/project/autosci-delphi/ponder-forge/worknotes/real_subagent_stability_2026-07-04/live_round_01/repair_results/repair_B_06_pf_task_d8d64ef0c037.json",
+      "source_ref": "state_db:messages:380671:20260705_003246_9aa494:assistant",
+      "submit_result": {
+        "artifact_ids": [],
+        "assertion_ids": [
+          "pf_assertion_c8ed5d1db11c"
+        ],
+        "evidence_ids": [
+          "pf_evidence_cca820fd8abb",
+          "pf_evidence_99fb2c6da947",
+          "pf_evidence_634dd4b3ea6c",
+          "pf_evidence_3a97b8470fb5"
+        ],
+        "report_id": "pf_report_4ef1fba2b1ed",
+        "success": true
+      }
+    },
+    "pf_task_ee85dad8ba18": {
+      "assertion_count": 1,
+      "errors": [],
+      "index": 8,
+      "saved_path": "/home/xu/project/autosci-delphi/ponder-forge/worknotes/real_subagent_stability_2026-07-04/live_round_01/repair_results/repair_B_08_pf_task_ee85dad8ba18.json",
+      "source_ref": "state_db:messages:380751:20260705_003247_03d9cc:assistant",
+      "submit_result": {
+        "artifact_ids": [],
+        "assertion_ids": [
+          "pf_assertion_9e6335e1bad7"
+        ],
+        "evidence_ids": [
+          "pf_evidence_5a03a9565fc6",
+          "pf_evidence_86502e29e3bd",
+          "pf_evidence_43dc2281a7e6",
+          "pf_evidence_c08f69938e53"
+        ],
+        "report_id": "pf_report_01dbc63cb07d",
+        "success": true
+      }
+    },
+    "pf_task_fa5c0e427f96": {
+      "assertion_count": 1,
+      "errors": [],
+      "index": 11,
+      "saved_path": "/home/xu/project/autosci-delphi/ponder-forge/worknotes/real_subagent_stability_2026-07-04/live_round_01/repair_results/repair_B_11_pf_task_fa5c0e427f96.json",
+      "source_ref": "state_db:messages:380576:20260705_003248_24419a:assistant",
+      "submit_result": {
+        "artifact_ids": [],
+        "assertion_ids": [
+          "pf_assertion_ffcc3c70cf73"
+        ],
+        "evidence_ids": [
+          "pf_evidence_29f92e26eb2e",
+          "pf_evidence_a0700f4342bb",
+          "pf_evidence_ba533fd8a637",
+          "pf_evidence_718b51858f52"
+        ],
+        "report_id": "pf_report_d57689327dd2",
+        "success": true
+      }
+    },
+    "pf_task_fc1606ea8cab": {
+      "assertion_count": 1,
+      "errors": [],
+      "index": 7,
+      "saved_path": "/home/xu/project/autosci-delphi/ponder-forge/worknotes/real_subagent_stability_2026-07-04/live_round_01/repair_results/repair_B_07_pf_task_fc1606ea8cab.json",
+      "source_ref": "state_db:messages:380647:20260705_003246_b7e798:assistant",
+      "submit_result": {
+        "artifact_ids": [],
+        "assertion_ids": [
+          "pf_assertion_50e14fdc4a6b"
+        ],
+        "evidence_ids": [
+          "pf_evidence_59f19d3c7e6e",
+          "pf_evidence_827547a7f678",
+          "pf_evidence_896094052c3f",
+          "pf_evidence_24c39939f44f"
+        ],
+        "report_id": "pf_report_9de0f1ce1e8d",
+        "success": true
+      }
+    }
+  },
+  "run_id": "pf_run_80cb097d3870"
+}

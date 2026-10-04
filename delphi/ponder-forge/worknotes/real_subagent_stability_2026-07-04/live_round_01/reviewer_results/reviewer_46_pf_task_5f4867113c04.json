@@ -1,0 +1,11 @@
+{
+  "confidence": 0.86,
+  "independent_from_task_id": "pf_task_adacac9eddf7",
+  "rationale": "The visible producer report and evidence support the assertion: the report states major Stage10 row counts were consistent with summaries, evidence [1] lists the verified row counts and reports state_report_audit_hash_matches_current=false, and evidence [2] directly confirms the stated current STAGE10_STATE.json sha256 differs from the REPORT_AUDIT.json record sha256. No visible evidence contradicts the claim.",
+  "required_actions": [],
+  "reviewer_role": "repro_reviewer",
+  "reviewer_task_id": "pf_task_5f4867113c04",
+  "run_id": "pf_run_80cb097d3870",
+  "target_id": "pf_assertion_7f031a563876",
+  "verdict": "accept"
+}

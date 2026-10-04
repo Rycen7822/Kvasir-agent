@@ -1,0 +1,21 @@
+{
+  "profile": "math",
+  "goal": "check a proof step with critique",
+  "expected_status": "final",
+  "report": {
+    "summary": "The proof step has an independent critique and revision trace.",
+    "assertions": [
+      {
+        "assertion_type": "proof_step",
+        "text": "The induction step follows from the recurrence hypothesis.",
+        "importance": 0.95,
+        "critical": true,
+        "evidence": [
+          {"evidence_type": "proof_step", "source_ref": "attempt", "quote_or_observation": "apply induction hypothesis"},
+          {"evidence_type": "critique", "source_ref": "review", "quote_or_observation": "checked base and step cases"},
+          {"evidence_type": "revision_trace", "source_ref": "attempt2", "quote_or_observation": "clarified boundary case"}
+        ]
+      }
+    ]
+  }
+}
