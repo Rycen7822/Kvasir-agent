@@ -19,9 +19,9 @@ python3 /absolute/plugin/path/scripts/ka_admin.py migrate --project /absolute/pr
 python3 /absolute/plugin/path/scripts/ka_admin.py migrate --project /absolute/project --apply-plan /absolute/project/migration-plan.json
 ```
 
-Inspect the plan's sources, hashes, conflicts, run ID/path mappings and unclassified files. Application revalidates inputs. Conflicts stop it before copying. Original files are archived byte-for-byte; old control state stays inactive. Existing source documents remain in place; the replaced root manifest is preserved in the archive. Converted records remain `legacy_unverified`.
+Inspect the plan's source paths, conflicts, run ID/path mappings and unclassified files. Migration and run IDs are ordinary identifiers saved in the plan. Application checks source paths, run mappings and conflicts before copying. Original files are copied into an archive; old control state stays inactive. Existing source documents remain in place; the replaced root manifest is preserved in the archive. Converted records remain `legacy_unverified`.
 
-An interrupted application leaves `migrations/pending.json`; rerun the same apply command to resume. A changed source or conflicting target fails closed and must be reviewed. Future manifest versions and corrupt metadata are not guessed. Empty legacy directories are reported as cleanup candidates and are not deleted automatically.
+An interrupted application leaves `migrations/pending.json`; rerun the same apply command to resume using the saved plan and already published archive files. Older plans with checksum-valued source maps are read using only their path keys. Migration does not calculate checksums or repeatedly inspect file contents; stop old writers and keep the inputs and archive stable while it runs. Changed source paths/run mappings and conflicting targets require review. Future manifest versions and corrupt metadata are not guessed. Empty legacy directories are reported as cleanup candidates and are not deleted automatically.
 
 ## Repair or reconcile
 

@@ -456,32 +456,6 @@ def test_migration_resumes_after_commit_before_pending_cleanup(tmp_path, monkeyp
     assert state.read_manifest()["schema_version"] == 3
 
 
-def test_migration_rechecks_early_sources_before_commit(tmp_path, monkeypatch):
-    state = legacy(tmp_path)
-    migration = Migration(state)
-    plan = migration.plan()
-    import kvasir_agent.services.explicit_migration as module
-    original = module.shutil.copyfile
-    changed = None
-    previous = None
-    def copying(source, dest):
-        nonlocal changed, previous
-        result = original(source, dest)
-        if changed is None:
-            changed = source
-            previous = source.read_bytes()
-            source.write_bytes(previous + b"\n")
-        return result
-    monkeypatch.setattr(module.shutil, "copyfile", copying)
-    with pytest.raises(EvidenceError, match="during staging"):
-        migration.apply(plan)
-    assert not state.manifest.exists()
-    assert not any(state.path(r["destination"]).exists() for r in plan["runs"])
-    changed.write_bytes(previous)
-    monkeypatch.setattr(module.shutil, "copyfile", original)
-    assert migration.apply(plan)["ok"]
-
-
 def test_interleaved_projects_ignore_ambient_routing(project, monkeypatch):
     root, state, _ = project
     other = root / "other-project"

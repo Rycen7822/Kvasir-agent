@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import fcntl
-import hashlib
 import json
 import os
 import math
@@ -19,19 +18,6 @@ from .evidence_contracts import EvidenceError, read_json
 
 def now():
     return datetime.now(timezone.utc).isoformat()
-
-
-def digest(data):
-    return hashlib.sha256(json.dumps(data, sort_keys=True, separators=(",", ":"),
-                                     ensure_ascii=False, allow_nan=False).encode()).hexdigest()
-
-
-def file_hash(path):
-    h = hashlib.sha256()
-    with Path(path).open("rb") as f:
-        for block in iter(lambda: f.read(1024 * 1024), b""):
-            h.update(block)
-    return h.hexdigest()
 
 
 def within(root: Path, value: str, *, exists=False):

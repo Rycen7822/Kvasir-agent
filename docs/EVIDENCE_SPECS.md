@@ -39,7 +39,7 @@ Each shape includes `schema_version`. Claim checks resolve actual records, repar
 
 ## ImportManifest
 
-Copy external files into the project first. Supply origin type/source/run identity, environment reference, method/seed, metric path and artifact paths. Metrics must be among the artifacts. Imports use ordinary IDs, copy their evidence to a stable directory and always retain `external_unverified` trust. Copying performs a transient internal checksum comparison; no checksum is required from the caller or stored for later audits. A supplied `trusted` field is rejected. Identical declared manifests and environment settings reuse the saved import and can retry partial result derivation, even if original artifact paths are gone. Give a new external result a distinct origin run identity; editing a source file does not overwrite a previous import.
+Copy external files into the project first. Supply origin type/source/run identity, environment reference, method/seed, metric path and artifact paths. Metrics must be among the artifacts. Imports use ordinary IDs, copy their evidence to a stable directory and always retain `external_unverified` trust. Imports check files and parse the saved metric; copying does not calculate or compare checksums. A supplied `trusted` field is rejected. Identical declared manifests and environment settings reuse the saved import and can retry partial result derivation, even if original artifact paths are gone. Give a new external result a distinct origin run identity; editing a source file does not overwrite a previous import.
 
 ## Local trust boundary
 

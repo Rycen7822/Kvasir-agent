@@ -29,7 +29,6 @@ def test_real_run_observations_separate_published_applied_and_cost_basis(project
     data = json.loads(progress.read_text()); data["step"] = 3; progress.write_text(json.dumps(data))
     assert service.status(run_id)["observations"]["progress"]["step"] == 3
     assert record["observations_snapshot"]["progress"]["step"] == 2
-    assert "sha256" not in observed["progress"]
     data["updated_at"] = "2000-01-01T00:00:00+00:00"; progress.write_text(json.dumps(data))
     assert service.status(run_id)["observations"]["progress"]["status"] == "stale"
 

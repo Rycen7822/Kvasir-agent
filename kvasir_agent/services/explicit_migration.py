@@ -1,7 +1,7 @@
 """Read-only migration planning and resumable, provenance-preserving application."""
 from __future__ import annotations
 
-import json
+import re
 import shutil
 from pathlib import Path
 from uuid import uuid4
@@ -9,7 +9,7 @@ from uuid import uuid4
 import yaml
 
 from .evidence_contracts import EvidenceError, read_json
-from .research_state import digest, file_hash, now
+from .research_state import now
 
 ACTIVE = {"starting", "running", "queued", "pending", "cancelling"}
 REFERENCE_KEYS = {"path", "artifact_path", "metrics_path", "stdout_path", "stderr_path", "log_path",
@@ -21,24 +21,24 @@ class Migration:
     def __init__(self, state):
         self.state = state
 
-    def snapshot(self, exclude=()):
-        files, empty = {}, []
+    def snapshot(self):
+        files, empty = [], []
         if not self.state.root.exists():
             return files, empty
         for path in sorted(self.state.root.rglob("*")):
             rel = path.relative_to(self.state.root).as_posix()
             if (rel == "events/write.lock" or rel == "migrations/pending.json"
-                    or rel.startswith("migrations/v3-") or rel in exclude):
+                    or rel.startswith("migrations/v3-")):
                 continue
             if path.is_symlink():
                 raise EvidenceError("migration_symlink", "Legacy state contains a symlink; review it before migration.")
             if path.is_file():
-                files[rel] = file_hash(path)
+                files.append(rel)
             elif path.is_dir() and not any(path.iterdir()):
                 empty.append(rel)
         return files, empty
 
-    def plan(self):
+    def plan(self, previous=None):
         if self.state.path("migrations/pending.json").exists():
             raise EvidenceError("migration_pending", "Resume the saved migration plan.")
         files, empty = self.snapshot()
@@ -62,13 +62,14 @@ class Migration:
                     raise EvidenceError("corrupt_manifest", "Invalid legacy quest metadata.") from exc
                 if not isinstance(obj, dict):
                     raise EvidenceError("corrupt_manifest", "Invalid legacy quest metadata.")
-        migration_id = "v3-" + digest(files)[:24]
+        migration_id = previous["migration_id"] if previous else "v3-" + uuid4().hex[:24]
+        identities = {r["source"]: r["run_id"] for r in previous["runs"]} if previous else {}
         archive = f"migrations/{migration_id}/archive"
         path_map = {name: f"{archive}/{name}" for name in files}
         runs, conflicts = [], []
-        for source, dest in path_map.items():
+        for dest in path_map.values():
             target = self.state.path(dest)
-            if target.exists() and (not target.is_file() or file_hash(target) != files[source]):
+            if target.exists():
                 conflicts.append({"path": dest, "reason": "archive_conflict"})
         for name in files:
             parts = Path(name).parts
@@ -86,7 +87,7 @@ class Migration:
                 continue
             if record.get("status") in ACTIVE:
                 conflicts.append({"path": name, "reason": "active_or_unresolved_run"})
-            new_id = "legacy_" + digest(name)[:24]
+            new_id = identities.get(name) or "legacy_" + uuid4().hex[:24]
             dest = f"runs/{new_id}/run.json"
             if dest in files:
                 conflicts.append({"path": dest, "reason": "target_conflict"})
@@ -128,109 +129,92 @@ class Migration:
     def apply(self, plan):
         if not isinstance(plan, dict) or plan.get("project") != str(self.state.project):
             raise EvidenceError("invalid_plan", "Migration plan belongs to a different project.")
+        # Older plans mapped paths to checksums; only their path keys are needed.
+        plan = {**plan, "sources": sorted(plan["sources"])}
         migration_id = plan.get("migration_id", "")
-        if migration_id != "v3-" + digest(plan.get("sources", {}))[:24]:
+        if not re.fullmatch(r"v3-[a-f0-9]{24}", migration_id):
             raise EvidenceError("invalid_plan", "Migration plan identity is invalid.")
         journal_rel = f"migrations/{migration_id}"
+        if plan["path_map"] != {name: f"{journal_rel}/archive/{name}" for name in plan["sources"]}:
+            raise EvidenceError("invalid_plan", "Migration archive paths are invalid.")
+        for name in plan["sources"]:
+            self.state.path(name)
+        for run in plan["runs"]:
+            if (run["source"] not in plan["sources"]
+                    or not re.fullmatch(r"[A-Za-z0-9_-]{1,80}", run["run_id"])
+                    or run["destination"] != f"runs/{run['run_id']}/run.json"):
+                raise EvidenceError("invalid_plan", "Migration run mapping is invalid.")
+
+        def same_plan(saved):
+            return {**saved, "sources": sorted(saved["sources"])} == plan
+
         done_path = self.state.path(f"{journal_rel}/complete.json")
-        if done_path.exists():
-            done = read_json(done_path)
-            if done.get("plan_digest") != digest(plan):
-                raise EvidenceError("invalid_plan", "Completed migration has a different plan.")
-            manifest = self.state.read_manifest(pending_ok=True)
-            if manifest.get("provenance", {}).get("migration_id") != migration_id:
-                raise EvidenceError("stale_plan", "Current manifest no longer belongs to this migration.")
-            pending_path = self.state.path("migrations/pending.json")
-            if pending_path.exists():
-                with self.state.locked():
-                    pending = read_json(pending_path, limit=50_000_000)
-                    if pending.get("plan_digest") != digest(plan) or pending.get("manifest") != manifest:
-                        raise EvidenceError("migration_pending", "A different migration is pending.")
-                    pending_path.unlink()
-            return {"ok": True, "status": "already_applied", "report_path": str(done_path)}
         pending_path = self.state.path("migrations/pending.json")
-        if not pending_path.exists():
-            current = self.plan()
-            if current != plan:
-                raise EvidenceError("stale_plan", "Migration inputs changed; produce a new plan.")
-            if plan["conflicts"]:
+        if not done_path.exists() and not pending_path.exists():
+            current = self.plan(plan)
+            if any(current[key] != plan[key] for key in ("sources", "path_map", "runs")):
+                raise EvidenceError("stale_plan", "Migration source paths or run mappings changed.")
+            if plan["conflicts"] or current["conflicts"]:
                 raise EvidenceError("migration_conflict", "Migration has unresolved conflicts.")
         # No state writes before the complete preflight above.
         with self.state.locked(create=True):
-            if pending_path.exists():
+            if done_path.exists():
+                if not same_plan(read_json(self.state.path(f"{journal_rel}/plan.json"), limit=50_000_000)):
+                    raise EvidenceError("invalid_plan", "Completed migration has a different plan.")
+                manifest = self.state.read_manifest(pending_ok=True)
+                if manifest.get("provenance", {}).get("migration_id") != migration_id:
+                    raise EvidenceError("stale_plan", "Current manifest no longer belongs to this migration.")
+                if pending_path.exists():
+                    pending = read_json(pending_path, limit=50_000_000)
+                    if not same_plan(pending["plan"]) or pending.get("manifest") != manifest:
+                        raise EvidenceError("migration_pending", "A different migration is pending.")
+                    pending_path.unlink()
+                return {"ok": True, "status": "already_applied", "report_path": str(done_path)}
+            resuming = pending_path.exists()
+            if resuming:
                 pending = read_json(pending_path, limit=50_000_000)
-                if pending.get("plan_digest") != digest(plan):
+                if not same_plan(pending["plan"]):
                     raise EvidenceError("migration_pending", "A different migration is pending.")
             else:
-                locked_plan = self.plan()
-                # Creating the write lock may make an empty events directory
-                # nonempty; cleanup suggestions are not migration inputs.
-                locked_plan["empty_directory_candidates"] = plan["empty_directory_candidates"]
-                if locked_plan != plan:
-                    raise EvidenceError("stale_plan", "Migration inputs changed before application.")
-                pending = {"plan_digest": digest(plan), "plan": plan,
+                pending = {"plan": plan,
                            "manifest": {"schema_version": 3, "layout_version": 3, "project_id": uuid4().hex,
                                         "created_at": now(), "provenance": {"migration_id": migration_id,
                                         "source_manifest": plan["path_map"].get("research.yaml")}}}
                 self.state.write("migrations/pending.json", pending)
-            sources, _ = self.snapshot(exclude={r["destination"] for r in plan["runs"]})
-            # The manifest is the final commit point. A crash after replacing it
-            # resumes against the archived old manifest, not its new content.
-            if self.state.manifest.exists():
-                try:
-                    if yaml.safe_load(self.state.manifest.read_text()) == pending["manifest"]:
-                        if "research.yaml" in plan["sources"]:
-                            sources["research.yaml"] = file_hash(self.state.path(plan["path_map"]["research.yaml"]))
-                        else:
-                            sources.pop("research.yaml", None)
-                except yaml.YAMLError:
-                    pass
-            if sources != plan["sources"]:
-                raise EvidenceError("stale_plan", "Legacy inputs changed during migration.")
             # Stage every original before publishing any converted run.
-            for name, expected in plan["sources"].items():
+            for name in plan["sources"]:
                 target = self.state.path(plan["path_map"][name])
-                if target.exists() and file_hash(target) == expected:
-                    continue
                 if target.exists():
-                    raise EvidenceError("migration_conflict", "Archive target changed during migration.")
+                    if not resuming or not target.is_file():
+                        raise EvidenceError("migration_conflict", "Archive target already exists.")
+                    continue  # A resumed migration uses its published archive.
                 source = self.state.path(name)
-                if file_hash(source) != expected:
-                    raise EvidenceError("stale_plan", "Source changed while copying.")
+                if not source.is_file():
+                    raise EvidenceError("artifact_unavailable", "Legacy source is not a file.")
                 target.parent.mkdir(parents=True, exist_ok=True)
-                tmp = target.with_name(target.name + ".copying")
-                shutil.copyfile(source, tmp)
-                if file_hash(tmp) != expected:
-                    raise EvidenceError("stale_plan", "Source changed while copying.")
-                tmp.replace(target)
-            # Old writers do not share the v3 lock. Recheck the entire input
-            # set after staging, including files copied early in the loop.
-            for name, expected in plan["sources"].items():
-                source = self.state.path(name)
-                if name == "research.yaml":
-                    try:
-                        if yaml.safe_load(source.read_text()) == pending["manifest"]:
-                            source = self.state.path(plan["path_map"][name])
-                    except (ValueError, yaml.YAMLError):
-                        pass  # The hash check below reports the changed source.
-                if not source.is_file() or file_hash(source) != expected:
-                    raise EvidenceError("stale_plan", "Legacy input changed during staging.")
+                tmp = self.state.path(f"{plan['path_map'][name]}.{uuid4().hex}.copying")
+                try:
+                    shutil.copyfile(source, tmp)
+                    tmp.replace(target)
+                finally:
+                    tmp.unlink(missing_ok=True)
             for run in plan["runs"]:
                 original = read_json(self.state.path(plan["path_map"][run["source"]]))
                 migrated = {"schema_version": 1, "run_id": run["run_id"], "project_id": pending["manifest"]["project_id"],
                             "status": "imported", "evidence_status": "unverified", "trust": "legacy_unverified",
-                            "source_sha256": plan["sources"][run["source"]],
                             "source_path": str(self.state.path(plan["path_map"][run["source"]])),
                             "legacy_record": self.rewrite_references(original, run["source"], plan)}
                 dest = self.state.path(run["destination"])
-                if dest.exists() and read_json(dest) != migrated:
-                    raise EvidenceError("migration_conflict", "Converted target changed during migration.")
+                if dest.exists():
+                    saved = read_json(dest)
+                    if any(saved.get(key) != value for key, value in migrated.items()):
+                        raise EvidenceError("migration_conflict", "Converted target changed during migration.")
                 if not dest.exists():
                     self.state.write(run["destination"], migrated)
             self.state.write(f"{journal_rel}/plan.json", plan)
             self.state.write("research.yaml", pending["manifest"])
             report = {"ok": True, "status": "applied", "migration_id": migration_id,
-                      "plan_digest": digest(plan), "preserved_files": len(plan["sources"]),
+                      "preserved_files": len(plan["sources"]),
                       "run_mappings": plan["runs"], "path_map": plan["path_map"],
                       "legacy_trust": "unverified", "controllers_activated": False}
             self.state.write(f"{journal_rel}/complete.json", report)

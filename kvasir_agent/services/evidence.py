@@ -11,7 +11,7 @@ from uuid import uuid4
 
 from .evidence_contracts import EvidenceError, read_json, validate_document
 from .metric import extract_metric_value, validate_metric_result
-from .research_state import ResearchState, alive, file_hash, now, process_identity, within
+from .research_state import ResearchState, alive, now, process_identity, within
 from .comparison import compare, environment_settings, file_reference, protocol_issues
 from .observations import observations, timestamp
 
@@ -408,13 +408,8 @@ class EvidenceService:
                         source = within(self.state.project, item["path"], exists=True)
                         if not source.is_file():
                             raise EvidenceError("artifact_unavailable", "Imported artifact is not a file.")
-                        # Only copying uses an internal, transient checksum. It is
-                        # neither a public identity nor a future audit prerequisite.
-                        before = file_hash(source)
                         dest = stage / f"artifact-{index}"
                         shutil.copyfile(source, dest)
-                        if file_hash(dest) != before:
-                            raise EvidenceError("artifact_changed", "Source changed while importing.")
                         copied.append({"path": dest.name, "source": item["path"], "size_bytes": dest.stat().st_size})
                         if item["path"] == manifest["metrics_path"]:
                             metric_path = dest
