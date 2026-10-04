@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "run_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,80}$"
+    },
+    "updated_at": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "phase": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "step": {
+      "type": "number",
+      "minimum": 0
+    },
+    "total": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "heartbeat_at": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "last_progress_at": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "versions": {
+      "type": "object",
+      "properties": {
+        "requested": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "published": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "applied": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "serving": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "schema_version",
+    "run_id",
+    "updated_at",
+    "phase"
+  ],
+  "additionalProperties": false
+}

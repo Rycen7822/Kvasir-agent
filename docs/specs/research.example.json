@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "record_id": "hypothesis-1",
+  "kind": "idea",
+  "title": "Test a competing mechanism",
+  "content": {
+    "path": "research/hypothesis.md",
+    "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "dependencies": [],
+  "metadata": {
+    "hypothesis": "Changing factor A changes outcome B.",
+    "alternatives": [
+      "The change is caused by confound C."
+    ],
+    "distinguishing_experiment": "Hold C fixed and vary A.",
+    "falsification": "B does not change under the controlled intervention."
+  }
+}

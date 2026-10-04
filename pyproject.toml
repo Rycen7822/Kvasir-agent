@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "kvasir-agent"
-version = "0.2.0"
-description = "Codex CLI plugin with a stable curated MCP control plane for research provenance workflows."
+version = "0.3.0"
+description = "Research runs and project-local evidence for Codex and Pi."
 readme = "README.md"
 requires-python = ">=3.10"
 authors = [{ name = "Kvasir-agent Hermes adaptation" }]

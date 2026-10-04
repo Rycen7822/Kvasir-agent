@@ -25,14 +25,12 @@ def test_runtime_state_dirs_are_not_repository_source_or_hidden():
     assert not (ROOT / "DeepScientist").exists()
 
 
-def test_runtime_source_lives_under_main_plugin_package():
+def test_production_package_has_no_retired_harness():
     assert not (ROOT / "kvasiragent_native").exists()
-    assert (ROOT / "kvasir_agent" / "runtime" / "__init__.py").exists()
-    assert (ROOT / "kvasir_agent" / "runtime" / "resources").is_dir()
-    assert (ROOT / "kvasir_agent" / "runtime" / "vendor").is_dir()
-
-    runtime = importlib.import_module("kvasir_agent.runtime")
-    assert runtime.__name__ == "kvasir_agent.runtime"
+    assert not (ROOT / "kvasir_agent" / "runtime").exists()
+    evidence = importlib.import_module("kvasir_agent.services.evidence")
+    assert evidence.EvidenceService
+    assert not any(name.startswith("kvasir_agent.runtime") for name in sys.modules)
 
 
 def test_root_pyproject_declares_minimal_project_metadata():

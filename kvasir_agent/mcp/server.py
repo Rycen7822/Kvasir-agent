@@ -11,7 +11,7 @@ from kvasir_agent.mcp.tool_registry import (
     mcp_tool_not_registered_payload,
     tools_list_payload,
 )
-from kvasir_agent.runtime.redaction import redact_text
+from kvasir_agent.services.redaction import redact_text
 
 
 def initialize_payload() -> dict[str, Any]:
@@ -22,7 +22,7 @@ def initialize_payload() -> dict[str, Any]:
         "protocolVersion": "2024-11-05",
         "transport": "stdio",
         "capabilities": {"tools": {}},
-        "serverInfo": {"name": "ka_mcp", "version": "0.2.0"},
+        "serverInfo": {"name": "ka_mcp", "version": "0.3.0"},
     }
 
 

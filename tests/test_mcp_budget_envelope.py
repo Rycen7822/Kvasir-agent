@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from kvasir_agent.runtime.redaction import redact_payload
+from kvasir_agent.services.redaction import redact_payload
 
 _REQUIRED_ENVELOPE_KEYS = {
     "schema_version",

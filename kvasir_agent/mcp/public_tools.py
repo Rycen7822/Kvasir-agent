@@ -63,7 +63,7 @@ DEFINITIONS = [{'name': 'ka_research_status',
                   'idempotentHint': True,
                   'openWorldHint': False}},
  {'name': 'ka_evidence_check',
-  'description': 'Check environment, run or claim evidence from a specification. Save a report and '
+  'description': 'Check versioned research or experiment evidence from a specification. Save a report and '
                  'return bounded findings.',
   'inputSchema': {'type': 'object',
                   'properties': {'project': {'type': 'string',

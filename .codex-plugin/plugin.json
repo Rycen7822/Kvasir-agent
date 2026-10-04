@@ -1,6 +1,6 @@
 {
   "name": "kvasir-agent",
-  "version": "0.2.0+codex.20260924010201",
+  "version": "0.3.0",
   "description": "Managed research runs and bounded evidence checks for Codex.",
   "author": {
     "name": "Kvasir-agent Codex MCP"

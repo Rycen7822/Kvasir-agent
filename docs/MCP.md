@@ -10,7 +10,7 @@ The bundled stdio server is `scripts/ka_mcp.py`. Standard discovery always expos
 | `ka_evidence_check` | project, spec_path | Save a material-integrity report and return bounded findings. |
 | `ka_evidence_import` | project, manifest_path | Preserve external artifacts and unverified provenance. |
 
-`project` is an explicit absolute directory. Specification files are project-contained; contracts and examples are in [EVIDENCE_SPECS.md](EVIDENCE_SPECS.md). Missing state returns a short error without creating directories. Old method names are rejected without dispatching to legacy handlers. Routine files, plans, literature, logs and research prose use Codex native tools.
+`project` is an explicit absolute directory. Specification files are project-contained; contracts and examples are in [EVIDENCE_SPECS.md](EVIDENCE_SPECS.md). Missing state returns a short error without creating directories. Old method names are rejected without dispatching to legacy handlers. Routine files, plans, literature, logs and research prose use Codex/Pi native tools.
 
 MCP results contain `content`, `structuredContent` and `isError`; business data is not repeated at the protocol top level. Both structured/text representations contain only the bounded receipt. Complete requests, artifacts and reports stay on disk. Only status is annotated read-only. Run and stop declare destructive side effects; check writes its report.
 

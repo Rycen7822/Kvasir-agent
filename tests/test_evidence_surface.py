@@ -35,6 +35,13 @@ def test_versioned_file_schemas_and_examples_match():
         assert published == schema
         Draft202012Validator.check_schema(schema)
         Draft202012Validator(schema).validate(json.loads((ROOT / f"docs/specs/{kind}.example.json").read_text()))
+    for kind in ["run", "check"]:
+        Draft202012Validator(CONTRACTS[kind]).validate(json.loads((ROOT / f"docs/specs/{kind}-v2.example.json").read_text()))
+    for branch in CONTRACTS["research"]["oneOf"]:
+        kind = branch["properties"]["kind"]["const"]
+        published = json.loads((ROOT / f"docs/specs/research-{kind}.schema.json").read_text())
+        published.pop("$schema")
+        assert published == branch
 
 
 def test_manual_init_from_arbitrary_cwd_writes_no_prompt_files(tmp_path):
@@ -165,4 +172,14 @@ def test_all_retired_tool_names_fail_without_writes(tmp_path):
     for name in retired:
         result = call_tool(name, {"project": str(tmp_path), "profile": "executor_local"})
         assert result["error_type"] == "tool_not_registered", name
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_doctor_uses_current_evidence_server_without_initializing(tmp_path):
+    proc = subprocess.run([sys.executable, str(ROOT / "scripts/doctor.py")], cwd=tmp_path,
+                          capture_output=True, text=True, timeout=20)
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    payload = json.loads(proc.stdout)
+    assert len(payload["tools"]) == 5 and not payload["problems"]
+    assert "runtime_doctor" not in payload
     assert list(tmp_path.iterdir()) == []

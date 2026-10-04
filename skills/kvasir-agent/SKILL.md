@@ -14,7 +14,7 @@ Use the five research tools when the task needs managed experiments or recorded 
 | `ka_research_status` | Read saved project or run state without filesystem changes. |
 | `ka_experiment_run` | Validate a RunSpec file and protected inputs, then start an authorized run. |
 | `ka_experiment_stop` | Stop a recorded run and retain its actual terminal state. |
-| `ka_evidence_check` | Check environment, run or claim evidence; save a report. |
+| `ka_evidence_check` | Check a versioned evidence specification; save a report. |
 | `ka_evidence_import` | Preserve external results with unverified origin. |
 
 Pass `project` as the absolute research project directory. A specification path resolves within that project. Do not use a plugin installation directory as the research project. Tools return bounded summaries and file paths; read only the referenced detail relevant to the task.
@@ -32,3 +32,5 @@ The process receives `KVASIR_RUN_DIR`, `KVASIR_RUN_ID` and `KVASIR_SEED`. Store 
 `completed` plus `evidence_status=verified` establishes local execution and checked material integrity. Inspect failures, missing artifacts and the saved report before using a result. `derivation_status=partial` means the run record exists but downstream result recording is incomplete. Preserve that distinction in reports.
 
 Claim checks resolve actual run records and observed seeds. They do not judge novelty, statistical adequacy or scientific validity. External imports remain `external_unverified`; a successful checksum check cannot upgrade their execution origin. Keep uncertainty and negative findings in project documents using native file editing. Never reinterpret missing evidence as success.
+
+Load [research records and templates](../../docs/RESEARCH_RECORDS.md) only when recording sources, ideas, candidates or a saved-version review. Use the project research index to locate existing material and history. Detailed file contracts remain on disk.

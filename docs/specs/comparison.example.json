@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "protocol_id": "paired-example",
+  "declared_at": "2026-10-04T00:00:00+00:00",
+  "timing": "prospective",
+  "environment_digest": "b8e197adf9bcab035dd32365460311668ad30c8d63ac38f3776415ecc8f600d2",
+  "dataset_id": "example-data",
+  "split": "held-out",
+  "datasets": [
+    {
+      "path": "data.json",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  ],
+  "evaluator": {
+    "path": "evaluate.py",
+    "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "metric": {
+    "name": "score",
+    "unit": "score",
+    "direction": "maximize",
+    "selection": "prespecified"
+  },
+  "methods": {
+    "baseline": "base",
+    "candidate": "candidate"
+  },
+  "method_inputs": {
+    "baseline": [
+      {
+        "path": "evaluate.py",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    ],
+    "candidate": [
+      {
+        "path": "evaluate.py",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    ]
+  },
+  "budget": {
+    "basis": "wall_timeout",
+    "timeout_seconds": 10
+  },
+  "pairs": [
+    {
+      "pair_id": "seed-1",
+      "task_id": "task",
+      "seed": 1
+    },
+    {
+      "pair_id": "seed-2",
+      "task_id": "task",
+      "seed": 2
+    }
+  ],
+  "failure_policy": "require_all_pairs",
+  "selection_rule": "unique_valid_attempt",
+  "statistics": "descriptive_only"
+}

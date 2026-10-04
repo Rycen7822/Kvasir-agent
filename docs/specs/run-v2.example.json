@@ -1,0 +1,31 @@
+{
+  "schema_version": 2,
+  "purpose": "baseline",
+  "command": [
+    "python3",
+    "evaluate.py"
+  ],
+  "cwd": ".",
+  "environment_path": "environment.json",
+  "method_id": "base",
+  "seed": 1,
+  "resources": {
+    "timeout_seconds": 600,
+    "max_log_bytes": 1048576
+  },
+  "metrics_path": "metrics.json",
+  "outputs": [
+    "metrics.json"
+  ],
+  "comparison": {
+    "protocol_path": "comparison.json",
+    "pair_id": "seed-1",
+    "metric_unit": "score",
+    "metric_selection": "prespecified"
+  },
+  "result_origin": {
+    "kind": "fresh"
+  },
+  "progress_path": "progress.json",
+  "cost_path": "cost.json"
+}

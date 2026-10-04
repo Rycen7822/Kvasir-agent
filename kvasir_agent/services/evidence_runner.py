@@ -11,6 +11,7 @@ from .evidence import EvidenceService
 from .evidence_contracts import EvidenceError, read_json
 from .metric import extract_metric_value, validate_metric_result
 from .research_state import alive, digest, file_hash, now, process_identity, within
+from .comparison import request_snapshot
 
 
 def terminate(identity):
@@ -37,6 +38,7 @@ def execute(project, run_id):
     service = EvidenceService(project)
     state = service.state
     process = None
+    execution_started = None
     forced = None
     try:
         with state.locked():
@@ -47,9 +49,10 @@ def execute(project, run_id):
             if record.get("worker") != process_identity(os.getpid()):
                 raise EvidenceError("worker_identity_mismatch", "Unexpected worker instance.")
             spec, env = record["spec"], record["environment"]
-            if digest({"spec": spec, "environment": env}) != record["request_digest"]:
+            if digest(request_snapshot(spec, env, record.get("protocol"), record.get("candidate"))) != record["request_digest"]:
                 raise EvidenceError("request_digest_mismatch", "Request changed before execution.")
             service.validate_environment(env)
+            service.validate_run_inputs(record)
             run_dir = state.path(f"runs/{run_id}")
             if record.get("cancel_requested_at"):
                 forced = "cancelled"
@@ -58,6 +61,7 @@ def execute(project, run_id):
                     stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                     start_new_session=True, env={**os.environ, "KVASIR_RUN_DIR": str(run_dir),
                                                 "KVASIR_RUN_ID": run_id, "KVASIR_SEED": str(spec["seed"])})
+                execution_started = time.monotonic()
                 record.update(status="running", process=process_identity(process.pid), started_at=now())
                 state.write(f"runs/{run_id}/run.json", record)
         if process:
@@ -127,6 +131,7 @@ def execute(project, run_id):
                       evidence_status="invalid", artifacts=[])
         if record["status"] == "completed":
             service.validate_environment(record["environment"])
+            service.validate_run_inputs(record)
             for output in sorted(set([spec["metrics_path"], *spec["outputs"]])):
                 path = within(run_dir, output, exists=True)
                 record["artifacts"].append({"path": output, "sha256": file_hash(path)})
@@ -149,6 +154,10 @@ def execute(project, run_id):
         record.update(status=forced or "failed", finished_at=now(), evidence_status="invalid",
                       exit_code=process.returncode if process else None,
                       error_type=exc.kind if isinstance(exc, EvidenceError) else "execution_error")
+    if execution_started is not None:
+        record["elapsed_seconds"] = time.monotonic() - execution_started
+    if record.get("spec", {}).get("schema_version") == 2:
+        record["observations_snapshot"] = service.observations(record)
     with state.locked():
         # Retain stop provenance, while the wrapper owns the actual terminal fact.
         current = state.read_run(run_id)

@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-"""Doctor for the Kvasir-agent Codex plugin."""
-from __future__ import annotations
-
+"""Read-only diagnostics for the installed five-tool evidence plugin."""
 import json
 import subprocess
 import sys
@@ -10,28 +8,31 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def main() -> int:
-    problems: list[str] = []
-    if not (ROOT / "scripts" / "ka_mcp.py").exists():
-        problems.append("Missing stable MCP entrypoint: scripts/ka_mcp.py")
-    if not (ROOT / "scripts" / "kactl.py").exists():
-        problems.append("Missing CLI fallback entrypoint: scripts/kactl.py")
-    manifest = json.loads((ROOT / ".codex-plugin" / "plugin.json").read_text(encoding="utf-8"))
-    if manifest.get("mcpServers") != "./.mcp.json":
-        problems.append("plugin.json must declare the bundled .mcp.json server configuration.")
-    mcp_path = ROOT / ".mcp.json"
-    if not mcp_path.exists():
-        problems.append("Missing bundled MCP configuration: .mcp.json")
-    else:
-        servers = json.loads(mcp_path.read_text(encoding="utf-8")).get("mcpServers", {})
-        if "kvasir-agent" not in servers:
-            problems.append("Missing kvasir-agent bundled MCP server.")
-    proc = subprocess.run([sys.executable, str(ROOT / "scripts" / "kactl.py"), "doctor", "--format", "json"], text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=30)
-    payload = json.loads(proc.stdout) if proc.stdout.strip() else {"ok": False, "error": proc.stderr}
-    ok = proc.returncode == 0 and payload.get("ok") is True and not problems
-    out = {"ok": ok, "plugin_root": str(ROOT), "mcp": True, "mcp_entrypoint": "scripts/ka_mcp.py", "cli_fallback": "scripts/kactl.py", "problems": problems, "runtime_doctor": payload}
-    print(json.dumps(out, ensure_ascii=False, indent=2))
-    return 0 if ok else 1
+def main():
+    problems = []
+    tools = []
+    try:
+        manifest = json.loads((ROOT / ".codex-plugin/plugin.json").read_text())
+        config = json.loads((ROOT / ".mcp.json").read_text())
+        if manifest.get("mcpServers") != "./.mcp.json" or manifest.get("skills") != "./skills":
+            problems.append("Unexpected plugin discovery paths.")
+        if "kvasir-agent" not in config.get("mcpServers", {}):
+            problems.append("Missing evidence server configuration.")
+        proc = subprocess.run([sys.executable, str(ROOT / "scripts/ka_mcp.py"), "--stdio-smoke", "tools/list"],
+                              capture_output=True, text=True, timeout=15)
+        if proc.returncode:
+            problems.append("Evidence server discovery failed.")
+        else:
+            tools = [item["name"] for item in json.loads(proc.stdout)["tools"]]
+            expected = {"ka_research_status", "ka_experiment_run", "ka_experiment_stop", "ka_evidence_check", "ka_evidence_import"}
+            if set(tools) != expected:
+                problems.append("Evidence server does not expose exactly five expected tools.")
+    except (OSError, ValueError, KeyError, TypeError, subprocess.TimeoutExpired):
+        problems.append("Plugin files or server discovery are unavailable.")
+    result = {"ok": not problems, "plugin_root": str(ROOT), "tools": tools,
+              "mcp_entrypoint": "scripts/ka_mcp.py", "maintenance_entrypoint": "scripts/ka_admin.py", "problems": problems}
+    print(json.dumps(result))
+    return 0 if result["ok"] else 1
 
 
 if __name__ == "__main__":

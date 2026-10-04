@@ -31,3 +31,7 @@ python3 /absolute/plugin/path/scripts/ka_admin.py reconcile --project /absolute/
 ```
 
 Event repair preserves a backup and removes invalid lines only when explicitly invoked. Reconcile retries result/event derivation after a run ends; interrupted runs stay interrupted. Running processes are not silently restarted. Generic `ka_native_cli.py` and `kactl.py` handler dispatch has been retired and returns a structured error.
+
+## Research material and history
+
+Use `research-register --project /absolute/project --spec-path project-relative.json` to save a typed revision and `research-index --project /absolute/project` to rebuild navigation, including explicit migration archive mappings. These commands do not initialize or reactivate old controllers. See [research records](RESEARCH_RECORDS.md).

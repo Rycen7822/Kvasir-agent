@@ -1,6 +1,8 @@
 # Install
 
-Requires Linux (process identity and file locks), Python 3.10+, PyYAML, jsonschema and a Codex CLI with plugin support. Install Python dependencies into the interpreter used by the bundled `python3` MCP entrypoint.
+Requires Linux (process identity and file locks), Python 3.10+, PyYAML and jsonschema. Install Python dependencies into the interpreter used by the MCP entrypoint. Codex and Pi use the same stdio server and file contracts.
+
+## Codex
 
 Register this repository through a Codex plugin marketplace and install its exact marketplace reference:
 
@@ -12,6 +14,28 @@ codex plugin list
 The wrapper delegates to `codex plugin add` and preserves errors. Open a fresh thread after changing the installation. The plugin manifest registers `./skills` and `./.mcp.json`. Expected discovery is five research tools and one `kvasir-agent` skill; project paths must be supplied explicitly.
 
 For updates to a local source, refresh the plugin cache version and reinstall from the registered marketplace. Verify the installed source/cache identity, not only the source checkout. A source-level test does not prove host discovery.
+
+Codex's [MCP configuration](https://learn.chatgpt.com/docs/extend/mcp?surface=cli) and [plugin documentation](https://developers.openai.com/plugins/build/plugins) describe the host integration. The marketplace wrapper is a Codex installation step; it does not initialize research projects.
+
+## Pi
+
+In Pi versions with native MCP support, install a project-local server:
+
+```sh
+bash /absolute/plugin/path/scripts/install_pi.sh /absolute/existing/project
+```
+
+The wrapper delegates to `pi mcp add -l`, preserves unrelated servers through Pi's native configuration writer, and records absolute interpreter, script and working-directory paths in `.pi/mcp.json`. Its default `codemode` exposure keeps the five tool schemas callable on demand. Trust the project using Pi's own controls, then open a session or `/reload`; `/mcp` shows discovery and connection state. For direct declarations, change the server's exposure to `direct` in Pi. This needs a Pi release supporting `mcp add --exposure` (verified with Pi 1.0.0).
+
+The research skill is optional and explicitly selected in Pi:
+
+```sh
+pi --skill /absolute/plugin/path/skills/kvasir-agent/SKILL.md
+```
+
+Only this active skill directory belongs in skill discovery. The separate `manual/` directory stays outside discovery. No Pi extension, session loop or model provider is supplied by Kvasir.
+
+## Manual project creation
 
 Project creation is a separate, user-triggered action:
 

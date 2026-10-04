@@ -17,7 +17,7 @@ from kvasir_agent.services.research_state import ResearchState
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
-    for command in ("init", "migrate", "repair-events", "reconcile"):
+    for command in ("init", "migrate", "repair-events", "reconcile", "research-register", "research-index"):
         sub = commands.add_parser(command)
         sub.add_argument("--project", required=True)
         if command == "migrate":
@@ -26,6 +26,8 @@ def main(argv=None):
             mode.add_argument("--apply-plan")
         if command == "reconcile":
             sub.add_argument("--run-id", required=True)
+        if command == "research-register":
+            sub.add_argument("--spec-path", required=True)
     args = parser.parse_args(argv)
     try:
         state = ResearchState(args.project)
@@ -35,6 +37,10 @@ def main(argv=None):
             result = state.repair_events()
         elif args.command == "reconcile":
             result = EvidenceService(args.project).reconcile(args.run_id)
+        elif args.command in {"research-register", "research-index"}:
+            from kvasir_agent.services.research_records import ResearchRecords
+            records = ResearchRecords(args.project)
+            result = records.register(args.spec_path) if args.command == "research-register" else records.reindex()
         else:
             from kvasir_agent.services.explicit_migration import Migration
             migration = Migration(state)

@@ -291,14 +291,17 @@ def test_bounded_errors_and_invalid_rpc_arguments(tmp_path):
     assert response["result"]["isError"]
 
 
-def test_real_v2_runner_layout_and_mixed_quest_migration(tmp_path):
-    from kvasir_agent.services.manifest import ManifestService
-    from kvasir_agent.services.project_state import ProjectLayout
-    from kvasir_agent.services.runner import RunnerService
-    layout = ProjectLayout.from_project_root(tmp_path)
-    ManifestService(layout).init(name="old", goal="preserve evidence")
-    old = RunnerService(layout).start(command="echo old", dry_run=True)["run"]
-    Path(old["log_path"]).write_text("R0001 original text\n")
+def test_v2_runner_wire_fixture_and_mixed_quest_migration(tmp_path):
+    # Historical v2 wire fixture based on RunnerService's dry-run format.
+    # Migration must remain testable without shipping the retired harness.
+    old_root = tmp_path / "Kvasir-agent"
+    write(old_root / "research.yaml", {"schema_version": 2, "layout_mode": "root_bound", "project": {"name": "old"}})
+    run_dir = old_root / "runs/R0001"
+    run_dir.mkdir(parents=True)
+    log = run_dir / "run.log"
+    log.write_text("R0001 original text\n")
+    write(run_dir / "runner.json", {"run_id": "R0001", "command": "echo old", "status": "dry_run", "terminal": False,
+        "log_path": str(log), "stderr_log_path": str(run_dir / "stderr.log"), "pid": None, "pgid": None})
     state = legacy(tmp_path, multiple=True)
     plan = Migration(state).plan()
     assert len(plan["runs"]) == 3

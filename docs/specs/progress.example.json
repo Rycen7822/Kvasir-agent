@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "run_id": "replace-with-real-run-id",
+  "updated_at": "2026-10-04T00:00:00+00:00",
+  "phase": "evaluation",
+  "step": 10,
+  "total": 100,
+  "versions": {
+    "requested": "weights-v2",
+    "published": "weights-v2",
+    "applied": "weights-v1",
+    "serving": "weights-v1"
+  }
+}

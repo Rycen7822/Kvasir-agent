@@ -26,11 +26,17 @@ def digest(data):
                                      ensure_ascii=False, allow_nan=False).encode()).hexdigest()
 
 
-def file_hash(path):
+def file_hash(path, *, limit=None):
     h = hashlib.sha256()
     with Path(path).open("rb") as f:
-        for block in iter(lambda: f.read(1024 * 1024), b""):
+        if limit is not None:
+            block = f.read(limit + 1)
+            if len(block) > limit:
+                raise EvidenceError("invalid_file", "Oversized evidence observation.")
             h.update(block)
+        else:
+            for block in iter(lambda: f.read(1024 * 1024), b""):
+                h.update(block)
     return h.hexdigest()
 
 
