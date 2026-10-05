@@ -11,7 +11,7 @@ bash scripts/install.sh kvasir-agent@your-marketplace
 codex plugin list
 ```
 
-The wrapper delegates to `codex plugin add` and preserves errors. Open a fresh thread after changing the installation. The plugin manifest registers `./skills` and `./.mcp.json`. Expected discovery is five research tools plus `kvasir-agent:kvasir-agent`, `kvasir-agent:idea-spark` and `kvasir-agent:ponder-forge`; project paths must be supplied explicitly. Delphi's two workflows use the [native host contract](../delphi/HOSTS.md) and the terminal CLI, adding no MCP tools.
+The wrapper delegates to `codex plugin add` and preserves errors. Open a fresh thread after changing the installation. The plugin manifest registers `./skills` and `./.mcp.json`. Expected discovery is five research tools plus `kvasir-agent:kvasir-agent`, `kvasir-agent:delphi-idea-spark` and `kvasir-agent:delphi-ponder-forge`; project paths must be supplied explicitly. Delphi's two workflows use the [native host contract](../delphi/HOSTS.md) and the terminal CLI, adding no MCP tools.
 
 For updates to a local source, refresh the plugin cache version and reinstall from the registered marketplace. Verify the installed source/cache identity, not only the source checkout. A source-level test does not prove host discovery.
 

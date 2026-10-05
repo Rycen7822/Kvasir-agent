@@ -1,5 +1,5 @@
 ---
-name: idea-spark
+name: delphi-idea-spark
 description: Review research ideas through Delphi's shared ledger and native agent discussion phases.
 ---
 

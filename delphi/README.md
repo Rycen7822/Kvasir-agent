@@ -5,7 +5,7 @@ Delphi is maintained in [Kvasir-agent](https://github.com/Rycen7822/Kvasir-agent
 - [Idea-Spark](idea-spark/README.md): discussion state and shared research ledger.
 - [Ponder-Forge](ponder-forge/README.md): complete FrontierAgent high/max team strategies, with max as the default and execution owned by the native host.
 
-Codex discovers `$kvasir-agent:idea-spark` and `$kvasir-agent:ponder-forge` through the Kvasir plugin. Both load the [native host contract](HOSTS.md) and the component's canonical workflow; no additional MCP tools or model runtime are registered.
+Codex discovers `$kvasir-agent:delphi-idea-spark` and `$kvasir-agent:delphi-ponder-forge` through the Kvasir plugin. Both load the [native host contract](HOSTS.md) and the component's canonical workflow; no additional MCP tools or model runtime are registered.
 
 ```sh
 python3 /absolute/plugin/root/delphi/cli.py --state-dir /absolute/project/.kvasir/delphi idea-spark config show

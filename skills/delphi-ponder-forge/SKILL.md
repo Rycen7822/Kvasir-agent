@@ -1,5 +1,5 @@
 ---
-name: ponder-forge
+name: delphi-ponder-forge
 description: Solve complex problems with FrontierAgent high/max strategies and native agents.
 ---
 

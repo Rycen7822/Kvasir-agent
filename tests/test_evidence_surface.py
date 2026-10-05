@@ -18,7 +18,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def test_active_skills_and_manual_is_outside_discovery():
     manifest = json.loads((ROOT / ".codex-plugin/plugin.json").read_text())
     active = sorted((ROOT / manifest["skills"]).rglob("SKILL.md"))
-    assert {path.parent.name for path in active} == {"kvasir-agent", "idea-spark", "ponder-forge"}
+    assert {path.parent.name for path in active} == {"kvasir-agent", "delphi-idea-spark", "delphi-ponder-forge"}
     manual = ROOT / "manual/init/SKILL.md"
     assert manual.is_file() and not manual.is_relative_to(ROOT / manifest["skills"])
     surface = json.dumps(manifest) + "".join(path.read_text() for path in active) + json.dumps(tools_list_payload())
