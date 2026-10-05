@@ -1019,8 +1019,8 @@ def idea_spark_need_update(args: dict, **kwargs) -> str:
 
 
 _TOOL_DESCRIPTIONS = {
-    "idea_spark_room_create": "Create an Idea-Spark shared-ledger review room and return room_url for the dashboard. Pass check_dashboard=true to perform a bounded dashboard reachability check before presenting the link as openable. Set metadata.expected_agents when round barriers should wait for named child agents. For protocol guidance, load skill idea-spark:idea-spark-usage.",
-    "idea_spark_room_join": "Register a delegate_task child agent in an Idea-Spark room. Children should call this first before reading or writing room state.",
+    "idea_spark_room_create": "Create an Idea-Spark shared-ledger review room and return room_url for the dashboard. Pass check_dashboard=true to perform a bounded dashboard reachability check before presenting the link as openable. Set metadata.expected_agents when round barriers should wait for named child agents. For protocol guidance, read the installed Idea-Spark workflow skill.",
+    "idea_spark_room_join": "Register a native child agent in an Idea-Spark room. Children should call this first before reading or writing room state.",
     "idea_spark_room_status": "Return room status, ledger counts, and expected agents that have not joined yet.",
     "idea_spark_message_post": "Post a concise round/phase narrative update, optionally linked to artifact IDs. Use artifacts for durable claims rather than only free text.",
     "idea_spark_message_read": "Read room messages, optionally filtered by round_id, phase, or agent_id.",

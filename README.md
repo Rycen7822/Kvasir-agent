@@ -2,7 +2,7 @@
 
 [中文](README.zh-CN.md) · [Install](docs/INSTALL.md) · [Usage](docs/USAGE.md) · [MCP](docs/MCP.md)
 
-A compact research evidence plugin: **five MCP tools, one active skill**, explicit project state and automatic experiment records. Codex/Pi handles planning, files, literature, code and research interpretation.
+A compact research evidence plugin: **five MCP tools**, the research skill and two Delphi workflow skills, explicit project state and automatic experiment records. Codex/Pi handles planning, files, literature, code and research interpretation.
 
 | Tool | Purpose |
 | --- | --- |

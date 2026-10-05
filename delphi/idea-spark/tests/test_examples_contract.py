@@ -129,7 +129,6 @@ def test_bundled_skill_documents_round_based_subagent_work_mode():
     parent_ref = read_text("resources/skills/idea-spark-usage/references/parent-controller.md")
     combined = f"{skill}\n{parent_ref}"
 
-    assert "Thin workflow router" in skill
     assert "**[PARENT-ONLY] Parent/main agent:**" in skill
     assert "**[SUBAGENT-ONLY] Subagent/child agent:**" in skill
     assert "## Role routing — choose exactly one lane first" in skill
@@ -159,10 +158,8 @@ def test_bundled_skill_is_thin_router_with_parent_and_subagent_references():
     assert "references/subagent-contract.md" in skill
     assert "references/cli-dashboard.md" in skill
     assert "references/handoff-report.md" in skill
-    assert "If a plugin-bundled reference request returns this main SKILL again" in skill
     assert "The parent must keep the phase loop moving" in refs["parent-controller.md"]
     assert "A subagent performs one assigned role in one phase" in refs["subagent-contract.md"]
-    assert "use `read_file` on `resources/skills/idea-spark-usage/references/subagent-contract.md`" in refs["subagent-contract.md"]
     assert "not automatically suitable as a human handoff report" in refs["handoff-report.md"]
     assert "Optional tool-mode" in refs["cli-dashboard.md"]
 
@@ -210,7 +207,6 @@ def test_bundled_skill_requires_skills_toolset_and_explicit_tool_mode_for_tools(
     assert 'toolsets=["terminal", "file", "skills"]' in combined
     assert 'toolsets=["idea_spark", "skills"]' in combined
     assert "hermes idea-spark config set-tools true" in combined
-    assert 'skill_view(name="idea-spark:idea-spark-usage")' in combined
     assert "Do not call `skill_manage`" in combined or "not to call `skill_manage`" in combined
 
 
@@ -223,7 +219,6 @@ def test_bundled_skill_documents_discussion_until_gate_controller_contract():
     combined = f"{skill}\n{parent_ref}\n{handoff_ref}\n{cli_dashboard}\n{subagent_contract}"
 
     required = [
-        "discussion-until-gate",
         "Seed / Framing",
         "Novelty Attack",
         "r1 / Novelty Attack",

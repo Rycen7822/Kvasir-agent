@@ -2,17 +2,19 @@
 
 Use this reference when you need exact Idea-Spark command mechanics, dashboard handling, artifact types, or safety boundaries.
 
+On Codex/Pi, `idea-spark` below abbreviates the complete project-state CLI prefix from the [native host contract](../../../../../HOSTS.md). On Hermes use `hermes idea-spark`. Do not run a Hermes command in Codex or change to the plugin cache to store research files. Query `idea-spark schema OPERATION` for payload fields.
+
 ## Default CLI-first operations
 
 Use JSON files for substantive payloads because artifacts and messages often contain multiline Markdown, tables, and quotes.
 
 ```bash
-hermes idea-spark call idea_spark_room_create --json-file /tmp/room.json
-hermes idea-spark call idea_spark_room_join --json-file /tmp/join.json
-hermes idea-spark call idea_spark_artifact_create --json-file /tmp/artifact.json
-hermes idea-spark call idea_spark_message_post --json-file /tmp/message.json
-hermes idea-spark call idea_spark_gate_record --json-file /tmp/gate.json
-hermes idea-spark call idea_spark_room_export --json-file /tmp/export.json
+idea-spark call idea_spark_room_create --json-file room.json
+idea-spark call idea_spark_room_join --json-file join.json
+idea-spark call idea_spark_artifact_create --json-file artifact.json
+idea-spark call idea_spark_message_post --json-file message.json
+idea-spark call idea_spark_gate_record --json-file gate.json
+idea-spark call idea_spark_room_export --json-file export.json
 ```
 
 `--stdin` is acceptable when a previous command emits one JSON object.
@@ -28,7 +30,7 @@ After every successful `idea_spark_room_create`, surface the returned room URL o
 Start the local dashboard from the Idea-Spark source tree when needed:
 
 ```bash
-python3 dashboard.py --host 127.0.0.1 --port 8765
+DELPHI_HOME=/absolute/project/.kvasir/delphi python3 /absolute/plugin/root/delphi/idea-spark/dashboard.py --host 127.0.0.1 --port 8765
 ```
 
 The dashboard is localhost-only by default. It shows rooms, joined subagents, missing expected agents, messages, artifacts, gate decisions, and open needs. It is a monitor, not an agent launcher.
@@ -76,4 +78,4 @@ accepted, rejected, superseded, retracted, needs_more_evidence
 
 ## Safety boundary
 
-Idea-Spark CLI operations and optional tools operate on the SQLite ledger, plugin config, and Markdown export payloads. They do not run web, shell, terminal, browser, file-system automation, or network actions on behalf of the review. The parent controls external tool access through `delegate_task` toolsets.
+Idea-Spark CLI operations and optional tools operate on the SQLite ledger, plugin config, and Markdown export payloads. They do not execute research tools on behalf of reviewers. The parent controls external tool access through the host's native agent interface; Hermes may use its `delegate_task` toolsets.

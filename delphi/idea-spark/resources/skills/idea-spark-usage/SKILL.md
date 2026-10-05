@@ -1,10 +1,10 @@
 ---
 name: idea-spark-usage
-description: Thin workflow router for Idea-Spark shared-ledger review rooms: parent-orchestrated r1-r4 discussion-until-gate, subagent role contracts, CLI-first operation, and standalone handoff reports.
+description: Shared-ledger research review with native agents, r1-r4 discussion phases, recorded gates and handoff reports.
 version: 0.2.7
-author: Hermes Agent
 license: MIT
 metadata:
+  hosts: [codex, pi, hermes-agent]
   hermes:
     tags: [idea-spark, delegate_task, multi-agent, research-review, hermes-plugin]
 ---
@@ -13,9 +13,9 @@ metadata:
 
 Load this when the task asks to run, coordinate, inspect, or explain an Idea-Spark review room.
 
-Idea-Spark is a Hermes standalone plugin named `idea-spark`. It is not a subagent launcher: the **parent agent** launches bounded `delegate_task` children, and Idea-Spark supplies the shared SQLite ledger where those children join, read, write messages, write typed artifacts, record open needs, and record gates.
+Idea-Spark supplies a shared SQLite ledger. The **parent agent** launches bounded native children; those children join, read, write messages and typed artifacts, record open needs, and record gates. Delphi does not launch models.
 
-Default mode is **skill + CLI**. Use `hermes idea-spark call ... --json-file ...` unless explicit tool-mode has been enabled and the Hermes session was reset.
+Default mode is **skill + CLI**. On Codex/Pi read the [host contract](../../../../HOSTS.md) and use its absolute `delphi/cli.py --state-dir ... idea-spark` prefix. On Hermes the registered `hermes idea-spark` prefix remains available. Below, `idea-spark` abbreviates the chosen complete prefix. Only Hermes supports its optional explicit tool-mode.
 
 ## Who is this document for?
 
@@ -42,7 +42,7 @@ Default mode is **skill + CLI**. Use `hermes idea-spark call ... --json-file ...
 
 ## Reference map
 
-Load references with `skill_view(name="idea-spark:idea-spark-usage", file_path="...")` when supported. If a plugin-bundled reference request returns this main SKILL again, use `read_file` on `resources/skills/idea-spark-usage/<reference-path>` in the Idea-Spark plugin source tree.
+Read references relative to this installed file using the host's file tools. Hermes may use `skill_view(name="idea-spark:idea-spark-usage", file_path="...")`; if it returns this main SKILL again, read the actual referenced file. Codex does not expose that Hermes tool.
 
 - `references/parent-controller.md` — parent-only continuous r1 → r2 → r3 → r4 controller, phase verification, retries, and mandatory skill re-read checkpoints.
 - `references/subagent-contract.md` — child-only join/read/write/link/message rules, allowed toolsets, artifact expectations, and prompt checklist.
@@ -56,7 +56,7 @@ Do not follow this section from a subagent prompt unless explicitly assigned to 
 1. Create one room and seed durable `ResearchGoal`, `IdeaCard`, and `EvaluationRubric` artifacts.
 2. Launch `r1/review` children such as `PriorArtBreaker`, `FeasibilityBreaker`, `SkepticalAC`, and `ExperimentPlanner`; every child writes at least one message and at least one typed artifact.
 3. Verify r1 by reading room status/messages/artifacts.
-4. **Re-read this SKILL.md with `skill_view(name="idea-spark:idea-spark-usage")` before launching r2.** Use the current checklist below to confirm r1 is not terminal.
+4. **Re-read this installed SKILL.md before launching r2.** Use the current checklist below to confirm r1 is not terminal.
 5. Launch `r2/rebuttal` and repair roles such as `AuthorAdvocate`, `SchemaSurgeon`, `ExperimentPlanner`, or `BaselineRepair`; r2 reads r1 artifacts and writes `Rebuttal`, `RevisionPlan`, `ExperimentPlan`, `BenchmarkRequirement`, or `RegimeTransition` artifacts.
 6. Verify r2, retry a missing required role once with a narrower prompt if it joined but wrote no artifacts, then **re-read this SKILL.md** before launching r3.
 7. Launch `r3/re-review` roles such as prior-art re-review, feasibility re-review, skeptical AC, and open-need curator; r3 writes `MetaReview`, `ScoreCard`, and/or `OpenNeed` updates.
@@ -72,7 +72,7 @@ Idea-Spark runs create long context. The parent/main agent must not rely on memo
 After **each** phase (`r1`, `r2`, `r3`, and before final reporting), the parent must:
 
 1. Read room status and verify the expected messages/artifacts for the phase.
-2. Call `skill_view(name="idea-spark:idea-spark-usage")` again.
+2. Re-read this installed SKILL.md using the host's file tools.
 3. Use this checklist to decide the next action:
    - If r1 is complete and no terminal gate exists, launch r2; do not summarize as done.
    - If r2 is complete and no terminal gate exists, launch r3; retry missing repair roles once if needed.
@@ -96,7 +96,7 @@ After **each** phase (`r1`, `r2`, `r3`, and before final reporting), the parent 
 
 ## Minimal role/tool rules
 
-- Default child delegate toolsets are `toolsets=["terminal", "file", "skills"]`; add external toolsets only when that role needs outside evidence.
+- On Codex/Pi use native agents with the actual terminal/file tools exposed by that host. On Hermes default child toolsets are `toolsets=["terminal", "file", "skills"]`. Add external capabilities only when the role needs outside evidence.
 - Explicit tool-mode child toolsets are `toolsets=["idea_spark", "skills"]` only after config enablement and session reset.
 - Every substantive child writes at least one `idea_spark_message_post` and one typed artifact.
 - Prefer artifact links over vague references to “previous reviewer”.

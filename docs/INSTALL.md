@@ -11,7 +11,7 @@ bash scripts/install.sh kvasir-agent@your-marketplace
 codex plugin list
 ```
 
-The wrapper delegates to `codex plugin add` and preserves errors. Open a fresh thread after changing the installation. The plugin manifest registers `./skills` and `./.mcp.json`. Expected discovery is five research tools and one `kvasir-agent` skill; project paths must be supplied explicitly.
+The wrapper delegates to `codex plugin add` and preserves errors. Open a fresh thread after changing the installation. The plugin manifest registers `./skills` and `./.mcp.json`. Expected discovery is five research tools plus `kvasir-agent:kvasir-agent`, `kvasir-agent:idea-spark` and `kvasir-agent:ponder-forge`; project paths must be supplied explicitly. Delphi's two workflows use the [native host contract](../delphi/HOSTS.md) and the terminal CLI, adding no MCP tools.
 
 For updates to a local source, refresh the plugin cache version and reinstall from the registered marketplace. Verify the installed source/cache identity, not only the source checkout. A source-level test does not prove host discovery.
 
@@ -33,7 +33,7 @@ The research skill is optional and explicitly selected in Pi:
 pi --skill /absolute/plugin/path/skills/kvasir-agent/SKILL.md
 ```
 
-Only this active skill directory belongs in skill discovery. The separate `manual/` directory stays outside discovery. No Pi extension, session loop or model provider is supplied by Kvasir.
+The two Delphi skills can be selected explicitly with the same `--skill` syntax. Their common CLI does not depend on Hermes. Pi's actual native multi-agent execution is verified separately. The separate `manual/` directory stays outside discovery. No Pi extension, session loop or model provider is supplied by Kvasir.
 
 ## Manual project creation
 

@@ -1,6 +1,6 @@
 # Idea-Spark
 
-Idea-Spark is a Hermes standalone plugin for typed artifact debate rooms. It gives parent agents and `delegate_task` child agents a shared SQLite ledger for ML research idea review, deterministic Markdown exports, gate records, open needs, and an optional localhost dashboard.
+Idea-Spark provides typed artifact debate rooms through a shared SQLite ledger: ML research idea review, deterministic Markdown exports, gate records, open needs, and an optional localhost dashboard. Native agents execute the discussion. Codex uses the [Delphi CLI and host contract](../HOSTS.md); existing Hermes plugin registration and `delegate_task` remain supported.
 
 This repository now maintains one implementation directly at the project root. There are no version-split subdirectories: default operation is CLI-first, and direct Hermes tools are available only through explicit tool-mode.
 

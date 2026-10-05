@@ -4,7 +4,7 @@ Use this reference only for the parent/main agent that orchestrates an Idea-Spar
 
 ## Parent responsibilities
 
-The parent creates the room, seeds initial artifacts, launches bounded `delegate_task` children, verifies each phase, re-reads the main skill after every phase, retries missing phase-critical roles when appropriate, records or delegates the terminal gate, exports the ledger, and writes the standalone handoff report.
+The parent creates the room, seeds initial artifacts, launches bounded native children, verifies each phase, re-reads the main skill after every phase, retries missing phase-critical roles when appropriate, records or delegates the terminal gate, exports the ledger, and writes the standalone handoff report. Use the selected host's actual agent interface; Hermes uses `delegate_task`, while Codex uses its native agent tools.
 
 The parent must keep the phase loop moving. `r1`, `r2`, and `r3` are progress states, not completion states.
 
@@ -20,7 +20,7 @@ Do not send a user-facing final answer after r1, r2, or r3. A parent-side synthe
 
 Before launching the first child phase, create or update `idea_spark_phase_ledger.md` in the current working directory, unless the user explicitly names another durable project path. Do not rely on memory, context compaction summaries, or `session_search` to reconstruct the active phase later; active live sessions may not be indexed yet.
 
-At minimum, the phase ledger must record: room id or room label, current phase, next phase, expected agents for the current phase, verification counts, last room-status check, last `skill_view(name="idea-spark:idea-spark-usage")` re-read time/checkpoint, open blockers, and final handoff report path.
+At minimum, the phase ledger must record: room id or room label, current phase, next phase, expected agents for the current phase, verification counts, last room-status check, last installed-skill re-read checkpoint, open blockers, and final handoff report path.
 
 After verifying each phase, append a stage checkpoint marker such as `r1_verified_next=r2`, `r2_verified_next=r3`, `r3_verified_next=r4`, or `r4_gate_verified_next=final/handoff`. If the parent is about to tell the user progress, the latest checkpoint marker must say which phase is verified and which phase starts next.
 
@@ -29,7 +29,7 @@ After verifying each phase, append a stage checkpoint marker such as `r1_verifie
 1. `r0 / seed`: create the room and seed `ResearchGoal`, `IdeaCard`, and `EvaluationRubric`.
 2. `r1 / review`: launch independent reviewers. Expected outputs include `PriorArtEvidence`, `NoveltyObjection`, `FeasibilityObjection`, `ReviewerRisk`, `BenchmarkRequirement`, `StressTest`, or `ExperimentPlan`.
 3. Verify r1: read status/messages/artifacts. If a required reviewer joined but wrote no artifact, relaunch that role once with a narrower prompt or record the missing evidence as an `OpenNeed`.
-4. Re-read `skill_view(name="idea-spark:idea-spark-usage")`, confirm r1 is not terminal, then launch r2.
+4. Re-read the installed SKILL.md, confirm r1 is not terminal, then launch r2.
 5. `r2 / rebuttal-repair`: launch `AuthorAdvocate`, `SchemaSurgeon`, `ExperimentPlanner`, `BaselineRepair`, or analogous repair roles. Expected outputs include `Rebuttal`, `RevisionPlan`, `ExperimentPlan`, `BenchmarkRequirement`, and `RegimeTransition` linked to r1 objections.
 6. Verify r2, retry missing required repair roles once when they joined but wrote no artifacts, then re-read the main skill before r3.
 7. `r3 / re-review`: launch prior-art re-review, feasibility re-review, skeptical AC, and open-need curator roles. Expected outputs include `MetaReview`, `ScoreCard`, and `OpenNeed` creation/update.
@@ -48,7 +48,7 @@ Required checkpoint after r1, r2, r3, and before final report:
 1. Read room status/messages/artifacts for the just-completed phase.
 2. Verify every phase-critical role wrote the expected message/artifact shape.
 3. Update idea_spark_phase_ledger.md in the current working directory with the stage checkpoint marker, counts, blockers, and next phase.
-4. Call skill_view(name="idea-spark:idea-spark-usage").
+4. Re-read the installed SKILL.md with the native file tools (Hermes may use skill_view).
 5. Confirm which phase is next by applying the main skill's checklist.
 6. Launch the next phase immediately unless a real blocker requires user input or an OpenNeed.
 ```
@@ -70,7 +70,7 @@ Use finite waits. If a role times out or returns without writing artifacts, insp
 ## Parent prompt skeleton
 
 ```text
-You are the parent/orchestrator for room <ROOM_ID>. Load idea-spark:idea-spark-usage. For this phase, launch bounded delegate_task children with toolsets=["terminal", "file", "skills"]. After they return, verify room status/messages/artifacts, re-read idea-spark:idea-spark-usage, and continue to the next phase. Do not stop after r1/r2/r3. Only stop after a real gate_record close_room=true and has_terminal_gate=true.
+You are the parent/orchestrator for room <ROOM_ID>. Read the installed Idea-Spark skill and native host contract. Give each native worker the same absolute CLI prefix/state path and its own scratch directory. After they return, verify room status/messages/artifacts, re-read the skill, and continue to the next phase. Do not stop after r1/r2/r3. Only stop after a real gate_record close_room=true and has_terminal_gate=true.
 
 Maintain idea_spark_phase_ledger.md in the current working directory. Each checkpoint must say current_phase, verified counts, next_phase, latest skill reread, open blockers, and final handoff path. Do not send a final answer until final/handoff is complete.
 ```

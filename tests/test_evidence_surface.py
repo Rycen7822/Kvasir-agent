@@ -15,17 +15,17 @@ from kvasir_agent.services.evidence_contracts import CONTRACTS
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_only_one_active_skill_and_manual_is_outside_discovery():
+def test_active_skills_and_manual_is_outside_discovery():
     manifest = json.loads((ROOT / ".codex-plugin/plugin.json").read_text())
-    active = list((ROOT / manifest["skills"]).rglob("SKILL.md"))
-    assert active == [ROOT / "skills/kvasir-agent/SKILL.md"]
+    active = sorted((ROOT / manifest["skills"]).rglob("SKILL.md"))
+    assert {path.parent.name for path in active} == {"kvasir-agent", "idea-spark", "ponder-forge"}
     manual = ROOT / "manual/init/SKILL.md"
     assert manual.is_file() and not manual.is_relative_to(ROOT / manifest["skills"])
-    surface = json.dumps(manifest) + active[0].read_text() + json.dumps(tools_list_payload())
+    surface = json.dumps(manifest) + "".join(path.read_text() for path in active) + json.dumps(tools_list_payload())
     for forbidden in ["ka_project_init", "manual/init", "ka_admin", "kvasir-agent-manual-init", "allow_implicit_invocation"]:
         assert forbidden not in surface
     assert '"manual" = "manual"' in (ROOT / "pyproject.toml").read_text()
-    assert len(active[0].read_text()) < 4500
+    assert all(len(path.read_text()) < 4500 for path in active)
 
 
 def test_versioned_file_schemas_and_examples_match():

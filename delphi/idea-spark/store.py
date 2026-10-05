@@ -7,6 +7,11 @@ from importlib import resources
 from pathlib import Path
 from typing import Callable, TypeVar
 
+try:
+    from .config import state_home
+except ImportError:
+    from config import state_home
+
 T = TypeVar("T")
 
 
@@ -14,11 +19,11 @@ MIGRATIONS = [("0001_init", "0001_init.sql")]
 
 
 def default_db_path() -> Path:
-    override = os.getenv("IDEA_SPARK_DB")
+    # An explicit Delphi project wins over inherited legacy/global settings.
+    override = os.getenv("IDEA_SPARK_DB") if not os.getenv("DELPHI_HOME") else None
     if override:
         return Path(override)
-    hermes_home = Path(os.getenv("HERMES_HOME", Path.home() / ".hermes"))
-    return hermes_home / "idea-spark" / "idea_spark.sqlite3"
+    return state_home() / "idea-spark" / "idea_spark.sqlite3"
 
 
 def canonical_json(value) -> str:

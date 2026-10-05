@@ -18,7 +18,10 @@ def hermes_home() -> Path:
 
 
 def state_dir(home: Path | None = None) -> Path:
-    return (home or hermes_home()) / "ponder_forge"
+    configured = os.getenv("DELPHI_HOME")
+    root = home if home is not None else (
+        Path(configured).expanduser().resolve() if configured else hermes_home())
+    return root / "ponder_forge"
 
 
 def runs_dir(home: Path | None = None) -> Path:

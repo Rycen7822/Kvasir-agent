@@ -21,7 +21,8 @@ dev = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["kvasir_agent"]
+packages = ["kvasir_agent", "delphi"]
+exclude = ["delphi/*/tests/**", "delphi/*/worknotes/**", "delphi/*/reference/**", "delphi/tmp/**", "delphi/**/.noemaloom/**"]
 
 [tool.hatch.build.targets.wheel.force-include]
 ".codex-plugin" = ".codex-plugin"

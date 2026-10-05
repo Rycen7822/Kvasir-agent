@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from datetime import date
 import json
+import os
 from pathlib import Path
 import re
 import shlex
@@ -24,6 +25,8 @@ def team_effort(run: dict) -> str:
 
 def coordinator_prompt(run: dict) -> str:
     cli = f"python3 {shlex.quote(str(Path(__file__).resolve().parent / 'cli.py'))}"
+    if os.getenv("DELPHI_HOME"):
+        cli = f"DELPHI_HOME={shlex.quote(os.environ['DELPHI_HOME'])} {cli}"
     rid = shlex.quote(run["run_id"])
     tools = f"""# Available operations on this host
 Use the native agent tools available in this session. Ponder stores research state;
@@ -75,7 +78,7 @@ CLI gate as proof that a scientific claim has been verified.
 
 
 def worker_prompt(name: str, role: str = "") -> str:
-    if "local_verifier" in name.lower():
+    if "local_verifier" in name.lower() or "conflict" in role.lower():
         prompt = LOCAL_VERIFIER
     elif "verifier" in name.lower():
         prompt = FINAL_VERIFIER

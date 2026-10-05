@@ -13,8 +13,13 @@ def hermes_home() -> Path:
     return Path.home() / ".hermes"
 
 
+def state_home() -> Path:
+    configured = os.getenv("DELPHI_HOME")
+    return Path(configured).expanduser().resolve() if configured else hermes_home()
+
+
 def config_path() -> Path:
-    return hermes_home() / "idea-spark" / "config.json"
+    return state_home() / "idea-spark" / "config.json"
 
 
 def _default_config() -> dict[str, Any]:

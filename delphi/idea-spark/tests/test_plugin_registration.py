@@ -120,7 +120,6 @@ def test_bundled_skill_documents_continuous_gate_and_handoff_report():
     parent_ref = Path("resources/skills/idea-spark-usage/references/parent-controller.md").read_text(encoding="utf-8")
     handoff_ref = Path("resources/skills/idea-spark-usage/references/handoff-report.md").read_text(encoding="utf-8")
 
-    assert "Thin workflow router" in skill_text
     assert "Do not stop after r1/r2/r3" in skill_text
     assert "Do not stop after `r1`" in parent_ref
     assert "r1 → r2 → r3 → r4" in parent_ref

@@ -1,16 +1,16 @@
 # Subagent Contract Reference
 
-Use this reference only inside a bounded `delegate_task` child role. Parent/orchestrator behavior belongs in `references/parent-controller.md`.
+Use this reference only inside a bounded native child role. Parent/orchestrator behavior belongs in `references/parent-controller.md`.
 
 ## Subagent scope
 
-If `skill_view(name="idea-spark:idea-spark-usage", file_path="references/subagent-contract.md")` returns the main SKILL rather than this reference, use `read_file` on `resources/skills/idea-spark-usage/references/subagent-contract.md` in the Idea-Spark plugin source tree.
+Read this reference from the installed component's skill directory with native file tools. On Hermes, if its skill_view returns the main SKILL, read this actual file instead.
 
 A subagent performs one assigned role in one phase. It does not own the room lifecycle.
 
 A subagent should:
 
-1. Load `skill_view(name="idea-spark:idea-spark-usage")` and this reference.
+1. Read the installed Idea-Spark SKILL.md and this reference.
 2. Join the assigned room with its stable `agent_id` and `role`.
 3. Read room status plus the seed and prior-phase artifacts needed for its role.
 4. Write at least one concise narrative message.
@@ -30,13 +30,15 @@ A subagent should not:
 
 ## Default toolsets
 
-Default CLI-first subagents use:
+Codex/Pi workers use their actual native terminal/file tools and the absolute CLI prefix supplied by the parent. Do not pass Hermes toolset parameters to Codex tools.
+
+Hermes CLI-first subagents use:
 
 ```text
 toolsets=["terminal", "file", "skills"]
 ```
 
-Use `file` to write JSON payloads, `terminal` to call `hermes idea-spark`, and `skills` to load this protocol. Add `web`, `browser`, or other external toolsets only when the assigned role needs outside evidence.
+Use file tools to write JSON payloads, terminal tools to call the selected CLI prefix, and file/skill tools to read this protocol. Add external capabilities only when the role needs outside evidence.
 
 Explicit tool-mode subagents use:
 
@@ -49,7 +51,7 @@ Only use explicit tool-mode after the plugin config enables tools and the Hermes
 ## CLI-first child workflow
 
 1. Write payload JSON under the assigned scratch directory.
-2. Call `hermes idea-spark call idea_spark_room_join --json-file join.json`.
+2. Call `idea-spark call idea_spark_room_join --json-file join.json` using the parent's complete prefix.
 3. Read current state with `idea_spark_room_status`, `idea_spark_message_read`, and `idea_spark_artifact_read`.
 4. Create artifacts with `idea_spark_artifact_create`.
 5. Link provenance with `idea_spark_artifact_link` when available and useful.

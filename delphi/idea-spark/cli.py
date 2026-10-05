@@ -8,10 +8,10 @@ from typing import Any
 
 try:
     from .config import config_path, load_config, set_tools_enabled
-    from .tools import HANDLERS
+    from .tools import HANDLERS, schema_for
 except ImportError:  # source-root script execution
     from config import config_path, load_config, set_tools_enabled
-    from tools import HANDLERS
+    from tools import HANDLERS, schema_for
 
 
 def _print_json(payload: dict[str, Any]) -> int:
@@ -57,8 +57,15 @@ def setup_parser(parser: argparse.ArgumentParser) -> None:
     payload.add_argument("--json-file", help="Path to a JSON object payload file.")
     payload.add_argument("--stdin", action="store_true", help="Read a JSON object payload from stdin.")
 
+    schema = sub.add_parser("schema", help="Read an operation's input schema on demand.")
+    schema.add_argument("operation")
+
 
 def main_from_args(args: argparse.Namespace) -> int:
+    if args.command == "schema":
+        if args.operation not in HANDLERS:
+            return _print_json({"success": False, "error": "unknown operation", "operation": args.operation})
+        return _print_json({"success": True, "schema": schema_for(args.operation)})
     if args.command == "config" and args.config_command == "show":
         return _print_json({"success": True, "path": str(config_path()), "config": load_config()})
     if args.command == "config" and args.config_command == "set-tools":
