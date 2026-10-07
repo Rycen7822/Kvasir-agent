@@ -290,7 +290,7 @@ def test_dashboard_http_serves_health_html_json_sse_and_rejects_mutations(temp_i
         assert rooms["rooms"][0]["room_id"] == room_id
 
         html = read_text(f"{base_url}/room/{room_id}")
-        assert "Idea-Spark Live Room" in html
+        assert "<title>Delphi</title>" in html
         assert room_id in html
         assert "EventSource" in html
 
@@ -367,55 +367,11 @@ def test_dashboard_http_delete_room_requires_confirmation_and_removes_only_that_
         server.server_close()
 
 
-def test_dashboard_html_uses_compact_industrial_radii():
-    import re
-
-    from idea_spark import dashboard
-
-    html = dashboard._room_html("radius-room")
-    radii = [int(value) for value in re.findall(r"border-radius:\s*(\d+)px", html)]
-
-    assert radii
-    assert max(radii) <= 10
-    assert "border-radius: 999px" not in html
-    for large_literal in [
-        "border-radius: 12px",
-        "border-radius: 14px",
-        "border-radius: 16px",
-        "border-radius: 17px",
-        "border-radius: 18px",
-        "border-radius: 22px",
-    ]:
-        assert large_literal not in html
-
-
-def test_dashboard_html_uses_wide_flat_hermes_inspired_layout():
-    from idea_spark import dashboard
-
-    html = dashboard._room_html("layout-room")
-
-    assert "max-width: 1440px" not in html
-    assert "max-width: min(1880px, calc(100vw - 24px));" in html
-    assert "--bg: #041c1c;" in html
-    assert "--line-soft:" in html
-    assert ".grid > section.panel { background: transparent; border: 0; box-shadow: none; overflow: visible; }" in html
-    assert ".grid > section.panel .panel-body { padding: 0; }" in html
-    assert ".stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; margin: 0 0 18px; border-top: 1px solid var(--line-soft); border-bottom: 1px solid var(--line-soft); }" in html
-    assert ".stat { padding: 10px 14px; background: transparent; border: 0; border-right: 1px solid var(--line-soft); border-radius: 0; }" in html
-    assert ".controls { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin: 0 0 16px; padding: 0 0 14px; border: 0; border-bottom: 1px solid var(--line-soft); border-radius: 0; background: transparent; }" in html
-    assert ".timeline { display: flex; flex-direction: column; gap: 0; border-top: 1px solid var(--line-soft); }" in html
-    assert ".event { position: relative; border: 0; border-bottom: 1px solid var(--line-soft); border-radius: 0; background: transparent; padding: 16px 4px 16px 18px; }" in html
-    assert ".event::before { content: ''; position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px; border-radius: 2px; background: var(--event-bar, var(--line)); }" in html
-    assert ".event.message { --event-bar: var(--accent-2); }" in html
-    assert ".event.artifact { --event-bar: var(--accent); }" in html
-
-
-def test_dashboard_html_marks_active_room_and_breaks_event_rails():
+def test_dashboard_html_marks_active_room():
     from idea_spark import dashboard
 
     html = dashboard._room_html("active-room")
 
-    assert ".rooms a.active { color: var(--accent); background: rgba(255,230,203,.07); box-shadow: inset 3px 0 0 var(--accent); padding-left: 12px; padding-right: 10px; }" in html
     assert ".current-room-badge" in html
     assert "currentRoom: 'current'" in html
     assert "currentRoom: '当前'" in html
@@ -423,7 +379,6 @@ def test_dashboard_html_marks_active_room_and_breaks_event_rails():
     assert "a.className = active ? 'room-link active' : 'room-link';" in html
     assert "a.setAttribute('aria-current', 'page');" in html
     assert "node('span', 'current-room-badge', t('currentRoom'))" in html
-    assert ".event::before { content: ''; position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px; border-radius: 2px; background: var(--event-bar, var(--line)); }" in html
 
 
 def test_dashboard_html_exposes_pagination_filter_grouping_and_markdown_controls():
@@ -452,7 +407,7 @@ def test_dashboard_html_exposes_pagination_filter_grouping_and_markdown_controls
         assert marker in html
 
     assert "JSON.stringify(event.content" not in html
-    assert 'class="event-markdown"' in html
+    assert ".event-markdown" in html
     assert "groupByAgentLabel" in html
     assert "paginationShowing" in html
 
@@ -508,7 +463,6 @@ def test_dashboard_html_exposes_room_context_menu_management():
         "function renderRoomGroups",
         "function renderRoomEntry",
         "addEventListener('contextmenu'",
-        "className = 'room-entry'",
         "fetch('/api/rooms/' + encodeURIComponent(room.room_id) + '?confirm=' + encodeURIComponent(room.room_id), {method: 'DELETE'})",
         "confirm(t('deleteRoomConfirm')",
         "ideaSparkDashboardPinnedRooms",
@@ -582,7 +536,7 @@ def test_dashboard_html_exposes_bilingual_language_switch():
     assert "function applyStaticTranslations" in html
     assert "localStorage" in html
     for required_text in [
-        "Idea-Spark 实时房间",
+        "Delphi 研究讨论",
         "房间",
         "实时监控",
         "本地管理 · localhost",

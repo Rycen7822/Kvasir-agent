@@ -484,238 +484,254 @@ def _page_shell(room_id: str | None) -> str:
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Idea-Spark Live Room</title>
+  <title>Delphi</title>
   <style>
+
     :root {{
       color-scheme: dark;
-      --bg: #041c1c;
-      --panel: color-mix(in srgb, #ffe6cb 5%, #041c1c);
-      --panel-2: color-mix(in srgb, #ffe6cb 8%, #041c1c);
-      --ink: #f6efe5;
-      --muted: rgba(255, 230, 203, .62);
-      --line: rgba(255, 230, 203, .20);
-      --line-soft: rgba(255, 230, 203, .10);
-      --accent: #ffe6cb;
-      --accent-2: #5eead4;
-      --bad: #fb7185;
-      --ok: #86efac;
-      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
-      --body: "Aptos", "Segoe UI", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+      --bg: #232323; --sidebar: #151515; --bubble: #303030;
+      --ink: #ececea; --muted: #aaa; --line: #3a3a3a; --line-soft: #303030;
+      --accent: #a38bff; --accent-2: #58bca8; --bad: #ff897d; --ok: #74c69d;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      --body: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
     }}
     * {{ box-sizing: border-box; }}
-    body {{
-      margin: 0;
-      min-height: 100vh;
-      background:
-        radial-gradient(circle at top left, rgba(255, 230, 203, .12), transparent 30rem),
-        radial-gradient(circle at 92% 8%, rgba(94, 234, 212, .14), transparent 26rem),
-        linear-gradient(135deg, #020707 0%, var(--bg) 48%, #062222 100%);
-      color: var(--ink);
-      font-family: var(--body);
-    }}
-    header {{
-      position: sticky;
-      top: 0;
-      z-index: 5;
-      backdrop-filter: blur(18px);
-      background: rgba(4, 28, 28, .88);
-      border-bottom: 1px solid var(--line-soft);
-      padding: 18px 24px;
-    }}
-    .wrap {{ width: 100%; max-width: min(1880px, calc(100vw - 24px)); margin: 0 auto; padding: 22px clamp(12px, 2.4vw, 36px); }}
-    .topbar {{ display: flex; justify-content: space-between; align-items: center; gap: 16px; }}
-    .brand {{ display: flex; gap: 14px; align-items: baseline; flex-wrap: wrap; }}
-    h1 {{ margin: 0; font-size: clamp(28px, 4vw, 54px); letter-spacing: -.06em; }}
-    .badge {{ border: 1px solid var(--line); border-radius: 4px; padding: 6px 10px; color: var(--muted); font-family: var(--mono); font-size: 12px; }}
-    .language-switch {{ display: flex; gap: 4px; align-items: center; border: 1px solid var(--line); border-radius: 6px; padding: 3px; background: rgba(255,255,255,.03); }}
-    .lang-button {{ border: 1px solid transparent; border-radius: 4px; padding: 6px 9px; background: transparent; color: var(--muted); font-family: var(--mono); font-size: 12px; cursor: pointer; }}
-    .lang-button.active {{ background: var(--accent); border-color: var(--accent); color: #041c1c; }}
-    .lang-button:focus-visible {{ outline: 1px solid var(--accent); outline-offset: 2px; }}
-    .grid {{ display: grid; grid-template-columns: minmax(260px, 340px) minmax(0, 1fr); gap: 24px; align-items: start; }}
-    .panel {{ background: color-mix(in srgb, var(--accent) 5%, var(--bg)); border: 1px solid var(--line-soft); border-radius: 8px; box-shadow: 0 16px 60px rgba(0,0,0,.24); overflow: hidden; }}
-    .grid > section.panel {{ background: transparent; border: 0; box-shadow: none; overflow: visible; }}
-    .grid > section.panel .panel-body {{ padding: 0; }}
-    .panel h2 {{ margin: 0; padding: 15px 16px; border-bottom: 1px solid var(--line-soft); font-size: 14px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }}
-    .grid > section.panel > h2 {{ padding: 0 0 12px; border-bottom: 1px solid var(--line-soft); }}
-    .panel-body {{ padding: 14px 16px; }}
-    .room-tools {{ display: grid; gap: 6px; padding: 11px 16px; border-bottom: 1px solid var(--line-soft); }}
-    .room-tools label {{ color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }}
-    .room-tools select {{ width: 100%; border: 1px solid var(--line); border-radius: 5px; background: #082323; color: var(--ink); padding: 8px 9px; font-family: var(--body); }}
-    .room-section {{ border-bottom: 1px solid var(--line-soft); padding: 4px 0; }}
-    .room-section:last-child {{ border-bottom: 0; }}
-    .room-section h3, .room-folder-header {{ margin: 0; padding: 9px 0 5px; color: var(--muted); font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }}
-    .room-folder-header {{ cursor: context-menu; display: flex; align-items: center; justify-content: space-between; gap: 8px; }}
-    .room-folder-header::before {{ content: '▾'; color: var(--accent); font-size: 10px; }}
-    .room-entry {{ display: block; border-bottom: 1px solid var(--line-soft); cursor: context-menu; }}
-    .room-entry:last-child {{ border-bottom: 0; }}
-    .rooms a {{ display: block; color: var(--ink); text-decoration: none; padding: 12px 0; border: 0; border-radius: 0; margin-bottom: 0; background: transparent; }}
-    .rooms a:hover, .room-entry.menu-open a {{ color: var(--accent); background: rgba(255,230,203,.045); }}
-    .rooms a.active {{ color: var(--accent); background: rgba(255,230,203,.07); box-shadow: inset 3px 0 0 var(--accent); padding-left: 12px; padding-right: 10px; }}
-    .rooms a.active .small {{ color: rgba(255,230,203,.78); }}
+    [hidden] {{ display: none !important; }}
+    body {{ margin: 0; height: 100dvh; overflow: hidden; background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.5; }}
+    button, input, select {{ font: inherit; }}
+    button, a, input, select, summary {{ -webkit-tap-highlight-color: transparent; }}
+    button {{ cursor: pointer; }}
+    button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible {{ outline: 2px solid var(--accent); outline-offset: 3px; }}
+    button:disabled {{ cursor: default; opacity: .45; }}
+    svg {{ flex-shrink: 0; }}
+    .sr-only {{ position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }}
+    .app-shell {{ display: grid; grid-template-columns: clamp(280px, 26vw, 380px) minmax(0, 1fr); width: 100%; height: 100dvh; min-height: 0; overflow: hidden; background: var(--bg); position: relative; }}
+    .sidebar {{ display: flex; flex-direction: column; min-height: 0; background: var(--sidebar); border-right: 1px solid var(--line); }}
+    .sidebar-top {{ height: 78px; flex-shrink: 0; display: flex; align-items: center; gap: 14px; padding: 0 22px; }}
+    .window-dots {{ display: flex; gap: 7px; }}
+    .window-dots i {{ width: 10px; height: 10px; border-radius: 50%; background: #ff6058; }}
+    .window-dots i:nth-child(2) {{ background: #febc2e; }}
+    .window-dots i:nth-child(3) {{ background: #28c840; }}
+    .brand {{ font-size: 18px; font-weight: 650; letter-spacing: -.3px; }}
+    .icon-button {{ display: grid; place-items: center; width: 40px; height: 40px; flex-shrink: 0; padding: 0; border: 0; border-radius: 9px; background: transparent; color: var(--muted); }}
+    .icon-button:hover, .icon-button[aria-pressed="true"] {{ background: #ffffff0a; color: var(--ink); }}
+    .sidebar-top .icon-button {{ margin-left: auto; font-size: 26px; font-weight: 300; }}
+    .search-box {{ display: flex; align-items: center; gap: 10px; border: 1px solid #404040; background: #252525; border-radius: 13px; padding: 11px 13px; }}
+    .sidebar-search {{ margin: 0 18px 14px; }}
+    .search-box svg {{ width: 20px; height: 20px; color: var(--muted); }}
+    .search-box input {{ width: 100%; min-width: 0; padding: 0; border: 0; outline: none; background: transparent; color: var(--ink); font-size: 16px; }}
+    .search-box:focus-within {{ border-color: #9280cd; }}
+    .search-box input::placeholder {{ color: var(--muted); }}
+    .navigation {{ flex: 1; min-height: 0; padding: 0 14px 16px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #444 transparent; }}
+    .nav-heading {{ display: flex; align-items: center; justify-content: space-between; min-height: 36px; padding: 0 10px; gap: 8px; }}
+    .nav-heading h2 {{ margin: 0; color: var(--muted); font-size: 16px; letter-spacing: .6px; text-transform: uppercase; font-weight: 600; }}
+    .nav-count {{ color: var(--muted); font-size: 16px; }}
+    .room-tools {{ max-width: 150px; position: relative; color: var(--muted); font-size: 16px; }}
+    .room-tools summary {{ cursor: pointer; padding: 6px 0; }}
+    .room-tools select {{ position: absolute; right: 0; z-index: 4; width: 150px; margin-top: 8px; padding: 9px; background: #262626; color: var(--ink); border: 1px solid var(--line); border-radius: 8px; }}
+    .room-section h3, .room-folder-header {{ display: flex; gap: 8px; align-items: center; margin: 12px 10px 5px; font-size: 16px; letter-spacing: .8px; color: var(--muted); font-weight: 500; }}
+    .room-folder-header {{ cursor: context-menu; }}
+    .room-folder-header::before {{ content: '▾'; }}
+    .room-entry {{ border-radius: 13px; cursor: context-menu; }}
+    .room-link, .agent-entry {{ display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 10px; border: 0; border-radius: 13px; color: var(--ink); text-decoration: none; background: transparent; text-align: left; }}
+    .room-link:hover, .agent-entry:hover, .room-entry.menu-open {{ background: #ffffff06; }}
+    .room-link.active, .agent-entry.active {{ background: #292929; }}
+    .nav-body {{ flex: 1; min-width: 0; }}
+    .room-title-row, .agent-title-row {{ display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }}
+    .room-title, .agent-name {{ min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 16px; font-weight: 560; }}
     .room-entry.pinned .room-title::before {{ content: '★ '; color: var(--accent); }}
-    .room-title-row {{ display: flex; align-items: center; justify-content: space-between; gap: 8px; }}
-    .current-room-badge {{ flex: 0 0 auto; border: 1px solid var(--accent); border-radius: 4px; color: #041c1c; background: var(--accent); padding: 2px 5px; font-family: var(--mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }}
-    .room-folder-empty {{ margin: 4px 0 8px; border-color: var(--line-soft); padding: 10px 0; }}
-    .context-menu {{ position: fixed; z-index: 50; min-width: 178px; display: grid; gap: 2px; padding: 6px; border: 1px solid var(--line); border-radius: 7px; background: rgba(4, 28, 28, .98); box-shadow: 0 18px 45px rgba(0,0,0,.35); }}
-    .context-menu[hidden] {{ display: none; }}
-    .context-menu button {{ width: 100%; border: 0; border-radius: 5px; background: transparent; color: var(--ink); cursor: pointer; font: 12px var(--body); text-align: left; padding: 8px 10px; }}
-    .context-menu button:hover {{ color: #041c1c; background: var(--accent); }}
-    .context-menu button.danger {{ color: var(--bad); }}
-    .context-menu button.danger:hover {{ color: #fff; background: rgba(251,113,133,.78); }}
-    .room-title {{ font-weight: 700; overflow-wrap: anywhere; }}
-    .small {{ color: var(--muted); font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }}
-    .stats {{ display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; margin: 0 0 18px; border-top: 1px solid var(--line-soft); border-bottom: 1px solid var(--line-soft); }}
-    .stat {{ padding: 10px 14px; background: transparent; border: 0; border-right: 1px solid var(--line-soft); border-radius: 0; }}
-    .stat:last-child {{ border-right: 0; }}
-    .stat strong {{ display: block; font-size: 28px; }}
-    .stat span {{ color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }}
-    .status-line {{ display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 18px; }}
-    .controls {{ display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin: 0 0 16px; padding: 0 0 14px; border: 0; border-bottom: 1px solid var(--line-soft); border-radius: 0; background: transparent; }}
+    .nav-time {{ color: var(--muted); font-size: 16px; white-space: nowrap; }}
+    .nav-preview {{ margin-top: 4px; font-size: 16px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.5; }}
+    .current-room-badge {{ width: 5px; height: 5px; flex-shrink: 0; border-radius: 50%; background: var(--accent-2); font-size: 0; }}
+    .agents-section {{ margin-top: 18px; }}
+    .avatar {{ width: 39px; height: 39px; flex: 0 0 39px; display: inline-block; position: relative; border-radius: 48% 52% 44% 56%; background: #59bca8; }}
+    .avatar::before, .avatar::after {{ content: ''; position: absolute; top: 10px; width: 3px; height: 8px; border-radius: 3px; background: #172523; transform: rotate(-25deg); }}
+    .avatar::before {{ right: 12px; }} .avatar::after {{ right: 7px; }}
+    .avatar.tone-1 {{ background: #f5a234; border-radius: 50%; }}
+    .avatar.tone-2 {{ background: #7164f5; border-radius: 12px; transform: rotate(-9deg); }}
+    .avatar.tone-3 {{ background: #9264f5; border-radius: 40% 53% 42% 45%; transform: rotate(-17deg); }}
+    .avatar.tone-4 {{ background: #4189ed; border-radius: 50%; }}
+    .avatar.tone-5 {{ background: #ed7839; border-radius: 50% 46% 48% 44%; }}
+    .avatar.room-avatar {{ background: transparent; border-radius: 0; }}
+    .avatar.room-avatar::before, .avatar.room-avatar::after {{ display: none; }}
+    .mini-avatar {{ position: absolute; width: 23px; height: 23px; border-radius: 50%; background: #59bca8; top: 1px; left: 9px; border: 2px solid var(--sidebar); }}
+    .mini-avatar:nth-child(2) {{ top: 15px; left: 0; background: #7164f5; }}
+    .mini-avatar:nth-child(3) {{ top: 15px; left: 18px; background: #9264f5; }}
+    .sidebar-footer {{ display: flex; align-items: center; gap: 11px; padding: 17px 22px; border-top: 1px solid #222; }}
+    .workspace-icon {{ display: grid; place-items: center; flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%; background: #292929; color: #aaa; font-size: 16px; }}
+    .workspace-title {{ font-size: 16px; }} .workspace-subtitle {{ margin-top: 3px; color: var(--muted); font-size: 16px; }}
+    .conversation {{ display: flex; flex-direction: column; min-width: 0; min-height: 0; }}
+    .conversation-header {{ display: flex; align-items: center; flex-shrink: 0; gap: 12px; min-height: 78px; padding: 14px 24px; border-bottom: 1px solid var(--line); }}
+    .conversation-header .avatar {{ width: 30px; height: 30px; flex-basis: 30px; }}
+    .conversation-header .mini-avatar {{ width: 18px; height: 18px; border-color: var(--bg); left: 6px; }}
+    .conversation-header .mini-avatar:nth-child(2) {{ top: 11px; left: 0; }} .conversation-header .mini-avatar:nth-child(3) {{ top: 11px; left: 14px; }}
+    .conversation-heading {{ flex: 1; min-width: 0; }}
+    #room-heading {{ margin: 0; font-size: 18px; font-weight: 570; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: -.2px; }}
+    #conversation-subtitle {{ font-size: 16px; color: var(--muted); margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }}
+    .badge {{ display: flex; align-items: center; gap: 6px; font-size: 16px; color: var(--muted); white-space: nowrap; }}
+    .badge::before {{ content: ''; width: 7px; height: 7px; border-radius: 50%; background: #888; }}
+    .badge.ok::before {{ background: var(--ok); }}
+    .language-switch {{ display: flex; padding: 2px; border: 1px solid var(--line); border-radius: 7px; }}
+    .lang-button {{ min-width: 40px; min-height: 36px; border: 0; border-radius: 5px; padding: 6px 10px; background: transparent; color: var(--muted); font-size: 16px; }}
+    .lang-button.active {{ background: #383838; color: var(--ink); }}
+    .controls {{ display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; flex-shrink: 0; margin: 0; padding: 14px 24px; border-bottom: 1px solid var(--line); }}
     .control-field {{ display: grid; gap: 5px; min-width: 0; }}
-    .control-field label, .check-field {{ color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }}
-    .control-field select {{ width: 100%; border: 1px solid var(--line); border-radius: 5px; background: #0b0b0b; color: var(--ink); padding: 8px 9px; font-family: var(--body); }}
-    .check-field {{ display: flex; gap: 8px; align-items: center; padding-top: 19px; }}
-    .check-field input {{ accent-color: var(--accent); }}
-    .pagination {{ display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 14px; }}
-    .pager-buttons {{ display: flex; gap: 8px; }}
-    .pager-buttons button {{ border: 1px solid var(--line); border-radius: 5px; background: rgba(255,255,255,.04); color: var(--ink); padding: 8px 11px; cursor: pointer; }}
-    .pager-buttons button:disabled {{ opacity: .45; cursor: not-allowed; }}
-    .pill {{ border: 1px solid var(--line); border-radius: 4px; padding: 7px 10px; font-size: 12px; color: var(--muted); background: rgba(255,255,255,.03); }}
-    .pill.hot {{ color: #041c1c; background: var(--accent); border-color: var(--accent); }}
-    .pill.ok {{ color: #06140b; background: var(--ok); border-color: var(--ok); }}
-    .timeline {{ display: flex; flex-direction: column; gap: 0; border-top: 1px solid var(--line-soft); }}
-    .event {{ position: relative; border: 0; border-bottom: 1px solid var(--line-soft); border-radius: 0; background: transparent; padding: 16px 4px 16px 18px; }}
-    .event::before {{ content: ''; position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px; border-radius: 2px; background: var(--event-bar, var(--line)); }}
-    .event:hover {{ background: rgba(255,230,203,.035); }}
-    .event.message {{ --event-bar: var(--accent-2); }}
-    .event.artifact {{ --event-bar: var(--accent); }}
-    .event.gate {{ --event-bar: var(--bad); }}
-    .event.open_need {{ --event-bar: #a78bfa; }}
-    .event-head {{ display: flex; gap: 10px; justify-content: space-between; align-items: start; margin-bottom: 8px; }}
-    .event-title {{ font-weight: 760; }}
-    .event-meta {{ color: var(--muted); font-family: var(--mono); font-size: 12px; }}
-    .event-tags {{ display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 0; }}
-    .tag {{ border: 1px solid var(--line); border-radius: 4px; padding: 3px 6px; color: var(--muted); font-family: var(--mono); font-size: 11px; background: rgba(255,255,255,.028); }}
-    .agent-group {{ display: grid; gap: 0; margin-bottom: 18px; }}
-    .agent-group h3 {{ margin: 16px 0 0; padding: 8px 0; border: 0; border-bottom: 1px solid var(--line-soft); border-radius: 0; background: transparent; color: var(--accent-2); font-family: var(--mono); font-size: 13px; }}
-    .event-markdown {{ line-height: 1.58; color: #e8e8e8; overflow-wrap: anywhere; }}
-    .event-markdown p {{ margin: 0 0 10px; }}
-    .event-markdown p:last-child {{ margin-bottom: 0; }}
-    .event-markdown h1, .event-markdown h2, .event-markdown h3 {{ margin: 12px 0 8px; line-height: 1.2; letter-spacing: -.02em; }}
-    .event-markdown h1 {{ font-size: 21px; }}
-    .event-markdown h2 {{ font-size: 18px; }}
-    .event-markdown h3 {{ font-size: 15px; }}
-    .event-markdown ul, .event-markdown ol {{ margin: 6px 0 10px 20px; padding: 0; }}
+    .control-field label, .check-field {{ color: var(--muted); font-size: 16px; }}
+    .control-field select {{ width: 100%; border: 1px solid var(--line); border-radius: 6px; background: #292929; color: var(--ink); min-height: 40px; padding: 8px 10px; font-size: 16px; }}
+    .check-field {{ min-height: 32px; display: flex; align-items: center; gap: 6px; grid-column: 1 / -1; }}
+    .check-field input {{ width: 18px; height: 18px; margin: 0; accent-color: var(--accent); }}
+    .room-details {{ flex-shrink: 0; padding: 8px 24px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 16px; }}
+    .room-details > summary {{ cursor: pointer; min-height: 32px; padding: 4px 0; }}
+    .room-details[open] {{ max-height: 24%; overflow: auto; }}
+    .room-topic {{ margin: 12px 0; color: #b6b6b6; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }}
+    .stats {{ display: flex; flex-wrap: wrap; gap: 16px; margin: 12px 0; }}
+    .stat strong {{ margin-right: 5px; color: var(--ink); font-size: 16px; }}
+    .stat span {{ font-size: 16px; }}
+    .status-line {{ display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }}
+    .pill, .tag {{ border: 1px solid var(--line); border-radius: 6px; padding: 3px 7px; color: var(--muted); font-size: 16px; overflow-wrap: anywhere; }}
+    .pill.hot {{ color: #c3b3ff; border-color: #5c5076; }} .pill.ok {{ color: var(--ok); }}
+    .conversation-scroll {{ flex: 1; min-height: 0; overflow-y: auto; padding: 22px 28px; scrollbar-width: thin; scrollbar-color: #444 transparent; }}
+    .timeline {{ display: flex; flex-direction: column; gap: 18px; min-height: 100%; }}
+    .day-divider {{ text-align: center; padding: 7px 0; color: #8f8f8f; font-size: 16px; }}
+    .event {{ display: flex; flex-direction: column; align-items: flex-start; gap: 6px; width: 100%; }}
+    .event-head {{ display: flex; gap: 9px; align-items: baseline; max-width: 88%; padding: 0 4px; color: var(--muted); font-size: 16px; }}
+    .event-actor {{ color: #aaa; font-weight: 500; }}
+    .event-meta {{ font-size: 16px; color: var(--muted); }}
+    .event-bubble {{ max-width: 88%; min-width: 0; padding: 13px 17px; border-radius: 20px; background: var(--bubble); }}
+    .event.outgoing {{ align-items: flex-end; }}
+    .event.outgoing .event-bubble {{ background: #e9e9e6; color: #1e1e1e; }}
+    .event.outgoing .event-markdown {{ color: #1e1e1e; }}
+    .event.outgoing .event-bubble .event-meta {{ color: #656565; }}
+    .event.outgoing .event-kind, .event.outgoing .tag {{ color: #5f596a; border-color: #c8c6ca; }}
+    .event.outgoing .event-markdown code {{ color: #645083; }}
+    .event.outgoing .event-markdown th {{ color: #4c4164; }}
+    .event-kind {{ color: #b4a2ee; font-size: 16px; font-weight: 550; letter-spacing: .2px; }}
+    .event-title {{ margin: 5px 0 9px; font-weight: 600; font-size: 16px; overflow-wrap: anywhere; }}
+    .artifact-details > summary {{ cursor: pointer; min-height: 32px; color: #c7b9ff; font-size: 16px; line-height: 1.6; overflow-wrap: anywhere; }}
+    .artifact-details[open] > summary {{ margin-bottom: 10px; }}
+    .event.gate .event-kind {{ color: #e9b379; }} .event.open_need .event-kind {{ color: #b6a1ec; }}
+    .event-tags {{ display: flex; gap: 5px; flex-wrap: wrap; margin-top: 10px; }}
+    .event-markdown {{ font-size: 16px; line-height: 1.65; color: #e6e6e4; overflow-wrap: anywhere; }}
+    .event-markdown p {{ margin: 0 0 10px; }} .event-markdown p:last-child {{ margin-bottom: 0; }}
+    .event-markdown h1, .event-markdown h2, .event-markdown h3 {{ margin: 10px 0 7px; font-size: 16px; line-height: 1.4; }}
+    .event-markdown ul, .event-markdown ol {{ margin: 6px 0 9px; padding-left: 20px; }}
     .event-markdown li {{ margin: 4px 0; }}
-    .event-markdown blockquote {{ margin: 8px 0; padding: 7px 10px; border-left: 3px solid var(--accent); background: rgba(255,230,203,.06); color: #f4f4f4; }}
-    .event-markdown pre {{ margin: 8px 0; padding: 10px; border: 1px solid var(--line-soft); border-radius: 6px; background: rgba(0,0,0,.24); overflow-x: auto; }}
-    .event-markdown code {{ font-family: var(--mono); color: var(--accent); }}
-    .event-markdown .table-wrap {{ margin: 10px 0 14px; overflow-x: auto; border: 1px solid var(--line-soft); border-radius: 7px; background: rgba(0,0,0,.15); }}
-    .event-markdown table {{ width: 100%; border-collapse: collapse; min-width: 520px; }}
-    .event-markdown th, .event-markdown td {{ border-bottom: 1px solid var(--line-soft); border-right: 1px solid var(--line-soft); padding: 8px 10px; vertical-align: top; text-align: left; }}
-    .event-markdown th:last-child, .event-markdown td:last-child {{ border-right: 0; }}
-    .event-markdown tr:last-child td {{ border-bottom: 0; }}
-    .event-markdown th {{ color: var(--accent); background: rgba(255,230,203,.06); font-family: var(--mono); font-size: 12px; letter-spacing: .02em; }}
-    .agents {{ display: grid; gap: 0; margin: 0 0 18px; border-top: 1px solid var(--line-soft); }}
-    .agent {{ display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border: 0; border-bottom: 1px solid var(--line-soft); border-radius: 0; background: transparent; }}
-    .empty {{ color: var(--muted); border: 1px dashed var(--line); border-radius: 6px; padding: 16px; }}
-    code {{ font-family: var(--mono); color: var(--accent); }}
-    @media (max-width: 900px) {{ .grid {{ grid-template-columns: 1fr; }} .stats {{ grid-template-columns: repeat(2, 1fr); }} .controls {{ grid-template-columns: 1fr 1fr; }} }}
+    .event-markdown blockquote {{ margin: 8px 0; padding: 4px 10px; border-left: 2px solid #9481bf; }}
+    .event-markdown pre {{ max-width: 100%; margin: 8px 0; padding: 10px; border-radius: 8px; background: #0002; overflow-x: auto; }}
+    .event-markdown code {{ font-family: var(--mono); color: #c6b6fa; font-size: 1em; }}
+    .event-markdown .table-wrap {{ max-width: 100%; overflow-x: auto; margin: 8px 0; border: 1px solid #7773; border-radius: 7px; }}
+    .event-markdown table {{ width: 100%; min-width: 460px; border-collapse: collapse; font-size: 16px; }}
+    .event-markdown th, .event-markdown td {{ padding: 8px 10px; border-bottom: 1px solid #7773; text-align: left; }}
+    .event-markdown th {{ color: #c6b6fa; }} .event-markdown tr:last-child td {{ border-bottom: 0; }}
+    .agent-group {{ display: flex; flex-direction: column; gap: 18px; }}
+    .agent-group h3 {{ margin: 12px 0 0; font-size: 16px; font-weight: 500; color: var(--accent); }}
+    .conversation-footer {{ flex-shrink: 0; padding: 0 24px 20px; }}
+    .pagination {{ display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 0; }}
+    .small {{ font-size: 16px; color: var(--muted); overflow-wrap: anywhere; }}
+    .pager-buttons {{ display: flex; gap: 5px; }}
+    .pager-buttons button {{ border: 0; border-radius: 5px; background: transparent; color: var(--muted); font-size: 16px; min-height: 36px; padding: 6px 10px; }}
+    .pager-buttons button:not(:disabled):hover {{ color: var(--ink); background: #ffffff08; }}
+    #timeline-latest.active {{ color: var(--accent-2); }}
+    .conversation-search {{ border-radius: 24px; padding: 12px 15px; background: transparent; }}
+    .conversation-search input {{ font-size: 16px; }}
+    .conversation-search .icon-button {{ width: 36px; height: 36px; font-size: 18px; }}
+    .empty {{ padding: 20px 12px; color: var(--muted); font-size: 16px; line-height: 1.7; }}
+    .timeline > .empty {{ margin: auto; max-width: 330px; text-align: center; }}
+    .context-menu {{ position: fixed; z-index: 50; min-width: 178px; display: grid; gap: 2px; padding: 6px; border: 1px solid var(--line); border-radius: 10px; background: #242424; box-shadow: 0 18px 45px #0005; }}
+    .context-menu button {{ width: 100%; border: 0; border-radius: 5px; background: transparent; color: var(--ink); font-size: 16px; text-align: left; min-height: 40px; padding: 8px 10px; }}
+    .context-menu button:hover {{ background: #ffffff0c; }}
+    .context-menu button.danger {{ color: var(--bad); }}
+    .mobile-toggle, .sidebar-backdrop {{ display: none; }}
+    @media (max-width: 1050px) {{ .app-shell {{ grid-template-columns: 280px minmax(0, 1fr); }} .conversation-header {{ gap: 8px; padding: 14px 18px; }} }}
+    @media (max-width: 740px) {{
+      .app-shell {{ display: block; }}
+      .conversation {{ height: 100%; }} .sidebar {{ position: absolute; top: 0; bottom: 0; left: 0; width: min(320px, 86vw); z-index: 25; transform: translateX(-100%); transition: transform .18s ease; }}
+      .sidebar-open .sidebar {{ transform: translateX(0); }} .sidebar-open .sidebar-backdrop {{ display: block; position: absolute; inset: 0; z-index: 24; border: 0; background: #0008; }}
+      .mobile-toggle {{ display: grid; }} .conversation-header {{ padding: 12px; min-height: 64px; }} .conversation-heading {{ max-width: calc(100% - 160px); }}
+      #conversation-avatar {{ display: none; }} #room-heading {{ font-size: 16px; }} .conversation-scroll {{ padding: 18px 14px; }}
+      .event-bubble, .event-head {{ max-width: 94%; }} .event-markdown {{ font-size: 16px; }} .conversation-footer {{ padding: 0 14px 14px; }}
+      .controls {{ grid-template-columns: 1fr 1fr; padding: 12px 14px; }} .room-details {{ padding: 8px 14px; }} .pagination {{ align-items: flex-start; }}
+      .pager-buttons {{ flex-shrink: 0; }} .language-switch {{ border: 0; }} .lang-button {{ padding: 4px; }}
+    }}
+    @media (prefers-reduced-motion: reduce) {{ .sidebar {{ transition: none; }} }}
   </style>
 </head>
 <body>
-  <header>
-    <div class="topbar">
-      <div class="brand">
-        <h1 data-i18n="appTitle">Idea-Spark Live Room</h1>
-        <span id="connection" class="badge">connecting</span>
-        <span class="badge" data-i18n="readonlyLocal">read-only · localhost</span>
+  <main class="app-shell" id="app-shell">
+    <button class="sidebar-backdrop" id="sidebar-backdrop" type="button" data-i18n-aria="closeNavigation" tabindex="-1"></button>
+    <aside class="sidebar" id="sidebar" aria-label="Rooms and agents">
+      <div class="sidebar-top">
+        <span class="window-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span class="brand">Delphi</span>
+        <button class="icon-button" id="new-folder" type="button" data-i18n-aria="createFolder">+</button>
       </div>
-      <div id="language-switch" class="language-switch" role="group" aria-label="Language">
-        <button type="button" class="lang-button" data-lang-option="en" aria-pressed="false">EN</button>
-        <button type="button" class="lang-button" data-lang-option="zh" aria-pressed="false">中文</button>
-      </div>
-    </div>
-  </header>
-  <main class="wrap">
-    <div class="grid">
-      <aside class="panel">
-        <h2 data-i18n="roomsHeading">Rooms</h2>
-        <div class="room-tools">
-          <label for="room-group-mode" data-i18n="groupRoomsLabel">Group rooms</label>
-          <select id="room-group-mode">
-            <option value="none" data-i18n="groupRoomsNone">No grouping</option>
-            <option value="status" data-i18n="groupRoomsStatus">Status</option>
-            <option value="creator" data-i18n="groupRoomsCreator">Creator</option>
-            <option value="protocol" data-i18n="groupRoomsProtocol">Protocol</option>
-            <option value="day" data-i18n="groupRoomsDay">Created day</option>
-          </select>
+      <label class="search-box sidebar-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg>
+        <span class="sr-only" data-i18n="navigationSearch">Search rooms and agents</span>
+        <input id="navigation-search" type="search" autocomplete="off" data-i18n-placeholder="navigationSearch" placeholder="Search rooms and agents">
+      </label>
+      <nav class="navigation" aria-label="Research conversations">
+        <div class="nav-heading">
+          <h2 data-i18n="roomsHeading">Rooms</h2>
+          <details class="room-tools">
+            <summary data-i18n="groupRoomsLabel">Group rooms</summary>
+            <label class="sr-only" for="room-group-mode" data-i18n="groupRoomsLabel">Group rooms</label>
+            <select id="room-group-mode">
+              <option value="none" data-i18n="groupRoomsNone">No grouping</option>
+              <option value="status" data-i18n="groupRoomsStatus">Status</option>
+              <option value="creator" data-i18n="groupRoomsCreator">Creator</option>
+              <option value="protocol" data-i18n="groupRoomsProtocol">Protocol</option>
+              <option value="day" data-i18n="groupRoomsDay">Created day</option>
+            </select>
+          </details>
         </div>
-        <div class="panel-body rooms" id="rooms"></div>
-        <div id="room-area-menu" class="context-menu" role="menu" hidden>
-          <button id="menu-create-folder" type="button" role="menuitem" data-i18n="createFolder">New folder</button>
-        </div>
-        <div id="room-context-menu" class="context-menu" role="menu" hidden>
-          <button id="menu-pin-room" type="button" role="menuitem" data-i18n="pinRoom">Pin</button>
-          <button id="menu-add-room-folder" type="button" role="menuitem" data-i18n="addToFolder">Add to group</button>
-          <button id="menu-delete-room" class="danger" type="button" role="menuitem" data-i18n="deleteRoom">Delete room</button>
-        </div>
-        <div id="room-folder-menu" class="context-menu" role="menu" hidden>
-          <button id="menu-rename-folder" type="button" role="menuitem" data-i18n="renameFolder">Rename folder</button>
-          <button id="menu-delete-folder" class="danger" type="button" role="menuitem" data-i18n="deleteFolder">Delete folder</button>
-        </div>
-      </aside>
-      <section class="panel">
-        <h2 id="room-heading" data-i18n="liveMonitor">Live monitor</h2>
-        <div class="panel-body">
-          <div id="summary"></div>
-          <div class="status-line" id="status-line"></div>
-          <div class="status-line" id="discussion-state">
-            <span class="pill" id="current-phase"></span>
-            <span class="pill" id="latest-gate"></span>
-            <span class="pill" id="open-need-summary"></span>
-          </div>
+        <div class="rooms" id="rooms"></div>
+        <section class="agents-section" id="agents-section" hidden>
+          <div class="nav-heading"><h2 data-i18n="agentsHeading">Agents in this room</h2><span id="agent-count" class="nav-count"></span></div>
           <div id="agents" class="agents"></div>
-          <div style="height: 18px"></div>
-          <div id="timeline-controls" class="controls" hidden>
-            <div class="control-field">
-              <label for="kind-filter" data-i18n="kindFilterLabel">Kind</label>
-              <select id="kind-filter"></select>
-            </div>
-            <div class="control-field">
-              <label for="agent-filter" data-i18n="agentFilterLabel">Subagent</label>
-              <select id="agent-filter"></select>
-            </div>
-            <div class="control-field">
-              <label for="tag-filter" data-i18n="tagFilterLabel">Tag</label>
-              <select id="tag-filter"></select>
-            </div>
-            <div class="control-field">
-              <label for="page-size" data-i18n="pageSizeLabel">Page size</label>
-              <select id="page-size">
-                <option value="10" selected>10</option>
-                <option value="20">20</option>
-                <option value="50">50</option>
-                <option value="100">100</option>
-              </select>
-            </div>
-            <label class="check-field" for="group-by-agent">
-              <input id="group-by-agent" type="checkbox">
-              <span data-i18n="groupByAgentLabel">Group by subagent</span>
-            </label>
-          </div>
-          <div id="timeline-pagination" class="pagination" hidden>
-            <span id="page-info" class="small"></span>
-            <div class="pager-buttons">
-              <button id="page-prev" type="button" data-i18n="prevPage">Prev</button>
-              <button id="page-next" type="button" data-i18n="nextPage">Next</button>
-            </div>
-          </div>
-          <div id="timeline-prototype" class="event-markdown" hidden></div>
-          <div id="timeline" class="timeline"></div>
+        </section>
+      </nav>
+      <div class="sidebar-footer"><span class="workspace-icon" aria-hidden="true">D</span><div><div class="workspace-title" data-i18n="workspaceTitle">Research workspace</div><div class="workspace-subtitle" data-i18n="workspaceSubtitle">Idea-Spark · Delphi</div></div></div>
+    </aside>
+    <section class="conversation" aria-label="Conversation">
+      <header class="conversation-header">
+        <button class="icon-button mobile-toggle" id="navigation-toggle" type="button" aria-controls="sidebar" aria-expanded="false" data-i18n-aria="openNavigation">☰</button>
+        <div id="conversation-avatar" aria-hidden="true"></div>
+        <div class="conversation-heading"><h1 id="room-heading" data-i18n="selectRoom">Select a room</h1><div id="conversation-subtitle"></div></div>
+        <span id="connection" class="badge" role="status">connecting</span>
+        <div id="language-switch" class="language-switch" role="group" aria-label="Language">
+          <button type="button" class="lang-button" data-lang-option="en" aria-pressed="false">EN</button>
+          <button type="button" class="lang-button" data-lang-option="zh" aria-pressed="false">中文</button>
         </div>
-      </section>
-    </div>
+        <button class="icon-button" id="filter-toggle" type="button" aria-controls="timeline-controls" aria-pressed="false" data-i18n-aria="filterToggle"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="2" fill="#232323"/><circle cx="15" cy="17" r="2" fill="#232323"/></svg></button>
+      </header>
+      <div id="timeline-controls" class="controls" hidden>
+        <div class="control-field"><label for="kind-filter" data-i18n="kindFilterLabel">Kind</label><select id="kind-filter"></select></div>
+        <div class="control-field"><label for="agent-filter" data-i18n="agentFilterLabel">Subagent</label><select id="agent-filter"></select></div>
+        <div class="control-field"><label for="tag-filter" data-i18n="tagFilterLabel">Tag</label><select id="tag-filter"></select></div>
+        <div class="control-field"><label for="page-size" data-i18n="pageSizeLabel">Page size</label><select id="page-size"><option value="10">10</option><option value="20">20</option><option value="50" selected>50</option><option value="100">100</option></select></div>
+        <label class="check-field" for="group-by-agent"><input id="group-by-agent" type="checkbox"><span data-i18n="groupByAgentLabel">Group by subagent</span></label>
+      </div>
+      <details id="room-details" class="room-details" hidden>
+        <summary id="room-overview-label" data-i18n="roomOverview">Room overview</summary>
+        <div id="room-topic" class="room-topic"></div><div id="summary"></div><div id="status-line" class="status-line"></div>
+        <div id="discussion-state" class="status-line"><span class="pill" id="current-phase"></span><span class="pill" id="latest-gate"></span><span class="pill" id="open-need-summary"></span></div>
+      </details>
+      <div class="conversation-scroll" id="conversation-scroll" tabindex="0" data-i18n-aria="conversationLabel">
+        <div id="timeline" class="timeline"><div class="empty" data-i18n="welcomeMessage">Choose a room to follow the discussion, or select an agent to inspect its work.</div></div>
+      </div>
+      <footer class="conversation-footer">
+        <div id="timeline-pagination" class="pagination" hidden><span id="page-info" class="small"></span><div class="pager-buttons"><button id="page-prev" type="button" data-i18n="prevPage">Prev</button><button id="page-next" type="button" data-i18n="nextPage">Next</button><button id="timeline-latest" type="button" data-i18n="latestMessages">Latest</button></div></div>
+        <label class="search-box conversation-search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg>
+          <span class="sr-only" data-i18n="conversationSearch">Search this conversation</span>
+          <input id="timeline-search" type="search" autocomplete="off" data-i18n-placeholder="conversationSearch" placeholder="Search this conversation">
+        </label>
+      </footer>
+    </section>
+    <div id="room-area-menu" class="context-menu" role="menu" hidden><button id="menu-create-folder" type="button" role="menuitem" data-i18n="createFolder">New folder</button></div>
+    <div id="room-context-menu" class="context-menu" role="menu" hidden><button id="menu-pin-room" type="button" role="menuitem" data-i18n="pinRoom">Pin</button><button id="menu-add-room-folder" type="button" role="menuitem" data-i18n="addToFolder">Add to group</button><button id="menu-delete-room" class="danger" type="button" role="menuitem" data-i18n="deleteRoom">Delete room</button></div>
+    <div id="room-folder-menu" class="context-menu" role="menu" hidden><button id="menu-rename-folder" type="button" role="menuitem" data-i18n="renameFolder">Rename folder</button><button id="menu-delete-folder" class="danger" type="button" role="menuitem" data-i18n="deleteFolder">Delete folder</button></div>
   </main>
 <script>
 const ROOM_ID = {room_json};
@@ -725,7 +741,24 @@ const ROOM_GROUP_KEY = 'ideaSparkDashboardRoomGroupMode';
 const ROOM_FOLDER_KEY = 'ideaSparkDashboardRoomFolders';
 const TRANSLATIONS = {{
   en: {{
-    appTitle: 'Idea-Spark Live Room',
+    agentsHeading: 'Agents in this room',
+    navigationSearch: 'Search rooms and agents',
+    conversationSearch: 'Search this conversation',
+    conversationLabel: 'Conversation history',
+    workspaceTitle: 'Research workspace',
+    workspaceSubtitle: 'Idea-Spark · Delphi',
+    welcomeMessage: 'Choose a room to follow the discussion, or select an agent to inspect its work.',
+    roomConversation: 'Room conversation',
+    roomOverview: 'Room overview',
+    workRecords: 'work records',
+    coordinator: 'Coordinator',
+    notJoined: 'Not joined yet',
+    noSearchResults: 'No matching rooms or agents.',
+    latestMessages: 'Latest',
+    filterToggle: 'Show or hide filters',
+    openNavigation: 'Open rooms and agents',
+    closeNavigation: 'Close navigation',
+    appTitle: 'Delphi',
     readonlyLocal: 'local management · localhost',
     roomsHeading: 'Rooms',
     currentRoom: 'current',
@@ -806,7 +839,24 @@ const TRANSLATIONS = {{
     }},
   }},
   zh: {{
-    appTitle: 'Idea-Spark 实时房间',
+    agentsHeading: '当前房间的代理',
+    navigationSearch: '搜索房间和代理',
+    conversationSearch: '搜索当前对话',
+    conversationLabel: '对话记录',
+    workspaceTitle: '研究工作台',
+    workspaceSubtitle: 'Idea-Spark · Delphi',
+    welcomeMessage: '选择房间查看整场讨论，或选择代理查看它的工作记录。',
+    roomConversation: '房间讨论',
+    roomOverview: '房间概览',
+    workRecords: '条工作记录',
+    coordinator: '协调者',
+    notJoined: '尚未加入',
+    noSearchResults: '没有匹配的房间或代理。',
+    latestMessages: '最新',
+    filterToggle: '显示或收起筛选',
+    openNavigation: '打开房间与代理列表',
+    closeNavigation: '关闭导航',
+    appTitle: 'Delphi 研究讨论',
     readonlyLocal: '本地管理 · localhost',
     roomsHeading: '房间',
     currentRoom: '当前',
@@ -899,7 +949,11 @@ function readStoredLanguage() {{
 let currentLanguage = readStoredLanguage();
 let lastSnapshot = null;
 let connectionState = {{key: 'connecting', cls: ''}};
-let uiState = {{kind: 'all', agent: 'all', tag: 'all', page: 1, pageSize: 10, groupByAgent: false}};
+let uiState = {{kind: 'all', agent: new URLSearchParams(location.search).get('agent') || 'all', tag: 'all', query: '', page: 1, pageSize: 50, groupByAgent: false, filtersOpen: false, followLatest: true}};
+let lastRooms = [];
+let roomsLoaded = false;
+let navigationQuery = '';
+let pollingTimer = null;
 let roomPrefs = loadRoomPrefs();
 let activeRoomMenuRoom = null;
 let activeFolderMenuId = null;
@@ -1101,6 +1155,8 @@ function applyStaticTranslations() {{
   document.querySelectorAll('[data-i18n]').forEach((el) => {{
     el.textContent = t(el.dataset.i18n);
   }});
+  document.querySelectorAll('[data-i18n-placeholder]').forEach((el) => el.placeholder = t(el.dataset.i18nPlaceholder));
+  document.querySelectorAll('[data-i18n-aria]').forEach((el) => {{ el.setAttribute('aria-label', t(el.dataset.i18nAria)); el.title = t(el.dataset.i18nAria); }});
   const switcher = $('language-switch');
   if (switcher) switcher.setAttribute('aria-label', t('languageAria'));
   document.querySelectorAll('[data-lang-option]').forEach((button) => {{
@@ -1153,6 +1209,7 @@ function setupRoomControls() {{
   }}
   const create = $('menu-create-folder');
   if (create) create.addEventListener('click', createRoomFolder);
+  $('new-folder').addEventListener('click', createRoomFolder);
   const pin = $('menu-pin-room');
   if (pin) pin.addEventListener('click', () => {{ if (activeRoomMenuRoom) toggleRoomPin(activeRoomMenuRoom.room_id); closeRoomMenus(); }});
   const add = $('menu-add-room-folder');
@@ -1184,42 +1241,100 @@ function buildFilterControls(data) {{
   const controls = $('timeline-controls');
   const pagination = $('timeline-pagination');
   if (!controls || !pagination) return;
-  controls.hidden = false;
+  controls.hidden = !uiState.filtersOpen;
   pagination.hidden = false;
   const options = data.filter_options || {{}};
   uiState.kind = fillSelect('kind-filter', options.kinds || [], t('allKinds'), uiState.kind, eventKindText);
-  uiState.agent = fillSelect('agent-filter', options.agents || [], t('allAgents'), uiState.agent);
+  uiState.agent = fillSelect('agent-filter', [...(options.agents || []), ...(data.missing_expected_agents || [])], t('allAgents'), uiState.agent);
   uiState.tag = fillSelect('tag-filter', options.tags || [], t('allTags'), uiState.tag);
   const pageSize = $('page-size');
   if (pageSize) pageSize.value = String(uiState.pageSize);
   const group = $('group-by-agent');
   if (group) group.checked = Boolean(uiState.groupByAgent);
 }}
-function setupTimelineControls() {{
-  const pairs = [
-    ['kind-filter', 'kind'],
-    ['agent-filter', 'agent'],
-    ['tag-filter', 'tag'],
-  ];
-  for (const [id, key] of pairs) {{
-    const el = $(id);
-    if (el) el.addEventListener('change', () => {{ uiState[key] = el.value || 'all'; uiState.page = 1; if (lastSnapshot) renderTimelinePage(lastSnapshot); }});
+function resetConversationView() {{
+  uiState.page = 1;
+  uiState.followLatest = true;
+  if (lastSnapshot && lastSnapshot.success) {{
+    renderAgentList(lastSnapshot);
+    renderConversationHeading(lastSnapshot);
+    renderTimelinePage(lastSnapshot);
   }}
-  const size = $('page-size');
-  if (size) size.addEventListener('change', () => {{ uiState.pageSize = Number(size.value) || 20; uiState.page = 1; if (lastSnapshot) renderTimelinePage(lastSnapshot); }});
-  const group = $('group-by-agent');
-  if (group) group.addEventListener('change', () => {{ uiState.groupByAgent = group.checked; uiState.page = 1; if (lastSnapshot) renderTimelinePage(lastSnapshot); }});
-  const prev = $('page-prev');
-  if (prev) prev.addEventListener('click', () => {{ uiState.page = Math.max(1, uiState.page - 1); if (lastSnapshot) renderTimelinePage(lastSnapshot); }});
-  const next = $('page-next');
-  if (next) next.addEventListener('click', () => {{ uiState.page += 1; if (lastSnapshot) renderTimelinePage(lastSnapshot); }});
 }}
+function syncNavigationAccessibility() {{
+  const closedMobile = matchMedia('(max-width: 740px)').matches && !$('app-shell').classList.contains('sidebar-open');
+  if (closedMobile && $('sidebar').contains(document.activeElement)) $('navigation-toggle').focus();
+  $('sidebar').inert = closedMobile;
+}}
+function setNavigationOpen(open) {{
+  $('app-shell').classList.toggle('sidebar-open', open);
+  $('navigation-toggle').setAttribute('aria-expanded', String(open));
+  syncNavigationAccessibility();
+  if (open) $('navigation-search').focus();
+}}
+function selectAgent(agent) {{
+  uiState.agent = agent || 'all';
+  $('agent-filter').value = uiState.agent;
+  const url = new URL(location.href);
+  if (uiState.agent === 'all') url.searchParams.delete('agent');
+  else url.searchParams.set('agent', uiState.agent);
+  history.replaceState(null, '', url);
+  resetConversationView();
+  setNavigationOpen(false);
+}}
+function setupTimelineControls() {{
+  for (const [id, key] of [['kind-filter', 'kind'], ['agent-filter', 'agent'], ['tag-filter', 'tag']]) {{
+    $(id).addEventListener('change', () => {{
+      if (key === 'agent') selectAgent($(id).value);
+      else {{ uiState[key] = $(id).value || 'all'; resetConversationView(); }}
+    }});
+  }}
+  $('page-size').addEventListener('change', () => {{ uiState.pageSize = Number($('page-size').value) || 50; resetConversationView(); }});
+  $('group-by-agent').addEventListener('change', () => {{ uiState.groupByAgent = $('group-by-agent').checked; resetConversationView(); }});
+  $('timeline-search').addEventListener('input', () => {{ uiState.query = $('timeline-search').value.trim().toLowerCase(); resetConversationView(); }});
+  for (const [id, delta] of [['page-prev', -1], ['page-next', 1]]) {{
+    $(id).addEventListener('click', () => {{
+      uiState.page = Math.max(1, uiState.page + delta);
+      uiState.followLatest = false;
+      $('conversation-scroll').scrollTop = 0;
+      if (lastSnapshot) renderTimelinePage(lastSnapshot);
+    }});
+  }}
+  $('timeline-latest').addEventListener('click', resetConversationView);
+  $('filter-toggle').addEventListener('click', () => {{
+    uiState.filtersOpen = !uiState.filtersOpen;
+    $('timeline-controls').hidden = !uiState.filtersOpen;
+    $('filter-toggle').setAttribute('aria-pressed', String(uiState.filtersOpen));
+  }});
+  $('navigation-search').addEventListener('input', () => {{
+    navigationQuery = $('navigation-search').value.trim().toLowerCase();
+    renderRoomGroups(lastRooms);
+    if (lastSnapshot && lastSnapshot.success) renderAgentList(lastSnapshot);
+  }});
+  $('navigation-toggle').addEventListener('click', () => setNavigationOpen(!$('app-shell').classList.contains('sidebar-open')));
+  $('sidebar-backdrop').addEventListener('click', () => setNavigationOpen(false));
+  syncNavigationAccessibility();
+  window.addEventListener('resize', syncNavigationAccessibility);
+  document.addEventListener('keydown', (event) => {{ if (event.key === 'Escape') setNavigationOpen(false); }});
+  $('conversation-scroll').addEventListener('scroll', () => {{
+    const pane = $('conversation-scroll');
+    const atBottom = pane.scrollHeight - pane.scrollTop - pane.clientHeight < 80;
+    if (!atBottom) uiState.followLatest = false;
+    else if (lastSnapshot && lastSnapshot.success) {{
+      const pages = Math.max(1, Math.ceil(filteredTimeline(lastSnapshot).length / uiState.pageSize));
+      if (uiState.page === pages) uiState.followLatest = true;
+    }}
+    $('timeline-latest').classList.toggle('active', uiState.followLatest);
+  }});
+}}
+
 function filteredTimeline(data) {{
   const events = (data && data.timeline) ? data.timeline : [];
   return events.filter((event) => {{
     if (uiState.kind !== 'all' && event.kind !== uiState.kind) return false;
     if (uiState.agent !== 'all' && event.actor !== uiState.agent) return false;
     if (uiState.tag !== 'all' && !(event.tags || []).includes(uiState.tag)) return false;
+    if (uiState.query && ![event.actor, event.role, event.title, event.content_text, contentText(event.content), ...(event.tags || [])].join(' ').toLowerCase().includes(uiState.query)) return false;
     return true;
   }});
 }}
@@ -1232,54 +1347,146 @@ function groupEventsByAgent(events) {{
   }}
   return Array.from(groups.entries()).sort((a, b) => a[0].localeCompare(b[0]));
 }}
+function participantInfo(agentId, data = lastSnapshot) {{
+  const participant = ((data && data.participants) || []).find((item) => item.agent_id === agentId);
+  return participant || {{agent_id: agentId, display_name: agentId, role: data && data.room.created_by === agentId ? t('coordinator') : t('agentFallback')}};
+}}
+function avatar(identity, room = false) {{
+  const identities = room ? lastRooms.map((item) => item.room_id) : ((lastSnapshot && lastSnapshot.filter_options.agents) || []);
+  const color = Math.max(0, identities.indexOf(identity)) % 6;
+  const el = node('span', 'avatar tone-' + color + (room ? ' room-avatar' : ''));
+  el.setAttribute('aria-hidden', 'true');
+  if (room) for (let n = 0; n < 3; n++) el.appendChild(node('span', 'mini-avatar'));
+  return el;
+}}
+function displayTime(value, short = false) {{
+  const date = new Date(value);
+  if (!value || Number.isNaN(date.getTime())) return '';
+  const sameDay = date.toDateString() === new Date().toDateString();
+  const options = short && !sameDay ? {{month: 'short', day: 'numeric'}} : {{hour: 'numeric', minute: '2-digit'}};
+  return date.toLocaleString(currentLanguage === 'zh' ? 'zh-CN' : 'en-US', options);
+}}
+function recordPreview(event) {{
+  return event ? contentText(event.content_text !== undefined ? event.content_text : event.content).replace(/\s+/g, ' ').slice(0, 180) : '';
+}}
+function renderConversationHeading(data) {{
+  const selected = uiState.agent !== 'all';
+  const participant = selected ? participantInfo(uiState.agent, data) : null;
+  const title = selected ? (participant.display_name || participant.agent_id) : roomTitle(data.room);
+  $('room-heading').textContent = title;
+  $('conversation-avatar').replaceChildren(avatar(selected ? uiState.agent : data.room.room_id, !selected));
+  const count = (data.timeline || []).filter((event) => !selected || event.actor === uiState.agent).length;
+  $('conversation-subtitle').textContent = selected ? roomTitle(data.room) + ' · ' + (participant.role || t('agentFallback')) + ' · ' + count + ' ' + t('workRecords') : t('roomConversation') + ' · ' + (data.participants || []).length + ' ' + t('stats.participants');
+  document.title = title + ' · Delphi';
+}}
+function renderAgentList(data) {{
+  const agents = $('agents');
+  agents.replaceChildren();
+  $('agents-section').hidden = false;
+  const identities = Array.from(new Set([...(data.filter_options.agents || []), ...(data.missing_expected_agents || [])]));
+  $('agent-count').textContent = identities.length;
+  const addEntry = (id, label, preview, time) => {{
+    const row = node('button', 'agent-entry' + (uiState.agent === id ? ' active' : ''));
+    row.type = 'button'; row.dataset.agentId = id;
+    row.setAttribute('aria-pressed', String(uiState.agent === id));
+    row.appendChild(avatar(id));
+    const body = node('div', 'nav-body');
+    const title = node('div', 'agent-title-row');
+    title.append(node('span', 'agent-name', label), node('time', 'nav-time', displayTime(time, true)));
+    body.append(title, node('div', 'nav-preview', preview)); row.appendChild(body);
+    row.addEventListener('click', () => selectAgent(id)); agents.appendChild(row);
+  }};
+  let visible = 0;
+  for (const identity of identities) {{
+    const participant = participantInfo(identity, data);
+    const records = (data.timeline || []).filter((event) => event.actor === identity);
+    const latest = records[records.length - 1];
+    const label = participant.display_name || identity;
+    if (navigationQuery && ![identity, label, participant.role, recordPreview(latest)].join(' ').toLowerCase().includes(navigationQuery)) continue;
+    const missing = (data.missing_expected_agents || []).includes(identity);
+    addEntry(identity, label, missing ? t('notJoined') : recordPreview(latest) || participant.role || t('agentFallback'), latest ? latest.created_at : participant.last_seen_at);
+    visible++;
+  }}
+  if (!visible) agents.appendChild(node('div', 'empty', navigationQuery ? t('noSearchResults') : t('noAgents')));
+}}
 function renderEventCard(event) {{
-  const card = node('article', 'event ' + event.kind);
+  const outgoing = lastSnapshot && event.actor && event.actor === lastSnapshot.room.created_by;
+  const card = node('article', 'event ' + event.kind + (outgoing ? ' outgoing' : ''));
+  card.dataset.eventId = event.id; card.dataset.actor = event.actor || '';
+  const participant = participantInfo(event.actor);
   const head = node('div', 'event-head');
-  head.append(node('div', 'event-title', eventKindText(event.kind) + ' · ' + (event.title || event.id)));
-  head.append(node('div', 'event-meta', (event.created_at || '-') + ' · ' + (event.actor || '-') + ' · ' + (event.role || '-')));
-  card.appendChild(head);
+  head.appendChild(node('span', 'event-actor', participant.display_name || event.actor || t('agentFallback')));
+  const time = node('time', 'event-meta', displayTime(event.created_at));
+  time.dateTime = event.created_at || ''; time.title = event.created_at || '';
+  head.appendChild(time); card.appendChild(head);
+  const bubble = node('div', 'event-bubble');
   const body = node('div', 'event-markdown');
   renderMarkdown(body, event.content_text !== undefined ? event.content_text : event.content);
-  card.appendChild(body);
-  if ((event.tags || []).length) {{
-    const tags = node('div', 'event-tags');
-    for (const tag of event.tags) tags.appendChild(node('span', 'tag', tag));
-    card.appendChild(tags);
+  if (event.kind === 'artifact') {{
+    const details = node('details', 'artifact-details');
+    details.append(node('summary', null, eventKindText(event.kind) + ' · ' + (event.title || event.role || event.id)), body);
+    bubble.appendChild(details);
+  }} else {{
+    if (event.kind !== 'message') {{
+      bubble.append(node('div', 'event-kind', eventKindText(event.kind)), node('div', 'event-title', event.title || event.id));
+    }}
+    bubble.appendChild(body);
   }}
+  const visibleTags = (event.tags || []).filter((tag) => !/^(agent|kind|phase|role|round|artifact|need|status):/.test(tag));
+  if (visibleTags.length) {{
+    const tags = node('div', 'event-tags');
+    for (const tag of visibleTags) tags.appendChild(node('span', 'tag', tag));
+    bubble.appendChild(tags);
+  }}
+  if (event.phase) bubble.appendChild(node('div', 'event-tags', event.phase)).classList.add('event-meta');
+  card.appendChild(bubble);
   return card;
 }}
+
 function renderTimelinePage(data) {{
   const timeline = $('timeline');
-  const pageInfo = $('page-info');
-  const prev = $('page-prev');
-  const next = $('page-next');
-  timeline.replaceChildren();
+  const pane = $('conversation-scroll');
+  const scrollTop = pane.scrollTop;
+  const openArtifacts = new Set(Array.from(timeline.querySelectorAll('.artifact-details[open]')).map((el) => el.closest('.event').dataset.eventId));
   const events = filteredTimeline(data);
-  const pageSize = Math.max(1, Number(uiState.pageSize) || 20);
+  const pageSize = Math.max(1, Number(uiState.pageSize) || 50);
   const pageCount = Math.max(1, Math.ceil(events.length / pageSize));
-  uiState.page = Math.min(Math.max(1, uiState.page), pageCount);
+  uiState.page = uiState.followLatest ? pageCount : Math.min(Math.max(1, uiState.page), pageCount);
   const start = (uiState.page - 1) * pageSize;
   const pageEvents = events.slice(start, start + pageSize);
-  if (!pageEvents.length) {{
-    timeline.appendChild(node('div', 'empty', t('noTimeline')));
-  }} else if (uiState.groupByAgent) {{
+  timeline.replaceChildren();
+  const appendEvents = (container, list) => {{
+    let lastDay = '';
+    for (const event of list) {{
+      const date = new Date(event.created_at);
+      if (!Number.isNaN(date.getTime())) {{
+        const day = date.toLocaleDateString(currentLanguage === 'zh' ? 'zh-CN' : 'en-US', {{year: 'numeric', month: 'long', day: 'numeric'}});
+        if (day !== lastDay) {{ container.appendChild(node('div', 'day-divider', day)); lastDay = day; }}
+      }}
+      const card = renderEventCard(event);
+      const details = card.querySelector('.artifact-details');
+      if (details) details.open = openArtifacts.has(event.id);
+      container.appendChild(card);
+    }}
+  }};
+  if (!pageEvents.length) timeline.appendChild(node('div', 'empty', t('noTimeline')));
+  else if (uiState.groupByAgent) {{
     for (const [actor, group] of groupEventsByAgent(pageEvents)) {{
       const section = node('section', 'agent-group');
-      section.appendChild(node('h3', null, actor));
-      for (const event of group) section.appendChild(renderEventCard(event));
-      timeline.appendChild(section);
+      const participant = participantInfo(actor);
+      section.appendChild(node('h3', null, participant.display_name || actor));
+      appendEvents(section, group); timeline.appendChild(section);
     }}
-  }} else {{
-    for (const event of pageEvents) timeline.appendChild(renderEventCard(event));
-  }}
-  if (pageInfo) {{
-    const end = events.length ? Math.min(events.length, start + pageEvents.length) : 0;
-    const first = events.length ? start + 1 : 0;
-    pageInfo.textContent = t('paginationShowing') + ' ' + first + '–' + end + ' ' + t('paginationOf') + ' ' + events.length + ' · ' + t('pageLabel') + ' ' + uiState.page + '/' + pageCount;
-  }}
-  if (prev) prev.disabled = uiState.page <= 1;
-  if (next) next.disabled = uiState.page >= pageCount;
+  }} else appendEvents(timeline, pageEvents);
+  const end = events.length ? Math.min(events.length, start + pageEvents.length) : 0;
+  const first = events.length ? start + 1 : 0;
+  $('page-info').textContent = t('paginationShowing') + ' ' + first + '–' + end + ' ' + t('paginationOf') + ' ' + events.length + ' · ' + t('pageLabel') + ' ' + uiState.page + '/' + pageCount;
+  $('page-prev').disabled = uiState.page <= 1;
+  $('page-next').disabled = uiState.page >= pageCount;
+  $('timeline-latest').classList.toggle('active', uiState.followLatest);
+  requestAnimationFrame(() => {{ pane.scrollTop = uiState.followLatest ? pane.scrollHeight : scrollTop; }});
 }}
+
 function renderDiscussionState(data) {{
   const currentPhase = data.current_phase || '-';
   const latestGate = data.latest_gate || null;
@@ -1438,11 +1645,14 @@ function renderRoomGroups(rooms) {{
     folder.roomIds = Array.from(new Set(kept));
   }}
   if (prefsChanged) saveRoomPrefs();
+  rooms = rooms.filter((room) => !navigationQuery || [roomTitle(room), room.topic, room.room_id].join(' ').toLowerCase().includes(navigationQuery));
+  const visibleLookup = new Map(rooms.map((room) => [room.room_id, room]));
+  if (!rooms.length) {{ box.appendChild(node('div', 'empty', t('noSearchResults'))); return; }}
   const folderAssigned = new Set(roomPrefs.folders.flatMap((folder) => folder.roomIds));
   const pinned = rooms.filter((room) => roomPrefs.pinned.has(room.room_id));
   const others = rooms.filter((room) => !roomPrefs.pinned.has(room.room_id) && !folderAssigned.has(room.room_id));
   appendRoomSection(box, pinned.length ? t('pinnedRooms') : '', pinned);
-  for (const folder of roomPrefs.folders) renderRoomFolderSection(box, folder, roomLookup);
+  for (const folder of roomPrefs.folders) renderRoomFolderSection(box, folder, visibleLookup);
   if (roomPrefs.groupMode === 'none') {{
     appendRoomSection(box, pinned.length || roomPrefs.folders.length ? t('unpinnedRooms') : '', others);
     return;
@@ -1460,27 +1670,28 @@ function renderRoomGroups(rooms) {{
 function renderRoomEntry(room) {{
   const pinned = roomPrefs.pinned.has(room.room_id);
   const active = room.room_id === ROOM_ID;
-  const row = node('div');
-  row.className = 'room-entry';
-  if (pinned) row.classList.add('pinned');
+  const row = node('div', 'room-entry' + (pinned ? ' pinned' : ''));
   row.dataset.roomId = room.room_id;
-  row.addEventListener('contextmenu', (event) => {{
-    event.preventDefault();
-    event.stopPropagation();
-    openRoomContextMenu(event, room);
-  }});
+  row.addEventListener('contextmenu', (event) => {{ event.preventDefault(); event.stopPropagation(); openRoomContextMenu(event, room); }});
   const a = node('a');
   a.href = '/room/' + encodeURIComponent(room.room_id);
   a.className = active ? 'room-link active' : 'room-link';
-  if (active) a.setAttribute('aria-current', 'page');
+  if (active) {{
+    a.setAttribute('aria-current', 'page');
+    a.addEventListener('click', (event) => {{ event.preventDefault(); selectAgent('all'); }});
+  }}
+  a.appendChild(avatar(room.room_id, true));
+  const body = node('div', 'nav-body');
   const titleRow = node('div', 'room-title-row');
   titleRow.appendChild(node('div', 'room-title', roomTitle(room)));
   if (active) titleRow.appendChild(node('span', 'current-room-badge', t('currentRoom')));
-  const meta = node('div', 'small', room.room_id + ' · ' + t('stats.messages') + ' ' + room.counts.messages + ' · ' + t('stats.artifacts') + ' ' + room.counts.artifacts);
-  a.append(titleRow, meta);
-  row.append(a);
+  const latest = active && lastSnapshot && lastSnapshot.success ? lastSnapshot.timeline[lastSnapshot.timeline.length - 1] : null;
+  titleRow.appendChild(node('time', 'nav-time', displayTime(latest ? latest.created_at : room.created_at, true)));
+  body.append(titleRow, node('div', 'nav-preview', recordPreview(latest) || room.topic || statusText(room.status)));
+  a.appendChild(body); row.appendChild(a);
   return row;
 }}
+
 function toggleRoomPin(roomId) {{
   if (roomPrefs.pinned.has(roomId)) roomPrefs.pinned.delete(roomId);
   else roomPrefs.pinned.add(roomId);
@@ -1505,66 +1716,61 @@ async function deleteRoom(room) {{
 }}
 async function loadRooms() {{
   const res = await fetch('/api/rooms', {{cache: 'no-store'}});
+  if (!res.ok) throw new Error('rooms request failed');
   const data = await res.json();
-  renderRoomGroups(data.rooms || []);
+  lastRooms = data.rooms || [];
+  roomsLoaded = true;
+  if (lastSnapshot && lastSnapshot.success && !lastRooms.some((room) => room.room_id === ROOM_ID)) lastRooms.unshift({{...lastSnapshot.room, counts: lastSnapshot.counts}});
+  renderRoomGroups(lastRooms);
 }}
 function renderSnapshot(data) {{
   lastSnapshot = data;
   if (!data.success) {{
-    $('summary').replaceChildren(node('div', 'empty', data.error || t('noSnapshot')));
+    $('timeline').replaceChildren(node('div', 'empty', data.error || t('noSnapshot')));
+    $('agents').replaceChildren(); $('agents-section').hidden = true;
+    $('room-details').hidden = true; $('timeline-pagination').hidden = true;
     return;
   }}
-  document.title = (data.room.title || data.room.room_id) + ' · ' + t('appTitle');
-  $('room-heading').textContent = data.room.title || data.room.room_id;
+  $('room-details').hidden = false;
+  $('room-topic').textContent = data.room.topic || '';
   const stats = node('div', 'stats');
   for (const [label, value] of Object.entries(data.counts)) {{
-    const card = node('div', 'stat');
-    card.append(node('strong', null, String(value)), node('span', null, t('stats.' + label, label)));
-    stats.appendChild(card);
+    const stat = node('div', 'stat');
+    stat.append(node('strong', null, String(value)), node('span', null, t('stats.' + label, label))); stats.appendChild(stat);
   }}
   $('summary').replaceChildren(stats);
-
-  const status = $('status-line');
-  status.replaceChildren();
+  const status = $('status-line'); status.replaceChildren();
   status.append(node('span', 'pill hot', statusText(data.room.status)));
-  status.append(node('span', 'pill', t('roomPrefix') + ' ' + data.room.room_id));
-  status.append(node('span', 'pill', t('updatedPrefix') + ' ' + data.generated_at));
-  if (data.missing_expected_agents.length === 0) status.append(node('span', 'pill ok', t('allAgentsJoined')));
-  else status.append(node('span', 'pill', t('missingPrefix') + ' ' + data.missing_expected_agents.join(', ')));
-
-  const agents = $('agents');
-  agents.replaceChildren();
-  if (data.participants.length === 0) agents.appendChild(node('div', 'empty', t('noAgents')));
-  for (const participant of data.participants) {{
-    const row = node('div', 'agent');
-    row.append(node('span', null, participant.agent_id + ' · ' + (participant.role || t('agentFallback'))));
-    row.append(node('span', 'small', participant.last_seen_at));
-    agents.appendChild(row);
-  }}
-
+  if (data.missing_expected_agents.length) status.append(node('span', 'pill', t('missingPrefix') + ' ' + data.missing_expected_agents.join(', ')));
+  else status.append(node('span', 'pill ok', t('allAgentsJoined')));
   buildFilterControls(data);
   renderDiscussionState(data);
-  renderTimelinePage(data);
+  $('room-overview-label').textContent = t('roomOverview') + ' · ' + (data.current_phase || statusText(data.room.status));
+  renderAgentList(data); renderConversationHeading(data); renderTimelinePage(data);
+  if (roomsLoaded) renderRoomGroups(lastRooms);
 }}
+
 async function pollSnapshot() {{
   if (!ROOM_ID) return;
   const res = await fetch('/api/rooms/' + encodeURIComponent(ROOM_ID) + '/snapshot', {{cache: 'no-store'}});
   renderSnapshot(await res.json());
 }}
-function connectEvents() {{
-  if (!ROOM_ID || !window.EventSource) {{
-    setConnection('polling', '');
-    setInterval(pollSnapshot, 1500);
-    pollSnapshot();
-    return;
-  }}
-  const source = new EventSource('/api/rooms/' + encodeURIComponent(ROOM_ID) + '/events');
-  source.addEventListener('open', () => setConnection('liveViaSSE', 'ok'));
-  source.addEventListener('snapshot', (event) => renderSnapshot(JSON.parse(event.data)));
-  source.addEventListener('error', () => {{
-    setConnection('sseReconnecting', '');
-  }});
+function startPolling() {{
+  if (!pollingTimer) pollingTimer = setInterval(() => pollSnapshot().catch(() => setConnection('sseReconnecting', '')), 1500);
 }}
+function connectEvents() {{
+  if (!ROOM_ID) return;
+  if (!window.EventSource) {{ setConnection('polling', ''); startPolling(); pollSnapshot().catch(() => setConnection('roomsFailed', '')); return; }}
+  const source = new EventSource('/api/rooms/' + encodeURIComponent(ROOM_ID) + '/events');
+  source.addEventListener('open', () => {{
+    if (pollingTimer) {{ clearInterval(pollingTimer); pollingTimer = null; }}
+    setConnection('liveViaSSE', 'ok');
+  }});
+  source.addEventListener('snapshot', (event) => renderSnapshot(JSON.parse(event.data)));
+  source.addEventListener('error', () => {{ setConnection('sseReconnecting', ''); startPolling(); }});
+  window.addEventListener('pagehide', () => {{ source.close(); if (pollingTimer) clearInterval(pollingTimer); }});
+}}
+
 setupLanguageSwitch();
 setupRoomControls();
 setupTimelineControls();
@@ -1573,6 +1779,7 @@ renderConnection();
 loadRooms().catch(() => setConnection('roomsFailed', ''));
 if (ROOM_ID) connectEvents();
 else setConnection('selectRoom', '');
+setInterval(() => loadRooms().catch(() => {{}}), 15000);
 </script>
 </body>
 </html>"""
