@@ -13,10 +13,12 @@ try:
     from .export import render_markdown
     from .schemas import ARTIFACT_STATUSES, ARTIFACT_TYPES, GATE_DECISIONS, PROTOCOL, RELATIONS, TOOL_NAMES
     from .store import IdeaSparkStore, canonical_json, with_retry
+    from .workflow import DEEP_EXPLORATION, WORKFLOW_MODES, workflow_mode, workflow_summary
 except ImportError:  # source-root script execution
     from export import render_markdown
     from schemas import ARTIFACT_STATUSES, ARTIFACT_TYPES, GATE_DECISIONS, PROTOCOL, RELATIONS, TOOL_NAMES
     from store import IdeaSparkStore, canonical_json, with_retry
+    from workflow import DEEP_EXPLORATION, WORKFLOW_MODES, workflow_mode, workflow_summary
 
 NEED_STATUSES = {"open", "claimed", "resolved", "stale", "cancelled"}
 DEFAULT_DASHBOARD_BASE_URL = "http://127.0.0.1:8765"
@@ -230,7 +232,22 @@ def idea_spark_room_create(args: dict, **kwargs) -> str:
     if missing:
         return err(f"missing required field: {missing}")
     room_id = args.get("room_id") or _new_id("room")
-    metadata = args.get("metadata") or {}
+    metadata_value = args.get("metadata")
+    if metadata_value is not None and not isinstance(metadata_value, dict):
+        return err("metadata must be a JSON object")
+    metadata = dict(metadata_value or {})
+    try:
+        if "workflow_mode" in args:
+            if "workflow_mode" in metadata and metadata["workflow_mode"] != args["workflow_mode"]:
+                return err("conflicting workflow_mode values")
+            metadata["workflow_mode"] = args["workflow_mode"]
+        mode = workflow_mode(metadata)
+        workflow_summary(metadata, args.get("status", "open"))
+        if mode == DEEP_EXPLORATION and args.get("status", "open") != "open":
+            return err("deep_exploration starts open; finish through workflow checkpoint")
+        metadata["workflow_mode"] = mode
+    except (ValueError, TypeError) as exc:
+        return err(str(exc))
     now = _now()
 
     def run() -> str:
@@ -255,6 +272,7 @@ def idea_spark_room_create(args: dict, **kwargs) -> str:
         response = {
             "room_id": room_id,
             "status": args.get("status", "open"),
+            **workflow_summary(metadata, args.get("status", "open")),
             "dashboard_url": f"{_dashboard_base_url(args)}/",
             "room_url": _room_url(room_id, args),
             "dashboard_checked": False,
@@ -397,6 +415,7 @@ def idea_spark_room_status(args: dict, **kwargs) -> str:
             {
                 "room_id": args["room_id"],
                 "status": room["status"],
+                **workflow_summary(_loads(room["metadata_json"], {}), room["status"]),
                 "counts": counts,
                 "expected_agents": expected,
                 "joined_agents": joined,
@@ -503,6 +522,10 @@ def idea_spark_room_export(args: dict, **kwargs) -> str:
             artifacts = _all_artifacts(conn, args["room_id"])
             gates = _all_gates(conn, args["room_id"])
             open_needs = _all_open_needs(conn, args["room_id"])
+            links = [dict(row) for row in conn.execute(
+                "select source_artifact_id, relation, target_artifact_id from artifact_links where room_id = ? order by link_id",
+                (args["room_id"],),
+            ).fetchall()]
             artifact_count = len(artifacts)
             gate_count = len(gates)
             open_need_count = len(open_needs)
@@ -510,7 +533,7 @@ def idea_spark_room_export(args: dict, **kwargs) -> str:
             {
                 "room_id": args["room_id"],
                 "format": "markdown",
-                "markdown": render_markdown(room, messages, artifacts, gates, open_needs),
+                "markdown": render_markdown(room, messages, artifacts, gates, open_needs, links),
                 "artifact_count": artifact_count,
                 "gate_count": gate_count,
                 "open_need_count": open_need_count,
@@ -871,6 +894,8 @@ def idea_spark_gate_record(args: dict, **kwargs) -> str:
             room = _room(conn, args["room_id"])
             if not room:
                 return err("unknown room_id", room_id=args["room_id"])
+            if args.get("close_room") and workflow_mode(_loads(room["metadata_json"], {})) == DEEP_EXPLORATION:
+                return err("deep_exploration finishes through workflow checkpoint; record this gate with close_room=false")
             if room_status is None:
                 room_status = room["status"]
             bad_ref = _validate_artifact_refs(conn, args["room_id"], input_artifact_ids)
@@ -1041,7 +1066,7 @@ def idea_spark_need_update(args: dict, **kwargs) -> str:
 _TOOL_DESCRIPTIONS = {
     "idea_spark_room_create": "Create an Idea-Spark shared-ledger review room and return room_url for the dashboard. Pass check_dashboard=true to perform a bounded dashboard reachability check before presenting the link as openable. Set metadata.expected_agents when round barriers should wait for named child agents. For protocol guidance, read the installed idea-spark-usage workflow skill.",
     "idea_spark_room_join": "Register a participant in an Idea-Spark room. Parent file collection registers producers automatically.",
-    "idea_spark_room_status": "Return room status, ledger counts, and expected agents that have not joined yet.",
+    "idea_spark_room_status": "Return mode, parent workflow checkpoint, completion status, ledger counts and missing participants.",
     "idea_spark_message_post": "Post a concise round/phase narrative update, optionally linked to artifact IDs. Use artifacts for durable claims rather than only free text.",
     "idea_spark_message_read": "Read room messages, optionally filtered by round_id, phase, or agent_id.",
     "idea_spark_round_wait": "Wait for ledger arrivals from expected agents via messages or phase-tagged artifacts. This does not wait for native worker execution. Optional phase filters exact phase, phase='*' or omitted matches any phase, and phases=[...] matches several role-specific phases. Always use a finite timeout_s and continue with partial state on timeout.",
@@ -1049,7 +1074,7 @@ _TOOL_DESCRIPTIONS = {
     "idea_spark_artifact_read": "Read artifacts in a room, optionally by artifact_id, type, or status, including file_path and linked provenance. Read referenced files with native file tools for the full body.",
     "idea_spark_artifact_link": "Link two artifacts with a typed provenance relation such as supports, critiques, rebuts, supersedes, requires, or cites.",
     "idea_spark_artifact_status_update": "Update an artifact lifecycle status: proposed, accepted, rejected, superseded, retracted, or stale.",
-    "idea_spark_gate_record": "Record an explicit gate decision over input artifacts. Final conclusions require this tool, not chat consensus alone.",
+    "idea_spark_gate_record": "Record an explicit research gate. Open discussion closes with close_room=true; deep exploration finishes through the workflow CLI checkpoint.",
     "idea_spark_need_create": "Create an open evidence/review need when information is missing or unresolved risk remains.",
     "idea_spark_need_update": "Update an OpenNeed lifecycle status and attach resolution artifacts or claim metadata.",
     "idea_spark_room_export": "Export the deterministic Markdown report for an Idea-Spark room from ledger state.",
@@ -1070,7 +1095,7 @@ _TOOL_PROPERTIES = {
 }
 
 _SCHEMA_FIELDS = {
-    "idea_spark_room_create": ["room_id", "title", "topic", "created_by", "protocol", "status", "dashboard_base_url", "check_dashboard", "dashboard_timeout_s", "metadata"],
+    "idea_spark_room_create": ["room_id", "title", "topic", "created_by", "protocol", "status", "workflow_mode", "dashboard_base_url", "check_dashboard", "dashboard_timeout_s", "metadata"],
     "idea_spark_room_join": ["room_id", "agent_id", "role", "display_name", "metadata"],
     "idea_spark_room_status": ["room_id"],
     "idea_spark_message_post": ["room_id", "round_id", "phase", "agent_id", "role", "content", "artifact_ids"],
@@ -1113,6 +1138,7 @@ _REQUIRED_FIELDS = {
 }
 
 _FIELD_OVERRIDES = {
+    "workflow_mode": {"type": "string", "enum": list(WORKFLOW_MODES)},
     "file_path": {"type": "string", "description": "Absolute path to the complete UTF-8 artifact; content may hold a summary."},
     "title": {"type": "string"},
     "topic": {"type": "string"},

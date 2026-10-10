@@ -70,9 +70,25 @@ def setup_parser(parser: argparse.ArgumentParser) -> None:
         prepare.add_argument("--" + field)
     collect = file_commands.add_parser("collect")
     collect.add_argument("receipts", nargs="+")
+    workflow = sub.add_parser("workflow", help="Save parent-owned workflow state; does not launch agents")
+    workflow_commands = workflow.add_subparsers(dest="workflow_command", required=True)
+    checkpoint = workflow_commands.add_parser("checkpoint", help="Merge checkpoint fields and optional room status atomically")
+    checkpoint.add_argument("--room-id", required=True)
+    checkpoint_payload = checkpoint.add_mutually_exclusive_group(required=True)
+    checkpoint_payload.add_argument("--json-file")
+    checkpoint_payload.add_argument("--stdin", action="store_true")
 
 
 def main_from_args(args: argparse.Namespace) -> int:
+    if args.command == "workflow":
+        try:
+            try:
+                from .workflow import save_checkpoint
+            except ImportError:
+                from workflow import save_checkpoint
+            return _print_json(save_checkpoint(args.room_id, _load_payload(args)))
+        except Exception as exc:
+            return _print_json({"success": False, "error": str(exc)})
     if args.command == "files":
         try:
             try:

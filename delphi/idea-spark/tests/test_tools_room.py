@@ -34,6 +34,45 @@ def make_room(expected_agents=None):
     return result["room_id"]
 
 
+def test_room_modes_persist_and_legacy_metadata_defaults_open(temp_idea_spark_db):
+    from idea_spark.store import IdeaSparkStore
+
+    deep = call(idea_spark_room_create, {"title": "Deep", "topic": "A challenge", "workflow_mode": "deep_exploration"})
+    assert deep["workflow_mode"] == "deep_exploration"
+    assert call(idea_spark_room_status, {"room_id": deep["room_id"]})["workflow_mode"] == "deep_exploration"
+    legacy = make_room()
+    with IdeaSparkStore().connect() as conn:
+        conn.execute("update rooms set metadata_json = '{}' where room_id = ?", (legacy,))
+    status = call(idea_spark_room_status, {"room_id": legacy})
+    assert status["workflow_mode"] == "open_discussion"
+    assert status["workflow_state"] == {}
+    assert status["is_terminal"] is False
+
+
+def test_room_rejects_unknown_or_conflicting_modes(temp_idea_spark_db):
+    unknown = call(idea_spark_room_create, {"title": "Unknown", "topic": "Test", "workflow_mode": "unsupported"})
+    assert unknown["success"] is False
+    conflict = call(idea_spark_room_create, {
+        "title": "Conflict", "topic": "Test", "workflow_mode": "open_discussion",
+        "metadata": {"workflow_mode": "deep_exploration"},
+    })
+    assert conflict["success"] is False
+
+
+def test_deep_candidate_gate_cannot_close_workflow(temp_idea_spark_db):
+    room = call(idea_spark_room_create, {"title": "Deep", "topic": "Test", "workflow_mode": "deep_exploration"})
+    gate = {"room_id": room["room_id"], "gate_type": "candidate", "decision": "needs_more_evidence",
+            "rationale": "Transfer remains uncertain", "input_artifact_ids": [], "close_room": True}
+    assert call(idea_spark_gate_record, gate)["success"] is False
+    status = call(idea_spark_room_status, {"room_id": room["room_id"]})
+    assert status["counts"]["gates"] == 0
+    gate["close_room"] = False
+    assert call(idea_spark_gate_record, gate)["success"] is True
+    status = call(idea_spark_room_status, {"room_id": room["room_id"]})
+    assert status["status"] == "open"
+    assert status["has_terminal_gate"] is False
+
+
 def test_room_create_returns_dashboard_room_url(temp_idea_spark_db):
     result = call(
         idea_spark_room_create,

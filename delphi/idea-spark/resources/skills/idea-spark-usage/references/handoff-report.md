@@ -1,91 +1,25 @@
 # Standalone Handoff Report Reference
 
-Use this reference after a terminal gate when the result will be shared with a researcher or stakeholder who cannot inspect the Idea-Spark room.
+Use this after an open discussion terminal gate, or a deep exploration completed/stopped outcome, when a researcher-facing deliverable is needed.
 
 ## Standalone handoff report contract
 
-The parent writes this report only after the terminal gate. It is the human-readable deliverable, not a dump of the room ledger.
+The report explains the science and actual outcome as a self-contained Markdown file. State whether this is an assessed idea, a complete untested proposal, or a stage report stopped by budget or another reason.
 
 ## Ledger export vs handoff report
 
-`idea_spark_room_export` produces a deterministic ledger export for auditability. It may contain room IDs, artifact IDs, need IDs, gate IDs, local paths, raw transcript order, or operational details. That export is not automatically suitable as a human handoff report.
+`idea_spark_room_export` produces the process history and file index. That export is not automatically suitable as a human handoff report. The reader should understand the research without needing the room, prior chat or operational identifiers.
 
-A standalone handoff report is a separate Markdown document written from the ledger and gate summary. It must be understandable as a single file and detailed enough that another researcher can evaluate the review without access to the room, repository, dashboard, PDFs, ledger export, or prior chat.
+For open discussion include the idea, criticism, rebuttal, re-review, actual gate and reasons, retained claims, prior art, risks, experiment requirements and next actions.
 
-## Default save location and detail level
+For deep exploration use the collected ResearchProposal as the main scientific deliverable: problem/challenge, gap/nearest work, source mechanism and mapping, method, falsifiable predictions, experiment plan, assumptions, limitations, references and next steps. A stopped workflow instead describes completed research, abandoned directions, unverified questions and why work stopped.
 
-Save the standalone handoff report in the current working directory by default, for example `idea_spark_handoffs/<slug>_handoff.md` or another user-visible project-relative path. Do not save the standalone handoff report under `/tmp` unless the user explicitly asks for a temporary location; `/tmp` is acceptable only for scratch payloads and internal audit exports.
+## Files and readership
 
-Do not shorten the handoff merely because the ledger is long. The report should be detailed enough that another researcher can understand the idea, the novelty pressure, the r1-r4 process, the final decision, the remaining blockers, and the next experiments from this one document.
+Preserve the complete registered proposal or stage file and tell the user its absolute path. The file remains available to other agents. Copies for outside readers use a user-visible durable project path, with readable public references; internal file paths and ledger IDs can live in a separate internal appendix when useful.
 
-## Required contents
+Keep temporary drafting material in the assigned .work directory. Do not use a transient directory as the only location of a final artifact.
 
-A researcher-ready handoff report should include:
+## Completion
 
-1. Title, generation date, and final gate decision.
-2. Executive summary that states the decision and the core reason.
-3. One-paragraph explanation of the idea being reviewed.
-4. Brief review process summary, including r1/r2/r3/r4 purpose, which phases were completed, and why the terminal gate decision follows from them, without internal transcript noise.
-5. Final scorecard or decision table.
-6. Claim triage: delete/concede, downgrade, and defensible narrow claim.
-7. Prior-art pressure by threat family.
-8. Method assessment: what is defensible and what is risky.
-9. Experiment and baseline requirements.
-10. Limitations and positioning changes required.
-11. Open blockers stated in human terms, not ledger IDs.
-12. Concrete next actions.
-13. Evidence-corpus list with readable paper/project names when available.
-14. Enough concrete experimental, baseline, metric, and positioning detail that a researcher can act without opening the ledger.
-
-## Forbidden content by default
-
-Do not include local machine paths, temp directories, dashboard URLs, room URLs, artifact IDs, need IDs, gate IDs, raw SQLite paths, or instructions like “see the ledger export” unless the user explicitly asks for an internal audit appendix.
-
-Do not assume the recipient can access the repository, PDFs, room, dashboard, or prior chat. If a fact is needed for understanding, summarize it in the report.
-
-## Self-containment scan
-
-Before reporting completion, scan the handoff report for:
-
-```text
-/home/
-/mnt/
-http://
-https://
-artifact_
-need_
-gate_
-room_id
-room/
-see file
-see path
-见文件
-见路径
-```
-
-If any hit appears, decide whether it is intentionally part of a public citation or an internal reference. Patch internal references into human-readable prose before handing off.
-
-## Suggested structure
-
-```markdown
-# <Idea name> Novelty Gate Report
-
-Final decision: **needs_more_evidence** / **accepted** / **rejected**
-
-## Executive summary
-## Idea under review
-## Review process
-## Final scorecard
-## Claim triage
-## Prior-art pressure
-## Method assessment
-## Experiment and baseline requirements
-## Limitations and positioning
-## Open blockers
-## Next actions
-## Evidence corpus
-```
-
-## Completion rule
-
-Before reporting completion, verify the standalone handoff path is under the current working directory or a user-named durable project path, not only under `/tmp`. Tell the user which file is the standalone handoff report. If you also saved a raw ledger export, label it as internal/audit-only so the user does not accidentally hand it to an outside reader.
+Read the actual final file and room checkpoint before reporting delivery. Explain unverified assumptions and planned experiments accurately; proposal completion does not establish experimental success. A status or short summary alone is insufficient to replace the full file.

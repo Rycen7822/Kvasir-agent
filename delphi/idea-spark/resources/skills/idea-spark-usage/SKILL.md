@@ -1,108 +1,47 @@
 ---
 name: idea-spark-usage
-description: Shared-ledger research review with native agents, r1-r4 discussion phases, recorded gates and handoff reports.
-version: 0.2.8
+description: Run open research discussions or IdeaScientist-inspired deep exploration using native agents and durable file delivery.
+version: 0.3.0
 license: MIT
 metadata:
   hosts: [codex, pi, hermes-agent]
   hermes:
-    tags: [idea-spark, delegate_task, multi-agent, research-review, hermes-plugin]
+    tags: [idea-spark, multi-agent, research-review, research-proposal]
 ---
 
 # Idea-Spark Usage
 
-Load this when the task asks to run, coordinate, inspect, or explain an Idea-Spark review room.
+Idea-Spark provides a shared SQLite ledger and complete-file delivery. The host owns models, tools and native agent lifetimes. The parent interprets research outputs and decides the next action.
 
-Idea-Spark supplies a shared SQLite ledger. The **parent agent** launches bounded native children; those children read research inputs and deliver complete files. The parent collects file references, records links and open needs, and records gates after reviewing the results. Delphi does not launch models.
-
-Default mode is **skill + CLI**. On Codex/Pi read the [host contract](../../../../HOSTS.md) and use its absolute `delphi/cli.py --state-dir ... idea-spark` prefix. On Hermes the registered `hermes idea-spark` prefix remains available. Below, `idea-spark` abbreviates the chosen complete prefix. Only Hermes supports its optional explicit tool-mode.
-
-## Who is this document for?
-
-- **[PARENT-ONLY] Parent/main agent:** read this whole thin workflow first. If orchestrating a room, also load `references/parent-controller.md`.
-- **[SUBAGENT-ONLY] Subagent/child agent:** load this skill, then load `references/subagent-contract.md`. Follow subagent-only rules unless explicitly assigned orchestration duties.
-- **Human-readable reporting:** after the terminal gate, load `references/handoff-report.md` before writing a report for researchers outside the room.
-- **CLI/dashboard mechanics:** load `references/cli-dashboard.md` only when you need exact commands, tool-mode configuration, dashboard checks, or artifact/type reference.
+Default delivery uses **skill + CLI**. Resolve the absolute prefix from the [host contract](../../../../HOSTS.md): `python3 <plugin-root>/delphi/cli.py --state-dir <project>/.kvasir/delphi idea-spark`. Below, `idea-spark` abbreviates that prefix. Hermes also supplies its registered component CLI and explicitly enabled tool-mode.
 
 ## Role routing — choose exactly one lane first
 
-| If this run is... | You are... | Read next | Do not do |
-|---|---|---|---|
-| Creating/controlling the room, launching delegates, moving r1→r2→r3→r4, closing gate, or writing final report | **[PARENT-ONLY] parent/main agent** | `references/parent-controller.md` | Do not behave like a one-role reviewer or stop after a child summary. |
-| A delegated reviewer/rebutter/planner/gatekeeper | **[SUBAGENT-ONLY] subagent/child agent** | `references/subagent-contract.md` | Do not launch agents, manage the room, export reports, or load parent-only workflow unless told. |
-| Writing a researcher-facing deliverable after the room is gated | **[PARENT-ONLY] report writer** | `references/handoff-report.md` | Do not hand off the raw ledger as the readable report. |
-| Looking up exact CLI, dashboard, tool-mode, type, or command syntax | **mechanics lookup** | `references/cli-dashboard.md` | Do not copy CLI mechanics into child prompts unless needed for that role. |
+- **[PARENT-ONLY] Parent/main agent:** read [parent-controller](references/parent-controller.md), select the mode, then load only its workflow.
+- **[SUBAGENT-ONLY] Subagent/child agent:** follow [subagent-contract](references/subagent-contract.md) and the one role supplied in your assignment. The parent supplies complete task instructions and input/output paths.
+- **[PARENT-ONLY] Human handoff:** load [handoff-report](references/handoff-report.md) when preparing a researcher-facing deliverable.
+- **Mechanics lookup:** load [cli-dashboard](references/cli-dashboard.md) only for exact operations, dashboard or configuration details.
 
-## [PARENT-ONLY] Non-negotiable phase contract
+## [PARENT-ONLY] Select the room workflow
 
-- In Idea-Spark, `r1`, `r2`, `r3`, and `r4` are workflow phases, not informal chat rounds. `r1/review` means Novelty Attack, `r2/rebuttal` means Author Rebuttal / Improvement Draft, `r3/re-review` means Re-review / Cross-examination, and `r4/gate` means Gate.
-- Before launching child agents, create or update `.work/idea_spark_phase_ledger.md` in the project, unless the user explicitly names another durable project path. This ledger must record `room_id`, `current_phase`, `next_phase`, expected agents for the current phase, last status check, last skill re-read checkpoint, open blockers, and the final handoff path.
-- After each phase verification, update `idea_spark_phase_ledger.md` with a stage checkpoint marker such as `r1_verified_next=r2`, re-read this skill, and immediately continue to the next phase while `has_terminal_gate=false`.
-- Do not send a user-facing final answer after r1, r2, or r3. A progress note is allowed only when it states the verified current phase, the next phase, and is followed by tool calls that start that next phase.
+| Mode | Input and purpose | Read |
+| --- | --- | --- |
+| `open_discussion` | Review an existing idea through independent review, rebuttal, re-review and a recorded gate | [Open discussion](references/modes/open-discussion.md) |
+| `deep_exploration` | Find a methodological gap, develop one sourced mechanism candidate, review/revise it and write a proposal | [Deep exploration](references/modes/deep-exploration.md) |
 
-## Reference map
+Use an explicit user choice. With no choice, create an open_discussion room; old rooms without mode metadata also resolve to this mode. `idea_spark_room_create` accepts `workflow_mode` and stores it in room metadata. Read an existing room's mode from `idea_spark_room_status`. To change modes after starting, create another room and pass relevant files with origin room/artifact references.
 
-Read references relative to this installed file using the host's file tools. Hermes may use `skill_view(name="idea-spark:idea-spark-usage", file_path="...")`; if it returns this main SKILL again, read the actual referenced file. Codex does not expose that Hermes tool.
-
-- `references/parent-controller.md` — parent-only continuous r1 → r2 → r3 → r4 controller, phase verification, retries, and mandatory skill re-read checkpoints.
-- `references/subagent-contract.md` — child-only complete-file delivery rules, allowed toolsets, artifact expectations, and prompt checklist.
-- `references/cli-dashboard.md` — CLI-first calls, optional tool-mode, dashboard link health checks, public operation names, artifact/gate types, and safety boundary.
-- `references/handoff-report.md` — standalone readable report requirements, self-containment scan, and distinction between ledger export and human handoff.
-
-## [PARENT-ONLY] Parent workflow, short form
+## [PARENT-ONLY] Resume from the checkpoint
 
 Do not follow this section from a subagent prompt unless explicitly assigned to orchestrate the room.
 
-1. Create one room and seed durable `ResearchGoal`, `IdeaCard`, and `EvaluationRubric` artifacts.
-2. Launch `r1/review` children such as `PriorArtBreaker`, `FeasibilityBreaker`, `SkepticalAC`, and `ExperimentPlanner`; prepare a file delivery for every child before launch and collect its complete report after native completion.
-3. Collect r1 files with `files collect`, read their full content, then verify room status/artifacts.
-4. **Re-read this installed SKILL.md before launching r2.** Use the current checklist below to confirm r1 is not terminal.
-5. Launch `r2/rebuttal` and repair roles such as `AuthorAdvocate`, `SchemaSurgeon`, `ExperimentPlanner`, or `BaselineRepair`; r2 reads r1 files and delivers reports containing `Rebuttal`, `RevisionPlan`, `ExperimentPlan`, `BenchmarkRequirement`, or `RegimeTransition` findings; the parent collects and links the artifacts.
-6. Verify r2, recover a missing ledger entry from its file or full native reply before considering a research retry, then **re-read this SKILL.md** before launching r3.
-7. Launch `r3/re-review` roles such as prior-art re-review, feasibility re-review, skeptical AC, and open-need curator; r3 delivers `MetaReview` / `ScoreCard` files and proposes need updates; the parent collects files and persists useful `OpenNeed` changes.
-8. Verify r3 and **re-read this SKILL.md** before launching r4.
-9. Launch `r4/gate`; Gatekeeper delivers its proposed final `ScoreCard` / `MetaReview`; the parent reviews and records `idea_spark_gate_record(close_room=true)`.
-10. Stop only after `idea_spark_room_status` reports `has_terminal_gate=true`.
-11. Export the deterministic ledger with `idea_spark_room_export`, then write a standalone handoff report when the user needs to share results outside the room.
+Read room status, `workflow_state`, pending receipts and the input files for `next_action`. Save phase, active candidate and next action through `workflow checkpoint` before launching more work. Temporary notes stay in the project's `.work`; room metadata is the shared checkpoint used by the dashboard and resumed parent.
 
-## [PARENT-ONLY] Mandatory phase re-read checkpoint
-
-Idea-Spark runs create long context. The parent/main agent must not rely on memory after a long child-agent round.
-
-After **each** phase (`r1`, `r2`, `r3`, and before final reporting), the parent must:
-
-1. Read room status and verify the expected file artifacts for the phase.
-2. Re-read this installed SKILL.md using the host's file tools.
-3. Use this checklist to decide the next action:
-   - If r1 is complete and no terminal gate exists, launch r2; do not summarize as done.
-   - If r2 is complete and no terminal gate exists, launch r3; retry missing repair roles once if needed.
-   - If r3 is complete and no terminal gate exists, launch r4 Gatekeeper.
-   - If r4 recorded a real gate and `has_terminal_gate=true`, export and write the handoff report when needed.
-   - If a required source, tool, or safety decision is missing, record an `OpenNeed` or ask the user only for that blocker.
-
-## [PARENT-ONLY] Discussion-until-gate stop rule
-
-- `r1`, `r2`, and `r3` are never terminal phases.
-- Do not stop after r1/r2/r3; continue to the next phase after verification and the mandatory skill re-read checkpoint.
-- A child summary, parent synthesis, dashboard text, exported ledger, or message saying “accepted” is not a gate.
-- Stop only when room status says `has_terminal_gate=true` from a real `idea_spark_gate_record` row and paired `GateDecision` artifact.
-- If `max_rounds=4` is exhausted without enough evidence, record a real `needs_more_evidence` gate at r4 instead of stopping early.
+Refresh the relevant role or mode instruction only when needed. Open discussion follows its r1–r4 contract. Deep exploration follows its current research decision and budget; it can finish as completed or stopped without a terminal gate.
 
 ## Hard boundary: [PARENT-ONLY] vs [SUBAGENT-ONLY]
 
-- **[PARENT-ONLY] The parent** creates the room, starts or checks the dashboard when needed, launches delegates, verifies every phase, re-reads this skill between phases, decides retries, reviews and records the terminal gate, exports the ledger, and writes the standalone handoff report.
-- **[SUBAGENT-ONLY] A subagent** handles one bounded role. It reads relevant inputs, keeps temporary notes in its scratch directory, writes one complete final file, returns the absolute path, and stops. If writing fails it returns the full substantive reply for parent recovery.
-- **[SUBAGENT-ONLY] Subagents must not** assume they are persistent room members, call `skill_manage`, spawn agents, export the final report or close the room. Gatekeeper proposals are reviewed and persisted by the parent.
-
-## Minimal role/tool rules
-
-- On Codex/Pi use native agents with the actual terminal/file tools exposed by that host. On Hermes default child toolsets are `toolsets=["terminal", "file", "skills"]`. Add external capabilities only when the role needs outside evidence.
-- Explicit tool-mode child toolsets are `toolsets=["idea_spark", "skills"]` only after config enablement and session reset.
-- Every substantive child delivers a complete file. The parent uses `files collect` to register it and may add an `idea_spark_message_post` when a narrative update is useful.
-- Prefer artifact links over vague references to “previous reviewer”.
-- Open evidence gaps use `idea_spark_need_create` / `idea_spark_need_update`.
-- Final decisions use `idea_spark_gate_record`; message-only gates are invalid.
-
-## Human handoff rule
-
-`idea_spark_room_export` is an internal ledger export, not automatically a researcher-ready report. When the user asks for a report or the output will be handed to someone who cannot inspect the room, write a detailed standalone Markdown report after the terminal gate, save it in the current working directory by default, and scan it for local paths, URLs, room IDs, artifact IDs, need IDs, and gate IDs, plus “see file/path” wording before delivery. Do not save the standalone handoff report only under `/tmp` unless the user explicitly asks for a temporary location.
+- **[PARENT-ONLY]** Create rooms, allocate deliveries, launch/wait/cancel native workers, collect files, interpret findings, update the checkpoint and finish the room.
+- **[SUBAGENT-ONLY]** Read assigned inputs, research one task, keep scratch notes, write the full assigned file and return its absolute path. If writing fails, return the full body.
+- **[SUBAGENT-ONLY]** The parent manages ledger writes, links, needs and gates. Readers and reviewers do not change the active candidate or close the room.
+- A completed worker or registered file establishes delivery, not scientific validity. Material revisions and independent reviewers receive new files and identities; collecting the same receipt again does not repeat research.

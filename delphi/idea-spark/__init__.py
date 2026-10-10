@@ -10,7 +10,7 @@ except ImportError:  # source-root import, including pytest parent-package colle
     from tools import HANDLERS, schema_for
 
 SKILL_NAME = "idea-spark-usage"
-SKILL_DESCRIPTION = "Use Idea-Spark shared-ledger debate rooms with Hermes delegate_task child agents, continuous r1-r4 gates, and standalone handoff reports."
+SKILL_DESCRIPTION = "Use native agents and complete-file delivery for open idea discussions or deep exploration of a research proposal."
 CLI_NAME = "idea-spark"
 CLI_DESCRIPTION = "Manage Idea-Spark ledger operations and tool-mode config."
 

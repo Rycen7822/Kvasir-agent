@@ -107,31 +107,10 @@ def test_register_defaults_to_skill_and_cli_without_tools(tmp_path, monkeypatch)
     assert [skill["name"] for skill in ctx.skills] == ["idea-spark-usage"]
     assert ctx.skills[0]["path"].name == "SKILL.md"
     assert ctx.skills[0]["path"].exists()
-    assert "delegate_task" in ctx.skills[0]["description"]
-    assert "continuous r1-r4" in ctx.skills[0]["description"]
-    assert "standalone handoff reports" in ctx.skills[0]["description"]
+    assert ctx.skills[0]["description"]
     assert [cmd["name"] for cmd in ctx.cli_commands] == ["idea-spark"]
     assert callable(ctx.cli_commands[0]["setup_fn"])
     assert callable(ctx.cli_commands[0]["handler_fn"])
-
-
-def test_bundled_skill_documents_continuous_gate_and_handoff_report():
-    skill_text = Path("resources/skills/idea-spark-usage/SKILL.md").read_text(encoding="utf-8")
-    parent_ref = Path("resources/skills/idea-spark-usage/references/parent-controller.md").read_text(encoding="utf-8")
-    handoff_ref = Path("resources/skills/idea-spark-usage/references/handoff-report.md").read_text(encoding="utf-8")
-
-    assert "Do not stop after r1/r2/r3" in skill_text
-    assert "Do not stop after `r1`" in parent_ref
-    assert "r1 → r2 → r3 → r4" in parent_ref
-    assert "Mandatory skill re-read after each phase" in parent_ref
-    assert "idea_spark_phase_ledger.md" in parent_ref
-    assert "Do not send a user-facing final answer after r1" in parent_ref
-    assert "Ledger export vs handoff report" in handoff_ref
-    assert "not automatically suitable as a human handoff report" in handoff_ref
-    assert "current working directory" in handoff_ref
-    assert "Do not save the standalone handoff report under `/tmp`" in handoff_ref
-    assert "detailed enough that another researcher" in handoff_ref
-    assert "local paths, URLs, room IDs, artifact IDs, need IDs, and gate IDs" in skill_text
 
 
 def test_register_still_loads_skill_when_cli_registration_is_unavailable(tmp_path, monkeypatch):

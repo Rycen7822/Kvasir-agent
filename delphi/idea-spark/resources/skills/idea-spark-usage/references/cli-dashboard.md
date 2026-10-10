@@ -52,6 +52,26 @@ hermes idea-spark config set-tools false
 
 When explicit tool-mode is active, narrow ledger-only child roles can use `toolsets=["idea_spark", "skills"]`. Otherwise use CLI-first `toolsets=["terminal", "file", "skills"]`.
 
+## Workflow modes and checkpoint
+
+Create a room with `workflow_mode` set to `open_discussion` or `deep_exploration`. Omitted mode and old room metadata resolve to open discussion. Mode is stored per room, not in the plugin configuration.
+
+```json
+{"title":"Mechanism exploration","topic":"Research problem and challenge","workflow_mode":"deep_exploration"}
+```
+
+Save parent state with `idea-spark workflow checkpoint --room-id ROOM --json-file .work/checkpoint.json` or `--stdin`. The payload contains checkpoint fields directly, plus optional status:
+
+```json
+{"phase":"review","candidate_label":"C2","next_action":"review_candidate","revision_count":1,"pending_receipts":["/absolute/project/receipt.json"]}
+```
+
+Artifact pointers (`active_gap_artifact_id`, `active_candidate_artifact_id`, `next_inputs`, `final_artifact_id`) refer to registered artifacts in this room. Use the artifact IDs returned by collection. `pending_receipts` lists prepared receipt paths; update it when collection or cancellation is accounted for.
+
+Finish deep mode with `{"status":"completed","final_artifact_id":"<collected ResearchProposal id>"}`. It requires a nonempty registered proposal file, with no requirement that its hypotheses are experimentally verified. Stop with `{"status":"stopped","stop_reason":"budget_exhausted"}` and optionally a stage-file final_artifact_id. Stopping before any output is allowed. Identical checkpoint retries are idempotent; terminal status cannot be reopened, but the parent can update bookkeeping or file pointers without changing it.
+
+Open discussion closes through `idea_spark_gate_record(close_room=true)`. Deep gates may be recorded with close_room=false; workflow completion uses the CLI checkpoint. `room_status` returns workflow_mode, workflow_state, is_terminal and final_artifact_id. The workflow command is CLI-only and does not register another tool.
+
 ## Round wait
 
 Use `idea_spark_round_wait` with finite `timeout_s`. For strict phase barriers pass `phase`; for a whole-round parent barrier omit `phase` or pass `phase="*"`; for role-specific labels in one barrier pass `phases=[...]`. Continue with partial state on timeout and record missing agents explicitly.
@@ -61,7 +81,7 @@ Use `idea_spark_round_wait` with finite `timeout_s`. For strict phase barriers p
 Allowed artifact types:
 
 ```text
-ResearchGoal, IdeaCard, EvaluationRubric, AtomicClaim, Assumption, PriorArtEvidence, EvidenceLink, NoveltyObjection, FeasibilityObjection, ReviewerRisk, Rebuttal, RevisionPlan, ExperimentPlan, StressTest, BenchmarkRequirement, ScoreCard, GateDecision, OpenNeed, RegimeTransition, MetaReview
+ResearchGoal, GapAnalysis, ResearchProposal, IdeaCard, EvaluationRubric, AtomicClaim, Assumption, PriorArtEvidence, EvidenceLink, NoveltyObjection, FeasibilityObjection, ReviewerRisk, Rebuttal, RevisionPlan, ExperimentPlan, StressTest, BenchmarkRequirement, ScoreCard, GateDecision, OpenNeed, RegimeTransition, MetaReview
 ```
 
 Allowed artifact statuses:

@@ -62,6 +62,29 @@ def export_markdown(room_id):
     return exported
 
 
+def test_deep_export_records_lineage_and_proposal_file_without_acceptance_gate(temp_idea_spark_db, tmp_path):
+    from idea_spark.workflow import save_checkpoint
+
+    room_id = call(idea_spark_room_create, {"title": "Deep", "topic": "Method gap", "workflow_mode": "deep_exploration"})["room_id"]
+    create_artifact(room_id, "GapAnalysis", {"gap": "A mechanism limitation"})
+    first = create_artifact(room_id, "IdeaCard", {"intuition": "C1"})
+    revised = create_artifact(room_id, "IdeaCard", {"intuition": "C2"})
+    assert call(idea_spark_artifact_link, {"room_id": room_id, "source_artifact_id": revised["artifact_id"],
+        "target_artifact_id": first["artifact_id"], "relation": "evolves_from"})["success"] is True
+    path = tmp_path / "proposal.md"
+    path.write_text("# Proposal\nPredictions are unverified.", encoding="utf-8")
+    proposal = call(idea_spark_artifact_create, {"room_id": room_id, "type": "ResearchProposal", "title": "Proposal", "file_path": str(path), "producer_agent": "writer"})
+    save_checkpoint(room_id, {"status": "completed", "final_artifact_id": proposal["artifact_id"]})
+    exported = export_markdown(room_id)
+    text = exported["markdown"]
+    assert "## Methodological gaps" in text
+    assert "## Research proposal" in text
+    assert str(path) in text
+    assert f"`{revised['artifact_id']}` evolves_from `{first['artifact_id']}`" in text
+    assert "Status: completed" in text
+    assert exported["gate_count"] == 0
+
+
 def test_export_contains_required_markdown_sections_before_artifacts_exist(temp_idea_spark_db):
     room_id = make_room("empty export")
 

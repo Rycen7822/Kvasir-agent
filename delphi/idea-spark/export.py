@@ -1,6 +1,11 @@
 import json
 from typing import Any
 
+try:
+    from .workflow import DEEP_EXPLORATION, workflow_summary
+except ImportError:
+    from workflow import DEEP_EXPLORATION, workflow_summary
+
 REPORT_HEADINGS = [
     "Executive verdict",
     "Idea card",
@@ -11,6 +16,19 @@ REPORT_HEADINGS = [
     "Artifact lifecycle",
     "Schema transitions",
     "Open needs",
+    "Full transcript appendix",
+]
+
+DEEP_REPORT_HEADINGS = [
+    "Workflow outcome",
+    "Research goal and challenge",
+    "Methodological gaps",
+    "Candidate history",
+    "Literature and mechanism sources",
+    "Adversarial reviews",
+    "Research proposal",
+    "Unverified questions and next steps",
+    "Artifact index",
     "Full transcript appendix",
 ]
 
@@ -93,16 +111,22 @@ def render_markdown(
     artifacts: list[dict[str, Any]] | None = None,
     gates: list[dict[str, Any]] | None = None,
     open_needs: list[dict[str, Any]] | None = None,
+    links: list[dict[str, Any]] | None = None,
 ) -> str:
     artifacts = artifacts or []
     gates = gates or []
     open_needs = open_needs or []
+    metadata = room.get("metadata")
+    if metadata is None:
+        metadata = json.loads(room.get("metadata_json") or "{}")
+    workflow = workflow_summary(metadata, room.get("status", "open"))
     lines = ["# Idea-Spark Room Report", ""]
     lines.append(f"Room: `{room['room_id']}`")
     if room.get("title"):
         lines.append(f"Title: {room['title']}")
     if room.get("topic"):
         lines.append(f"Topic: {room['topic']}")
+    lines.append(f"Workflow mode: `{workflow['workflow_mode']}`")
     lines.append("")
 
     sections = {
@@ -121,7 +145,40 @@ def render_markdown(
         "Open needs": _render_need_lines(open_needs),
     }
 
-    for heading in REPORT_HEADINGS:
+    headings = REPORT_HEADINGS
+    if workflow["workflow_mode"] == DEEP_EXPLORATION:
+        state = workflow["workflow_state"]
+        candidate_lines = _render_artifact_lines(_artifacts_of(artifacts, "IdeaCard"))
+        for link in links or []:
+            if link["relation"] == "evolves_from":
+                candidate_lines.append(
+                    f"- `{link['source_artifact_id']}` evolves_from `{link['target_artifact_id']}`"
+                )
+        outcome = [
+            f"- Status: {room.get('status', 'open')}; terminal={workflow['is_terminal']}",
+            f"- Phase: {state.get('phase') or '-'}; active candidate: {state.get('candidate_label') or '-'}",
+            f"- Final artifact: {workflow['final_artifact_id'] or '-'}",
+            "- Workflow completion records proposal delivery, not experimental validation.",
+        ]
+        if state.get("stop_reason"):
+            outcome.append(f"- Stop reason: {state['stop_reason']}")
+        sections = {
+            "Workflow outcome": outcome,
+            "Research goal and challenge": _render_artifact_lines(_artifacts_of(artifacts, "ResearchGoal")),
+            "Methodological gaps": _render_artifact_lines(_artifacts_of(artifacts, "GapAnalysis")),
+            "Candidate history": candidate_lines,
+            "Literature and mechanism sources": _render_artifact_lines(_artifacts_of(artifacts, "PriorArtEvidence", "EvidenceLink")),
+            "Adversarial reviews": _render_artifact_lines(_artifacts_of(artifacts, "MetaReview", "ScoreCard")),
+            "Research proposal": _render_artifact_lines(_artifacts_of(artifacts, "ResearchProposal")),
+            "Unverified questions and next steps": [
+                f"- Next action: {state.get('next_action') or '-'}",
+                "- Read the full proposal and review files for retained assumptions, predictions and limitations.",
+            ] + _render_need_lines(open_needs),
+            "Artifact index": _render_artifact_lines(artifacts),
+        }
+        headings = DEEP_REPORT_HEADINGS
+
+    for heading in headings:
         lines.append(f"## {heading}")
         if heading == "Full transcript appendix":
             if messages:

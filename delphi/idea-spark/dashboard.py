@@ -13,9 +13,11 @@ from urllib.parse import parse_qs, quote, unquote, urlparse
 try:
     from .store import IdeaSparkStore, default_db_path, with_retry
     from .tools import _latest_gate, _open_need_summary, _room_cursors
+    from .workflow import DEEP_EXPLORATION, workflow_summary
 except ImportError:  # source-root script execution
     from store import IdeaSparkStore, default_db_path, with_retry
     from tools import _latest_gate, _open_need_summary, _room_cursors
+    from workflow import DEEP_EXPLORATION, workflow_summary
 
 
 DEFAULT_HOST = "127.0.0.1"
@@ -113,6 +115,7 @@ class DashboardReader:
     def _room_dict(row: sqlite3.Row) -> dict[str, Any]:
         item = dict(row)
         item["metadata"] = _loads(item.pop("metadata_json"), {})
+        item.update(workflow_summary(item["metadata"], item["status"]))
         return item
 
     @staticmethod
@@ -247,6 +250,14 @@ class DashboardReader:
                 return {"success": False, "error": "unknown room_id", "room_id": room_id}
 
             room = self._room_dict(room_row)
+            final_artifact = None
+            if room["final_artifact_id"]:
+                final_row = conn.execute(
+                    "select * from artifacts where room_id = ? and artifact_id = ?",
+                    (room_id, room["final_artifact_id"]),
+                ).fetchone()
+                if final_row:
+                    final_artifact = self._artifact_dict(final_row)
             participants = [
                 self._participant_dict(row)
                 for row in conn.execute(
@@ -286,17 +297,26 @@ class DashboardReader:
             counts = self._counts(conn, room_id)
             latest_gate = _latest_gate(conn, room_id)
             open_need_summary = _open_need_summary(conn, room_id)
-            cursor = {**counts, **_room_cursors(conn, room_id)}
+            cursor = {
+                **counts, **_room_cursors(conn, room_id),
+                "room_status": room["status"],
+                "workflow_mode": room["workflow_mode"],
+                "workflow_state": room["workflow_state"],
+            }
 
         expected = self._expected_agents(room)
         joined = {participant["agent_id"] for participant in participants}
         missing = [agent for agent in expected if agent not in joined]
         timeline = self._timeline(messages, artifacts, gates, open_needs)
         filter_options = self._filter_options(participants, timeline)
-        current_phase = self._current_phase(latest_gate, timeline)
+        current_phase = room["workflow_state"].get("phase")
+        if not current_phase:
+            current_phase = "framing" if room["workflow_mode"] == DEEP_EXPLORATION else self._current_phase(latest_gate, timeline)
         return {
             "success": True,
             "room": room,
+            **workflow_summary(room["metadata"], room["status"]),
+            "final_artifact": final_artifact,
             "expected_agents": expected,
             "missing_expected_agents": missing,
             "participants": participants,
@@ -730,6 +750,7 @@ def _page_shell(room_id: str | None) -> str:
         <div id="room-topic" class="room-topic"></div><div id="summary"></div><div id="status-line" class="status-line"></div>
         <div id="discussion-state" class="status-line"><span class="pill" id="current-phase"></span><span class="pill" id="latest-gate"></span><span class="pill" id="open-need-summary"></span></div>
       </details>
+      <div id="final-delivery" class="room-topic" style="max-height:40vh;overflow:auto;flex-shrink:0;padding:12px 24px" hidden></div>
       <div class="conversation-scroll" id="conversation-scroll" tabindex="0" data-i18n-aria="conversationLabel">
         <div id="timeline" class="timeline"><div class="empty" data-i18n="welcomeMessage">Choose a room to follow the discussion, or select an agent to inspect its work.</div></div>
       </div>
@@ -827,6 +848,11 @@ const TRANSLATIONS = {{
     missingPrefix: 'missing',
     allAgentsJoined: 'all expected agents joined',
     currentPhase: 'Current phase',
+    modes: {{open_discussion: 'Open discussion', deep_exploration: 'Deep exploration'}},
+    workflowOutcome: 'Workflow',
+    activeCandidate: 'Candidate',
+    finalProposal: 'Final proposal',
+    finalDelivery: 'Stage report',
     finalGate: 'Final gate',
     unresolvedNeeds: 'Unresolved needs',
     noGate: 'no gate yet',
@@ -847,6 +873,9 @@ const TRANSLATIONS = {{
     }},
     status: {{
       open: 'open',
+      gated: 'gated',
+      completed: 'proposal delivered',
+      stopped: 'stopped',
       closed: 'closed',
       archived: 'archived',
     }},
@@ -925,6 +954,11 @@ const TRANSLATIONS = {{
     missingPrefix: '未加入',
     allAgentsJoined: '全部预期代理已加入',
     currentPhase: '当前阶段',
+    modes: {{open_discussion: '开放讨论', deep_exploration: '深度挖掘'}},
+    workflowOutcome: '流程状态',
+    activeCandidate: '当前候选',
+    finalProposal: '最终提案',
+    finalDelivery: '阶段报告',
     finalGate: '最终 Gate',
     unresolvedNeeds: '未解决需求',
     noGate: '尚无 Gate',
@@ -945,6 +979,9 @@ const TRANSLATIONS = {{
     }},
     status: {{
       open: '开放',
+      gated: '评审已收束',
+      completed: '提案已交付',
+      stopped: '已停止',
       closed: '关闭',
       archived: '归档',
     }},
@@ -1389,7 +1426,7 @@ function renderConversationHeading(data) {{
   $('room-heading').textContent = title;
   $('conversation-avatar').replaceChildren(avatar(selected ? uiState.agent : data.room.room_id, !selected));
   const count = (data.timeline || []).filter((event) => !selected || event.actor === uiState.agent).length;
-  $('conversation-subtitle').textContent = selected ? roomTitle(data.room) + ' · ' + (participant.role || t('agentFallback')) + ' · ' + count + ' ' + t('workRecords') : t('roomConversation') + ' · ' + (data.participants || []).length + ' ' + t('stats.participants');
+  $('conversation-subtitle').textContent = selected ? roomTitle(data.room) + ' · ' + (participant.role || t('agentFallback')) + ' · ' + count + ' ' + t('workRecords') : t('modes.' + data.workflow_mode) + ' · ' + (data.participants || []).length + ' ' + t('stats.participants');
   document.title = title + ' · Delphi';
 }}
 function renderAgentList(data) {{
@@ -1530,10 +1567,42 @@ function renderDiscussionState(data) {{
   const needEl = $('open-need-summary');
   if (phaseEl) phaseEl.textContent = t('currentPhase') + ': ' + currentPhase;
   if (gateEl) {{
-    gateEl.className = hasTerminalGate ? 'pill hot' : 'pill';
-    gateEl.textContent = t('finalGate') + ': ' + (latestGate ? latestGate.decision : t('noGate'));
+    const deep = data.workflow_mode === 'deep_exploration';
+    gateEl.className = (deep ? data.is_terminal : hasTerminalGate) ? 'pill hot' : 'pill';
+    gateEl.textContent = deep ? t('workflowOutcome') + ': ' + statusText(data.room.status) : t('finalGate') + ': ' + (latestGate ? latestGate.decision : t('noGate'));
+    if (deep && data.workflow_state.stop_reason) gateEl.textContent += ' · ' + data.workflow_state.stop_reason;
   }}
   if (needEl) needEl.textContent = t('unresolvedNeeds') + ': ' + unresolved;
+}}
+function renderFinalDelivery(data) {{
+  const container = $('final-delivery');
+  const artifact = data.final_artifact;
+  if (!artifact || !artifact.file_path) {{
+    container.hidden = true; container.replaceChildren(); delete container.dataset.artifactId; return;
+  }}
+  container.hidden = false;
+  if (container.dataset.artifactId === artifact.artifact_id && container.dataset.language === currentLanguage) return;
+  const wasOpen = container.dataset.artifactId === artifact.artifact_id && container.querySelector('details')?.open;
+  container.dataset.artifactId = artifact.artifact_id; container.dataset.language = currentLanguage;
+  const details = node('details', 'artifact-details');
+  details.appendChild(node('summary', null, t(artifact.artifact_type === 'ResearchProposal' ? 'finalProposal' : 'finalDelivery') + ' · ' + artifact.title));
+  const path = node('div', 'artifact-file-path', artifact.file_path); path.style.overflowWrap = 'anywhere';
+  const body = node('div', 'event-markdown'); details.append(path, body);
+  let loaded = false;
+  details.addEventListener('toggle', async () => {{
+    if (!details.open || loaded) return;
+    loaded = true;
+    try {{
+      const response = await fetch('/api/rooms/' + encodeURIComponent(ROOM_ID) + '/artifacts/' + encodeURIComponent(artifact.artifact_id) + '/file', {{cache: 'no-store'}});
+      const result = await response.json();
+      if (!result.success) throw new Error(result.error);
+      renderMarkdown(body, result.content_text);
+    }} catch (error) {{
+      loaded = false; body.replaceChildren(node('div', 'empty', String(error.message || error)));
+    }}
+  }});
+  container.replaceChildren(details);
+  if (wasOpen) details.open = true;
 }}
 function hideRoomMenus() {{
   for (const id of ['room-area-menu', 'room-context-menu', 'room-folder-menu']) {{
@@ -1719,7 +1788,7 @@ function renderRoomEntry(room) {{
   if (active) titleRow.appendChild(node('span', 'current-room-badge', t('currentRoom')));
   const latest = active && lastSnapshot && lastSnapshot.success ? lastSnapshot.timeline[lastSnapshot.timeline.length - 1] : null;
   titleRow.appendChild(node('time', 'nav-time', displayTime(latest ? latest.created_at : room.created_at, true)));
-  body.append(titleRow, node('div', 'nav-preview', recordPreview(latest) || room.topic || statusText(room.status)));
+  body.append(titleRow, node('div', 'nav-preview', t('modes.' + room.workflow_mode) + ' · ' + (recordPreview(latest) || room.topic || statusText(room.status))));
   a.appendChild(body); row.appendChild(a);
   return row;
 }}
@@ -1761,6 +1830,7 @@ function renderSnapshot(data) {{
     $('timeline').replaceChildren(node('div', 'empty', data.error || t('noSnapshot')));
     $('agents').replaceChildren(); $('agents-section').hidden = true;
     $('room-details').hidden = true; $('timeline-pagination').hidden = true;
+    $('final-delivery').hidden = true;
     return;
   }}
   $('room-details').hidden = false;
@@ -1773,10 +1843,13 @@ function renderSnapshot(data) {{
   $('summary').replaceChildren(stats);
   const status = $('status-line'); status.replaceChildren();
   status.append(node('span', 'pill hot', statusText(data.room.status)));
+  status.append(node('span', 'pill', t('modes.' + data.workflow_mode)));
+  if (data.workflow_state.candidate_label) status.append(node('span', 'pill', t('activeCandidate') + ': ' + data.workflow_state.candidate_label));
   if (data.missing_expected_agents.length) status.append(node('span', 'pill', t('missingPrefix') + ' ' + data.missing_expected_agents.join(', ')));
   else status.append(node('span', 'pill ok', t('allAgentsJoined')));
   buildFilterControls(data);
   renderDiscussionState(data);
+  renderFinalDelivery(data);
   $('room-overview-label').textContent = t('roomOverview') + ' · ' + (data.current_phase || statusText(data.room.status));
   renderAgentList(data); renderConversationHeading(data); renderTimelinePage(data);
   if (roomsLoaded) renderRoomGroups(lastRooms);

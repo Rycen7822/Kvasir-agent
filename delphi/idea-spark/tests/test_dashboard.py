@@ -24,6 +24,34 @@ def call(handler, payload):
     return result
 
 
+def test_deep_snapshot_uses_parent_phase_and_refreshes_checkpoint_only_changes(temp_idea_spark_db, tmp_path):
+    from idea_spark.dashboard import DashboardReader
+    from idea_spark.workflow import save_checkpoint
+
+    room_id = call(idea_spark_room_create, {"title": "Deep", "topic": "Mechanism", "workflow_mode": "deep_exploration"})["room_id"]
+    reader = DashboardReader(temp_idea_spark_db)
+    save_checkpoint(room_id, {"phase": "review", "candidate_label": "C1"})
+    before = reader.room_snapshot(room_id)
+    save_checkpoint(room_id, {"phase": "write", "next_action": "write_proposal"})
+    after = reader.room_snapshot(room_id)
+    assert before["counts"] == after["counts"]
+    assert before["cursor"] != after["cursor"]
+    assert after["current_phase"] == "write"
+    path = tmp_path / "proposal.md"
+    path.write_text("# Proposal\nExperiments have not run.", encoding="utf-8")
+    proposal = call(idea_spark_artifact_create, {"room_id": room_id, "type": "ResearchProposal", "title": "Final proposal",
+        "file_path": str(path), "producer_agent": "writer"})
+    save_checkpoint(room_id, {"status": "completed", "final_artifact_id": proposal["artifact_id"]})
+    call(idea_spark_artifact_create, {"room_id": room_id, "type": "PriorArtEvidence", "title": "Late reader",
+        "content": "Method details", "metadata": {"phase": "reading"}, "producer_agent": "reader"})
+    final = reader.room_snapshot(room_id, limit=1)
+    assert final["current_phase"] == "completed"
+    assert final["workflow_mode"] == "deep_exploration"
+    assert final["final_artifact"]["file_path"] == str(path)
+    assert final["artifacts"][0]["artifact_id"] != proposal["artifact_id"]
+    assert reader.list_rooms()[0]["is_terminal"] is True
+
+
 def seed_room():
     room = call(
         idea_spark_room_create,

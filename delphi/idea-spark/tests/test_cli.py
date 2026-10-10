@@ -242,3 +242,82 @@ def test_file_delivery_batch_retry_and_project_binding(temp_idea_spark_db, tmp_p
     monkeypatch.setenv("IDEA_SPARK_DB", str(tmp_path / "other.sqlite3"))
     assert cli.main(["files", "collect", receipts[0]]) == 1
     assert "different Delphi project" in _read_stdout_json(capsys)["deliveries"][0]["error"]
+
+
+def test_deep_checkpoint_collects_revisions_and_unverified_proposal(temp_idea_spark_db, tmp_path, capsys):
+    from idea_spark.tools import idea_spark_artifact_link, idea_spark_room_status
+
+    payload = _write_json(tmp_path / "room.json", {
+        "room_id": "deep-cli", "title": "Deep exploration", "topic": "Method gap", "workflow_mode": "deep_exploration",
+    })
+    assert cli.main(["call", "idea_spark_room_create", "--json-file", str(payload)]) == 0
+    room_id = _read_stdout_json(capsys)["room_id"]
+
+    def deliver(kind, label, body):
+        assert cli.main(["files", "prepare", "--room-id", room_id, "--agent-id", "worker",
+                         "--type", kind, "--title", label, "--round-id", label, "--phase", "ideate"]) == 0
+        receipt = _read_stdout_json(capsys)
+        Path(receipt["file_path"]).write_text(body, encoding="utf-8")
+        assert cli.main(["files", "collect", receipt["receipt_path"]]) == 0
+        assert _read_stdout_json(capsys)["success"] is True
+        return receipt
+
+    gap = deliver("GapAnalysis", "axis", "# Gap\nA concrete method assumption fails.")
+    first = deliver("IdeaCard", "C1", "# C1\nInitial mechanism.")
+    revised = deliver("IdeaCard", "C2", "# C2\nA sharper transfer condition.")
+    linked = json.loads(idea_spark_artifact_link({"room_id": room_id, "source_artifact_id": revised["artifact_id"],
+        "target_artifact_id": first["artifact_id"], "relation": "evolves_from"}))
+    assert linked["success"] is True
+    assert first["file_path"] != revised["file_path"]
+    assert Path(first["file_path"]).read_text() == "# C1\nInitial mechanism."
+    checkpoint = _write_json(tmp_path / "checkpoint.json", {
+        "phase": "review", "active_gap_artifact_id": gap["artifact_id"],
+        "active_candidate_artifact_id": revised["artifact_id"], "candidate_label": "C2",
+        "next_action": "review_candidate", "revision_count": 1, "pending_receipts": [],
+    })
+    command = ["workflow", "checkpoint", "--room-id", room_id, "--json-file", str(checkpoint)]
+    assert cli.main(command) == 0
+    assert _read_stdout_json(capsys)["idempotent"] is False
+    assert cli.main(command) == 0
+    assert _read_stdout_json(capsys)["idempotent"] is True
+    status = json.loads(idea_spark_room_status({"room_id": room_id}))
+    assert status["workflow_state"]["revision_count"] == 1
+    assert status["workflow_state"]["active_candidate_artifact_id"] == revised["artifact_id"]
+
+    proposal = deliver("ResearchProposal", "C2 proposal", "# Proposal\nHypothesis is unverified. Experiments are planned.")
+    complete = _write_json(tmp_path / "complete.json", {"status": "completed", "final_artifact_id": proposal["artifact_id"]})
+    assert cli.main(["workflow", "checkpoint", "--room-id", room_id, "--json-file", str(complete)]) == 0
+    result = _read_stdout_json(capsys)
+    assert result["is_terminal"] is True
+    assert result["workflow_state"]["phase"] == "completed"
+    status = json.loads(idea_spark_room_status({"room_id": room_id}))
+    assert status["has_terminal_gate"] is False
+    assert status["final_artifact_id"] == proposal["artifact_id"]
+    assert status["counts"]["gates"] == 0
+
+
+def test_checkpoint_invalid_completion_preserves_state_and_budget_stop_is_terminal(temp_idea_spark_db, tmp_path, capsys):
+    from idea_spark.tools import idea_spark_room_create, idea_spark_room_status
+
+    room_id = json.loads(idea_spark_room_create({"title": "Stop", "topic": "Finite budget", "workflow_mode": "deep_exploration"}))["room_id"]
+    before = json.loads(idea_spark_room_status({"room_id": room_id}))
+    invalid = _write_json(tmp_path / "invalid.json", {"status": "completed", "phase": "completed"})
+    assert cli.main(["workflow", "checkpoint", "--room-id", room_id, "--json-file", str(invalid)]) == 1
+    assert _read_stdout_json(capsys)["success"] is False
+    unchanged = json.loads(idea_spark_room_status({"room_id": room_id}))
+    assert unchanged["status"] == before["status"]
+    assert unchanged["workflow_state"] == before["workflow_state"]
+    stop = _write_json(tmp_path / "stop.json", {"status": "stopped", "stop_reason": "budget_exhausted"})
+    command = ["workflow", "checkpoint", "--room-id", room_id, "--json-file", str(stop)]
+    assert cli.main(command) == 0
+    assert _read_stdout_json(capsys)["is_terminal"] is True
+    assert cli.main(command) == 0
+    assert _read_stdout_json(capsys)["idempotent"] is True
+    bookkeeping = _write_json(tmp_path / "bookkeeping.json", {"handoff_path": str(tmp_path / "stage.md")})
+    assert cli.main(["workflow", "checkpoint", "--room-id", room_id, "--json-file", str(bookkeeping)]) == 0
+    recorded = _read_stdout_json(capsys)
+    assert recorded["status"] == "stopped"
+    assert recorded["workflow_state"]["handoff_path"] == str(tmp_path / "stage.md")
+    reopen = _write_json(tmp_path / "reopen.json", {"status": "open"})
+    assert cli.main(["workflow", "checkpoint", "--room-id", room_id, "--json-file", str(reopen)]) == 1
+    assert _read_stdout_json(capsys)["success"] is False

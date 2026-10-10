@@ -21,6 +21,8 @@ TOOL_NAMES = [
 
 ARTIFACT_TYPES = {
     "ResearchGoal",
+    "GapAnalysis",
+    "ResearchProposal",
     "IdeaCard",
     "EvaluationRubric",
     "AtomicClaim",

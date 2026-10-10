@@ -233,29 +233,33 @@ Use `IDEA_SPARK_DB=/absolute/path/to/idea_spark.sqlite3` or `--db /absolute/path
 
 ## Parent protocol
 
-Default CLI-first parent flow:
+Use `$kvasir-agent:delphi-idea-spark` and specify open discussion or deep exploration. Select the mode before loading role instructions. Codex/Pi use the absolute common CLI from [HOSTS.md](../HOSTS.md); Hermes can use its registered CLI.
 
-1. Create the room with `hermes idea-spark call idea_spark_room_create --json-file room.json`; include `dashboard_base_url` and `check_dashboard=true` when a live dashboard should be openable, then give the returned `room_url` to the user only if `dashboard_reachable=true` or after separately verifying the dashboard.
-2. Seed `ResearchGoal`, `IdeaCard`, and `EvaluationRubric` artifacts with `hermes idea-spark call idea_spark_artifact_create --json-file artifact.json`.
-3. Launch child roles with `toolsets=["terminal", "file", "skills"]` by default so they can write payload JSON files, call `hermes idea-spark`, and load the bundled skill. Pass each child a `payload_scratch_dir` under `/tmp/idea_spark_<run_id>/<agent_id>/`; do not let transient payload JSON land in the repo root. Add external toolsets only for roles that need outside evidence.
-4. Maintain `idea_spark_phase_ledger.md` in the current working directory, recording the current phase, next phase, verification counts, latest skill re-read checkpoint, blockers, and final handoff path.
-5. Run the continuous Idea-Spark phase loop: `r0/seed` (`Seed / Framing`) → `r1/review` (`Novelty Attack`) → `r2/rebuttal` (`Author Rebuttal / Improvement Draft`) → `r3/re-review` (`Re-review / Cross-examination`) → `r4/gate` (`Gate`) → `final/handoff`.
-6. After each nonterminal phase, use `idea_spark_room_status` and `idea_spark_message_read` through CLI calls, update the phase ledger with a stage checkpoint marker, re-read the bundled skill, and continue while `has_terminal_gate=false`. Do not treat r1, r2, or r3 as a final answer.
-7. Require `idea_spark_gate_record` before treating any conclusion as final; message-only gate is not final.
-8. On the terminal decision, call `idea_spark_gate_record` with `close_room=true`.
-9. Use `idea_spark_room_export` for auditability only; when a researcher-facing report is needed, write a detailed standalone handoff report into the current working directory rather than only under `/tmp`.
+| Workflow mode | Purpose | Process |
+| --- | --- | --- |
+| `open_discussion` (default, including legacy rooms) | Discuss and assess an existing idea | `r0/seed` → `r1/review` → `r2/rebuttal` → `r3/re-review` → `r4/gate` → `final/handoff` |
+| `deep_exploration` | Develop a methodological research proposal | One challenge axis → gap → mechanism candidate → review → revision/pivot → proposal |
+
+1. Create a room with the chosen workflow_mode. Include dashboard_base_url / check_dashboard=true when presenting a live dashboard link.
+2. Seed research inputs and load only the chosen workflow and current role. Use the host's native agents; Hermes CLI-first workers use `toolsets=["terminal", "file", "skills"]`. Notes and temporary payloads belong in .work.
+3. Prepare a delivery per assignment, save its receipt in the parent checkpoint, then launch. After native completion collect the files and read their full content. Recover a failed write from the full reply before repeating research.
+4. Save phase, active candidate, next action, pending receipts and actual budget through workflow checkpoint. Resume from idea_spark_room_status and those files; read instructions when needed.
+5. Open discussion continues its review/rebuttal/re-review/gate contract. A message-only gate is not final; the parent records `idea_spark_gate_record(close_room=true)` and confirms has_terminal_gate=true.
+6. Deep exploration uses GapFinder, Innovator, Reviewer, Reader and ProposalWriter. The parent dispatches Reader work. Each revision gets a fresh candidate/file; reviewers recommend survive/revise/reject, and the parent decides the next action.
+7. A deep proposal closes with status=completed and its registered ResearchProposal file; budget exhaustion or no viable direction closes with status=stopped, a reason and available stage files. Unverified hypotheses remain explicit. Confirm is_terminal=true; no acceptance gate is required.
+8. Export the ledger as a process/file index. Write a self-contained researcher handoff when needed, preserving a durable project path.
 
 Explicit tool-mode parent flow:
 
 - Enable `$HERMES_HOME/idea-spark/config.json` with `tools.enabled=true`.
 - Start a fresh Hermes process or session reset.
-- Use `toolsets=["idea_spark", "skills"]` only for roles that should have the narrow ledger tools.
+- Use `toolsets=["idea_spark", "skills"]` only for roles needing the narrow ledger tools.
 
-Strict barriers require `expected_agents <= delegation.max_concurrent_children`; otherwise use timeout-only soft barriers.
+Use expected_agents for the current assignment group and finite waits. The host owns concurrency and worker termination.
 
 ## Child protocol
 
-Default delivery uses native file tools. The parent prepares a durable output path and receipt with `files prepare`, supplies input artifact paths and a `.work` scratch directory, then launches the worker. The worker consolidates all findings, sources, failures, limits and proposed needs into the final file and returns its absolute path. If file writing fails, it returns the full substantive reply for recovery. After native completion the parent runs `files collect`, reads full files, records useful links/needs and reviews the gate proposal before recording the actual gate. See the file-delivery commands below.
+Default delivery uses native file tools. The parent prepares a durable output path and receipt with `files prepare`, supplies input artifact paths and a `.work` scratch directory, then launches the worker. The worker consolidates all findings, sources, failures, limits and proposed needs into the final file and returns its absolute path. If file writing fails, it returns the full substantive reply for recovery. After native completion the parent runs `files collect`, reads full files, records useful links/needs and makes the next decision for the selected mode. See the file-delivery commands below.
 
 ## Failure modes
 

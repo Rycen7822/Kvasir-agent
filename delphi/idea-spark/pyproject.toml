@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "idea-spark"
 version = "0.1.0"
-description = "Typed artifact swarm debate room for Hermes delegate_task child agents."
+description = "Open research discussion and deep exploration using native agents and durable file delivery."
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = []
@@ -27,6 +27,8 @@ idea_spark = [
   "migrations/*.sql",
   "resources/skills/idea-spark-usage/*.md",
   "resources/skills/idea-spark-usage/references/*.md",
+  "resources/skills/idea-spark-usage/references/modes/*.md",
+  "resources/skills/idea-spark-usage/references/roles/*.md",
 ]
 
 [tool.pytest.ini_options]

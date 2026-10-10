@@ -1,12 +1,12 @@
 ---
 name: delphi-idea-spark
-description: Review research ideas through Delphi's shared ledger and native agent discussion phases.
+description: Discuss research ideas or deeply develop a research proposal through Delphi's shared ledger and native agents.
 ---
 
 # Idea-Spark
 
-Read the [native host contract](../../delphi/HOSTS.md), then the [Idea-Spark workflow](../../delphi/idea-spark/resources/skills/idea-spark-usage/SKILL.md). Follow that workflow through review, rebuttal, re-review and a recorded gate. Read its parent or worker reference according to your assigned role.
+Read the [native host contract](../../delphi/HOSTS.md) and [Idea-Spark router](../../delphi/idea-spark/resources/skills/idea-spark-usage/SKILL.md). The parent selects `open_discussion` for an existing idea or `deep_exploration` when the user requests IdeaScientist-style depth. Default to open discussion when no mode is specified. Load only the selected mode; a delegated worker follows its supplied role and delivery contract.
 
-Resolve these paths relative to this installed skill file. The plugin root is two levels above this skill directory. On Codex use its terminal/file tools and native agents; pass the same absolute CLI and state paths to each worker.
+Resolve paths relative to this installed file. The plugin root is two levels above this skill directory. Use native host agents and file/terminal tools, and one absolute project state directory.
 
-Default delivery is a complete Markdown file at a parent-preallocated absolute path. The parent prepares and collects receipts with the CLI; workers keep temporary notes in their assigned `.work` directory. If a file cannot be written, the worker returns the full body for parent recovery. Read referenced files directly rather than relying on a short summary.
+Every assignment delivers a complete Markdown file at a parent-preallocated absolute path. The parent prepares and collects receipts; workers keep interim notes in their assigned `.work` directory. Return the full body if writing fails. Read referenced files for substantive results; the parent owns research decisions and workflow checkpoints.
