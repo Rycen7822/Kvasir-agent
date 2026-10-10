@@ -280,8 +280,21 @@ def test_dashboard_http_serves_health_html_json_sse_and_rejects_mutations(temp_i
     from idea_spark import dashboard
 
     room_id, _ = seed_room()
+    delivered = temp_idea_spark_db.parent / "review.md"
+    full_body = "# Complete review\n" + "Independent finding.\n" * 1500
+    delivered.write_text(full_body, encoding="utf-8")
+    registered = call(idea_spark_artifact_create, {"room_id": room_id, "artifact_type": "MetaReview",
+        "producer_agent": "file-reviewer", "title": "Complete review", "file_path": str(delivered)})
+    artifact_id = registered["artifact_id"]
     server, base_url = start_server(dashboard, temp_idea_spark_db)
     try:
+        file_url = f"{base_url}/api/rooms/{room_id}/artifacts/{artifact_id}/file"
+        result = read_json(file_url)
+        assert result["file_path"] == str(delivered)
+        assert result["content_text"] == full_body
+        wrong_room = read_http_error_json(f"{base_url}/api/rooms/other/artifacts/{artifact_id}/file")
+        assert wrong_room[0] == 404
+        assert "content_text" not in wrong_room[1]
         health = read_json(f"{base_url}/health")
         assert health["status"] == "ok"
         assert health["read_only"] is False
@@ -303,6 +316,10 @@ def test_dashboard_http_serves_health_html_json_sse_and_rejects_mutations(temp_i
         assert "data:" in sse
         assert "I found a close prior-art match" in sse
 
+        event = next(event for event in snapshot["timeline"] if event["id"] == artifact_id)
+        assert event["file_path"] == str(delivered)
+        delivered.unlink()
+        assert read_http_error_json(file_url)[0] == 404
         request = urllib.request.Request(f"{base_url}/api/rooms", method="POST")
         try:
             urllib.request.urlopen(request, timeout=5)

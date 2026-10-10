@@ -207,3 +207,38 @@ def test_pyproject_exposes_console_script():
 
     assert "[project.scripts]" in text
     assert 'idea-spark = "idea_spark.cli:main"' in text
+
+
+def test_file_delivery_batch_retry_and_project_binding(temp_idea_spark_db, tmp_path, capsys, monkeypatch):
+    from idea_spark.tools import idea_spark_artifact_read, idea_spark_room_create
+    room = json.loads(idea_spark_room_create({"title": "File review", "topic": "Evidence"}))["room_id"]
+    deliveries = []
+    for reviewer in ("reviewer-a", "reviewer-b"):
+        assert cli.main(["files", "prepare", "--room-id", room, "--agent-id", reviewer,
+            "--type", "MetaReview", "--title", "Independent review", "--round-id", "r1", "--phase", "review", "--role", "Reviewer"]) == 0
+        deliveries.append(_read_stdout_json(capsys))
+    complete = "# Full review\n" + "Detailed independent finding.\n" * 2000
+    Path(deliveries[0]["file_path"]).write_text(complete, encoding="utf-8")
+    receipts = [item["receipt_path"] for item in deliveries]
+    assert cli.main(["files", "collect", *receipts]) == 1
+    batch = _read_stdout_json(capsys)["deliveries"]
+    assert batch[0]["success"] is True
+    assert batch[1]["success"] is False
+    Path(deliveries[1]["file_path"]).write_text(complete, encoding="utf-8")
+    assert cli.main(["files", "collect", *receipts]) == 0
+    batch = _read_stdout_json(capsys)["deliveries"]
+    assert batch[0]["deduplicated"] is True
+    assert batch[1]["deduplicated"] is False
+    artifacts = json.loads(idea_spark_artifact_read({"room_id": room}))["artifacts"]
+    assert {item["producer_agent"] for item in artifacts} == {"reviewer-a", "reviewer-b"}
+    assert len(artifacts) == 2
+    for artifact in artifacts:
+        assert artifact["content"] == {}
+        assert Path(artifact["file_path"]).read_text(encoding="utf-8") == complete
+    from idea_spark.tools import idea_spark_round_wait
+    barrier = json.loads(idea_spark_round_wait({"room_id": room, "round_id": "r1", "phase": "review",
+        "expected_agents": ["reviewer-a", "reviewer-b"], "timeout_s": 0}))
+    assert barrier["status"] == "complete"
+    monkeypatch.setenv("IDEA_SPARK_DB", str(tmp_path / "other.sqlite3"))
+    assert cli.main(["files", "collect", receipts[0]]) == 1
+    assert "different Delphi project" in _read_stdout_json(capsys)["deliveries"][0]["error"]

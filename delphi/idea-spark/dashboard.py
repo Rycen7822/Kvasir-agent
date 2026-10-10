@@ -97,6 +97,18 @@ class DashboardReader:
         conn.execute("PRAGMA busy_timeout = 30000")
         return conn
 
+    def artifact_file(self, room_id: str, artifact_id: str) -> dict[str, Any]:
+        try:
+            with self._connect() as conn:
+                row = conn.execute("select * from artifacts where room_id = ? and artifact_id = ?",
+                                   (room_id, artifact_id)).fetchone()
+            if not row or not dict(row).get("file_path"):
+                return {"success": False, "error": "artifact file not found"}
+            path = Path(row["file_path"])
+            return {"success": True, "file_path": str(path), "content_text": path.read_text(encoding="utf-8")}
+        except (OSError, UnicodeError) as exc:
+            return {"success": False, "error": f"cannot read artifact file: {exc}"}
+
     @staticmethod
     def _room_dict(row: sqlite3.Row) -> dict[str, Any]:
         item = dict(row)
@@ -372,6 +384,7 @@ class DashboardReader:
                     "title": artifact.get("title") or artifact["artifact_type"],
                     "status": artifact["status"],
                     "content": artifact.get("content"),
+                    "file_path": artifact.get("file_path"),
                     "content_text": artifact.get("content_text") or _plain_content_text(artifact.get("content")),
                     "tags": artifact.get("tags", []),
                 }
@@ -1425,6 +1438,25 @@ function renderEventCard(event) {{
   if (event.kind === 'artifact') {{
     const details = node('details', 'artifact-details');
     details.append(node('summary', null, eventKindText(event.kind) + ' · ' + (event.title || event.role || event.id)), body);
+    if (event.file_path) {{
+      const path = node('div', 'artifact-file-path', event.file_path);
+      path.style.overflowWrap = 'anywhere';
+      details.insertBefore(path, body);
+      let loaded = false;
+      details.addEventListener('toggle', async () => {{
+        if (!details.open || loaded) return;
+        loaded = true;
+        try {{
+          const response = await fetch('/api/rooms/' + encodeURIComponent(ROOM_ID) + '/artifacts/' + encodeURIComponent(event.id) + '/file', {{cache: 'no-store'}});
+          const result = await response.json();
+          if (!result.success) throw new Error(result.error);
+          renderMarkdown(body, result.content_text);
+        }} catch (error) {{
+          loaded = false;
+          body.replaceChildren(node('div', 'empty', String(error.message || error)));
+        }}
+      }});
+    }}
     bubble.appendChild(details);
   }} else {{
     if (event.kind !== 'message') {{
@@ -1872,6 +1904,10 @@ def create_server(
                 return
             if path.startswith("/api/rooms/"):
                 parts = [unquote(part) for part in path.split("/")]
+                if len(parts) == 7 and parts[4] == "artifacts" and parts[6] == "file":
+                    result = reader.artifact_file(parts[3], parts[5])
+                    _json_response(self, result, HTTPStatus.OK if result["success"] else HTTPStatus.NOT_FOUND)
+                    return
                 if len(parts) == 5 and parts[4] == "snapshot":
                     _json_response(self, reader.room_snapshot(parts[3]))
                     return

@@ -4,72 +4,35 @@ Use this reference only inside a bounded native child role. Parent/orchestrator 
 
 ## Subagent scope
 
-Read this reference from the installed component's skill directory with native file tools. On Hermes, if its skill_view returns the main SKILL, read this actual file instead.
+A subagent performs one assigned role in one phase. It does not own the room lifecycle. Use the host's native file and terminal tools. The parent supplies the room, stable agent ID, role, phase, input artifact paths, scratch directory and preallocated absolute `file_path`.
 
-A subagent performs one assigned role in one phase. It does not own the room lifecycle.
+1. Read the supplied inputs, including complete files referenced by prior artifacts. Use `idea_spark_room_status`, `idea_spark_message_read` and `idea_spark_artifact_read` only when more room context is needed.
+2. Keep interim notes and working material in the assigned `.work` scratch directory.
+3. Consolidate all substantive results into the assigned UTF-8 Markdown file: reasoning, sources, findings, objections, counterexamples, failed attempts, limitations, unresolved needs and proposed next actions. Clearly cite input artifact IDs or file paths.
+4. Finish writing and check that the complete final file is readable. Return its absolute path, completion state and a brief index through the native final reply, then stop. The file carries the full result; a short summary alone is not a delivery.
+5. If the file cannot be written, return the complete substantive body in the native final reply, with the write failure. The parent can save that body to the preallocated path without rerunning the research.
 
-A subagent should:
+The parent collects the file and registers the artifact. Default workers do not have to join, submit artifacts, post messages, update needs, verify ledger writes or record gates. A Gatekeeper proposes a decision with rationale in its file; the parent records the actual gate after reviewing it.
 
-1. Read the installed Idea-Spark SKILL.md and this reference.
-2. Join the assigned room with its stable `agent_id` and `role`.
-3. Read room status plus the seed and prior-phase artifacts needed for its role.
-4. Write at least one concise narrative message.
-5. Write at least one typed artifact when it has substantive content.
-6. Link or clearly cite the artifacts it answers, critiques, or requires.
-7. Create or update open needs for missing evidence that blocks its judgment.
-8. Verify its own message/artifact writes by reading room state back.
-9. Return a short summary to the parent and stop.
+Do not call `skill_manage`, spawn agents, manage the room or export the final handoff unless explicitly assigned orchestration duties. Do not change a previously delivered file for a new assignment: the parent allocates a fresh path and delivery ID for each revision.
 
-A subagent should not:
+## Native tools
 
-- Call `skill_manage`. Do not call `skill_manage` from child prompts.
-- Decide the whole room is complete unless it is the assigned Gatekeeper and explicitly records a gate.
-- Assume it will remain alive to continue the conversation later.
-- Spawn other agents unless it was explicitly launched as an orchestrator role.
-- Put transient payload JSON in the repository root; use the parent-provided scratch directory.
-
-## Default toolsets
-
-Codex/Pi workers use their actual native terminal/file tools and the absolute CLI prefix supplied by the parent. Do not pass Hermes toolset parameters to Codex tools.
-
-Hermes CLI-first subagents use:
-
-```text
-toolsets=["terminal", "file", "skills"]
-```
-
-Use file tools to write JSON payloads, terminal tools to call the selected CLI prefix, and file/skill tools to read this protocol. Add external capabilities only when the role needs outside evidence.
-
-Explicit tool-mode subagents use:
-
-```text
-toolsets=["idea_spark", "skills"]
-```
-
-Only use explicit tool-mode after the plugin config enables tools and the Hermes session has been reset.
-
-## CLI-first child workflow
-
-1. Write payload JSON under the assigned scratch directory.
-2. Call `idea-spark call idea_spark_room_join --json-file join.json` using the parent's complete prefix.
-3. Read current state with `idea_spark_room_status`, `idea_spark_message_read`, and `idea_spark_artifact_read`.
-4. Create artifacts with `idea_spark_artifact_create`.
-5. Link provenance with `idea_spark_artifact_link` when available and useful.
-6. Post a message with `idea_spark_message_post` and include artifact IDs.
-7. Create/update needs with `idea_spark_need_create` / `idea_spark_need_update` for unresolved blockers.
-8. Verify the created message and artifact IDs by reading the room back.
+Codex/Pi workers use their actual native terminal/file tools and the absolute CLI prefix supplied by the parent. Hermes CLI-first workers use `toolsets=["terminal", "file", "skills"]`. Add outside research capabilities only when the role needs them. Optional Hermes explicit tool-mode remains available after configuration and a session reset; it does not change the default file delivery contract.
 
 ## Artifact expectations by common role
 
-- `PriorArtBreaker`: `PriorArtEvidence`, `NoveltyObjection`, optionally `BenchmarkRequirement`.
-- `FeasibilityBreaker`: `FeasibilityObjection`, `ReviewerRisk`, `StressTest`, optionally `ExperimentPlan`.
-- `ExperimentPlanner`: `ExperimentPlan`, `BenchmarkRequirement`, optionally `OpenNeed`.
-- `AuthorAdvocate`: `Rebuttal`, `RevisionPlan`, optionally `RegimeTransition`.
-- `SchemaSurgeon`: `RevisionPlan`, `RegimeTransition`.
-- `BaselineRepair`: `BenchmarkRequirement`, `ReviewerRisk`.
-- `MetaReviewer` / `SkepticalAC`: `MetaReview`, `ScoreCard`, optionally `OpenNeed`.
-- `Gatekeeper`: final `ScoreCard`, final `MetaReview`, and a real `idea_spark_gate_record(close_room=true)` when assigned to close the room.
+The parent chooses a primary artifact type before launch; one complete report can contain several kinds of findings. The parent may subsequently register additional typed claims or relations when useful.
 
-## Subagent prompt checklist
+- `PriorArtBreaker`: `PriorArtEvidence` or `NoveltyObjection`.
+- `FeasibilityBreaker`: `FeasibilityObjection`, `ReviewerRisk` or `StressTest`.
+- `ExperimentPlanner`: `ExperimentPlan` or `BenchmarkRequirement`.
+- `AuthorAdvocate`: `Rebuttal` or `RevisionPlan`.
+- `SchemaSurgeon`: `RevisionPlan` or `RegimeTransition`.
+- `BaselineRepair`: `BenchmarkRequirement` or `ReviewerRisk`.
+- `MetaReviewer` / `SkepticalAC`: `MetaReview` or `ScoreCard`.
+- `Gatekeeper`: `MetaReview` containing the proposed final decision and scores; the parent records `idea_spark_gate_record`.
 
-A good child prompt includes: room id, stable agent id, role name, phase name, scratch directory, required first operation `idea_spark_room_join`, exact artifact types to write, whether external evidence tools are allowed, requirement to create open needs for blockers, requirement to verify writes, and a reminder not to call `skill_manage`.
+## Child prompt checklist
+
+Include room ID, stable agent ID, role, phase, primary artifact type, exact input artifact IDs and file paths, permitted research tools, `.work` scratch directory, preallocated absolute output path, complete-file delivery and full-reply fallback. The parent retains the receipt; the worker only needs the output path.

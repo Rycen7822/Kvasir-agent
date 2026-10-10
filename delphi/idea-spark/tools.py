@@ -2,6 +2,7 @@ import json
 import sqlite3
 import time
 import uuid
+from pathlib import Path
 from collections.abc import Callable
 from typing import Any
 import urllib.error
@@ -11,11 +12,11 @@ from urllib.parse import quote
 try:
     from .export import render_markdown
     from .schemas import ARTIFACT_STATUSES, ARTIFACT_TYPES, GATE_DECISIONS, PROTOCOL, RELATIONS, TOOL_NAMES
-    from .store import IdeaSparkStore, canonical_json, content_hash, with_retry
+    from .store import IdeaSparkStore, canonical_json, with_retry
 except ImportError:  # source-root script execution
     from export import render_markdown
     from schemas import ARTIFACT_STATUSES, ARTIFACT_TYPES, GATE_DECISIONS, PROTOCOL, RELATIONS, TOOL_NAMES
-    from store import IdeaSparkStore, canonical_json, content_hash, with_retry
+    from store import IdeaSparkStore, canonical_json, with_retry
 
 NEED_STATUSES = {"open", "claimed", "resolved", "stale", "cancelled"}
 DEFAULT_DASHBOARD_BASE_URL = "http://127.0.0.1:8765"
@@ -209,7 +210,12 @@ def _arrived_agents(conn: sqlite3.Connection, room_id: str, round_id: str, phase
         """,
         params,
     ).fetchall()
-    return [row["agent_id"] for row in rows]
+    arrived = {row["agent_id"] for row in rows}
+    for artifact in conn.execute("select producer_agent, metadata_json from artifacts where room_id = ?", (room_id,)):
+        metadata = _loads(artifact["metadata_json"], {})
+        if metadata.get("round_id") == round_id and (phases is None or metadata.get("phase") in phases):
+            arrived.add(artifact["producer_agent"])
+    return sorted(arrived)
 
 
 def _ordered_subset(order: list[str], values: list[str]) -> list[str]:
@@ -576,43 +582,30 @@ def _insert_artifact(
     status: str = "proposed",
     metadata: dict | None = None,
     artifact_id: str | None = None,
-) -> tuple[str, str, bool]:
-    digest = content_hash(content)
-    now = _now()
+    file_path: str | None = None,
+) -> tuple[str, bool]:
     artifact_id = artifact_id or _new_id("artifact")
-    try:
-        conn.execute(
-            """
-            insert into artifacts(
-                artifact_id, room_id, schema_id, artifact_type, producer_agent, title,
-                content_json, content_hash, status, confidence, created_at, updated_at, metadata_json
-            ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                artifact_id,
-                room_id,
-                PROTOCOL,
-                artifact_type,
-                producer_agent,
-                title,
-                canonical_json(content),
-                digest,
-                status,
-                None,
-                now,
-                now,
-                canonical_json(metadata or {}),
-            ),
-        )
-        return artifact_id, digest, False
-    except sqlite3.IntegrityError:
-        row = conn.execute(
-            "select artifact_id from artifacts where room_id = ? and artifact_type = ? and content_hash = ?",
-            (room_id, artifact_type, digest),
-        ).fetchone()
-        if not row:
-            raise
-        return row["artifact_id"], digest, True
+    identity = {
+        "room_id": room_id, "artifact_type": artifact_type,
+        "producer_agent": producer_agent, "title": title,
+        "content_json": canonical_json(content), "file_path": file_path,
+        "metadata_json": canonical_json(metadata or {}),
+    }
+    existing = conn.execute("select * from artifacts where artifact_id = ?", (artifact_id,)).fetchone()
+    if existing:
+        if any(existing[key] != value for key, value in identity.items()):
+            raise ValueError("artifact_id already belongs to different content or work")
+        return artifact_id, True
+    now = _now()
+    conn.execute(
+        """insert into artifacts(
+            artifact_id, room_id, schema_id, artifact_type, producer_agent, title,
+            content_json, file_path, status, confidence, created_at, updated_at, metadata_json
+        ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (artifact_id, room_id, PROTOCOL, artifact_type, producer_agent, title,
+         identity["content_json"], file_path, status, None, now, now, identity["metadata_json"]),
+    )
+    return artifact_id, False
 
 
 def _insert_link(
@@ -652,6 +645,21 @@ def idea_spark_artifact_create(args: dict, **kwargs) -> str:
             args["producer_agent"] = args["agent_id"]
     if "content" in args and not isinstance(args["content"], dict):
         args["content"] = {"text": str(args["content"])}
+    file_path = args.get("file_path")
+    if file_path is not None:
+        if not isinstance(file_path, str) or not file_path.strip():
+            return err("file_path must be a nonempty path")
+        try:
+            path = Path(file_path).expanduser().resolve(strict=True)
+            if not path.is_file() or not path.read_text(encoding="utf-8").strip():
+                return err("file_path must reference a nonempty UTF-8 file")
+            file_path = str(path)
+        except (OSError, UnicodeError) as exc:
+            return err(f"cannot read artifact file: {exc}")
+        args.setdefault("content", {})
+    provided_id = args.get("artifact_id")
+    if provided_id is not None and (not isinstance(provided_id, str) or not provided_id.strip()):
+        return err("artifact_id must be a nonempty string")
     status = args.get("status", "proposed")
     missing = _require(args, "room_id", "artifact_type", "producer_agent", "content")
     if missing:
@@ -674,12 +682,13 @@ def idea_spark_artifact_create(args: dict, **kwargs) -> str:
     def run() -> str:
         store = _store()
         with store.connect() as conn:
+            conn.execute("BEGIN IMMEDIATE")
             if not _room(conn, args["room_id"]):
                 return err("unknown room_id", room_id=args["room_id"])
             for link in parent_links:
                 if not _artifact_in_room(conn, args["room_id"], link["source_artifact_id"]):
                     return err("unknown parent artifact", artifact_id=link["source_artifact_id"])
-            artifact_id, digest, deduplicated = _insert_artifact(
+            artifact_id, deduplicated = _insert_artifact(
                 conn,
                 room_id=args["room_id"],
                 artifact_type=args["artifact_type"],
@@ -688,7 +697,17 @@ def idea_spark_artifact_create(args: dict, **kwargs) -> str:
                 content=args["content"],
                 status=status,
                 metadata=args.get("metadata") or {},
+                artifact_id=provided_id,
+                file_path=file_path,
             )
+            if file_path:
+                now = _now()
+                conn.execute(
+                    """insert into participants(room_id, agent_id, role, status, joined_at, last_seen_at)
+                    values (?, ?, ?, 'joined', ?, ?) on conflict(room_id, agent_id)
+                    do update set last_seen_at = excluded.last_seen_at""",
+                    (args["room_id"], args["producer_agent"], (args.get("metadata") or {}).get("role"), now, now),
+                )
             if not deduplicated:
                 for link in parent_links:
                     _insert_link(
@@ -699,7 +718,8 @@ def idea_spark_artifact_create(args: dict, **kwargs) -> str:
                         target_artifact_id=artifact_id,
                         created_by=args["producer_agent"],
                     )
-        return ok({"artifact_id": artifact_id, "content_hash": digest, "status": status, "deduplicated": deduplicated})
+            saved_status = conn.execute("select status from artifacts where artifact_id = ?", (artifact_id,)).fetchone()[0]
+        return ok({"artifact_id": artifact_id, "file_path": file_path, "status": saved_status, "deduplicated": deduplicated})
 
     return with_retry(run)
 
@@ -1019,14 +1039,14 @@ def idea_spark_need_update(args: dict, **kwargs) -> str:
 
 
 _TOOL_DESCRIPTIONS = {
-    "idea_spark_room_create": "Create an Idea-Spark shared-ledger review room and return room_url for the dashboard. Pass check_dashboard=true to perform a bounded dashboard reachability check before presenting the link as openable. Set metadata.expected_agents when round barriers should wait for named child agents. For protocol guidance, read the installed Idea-Spark workflow skill.",
-    "idea_spark_room_join": "Register a native child agent in an Idea-Spark room. Children should call this first before reading or writing room state.",
+    "idea_spark_room_create": "Create an Idea-Spark shared-ledger review room and return room_url for the dashboard. Pass check_dashboard=true to perform a bounded dashboard reachability check before presenting the link as openable. Set metadata.expected_agents when round barriers should wait for named child agents. For protocol guidance, read the installed idea-spark-usage workflow skill.",
+    "idea_spark_room_join": "Register a participant in an Idea-Spark room. Parent file collection registers producers automatically.",
     "idea_spark_room_status": "Return room status, ledger counts, and expected agents that have not joined yet.",
     "idea_spark_message_post": "Post a concise round/phase narrative update, optionally linked to artifact IDs. Use artifacts for durable claims rather than only free text.",
     "idea_spark_message_read": "Read room messages, optionally filtered by round_id, phase, or agent_id.",
-    "idea_spark_round_wait": "Wait for expected agents to post in a round. Optional phase filters exact phase, phase='*' or omitted matches any phase, and phases=[...] matches several role-specific phases. Always use a finite timeout_s and continue with partial state on timeout.",
-    "idea_spark_artifact_create": "Create a typed durable review artifact such as ResearchGoal, IdeaCard, AtomicClaim, NoveltyObjection, ExperimentPlan, ScoreCard, GateDecision, or OpenNeed.",
-    "idea_spark_artifact_read": "Read artifacts in a room, optionally by artifact_id, type, or status, including linked provenance.",
+    "idea_spark_round_wait": "Wait for ledger arrivals from expected agents via messages or phase-tagged artifacts. This does not wait for native worker execution. Optional phase filters exact phase, phase='*' or omitted matches any phase, and phases=[...] matches several role-specific phases. Always use a finite timeout_s and continue with partial state on timeout.",
+    "idea_spark_artifact_create": "Register a typed review artifact with inline content or file_path. Optional artifact_id identifies retries of one delivery; different reviewer contributions stay independent.",
+    "idea_spark_artifact_read": "Read artifacts in a room, optionally by artifact_id, type, or status, including file_path and linked provenance. Read referenced files with native file tools for the full body.",
     "idea_spark_artifact_link": "Link two artifacts with a typed provenance relation such as supports, critiques, rebuts, supersedes, requires, or cites.",
     "idea_spark_artifact_status_update": "Update an artifact lifecycle status: proposed, accepted, rejected, superseded, retracted, or stale.",
     "idea_spark_gate_record": "Record an explicit gate decision over input artifacts. Final conclusions require this tool, not chat consensus alone.",
@@ -1056,7 +1076,7 @@ _SCHEMA_FIELDS = {
     "idea_spark_message_post": ["room_id", "round_id", "phase", "agent_id", "role", "content", "artifact_ids"],
     "idea_spark_message_read": ["room_id", "round_id", "phase", "agent_id", "after_message_id", "order", "limit"],
     "idea_spark_round_wait": ["room_id", "round_id", "phase", "phases", "expected_agents", "timeout_s"],
-    "idea_spark_artifact_create": ["room_id", "type", "title", "content", "created_by", "status", "metadata"],
+    "idea_spark_artifact_create": ["room_id", "type", "title", "content", "created_by", "status", "metadata", "artifact_id", "file_path"],
     "idea_spark_artifact_read": ["room_id", "artifact_id", "type", "status", "created_after", "updated_after", "order", "limit"],
     "idea_spark_artifact_link": ["room_id", "source_artifact_id", "target_artifact_id", "relation", "created_by", "metadata"],
     "idea_spark_artifact_status_update": ["room_id", "artifact_id", "status", "updated_by", "rationale"],
@@ -1082,7 +1102,7 @@ _REQUIRED_FIELDS = {
     "idea_spark_message_post": ["room_id", "agent_id", "content"],
     "idea_spark_message_read": ["room_id"],
     "idea_spark_round_wait": ["room_id", "round_id"],
-    "idea_spark_artifact_create": ["room_id", "type", "title", "content", "created_by"],
+    "idea_spark_artifact_create": ["room_id", "type", "title", "created_by"],
     "idea_spark_artifact_read": ["room_id"],
     "idea_spark_artifact_link": ["room_id", "source_artifact_id", "target_artifact_id", "relation", "created_by"],
     "idea_spark_artifact_status_update": ["room_id", "artifact_id", "status", "updated_by"],
@@ -1093,6 +1113,7 @@ _REQUIRED_FIELDS = {
 }
 
 _FIELD_OVERRIDES = {
+    "file_path": {"type": "string", "description": "Absolute path to the complete UTF-8 artifact; content may hold a summary."},
     "title": {"type": "string"},
     "topic": {"type": "string"},
     "created_by": {"type": "string"},

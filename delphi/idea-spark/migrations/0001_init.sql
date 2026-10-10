@@ -55,18 +55,15 @@ CREATE TABLE IF NOT EXISTS artifacts (
     producer_agent TEXT NOT NULL,
     title TEXT,
     content_json TEXT NOT NULL,
-    content_hash TEXT NOT NULL,
     status TEXT NOT NULL,
     confidence REAL,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
     metadata_json TEXT NOT NULL DEFAULT '{}',
-    UNIQUE(room_id, artifact_type, content_hash),
     FOREIGN KEY (room_id) REFERENCES rooms(room_id)
 );
 CREATE INDEX IF NOT EXISTS idx_artifacts_room_type_status ON artifacts(room_id, artifact_type, status);
 CREATE INDEX IF NOT EXISTS idx_artifacts_room_producer ON artifacts(room_id, producer_agent);
-CREATE INDEX IF NOT EXISTS idx_artifacts_hash ON artifacts(content_hash);
 
 CREATE TABLE IF NOT EXISTS artifact_links (
     link_id INTEGER PRIMARY KEY AUTOINCREMENT,

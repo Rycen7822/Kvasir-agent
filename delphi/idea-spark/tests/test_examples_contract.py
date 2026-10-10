@@ -72,18 +72,10 @@ def test_examples_use_only_canonical_tool_names():
     assert "old-prefix" not in text
 
 
-def test_child_protocol_forces_room_join_before_other_actions():
-    text = read_text("examples/ml_idea_review_prompt.md")
-
-    join_pos = text.index("idea_spark_room_join")
-    for later_tool in ["idea_spark_artifact_create", "idea_spark_message_post", "idea_spark_round_wait"]:
-        assert join_pos < text.index(later_tool)
-
-
 def test_examples_include_gate_decision_before_final_consensus_rule():
     text = read_text("examples/ml_idea_review_prompt.md")
 
-    assert text.index("idea_spark_gate_record") < text.index("Final conclusions require")
+    assert text.index("idea_spark_gate_record") < text.index("no consensus without GateDecision")
     assert "no consensus without GateDecision" in text
     assert "message-only gate is not final" in text
 
@@ -185,19 +177,6 @@ def test_readme_sections_are_complete_and_ordered():
     assert positions == sorted(positions)
 
 
-def test_delegate_task_template_is_valid_and_cli_first_by_default():
-    data = json.loads(read_text("examples/delegate_task_template.json"))
-    combined = f"{data['goal']}\n{data['context']}"
-
-    assert data["toolsets"] == ["terminal", "file", "skills"]
-    assert "room_id" in data["context"]
-    assert "idea_spark_room_join" in combined
-    assert "hermes idea-spark call" in combined
-    assert "skill_view" in data["goal"]
-    assert "idea-spark:idea-spark-usage" in data["goal"]
-    assert 'toolsets=["idea_spark", "skills"]' in combined
-
-
 def test_bundled_skill_requires_skills_toolset_and_explicit_tool_mode_for_tools():
     skill = read_text("resources/skills/idea-spark-usage/SKILL.md")
     cli_dashboard = read_text("resources/skills/idea-spark-usage/references/cli-dashboard.md")
@@ -229,7 +208,7 @@ def test_bundled_skill_documents_discussion_until_gate_controller_contract():
         "Re-review / Cross-examination",
         "Gate",
         "has_terminal_gate",
-        "Gatekeeper must call `idea_spark_gate_record`",
+        "the parent calls `idea_spark_gate_record`",
         "message-only gate is not final",
         "Round-continuity rule",
         "idea_spark_phase_ledger.md",
@@ -297,8 +276,8 @@ def test_discussion_until_gate_template_is_valid_cli_first_and_bounded():
     assert "stage checkpoint marker" in combined
     assert "current working directory" in combined
     assert "researcher-facing handoff" in combined
-    assert "continue r1->r2->r3->r4 until has_terminal_gate=true" in combined
-    assert "Gatekeeper must call idea_spark_gate_record" in combined
+    assert "continues r1->r2->r3->r4" in combined
+    assert "Parent must review the Gatekeeper file and call idea_spark_gate_record" in combined
     assert "do not call skill_manage" in combined.lower()
     assert "<ROOM_ID>" in combined
     assert "<IDEA_SUMMARY>" in combined

@@ -255,19 +255,7 @@ Strict barriers require `expected_agents <= delegation.max_concurrent_children`;
 
 ## Child protocol
 
-Default CLI-first child protocol:
-
-1. First call `hermes idea-spark call idea_spark_room_join --json-file join.json` with the assigned `room_id`, `agent_id`, and role.
-2. Read the current room state with CLI calls to `idea_spark_room_status`, `idea_spark_message_read`, and `idea_spark_artifact_read`.
-3. Create typed artifacts with `idea_spark_artifact_create` for claims, objections, rebuttals, evidence, risks, experiment plans, and score cards.
-4. Link provenance with `idea_spark_artifact_link`.
-5. Post concise narrative updates with `idea_spark_message_post` and include artifact IDs.
-6. Update lifecycle status explicitly with `idea_spark_artifact_status_update`.
-7. Use `idea_spark_need_create` for missing evidence or unresolved reviewer risk; use `idea_spark_need_update` when the need is claimed, resolved, reopened, marked stale, or cancelled.
-8. Use `idea_spark_round_wait` with a finite timeout. For strict phase barriers pass `phase`; for a whole-round parent barrier omit `phase` or pass `phase="*"`; for role-specific labels in one barrier pass `phases=[...]`. Continue with partial state if peers are missing.
-9. Use `idea_spark_gate_record` for final gate decisions; no consensus without GateDecision and message-only gate is not final.
-
-When explicit tool-mode is enabled and the session has been reset, the same protocol can use direct Hermes tool calls instead of `hermes idea-spark call ...` commands.
+Default delivery uses native file tools. The parent prepares a durable output path and receipt with `files prepare`, supplies input artifact paths and a `.work` scratch directory, then launches the worker. The worker consolidates all findings, sources, failures, limits and proposed needs into the final file and returns its absolute path. If file writing fails, it returns the full substantive reply for recovery. After native completion the parent runs `files collect`, reads full files, records useful links/needs and reviews the gate proposal before recording the actual gate. See the file-delivery commands below.
 
 ## Failure modes
 
@@ -310,3 +298,19 @@ Locked until the ledger/export/dashboard/config gates pass:
 - Vector retrieval or embedding cache.
 - Remote or authenticated dashboard hosting.
 - Alternate public tool names.
+
+## Native worker file delivery
+
+The default worker contract uses durable files and parent collection. Prepare one output per assignment with the selected absolute shared CLI prefix:
+
+```sh
+python3 /absolute/Kvasir-agent/delphi/cli.py --state-dir /absolute/project/.kvasir/delphi idea-spark files prepare --room-id ROOM --agent-id reviewer-r1 --role PriorArtBreaker --round-id r1 --phase review --type PriorArtEvidence --title "Prior art review"
+```
+
+Give the worker the returned `file_path` and a separate `.work` scratch directory. It writes the complete Markdown report and returns the absolute path. If writing fails it returns the complete substantive reply, which the parent saves to the prepared file. Wait for native completion, then register one or more receipts:
+
+```sh
+python3 /absolute/Kvasir-agent/delphi/cli.py --state-dir /absolute/project/.kvasir/delphi idea-spark files collect /absolute/receipt-a.json /absolute/receipt-b.json
+```
+
+The collector saves each artifact reference independently, binds the receipt to the selected database and retries by artifact ID. Identical bodies from different reviewers are separate contributions. `idea_spark_artifact_read`, room exports and the dashboard expose absolute file paths; the dashboard expands the complete file on demand. Keep delivered files available and allocate a new receipt/path for revisions. The parent records links, needs and final gates; file delivery does not approve research conclusions. No hooks or additional MCP tools are required.

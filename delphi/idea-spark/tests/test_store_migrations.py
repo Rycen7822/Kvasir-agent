@@ -39,18 +39,7 @@ def test_migrations_are_idempotent(temp_idea_spark_db):
     with sqlite3.connect(temp_idea_spark_db) as conn:
         rows = conn.execute("select version from schema_migrations order by version").fetchall()
 
-    assert rows == [("0001_init",)]
-
-
-def test_content_hash_is_canonical_and_deterministic():
-    from idea_spark.store import canonical_json, content_hash
-
-    left = {"b": 2, "a": 1}
-    right = {"a": 1, "b": 2}
-
-    assert canonical_json(left) == '{"a":1,"b":2}'
-    assert content_hash(left) == content_hash(right)
-    assert content_hash(left).startswith("sha256:")
+    assert rows == [("0001_init",), ("0002_file_artifacts",)]
 
 
 def test_default_db_path_uses_env_override(temp_idea_spark_db):

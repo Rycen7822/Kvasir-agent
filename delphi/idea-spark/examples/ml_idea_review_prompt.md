@@ -2,24 +2,22 @@
 
 Use this prompt when a parent Hermes agent coordinates child reviewers through Idea-Spark.
 
-Default mode is CLI-first: children use `toolsets=["terminal", "file", "skills"]`, write JSON payload files under a provided `payload_scratch_dir`, and call `hermes idea-spark call <operation> --json-file <payload>`. Use direct `idea_spark` tools only after explicit tool-mode has been enabled with `$HERMES_HOME/idea-spark/config.json` and the Hermes session has been restarted/reset. After every room creation, report the returned `room_url` only after the dashboard is started and `check_dashboard=true` or another health check proves it reachable.
+Default mode is native workers plus file delivery. Use the absolute shared CLI/state prefix from `HOSTS.md`; Hermes also supports `hermes idea-spark`. The parent prepares a receipt/output path per assignment with `files prepare`, launches native workers, then uses `files collect` after native completion. Give every worker a separate `.work/delphi/<artifact_id>/` scratch directory. Present the returned `room_url` only after a dashboard health check succeeds.
 
-## Child protocol hard rule block
+## Worker delivery
 
-Every child agent must call `idea_spark_room_join` before any substantive work. In default CLI-first mode this means running `hermes idea-spark call idea_spark_room_join --json-file join.json`. After joining, the child may call `idea_spark_room_status`, `idea_spark_message_read`, `idea_spark_artifact_read`, `idea_spark_artifact_create`, `idea_spark_artifact_link`, `idea_spark_message_post`, `idea_spark_round_wait`, `idea_spark_artifact_status_update`, `idea_spark_need_create`, `idea_spark_need_update`, and `idea_spark_gate_record`.
+1. Read relevant inputs and complete files referenced by prior artifacts. If needed, query `idea_spark_room_status`, `idea_spark_message_read` or `idea_spark_artifact_read`.
+2. Keep intermediate notes in the assigned scratch directory and consolidate all substantive findings, sources, counterexamples, limitations and unresolved needs into the assigned final Markdown file.
+3. Return the absolute file path and completion state. If file writing fails, return the full substantive body for parent recovery. A summary alone cannot replace the deliverable.
+4. Stop after the bounded assignment. The parent owns ledger registration, relationships and gate decisions.
 
-Child rules:
+## Parent ledger operations
 
-1. Join first with `idea_spark_room_join` using the provided `room_id`, unique `agent_id`, and assigned role.
-2. Read existing state with `idea_spark_room_status`, `idea_spark_message_read`, and `idea_spark_artifact_read`.
-3. Convert each substantive scientific point into a typed artifact with `idea_spark_artifact_create`.
-4. Link evidence, objections, rebuttals, and revisions with `idea_spark_artifact_link`.
-5. Post concise narrative progress with `idea_spark_message_post`; include artifact IDs instead of long transcripts.
-6. Wait only with bounded `idea_spark_round_wait`; pass `phase` for exact phase barriers, omit `phase` or use `phase="*"` for whole-round parent barriers, or pass `phases=[...]` when reviewers use role-specific phase labels. If timeout returns missing agents, continue with partial state and record the gap.
-7. Revise, reject, supersede, or retract only through `idea_spark_artifact_status_update` or `idea_spark_gate_record`.
-8. Use `idea_spark_need_create` when stronger prior-art evidence, benchmark detail, or reviewer-risk evidence is required; use `idea_spark_need_update` when the need is claimed, resolved, reopened, marked stale, or cancelled.
-9. Gatekeeper and MetaReviewer must use `idea_spark_gate_record` before final synthesis. Final conclusions require gate-backed ledger evidence; no consensus without GateDecision; message-only gate is not final.
-10. Parent uses `idea_spark_room_export` for the audit ledger only; the researcher-facing handoff is a separate detailed Markdown report saved in the current working directory after the terminal gate.
+The parent can use `idea_spark_room_join` for manually registered participants; file collection registers its producer automatically. Use `idea_spark_artifact_create` for extra structured claims, `idea_spark_artifact_link` for relationships, `idea_spark_message_post` for optional narrative updates and `idea_spark_artifact_status_update` for research status. Evidence gaps use `idea_spark_need_create` / `idea_spark_need_update`.
+
+Wait for workers with native host tools. `idea_spark_round_wait` only checks ledger arrivals and does not wait for worker execution. Pass `phase`, `phase="*"` or `phases=[...]` when using that ledger query.
+
+After reading the Gatekeeper file, the parent records `idea_spark_gate_record` before final synthesis: no consensus without GateDecision; a message-only gate is not final. `idea_spark_room_export` supplies the audit ledger; a researcher-facing handoff is a separate detailed Markdown report after the terminal gate.
 
 ## Discussion-until-gate phase order
 
@@ -29,15 +27,15 @@ Use the fixed Idea-Spark workflow phases. The parent/orchestrator continues unti
 2. `r1/review` (`Novelty Attack`): prior-art, feasibility, benchmark, and skeptical reviewers create `PriorArtEvidence`, `NoveltyObjection`, `FeasibilityObjection`, `ReviewerRisk`, `BenchmarkRequirement`, `StressTest`, or `ExperimentPlan` artifacts.
 3. `r2/rebuttal` (`Author Rebuttal / Improvement Draft`): response roles create `Rebuttal`, `RevisionPlan`, `ExperimentPlan`, and `RegimeTransition` artifacts linked to r1 objections.
 4. `r3/re-review` (`Re-review / Cross-examination`): reviewers re-read rebuttals, resolve or reopen OpenNeed records, and create remaining risks.
-5. `r4/gate` (`Gate`): Gatekeeper must call `idea_spark_gate_record`; message-only gate is not final.
+5. `r4/gate` (`Gate`): Gatekeeper proposes the decision in its file; the parent calls `idea_spark_gate_record`; message-only gate is not final.
 6. `final/handoff`: parent exports the audit ledger and writes the standalone handoff report.
 
 ## Parent setup
 
 1. Call `idea_spark_room_create` with title, topic, created_by, metadata containing expected agent IDs, `dashboard_base_url` when the dashboard is on a non-default port, and `check_dashboard=true` when the link should be presented as openable. Give the returned `room_url` to the user only after `dashboard_reachable=true` or another health check passes.
 2. Seed `ResearchGoal`, `IdeaCard`, and `EvaluationRubric` artifacts.
-3. Dispatch child roles with default `toolsets=["terminal", "file", "skills"]` and a per-child `payload_scratch_dir=/tmp/idea_spark_<run_id>/<agent_id>/`; use `toolsets=["idea_spark", "skills"]` only for explicit tool-mode after config enablement and reset.
-4. Maintain `idea_spark_phase_ledger.md` in the current working directory; after each phase, record the stage checkpoint marker, verification counts, latest skill re-read checkpoint, blockers, and next phase.
+3. Dispatch child roles with default `toolsets=["terminal", "file", "skills"]` and a per-child `payload_scratch_dir=.work/delphi/<artifact_id>/` and prepared durable output path; use `toolsets=["idea_spark", "skills"]` only for explicit tool-mode after config enablement and reset.
+4. Maintain `.work/idea_spark_phase_ledger.md` in the project; after each phase, record the stage checkpoint marker, verification counts, latest skill re-read checkpoint, blockers, and next phase.
 5. Monitor with room status and message reads, re-read `idea-spark:idea-spark-usage` after each phase, and continue through r2/r3/r4 while `has_terminal_gate=false`.
 6. After gate records exist, export the audit ledger and write the standalone handoff report into the current working directory, not only under `/tmp`.
 

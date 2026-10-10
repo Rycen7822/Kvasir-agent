@@ -79,3 +79,7 @@ accepted, rejected, superseded, retracted, needs_more_evidence
 ## Safety boundary
 
 Idea-Spark CLI operations and optional tools operate on the SQLite ledger, plugin config, and Markdown export payloads. They do not execute research tools on behalf of reviewers. The parent controls external tool access through the host's native agent interface; Hermes may use its `delegate_task` toolsets.
+
+## Durable worker files
+
+Default workers deliver complete Markdown files and the parent registers their references. Use `files prepare` before native launch and `files collect` after native completion; see `parent-controller.md` for exact commands and recovery. CLI artifact creation also accepts `file_path` and an optional stable `artifact_id`. Supply either inline `content` or a readable, nonempty UTF-8 file. A new assignment gets a new identity even if another reviewer produced identical content. No content hash is calculated.

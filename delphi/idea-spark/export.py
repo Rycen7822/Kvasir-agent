@@ -40,6 +40,8 @@ def _render_artifact_lines(artifacts: list[dict[str, Any]]) -> list[str]:
             f"- `{artifact['artifact_id']}` {artifact['artifact_type']} status={artifact['status']} "
             f"title={title} content={_content_text(artifact.get('content', {}))}"
         )
+        if artifact.get("file_path"):
+            lines.append(f"  File: `{artifact['file_path']}`")
     return lines
 
 

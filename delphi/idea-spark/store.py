@@ -1,4 +1,3 @@
-import hashlib
 import json
 import os
 import sqlite3
@@ -15,7 +14,7 @@ except ImportError:
 T = TypeVar("T")
 
 
-MIGRATIONS = [("0001_init", "0001_init.sql")]
+MIGRATIONS = [("0001_init", "0001_init.sql"), ("0002_file_artifacts", "0002_file_artifacts.sql")]
 
 
 def default_db_path() -> Path:
@@ -28,11 +27,6 @@ def default_db_path() -> Path:
 
 def canonical_json(value) -> str:
     return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
-
-
-def content_hash(value) -> str:
-    digest = hashlib.sha256(canonical_json(value).encode("utf-8")).hexdigest()
-    return f"sha256:{digest}"
 
 
 def with_retry(fn: Callable[[], T], attempts: int = 3, delay_s: float = 0.05) -> T:
@@ -65,6 +59,8 @@ class IdeaSparkStore:
     def initialize(self) -> None:
         def run() -> None:
             with self.connect() as conn:
+                # Rebuilding a referenced table requires FK checks after the copy.
+                # Execute every statement in one transaction, including its marker.
                 conn.execute(
                     """
                     CREATE TABLE IF NOT EXISTS schema_migrations (
@@ -77,6 +73,12 @@ class IdeaSparkStore:
                     row["version"]
                     for row in conn.execute("select version from schema_migrations").fetchall()
                 }
+                if all(version in applied for version, _ in MIGRATIONS):
+                    return
+                conn.execute("PRAGMA foreign_keys = OFF")
+                conn.execute("BEGIN IMMEDIATE")
+                # Another process may have completed initialization while we waited.
+                applied = {row["version"] for row in conn.execute("select version from schema_migrations")}
                 for version, filename in MIGRATIONS:
                     if version in applied:
                         continue
@@ -85,10 +87,19 @@ class IdeaSparkStore:
                         sql = resources.files(migrations_pkg).joinpath(filename).read_text(encoding="utf-8")
                     else:
                         sql = (Path(__file__).resolve().parent / "migrations" / filename).read_text(encoding="utf-8")
-                    conn.executescript(sql)
+                    statement = ""
+                    for line in sql.splitlines(keepends=True):
+                        statement += line
+                        if sqlite3.complete_statement(statement):
+                            conn.execute(statement)
+                            statement = ""
+                    if statement.strip():
+                        raise ValueError(f"incomplete migration: {filename}")
                     conn.execute(
                         "insert or ignore into schema_migrations(version, applied_at) values (?, datetime('now'))",
                         (version,),
                     )
+                if conn.execute("PRAGMA foreign_key_check").fetchone():
+                    raise ValueError("migration would leave invalid artifact relationships")
 
         with_retry(run)

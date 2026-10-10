@@ -1,3 +1,4 @@
+import pytest
 import json
 import sqlite3
 
@@ -51,7 +52,7 @@ def read_need(db_path, need_id):
     return need
 
 
-def test_artifact_create_hashes_and_links_parents(temp_idea_spark_db):
+def test_artifact_create_links_parents(temp_idea_spark_db):
     room_id = make_room()
     idea = create_artifact(room_id, "IdeaCard", {"idea": "base idea"})
     claim = create_artifact(
@@ -61,7 +62,6 @@ def test_artifact_create_hashes_and_links_parents(temp_idea_spark_db):
         parent_links=[{"source_artifact_id": idea["artifact_id"], "relation": "decomposes"}],
     )
 
-    assert claim["content_hash"].startswith("sha256:")
     read = call(
         idea_spark_artifact_read,
         {"room_id": room_id, "artifact_ids": [claim["artifact_id"]], "relation_depth": 1},
@@ -76,16 +76,23 @@ def test_artifact_create_hashes_and_links_parents(temp_idea_spark_db):
     ]
 
 
-def test_artifact_create_deduplicates_same_type_and_content_in_room(temp_idea_spark_db):
+def test_artifact_identity_preserves_reviewers_and_retries(temp_idea_spark_db):
     room_id = make_room()
-    first = create_artifact(room_id, content={"claim": "same"})
-    second = create_artifact(room_id, content={"claim": "same"})
-
-    assert second["artifact_id"] == first["artifact_id"]
-    assert second["deduplicated"] is True
-
+    first = create_artifact(room_id, content={"claim": "same"}, artifact_id="submission-a")
+    second = create_artifact(room_id, content={"claim": "same"}, producer_agent="agent-b")
+    third = create_artifact(room_id, content={"claim": "same"})
+    assert len({first["artifact_id"], second["artifact_id"], third["artifact_id"]}) == 3
+    call(idea_spark_artifact_status_update, {"room_id": room_id, "artifact_id": first["artifact_id"],
+        "status": "accepted", "updated_by": "parent"})
+    retry = create_artifact(room_id, content={"claim": "same"}, artifact_id="submission-a")
+    assert retry["deduplicated"] is True
+    assert retry["status"] == "accepted"
+    with pytest.raises(ValueError, match="different content or work"):
+        create_artifact(room_id, content={"claim": "changed"}, artifact_id="submission-a")
+    with pytest.raises(ValueError, match="different content or work"):
+        create_artifact(room_id, content={"claim": "same"}, artifact_id="submission-a", producer_agent="agent-b")
     read = call(idea_spark_artifact_read, {"room_id": room_id, "artifact_type": "AtomicClaim"})
-    assert len(read["artifacts"]) == 1
+    assert len(read["artifacts"]) == 3
 
 
 def test_artifact_read_supports_created_updated_delta_limit_and_next_cursor(temp_idea_spark_db):

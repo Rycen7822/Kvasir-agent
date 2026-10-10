@@ -59,9 +59,30 @@ def setup_parser(parser: argparse.ArgumentParser) -> None:
 
     schema = sub.add_parser("schema", help="Read an operation's input schema on demand.")
     schema.add_argument("operation")
+    files = sub.add_parser("files", help="Prepare and collect durable worker files")
+    file_commands = files.add_subparsers(dest="files_command", required=True)
+    prepare = file_commands.add_parser("prepare")
+    prepare.add_argument("--room-id", required=True)
+    prepare.add_argument("--agent-id", required=True)
+    prepare.add_argument("--type", dest="artifact_type", required=True)
+    prepare.add_argument("--title", required=True)
+    for field in ("role", "phase", "round-id", "summary"):
+        prepare.add_argument("--" + field)
+    collect = file_commands.add_parser("collect")
+    collect.add_argument("receipts", nargs="+")
 
 
 def main_from_args(args: argparse.Namespace) -> int:
+    if args.command == "files":
+        try:
+            try:
+                from .file_delivery import collect_files, prepare_file
+            except ImportError:
+                from file_delivery import collect_files, prepare_file
+            result = prepare_file(args) if args.files_command == "prepare" else collect_files(args.receipts)
+            return _print_json(result)
+        except Exception as exc:
+            return _print_json({"success": False, "error": str(exc)})
     if args.command == "schema":
         if args.operation not in HANDLERS:
             return _print_json({"success": False, "error": "unknown operation", "operation": args.operation})
