@@ -1,4 +1,4 @@
-"""Five public tools, all routed through validated project evidence operations."""
+"""Three public tools, routed through action-validated project operations."""
 from __future__ import annotations
 from dataclasses import dataclass
 from jsonschema import Draft202012Validator
@@ -37,17 +37,23 @@ def call_tool(name, args=None):
     error = next(Draft202012Validator(definition(name)["inputSchema"]).iter_errors(args), None)
     if error:
         return {"ok": False, "error_type": "invalid_arguments", "error": f"Invalid tool arguments ({error.validator})."}
+    if name == "ka_experiment":
+        required = {"spec_path", "idempotency_key"} if args["action"] == "run" else {"run_id"}
+        if not required.issubset(args):
+            return {"ok": False, "error_type": "invalid_arguments", "error": "Invalid tool arguments (required)."}
+        if set(args) - required - {"project", "action"}:
+            return {"ok": False, "error_type": "invalid_arguments", "error": "Invalid tool arguments (additionalProperties)."}
     try:
         service = EvidenceService(args["project"])
         if name == "ka_research_status":
             return service.status(args.get("run_id"))
-        if name == "ka_experiment_run":
-            return service.run(args["spec_path"], args["idempotency_key"])
-        if name == "ka_experiment_stop":
+        if name == "ka_experiment":
+            if args["action"] == "run":
+                return service.run(args["spec_path"], args["idempotency_key"])
             return service.stop(args["run_id"])
-        if name == "ka_evidence_check":
+        if args["action"] == "check":
             return service.check(args["spec_path"])
-        return service.import_evidence(args["manifest_path"])
+        return service.import_evidence(args["spec_path"])
     except EvidenceError as exc:
         return {"ok": False, "error_type": exc.kind, "error": str(exc)[:240]}
     except (OSError, ValueError, TypeError, KeyError, AttributeError, RecursionError):

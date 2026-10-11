@@ -5,19 +5,19 @@ description: Run research experiments and inspect project-local evidence with Kv
 
 # Research evidence
 
-Use the five research tools when the task needs managed experiments or recorded evidence. Codex handles research reasoning, literature searches, document editing, code, tests, Git, and task coordination through its native capabilities. A recorded result is not a scientifically validated conclusion.
+Use the three research tools when the task needs managed experiments or recorded evidence. Codex handles research reasoning, literature searches, document editing, code, tests, Git, and task coordination through its native capabilities. A recorded result is not a scientifically validated conclusion.
 
 ## Choose an operation
 
 | Tool | Use |
 | --- | --- |
 | `ka_research_status` | Read saved project or run state without filesystem changes. |
-| `ka_experiment_run` | Validate a RunSpec and declared settings, then start an authorized run. |
-| `ka_experiment_stop` | Stop a recorded run and retain its actual terminal state. |
-| `ka_evidence_check` | Check a versioned evidence specification; save a report. |
-| `ka_evidence_import` | Preserve external results with unverified origin. |
+| `ka_experiment` | `action=run`: validate and start an authorized run; `action=stop`: stop a recorded run and preserve terminal facts. |
+| `ka_evidence` | `action=check`: inspect evidence and save a report; `action=import`: preserve external results with unverified origin. |
 
 Pass `project` as the absolute research project directory. A specification path resolves within that project. Do not use a plugin installation directory as the research project. Tools return bounded summaries and file paths; read only the referenced detail relevant to the task.
+
+Always supply `action`. For `ka_experiment`, run requires `spec_path` and `idempotency_key`; stop requires `run_id`. Omit parameters belonging to the other action. For `ka_evidence`, both actions require `spec_path`: a CheckSpec for check, or an import manifest for import.
 
 ## Managed experiments
 

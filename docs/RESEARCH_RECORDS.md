@@ -19,7 +19,7 @@ Check current research records with CheckSpec v2:
 {"schema_version": 2, "target": "research", "record_ids": ["hypothesis-1"]}
 ```
 
-The existing ka_evidence_check inspects saved materials, exact dependency references and available run records. A new parent version or editing the current content does not invalidate a pinned historical version. Missing dependencies, unavailable copies, invalid excerpts and unresolved locators stay explicit. The check returns a completed report even when it finds issues; it does not recursively hash inputs or certify unchanged bytes.
+`ka_evidence(action=check)` inspects saved materials, exact dependency references and available run records. A new parent version or editing the current content does not invalidate a pinned historical version. Missing dependencies, unavailable copies, invalid excerpts and unresolved locators stay explicit. The check returns a completed report even when it finds issues; it does not recursively hash inputs or certify unchanged bytes.
 
 Source records retain exact version and acquisition coverage, queries and locators. Line excerpts are checked against saved UTF-8 bytes; PDF/page locators remain unresolved without a suitable reader. Abstract-only, truncated, unavailable or changed-query states are limitations, not independent scientific support. Record acquisition failures with a local receipt as content rather than inventing an experiment.
 

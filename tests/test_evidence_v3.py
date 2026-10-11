@@ -63,7 +63,7 @@ def finish(state, run_id, timeout=12):
 
 def start(project, key="one"):
     root, state, _ = project
-    result = call_tool("ka_experiment_run", {"project": str(root), "spec_path": "run.json", "idempotency_key": key})
+    result = call_tool("ka_experiment", {"action": "run", "project": str(root), "spec_path": "run.json", "idempotency_key": key})
     assert result["ok"], result
     return result["run_id"]
 
@@ -71,13 +71,14 @@ def start(project, key="one"):
 def test_discovery_and_missing_project_never_write(tmp_path):
     before = snapshot(tmp_path)
     tools = tools_list_payload()["tools"]
-    assert len(tools) == 5
+    assert {tool["name"] for tool in tools} == {"ka_research_status", "ka_experiment", "ka_evidence"}
     assert sum(t["annotations"]["readOnlyHint"] for t in tools) == 1
     assert not any("init" in t["description"] for t in tools)
     for name, args in [
-        ("ka_research_status", {}), ("ka_experiment_run", {"spec_path": "missing.json", "idempotency_key": "x"}),
-        ("ka_evidence_import", {"manifest_path": "missing.json"}), ("ka_evidence_check", {"spec_path": "missing.json"}),
-        ("ka_experiment_stop", {"run_id": "r_one"}), ("ka_literature", {}), ("ka_project_init", {}),
+        ("ka_research_status", {}), ("ka_experiment", {"action": "run", "spec_path": "missing.json", "idempotency_key": "x"}),
+        ("ka_evidence", {"action": "import", "spec_path": "missing.json"}),
+        ("ka_evidence", {"action": "check", "spec_path": "missing.json"}),
+        ("ka_experiment", {"action": "stop", "run_id": "r_one"}), ("ka_literature", {}), ("ka_project_init", {}),
     ]:
         result = call_tool(name, {"project": str(tmp_path), **args})
         assert not result["ok"]
@@ -120,7 +121,7 @@ def test_success_idempotency_and_claims_use_real_runs(project):
     assert start(project) == run_id
     spec["seed"] = 2
     write(root / "run.json", spec)
-    result = call_tool("ka_experiment_run", {"project": str(root), "spec_path": "run.json", "idempotency_key": "one"})
+    result = call_tool("ka_experiment", {"action": "run", "project": str(root), "spec_path": "run.json", "idempotency_key": "one"})
     assert result["error_type"] == "idempotency_conflict"
     write(root / "check.json", {"schema_version": 1, "target": "claim", "claim": "toy", "run_ids": [run_id], "minimum_seeds": 2})
     checked = EvidenceService(str(root)).check("check.json")
@@ -152,7 +153,7 @@ def test_preflight_rejects_without_creating_runs(project, change):
     else:
         spec["trusted"] = True
     write(root / "run.json", spec)
-    result = call_tool("ka_experiment_run", {"project": str(root), "spec_path": "run.json", "idempotency_key": "x"})
+    result = call_tool("ka_experiment", {"action": "run", "project": str(root), "spec_path": "run.json", "idempotency_key": "x"})
     assert not result["ok"]
     assert not state.path("runs").exists()
 
@@ -169,7 +170,7 @@ def test_process_status_and_evidence_are_separate(project, mode, expected):
     write(root / "run.json", spec)
     run_id = start(project)
     if mode == "cancel":
-        EvidenceService(str(root)).stop(run_id)
+        assert call_tool("ka_experiment", {"project": str(root), "action": "stop", "run_id": run_id})["ok"]
     record = finish(state, run_id)
     assert record["status"] == expected, record
     assert record["evidence_status"] == "invalid"
@@ -177,8 +178,8 @@ def test_process_status_and_evidence_are_separate(project, mode, expected):
 
 def test_connection_exit_does_not_prevent_completion(project):
     root, state, _ = project
-    request = {"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": "ka_experiment_run",
-               "arguments": {"project": str(root), "spec_path": "run.json", "idempotency_key": "disconnect"}}}
+    request = {"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": "ka_experiment",
+               "arguments": {"project": str(root), "action": "run", "spec_path": "run.json", "idempotency_key": "disconnect"}}}
     output = subprocess.run([sys.executable, str(ROOT / "scripts/ka_mcp.py")], input=json.dumps(request) + "\n",
                             capture_output=True, text=True, timeout=10, env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"})
     result = json.loads(output.stdout)["result"]
@@ -195,10 +196,12 @@ def test_external_import_is_unverified_and_idempotent(project):
                 "metrics_path": "external.json", "artifacts": [{"path": "external.json"}]}
     write(root / "import.json", manifest)
     service = EvidenceService(str(root))
-    result = service.import_evidence("import.json")
+    args = {"project": str(root), "action": "import", "spec_path": "import.json"}
+    result = call_tool("ka_evidence", args)
+    assert result["ok"], result
     assert result["trust"] == "external_unverified"
     assert result["derivation_status"] == "complete"
-    assert service.import_evidence("import.json")["import_id"] == result["import_id"]
+    assert call_tool("ka_evidence", args)["import_id"] == result["import_id"]
     manifest["trusted"] = True
     write(root / "import.json", manifest)
     with pytest.raises(EvidenceError, match="Invalid import"):
@@ -211,7 +214,7 @@ def test_check_reports_changed_metric(project):
     finish(state, run_id)
     state.path(f"runs/{run_id}/metrics.json").write_text('{"score":999}')
     write(root / "check.json", {"schema_version": 1, "target": "run", "run_id": run_id})
-    result = EvidenceService(str(root)).check("check.json")
+    result = call_tool("ka_evidence", {"project": str(root), "action": "check", "spec_path": "check.json"})
     assert result["ok"] and result["status"] == "failed"
     assert any("metric_value_mismatch" in issue for issue in result["issues"])
 
@@ -282,10 +285,31 @@ def test_migration_resume_after_copy_interruption(tmp_path, monkeypatch):
 
 
 def test_bounded_errors_and_invalid_rpc_arguments(tmp_path):
-    response = handle_jsonrpc_message({"jsonrpc": "2.0", "id": 1, "method": "tools/call",
-                                      "params": {"name": "ka_research_status", "arguments": "x" * 100000}})
-    assert len(json.dumps(response)) < 1000
-    assert response["result"]["isError"]
+    before = snapshot(tmp_path)
+    cases = [
+        ("ka_research_status", "x" * 100000),
+        ("ka_experiment", {"spec_path": "run.json", "idempotency_key": "one"}),
+        ("ka_experiment", {"action": "unknown"}),
+        ("ka_experiment", {"action": "run", "idempotency_key": "one"}),
+        ("ka_experiment", {"action": "run", "spec_path": "run.json"}),
+        ("ka_experiment", {"action": "run", "spec_path": "run.json", "idempotency_key": "one", "run_id": "r_one"}),
+        ("ka_experiment", {"action": "stop"}),
+        ("ka_experiment", {"action": "stop", "run_id": "r_one", "spec_path": "run.json"}),
+        ("ka_experiment", {"action": "stop", "run_id": "r_one", "idempotency_key": "one"}),
+        ("ka_evidence", {"spec_path": "check.json"}),
+        ("ka_evidence", {"action": "unknown", "spec_path": "check.json"}),
+        ("ka_evidence", {"action": "check"}),
+        ("ka_evidence", {"action": "import"}),
+    ]
+    for name, args in cases:
+        if isinstance(args, dict):
+            args = {"project": str(tmp_path), **args}
+        response = handle_jsonrpc_message({"jsonrpc": "2.0", "id": 1, "method": "tools/call",
+                                          "params": {"name": name, "arguments": args}})
+        assert len(json.dumps(response)) < 1000
+        assert response["result"]["isError"], args
+        assert response["result"]["structuredContent"]["error_type"] == "invalid_arguments", args
+    assert snapshot(tmp_path) == before
 
 
 def test_v2_runner_wire_fixture_and_mixed_quest_migration(tmp_path):
@@ -360,7 +384,8 @@ def test_interrupted_worker_reports_readonly_then_explicit_stop(project):
         before = snapshot(root)
         assert EvidenceService(str(root)).status(run_id)["status"] == "interrupted"
         assert snapshot(root) == before
-        stopped = EvidenceService(str(root)).stop(run_id)
+        stopped = call_tool("ka_experiment", {"project": str(root), "action": "stop", "run_id": run_id})
+        assert stopped["ok"], stopped
         assert stopped["status"] == "interrupted"
         assert not alive(record["process"])
         assert EvidenceService(str(root)).reconcile(run_id)["status"] == "interrupted"
@@ -404,7 +429,7 @@ def test_many_runs_and_large_invalid_spec_return_bounded_summaries(project):
     assert len(json.dumps(result, ensure_ascii=False)) < 2500
     spec["command"] = ["错误" * 10000]
     write(root / "run.json", spec)
-    result = call_tool("ka_experiment_run", {"project": str(root), "spec_path": "run.json", "idempotency_key": "big"})
+    result = call_tool("ka_experiment", {"action": "run", "project": str(root), "spec_path": "run.json", "idempotency_key": "big"})
     assert not result["ok"] and len(json.dumps(result)) < 500
 
 

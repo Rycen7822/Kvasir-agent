@@ -83,7 +83,7 @@ def test_stdio_errors_remain_bounded_and_connection_survives(tmp_path):
                 json.dumps({"jsonrpc": "2.0", "id": 3, "method": "tools/list"})]
     assert run_stdio(io.StringIO("\n".join(messages)), output) == 0
     replies = [json.loads(line) for line in output.getvalue().splitlines()]
-    assert len(replies) == 4 and len(replies[-1]["result"]["tools"]) == 5
+    assert len(replies) == 4 and len(replies[-1]["result"]["tools"]) == 3
     assert "keep-secret" not in output.getvalue()
     assert len(json.dumps(replies[2])) < 1000
 
@@ -101,6 +101,6 @@ def test_doctor_uses_current_evidence_server_without_initializing(tmp_path):
                           capture_output=True, text=True, timeout=20)
     assert proc.returncode == 0, proc.stdout + proc.stderr
     payload = json.loads(proc.stdout)
-    assert len(payload["tools"]) == 5 and not payload["problems"]
+    assert len(payload["tools"]) == 3 and not payload["problems"]
     assert "runtime_doctor" not in payload
     assert list(tmp_path.iterdir()) == []
