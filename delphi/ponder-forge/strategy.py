@@ -23,7 +23,7 @@ def team_effort(run: dict) -> str:
     return value if value in ("high", "max") else "high"
 
 
-def coordinator_prompt(run: dict) -> str:
+def coordinator_prompt(run: dict, *, mcp_project: str | None = None) -> str:
     cli = f"python3 {shlex.quote(str(Path(__file__).resolve().parent / 'cli.py'))}"
     if os.getenv("DELPHI_HOME"):
         cli = f"DELPHI_HOME={shlex.quote(os.environ['DELPHI_HOME'])} {cli}"
@@ -51,6 +51,30 @@ it does not run models or supervise processes. Map the strategy's tool names as 
   {cli} finalize --run-id {rid} --file draft.md.
   On budget exhaustion or interruption, use --partial --reason REASON to save a partial result.
 """
+    if mcp_project is not None:
+        base = json.dumps({"project": mcp_project, "workflow": "ponder_forge", "run_id": run["run_id"]})
+        tools = f"""# Available operations on this host
+Use ka_delphi with common arguments {base} and explicit action. Native host tools own agent execution.
+- add_task / update_task: action=plan, input_path=board.json. The supplied template contains
+  tasks with description, owners, resolution and optional existing id. Resolutions: open, in_progress, resolved, cancelled.
+- create_subagent / assign_task: action=prepare, input_path=assignments.json, request_id=NEW_ASSIGNMENT_ID.
+  Tasks contain agent, system_prompt, prompt and task_ids. Execute each returned complete instructions
+  with actual native tools. Reuse the host agent for serial follow-ups by logical role name.
+  After successful launch, action=record, task_id=TASK_ID, status=started, host_agent_id=HOST_ID.
+- collect_reports: wait with native tools, read complete result files, then action=collect with receipt_paths.
+  If writing failed, preserve the full native reply at the preallocated file path before collecting.
+  Worker identity does not require a submit_report tool. Preparation alone is not proof of launch.
+- stop_subagent: cancel with the native host, then action=record with task_id and status=cancelled
+  only after confirmation. Cancel board questions separately when warranted.
+- final verifier / local arbitration: action=verify, input_path=verification.json,
+  request_id=NEW_VERIFICATION_ID. Final input contains mode=final and draft_path;
+  local input contains mode=local, conflict and at least two independent report_ids.
+  Run the returned verifier assignment through native tools, collect its complete file and interpret it.
+- Save the complete final draft using action=finish, file_path=draft.md, status=completed.
+  For interruption or budget exhaustion use status=partial and input_path to a JSON object with reason.
+Only the coordinator writes state and makes research decisions. Read instruction_path in full once;
+use returned input templates and next_call examples. Status returns bounded summaries and file paths.
+"""
     # Source prose says 'blocked', but the source task-board code accepts these four states.
     management = re.sub(r"Mark a genuine dead end `blocked` \(reason in\s*notes\)\.",
                         "Mark a genuine dead end `cancelled` and record its reason.", TEAM_MANAGEMENT)
@@ -71,7 +95,7 @@ only their assigned files. A report arriving does not resolve its board question
 Keep negative results and uncertainties. If the host runs synchronously, collect
 that batch before continuing; prompt text does not create background execution.
 Do not implement another agent loop, fabricate execution receipts or treat the
-CLI gate as proof that a scientific claim has been verified.
+state gate as proof that a scientific claim has been verified.
 """
     # Frontier's main-agent decorator appends this after the assembled base prompt.
     return prompt + render_team_effort(team_effort(run))

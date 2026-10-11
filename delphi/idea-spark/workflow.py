@@ -13,7 +13,8 @@ except ImportError:  # source-root script execution
 
 OPEN_DISCUSSION = "open_discussion"
 DEEP_EXPLORATION = "deep_exploration"
-WORKFLOW_MODES = (OPEN_DISCUSSION, DEEP_EXPLORATION)
+MODE_REFERENCES = {OPEN_DISCUSSION: "open-discussion.md", DEEP_EXPLORATION: "deep-exploration.md"}
+WORKFLOW_MODES = tuple(MODE_REFERENCES)
 TERMINAL_STATUSES = {"gated", "completed", "stopped"}
 
 
@@ -22,7 +23,7 @@ def workflow_mode(metadata: dict[str, Any]) -> str:
         raise ValueError("metadata must be a JSON object")
     mode = metadata.get("workflow_mode", OPEN_DISCUSSION)
     if not isinstance(mode, str) or mode not in WORKFLOW_MODES:
-        raise ValueError("workflow_mode must be open_discussion or deep_exploration")
+        raise ValueError(f"workflow_mode must be one of: {', '.join(WORKFLOW_MODES)}")
     return mode
 
 

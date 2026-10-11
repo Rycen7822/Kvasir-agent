@@ -72,6 +72,33 @@ DEFINITIONS = [{'name': 'ka_research_status',
                   'destructiveHint': False,
                   'idempotentHint': False,
                   'openWorldHint': False}}]
+DEFINITIONS.append({
+    'name': 'ka_delphi',
+    'description': 'Manage native-agent research: idea_spark modes or ponder_forge high/max. Open/prepare/verify require request_id. Return instructions, input templates and complete-file receipts; host owns agents, parent owns decisions.',
+    'inputSchema': {
+        'type': 'object',
+        'properties': {
+            'project': deepcopy(DEFINITIONS[0]['inputSchema']['properties']['project']),
+            'workflow': {'type': 'string', 'enum': ['idea_spark', 'ponder_forge']},
+            'action': {'type': 'string', 'enum': ['open', 'status', 'plan', 'prepare', 'record', 'collect', 'update', 'verify', 'finish']},
+            'mode': {'type': 'string', 'maxLength': 80, 'description': 'Workflow mode; open returns supported names/default.'},
+            'effort': {'type': 'string', 'enum': ['high', 'max']},
+            **{key: {'type': 'string', 'minLength': 1, 'maxLength': 80, 'pattern': '^[A-Za-z0-9_-]+$'}
+               for key in ('room_id', 'run_id', 'task_id', 'request_id')},
+            'goal': {'type': 'string', 'minLength': 1, 'maxLength': 50000},
+            **{key: {'type': 'string', 'minLength': 1, 'maxLength': 1024}
+               for key in ('input_path', 'file_path', 'host_agent_id', 'agent_id', 'role')},
+            'receipt_paths': {'type': 'array', 'minItems': 1, 'maxItems': 50,
+                              'items': {'type': 'string', 'minLength': 1, 'maxLength': 1024}},
+            'status': {'type': 'string', 'maxLength': 40},
+            'limit': {'type': 'integer', 'minimum': 1, 'maximum': 50, 'default': 20},
+        },
+        'required': ['project', 'workflow', 'action'],
+        'additionalProperties': False,
+    },
+    'annotations': {'readOnlyHint': False, 'destructiveHint': False,
+                    'idempotentHint': False, 'openWorldHint': False},
+})
 PUBLIC_NAMES = frozenset(item["name"] for item in DEFINITIONS)
 
 

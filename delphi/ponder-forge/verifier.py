@@ -8,7 +8,7 @@ except ImportError:
     from delegation import prepare_delegations, report_content
 
 
-def verify_run(store, run_id: str, args: dict) -> dict:
+def verify_run(store, run_id: str, args: dict, *, allocation_ids: list[str] | None = None) -> dict:
     run = require_active_run(store, run_id)
     mode = args.get("mode", "final")
     if mode == "final":
@@ -36,4 +36,4 @@ def verify_run(store, run_id: str, args: dict) -> dict:
     else:
         raise ValueError("verification mode must be final or local")
     return prepare_delegations(store, run_id, {"tasks": [{"agent": name, "prompt": prompt,
-        "system_prompt": "", "task_ids": args.get("task_ids", [])}]})
+        "system_prompt": "", "task_ids": args.get("task_ids", [])}]}, allocation_ids=allocation_ids)

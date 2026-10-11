@@ -83,7 +83,7 @@ def test_stdio_errors_remain_bounded_and_connection_survives(tmp_path):
                 json.dumps({"jsonrpc": "2.0", "id": 3, "method": "tools/list"})]
     assert run_stdio(io.StringIO("\n".join(messages)), output) == 0
     replies = [json.loads(line) for line in output.getvalue().splitlines()]
-    assert len(replies) == 4 and len(replies[-1]["result"]["tools"]) == 3
+    assert len(replies) == 4 and len(replies[-1]["result"]["tools"]) == 4
     assert "keep-secret" not in output.getvalue()
     assert len(json.dumps(replies[2])) < 1000
 
@@ -101,6 +101,73 @@ def test_doctor_uses_current_evidence_server_without_initializing(tmp_path):
                           capture_output=True, text=True, timeout=20)
     assert proc.returncode == 0, proc.stdout + proc.stderr
     payload = json.loads(proc.stdout)
-    assert len(payload["tools"]) == 3 and not payload["problems"]
+    assert len(payload["tools"]) == 4 and not payload["problems"]
     assert "runtime_doctor" not in payload
     assert list(tmp_path.iterdir()) == []
+
+
+def test_delphi_invalid_calls_do_not_create_project_state(tmp_path):
+    for fields in [
+        {"workflow": "idea_spark", "action": "init"},
+        {"workflow": "idea_spark", "action": "open", "goal": "Question", "request_id": "bad", "mode": "unsupported"},
+        {"workflow": "idea_spark", "action": "status", "room_id": "room_absent"},
+        {"workflow": "ponder_forge", "action": "update", "run_id": "run_absent"},
+        {"workflow": "ponder_forge", "action": "status", "run_id": "run_absent", "command": "arbitrary"},
+    ]:
+        assert not call_tool("ka_delphi", {"project": str(tmp_path), **fields})["ok"]
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_delphi_allocation_retry_and_independent_complete_files(tmp_path):
+    for workflow in ("idea_spark", "ponder_forge"):
+        project = tmp_path / workflow
+        project.mkdir()
+        base = {"project": str(project), "workflow": workflow}
+        opened = call_tool("ka_delphi", {**base, "action": "open", "goal": "Research question", "request_id": "open"})
+        assert opened["ok"], opened
+        identity = {key: opened[key] for key in ("room_id", "run_id") if key in opened}
+        deliveries = []
+        full_body = "# Complete report\n" + "Independent research detail.\n" * 100
+        for index in range(2):
+            brief = project / f"brief-{index}.json"
+            payload = ({"task": "Independent review", "title": "Full report", "artifact_type": "MetaReview"}
+                       if workflow == "idea_spark" else {"tasks": [{"agent": f"reviewer-{index}", "prompt": "Independent review"}]})
+            brief.write_text(json.dumps(payload))
+            arguments = {**base, **identity, "action": "prepare", "input_path": str(brief), "request_id": f"review-{index}"}
+            if workflow == "idea_spark":
+                arguments["agent_id"] = f"reviewer-{index}"
+            prepared = call_tool("ka_delphi", arguments)
+            replay = call_tool("ka_delphi", arguments)
+            assert prepared["ok"] and replay["ok"] and replay["idempotent"]
+            delivery = prepared if workflow == "idea_spark" else prepared["assignments"][0]
+            repeated = replay if workflow == "idea_spark" else replay["assignments"][0]
+            assert repeated["file_path"] == delivery["file_path"]
+            Path(delivery["file_path"]).write_text(full_body)
+            deliveries.append(delivery)
+            if workflow == "idea_spark":
+                payload["task"] = "A different research task"
+            else:
+                payload["tasks"][0]["prompt"] = "A different research task"
+            brief.write_text(json.dumps(payload))
+            assert not call_tool("ka_delphi", arguments)["ok"]
+        assert deliveries[0]["file_path"] != deliveries[1]["file_path"]
+        result = call_tool("ka_delphi", {**base, **identity, "action": "collect",
+                                         "receipt_paths": [item["receipt_path"] for item in deliveries]})
+        assert result["ok"], result
+        assert len(result["deliveries"]) == 2
+        for item in result["deliveries"]:
+            assert Path(item["file_path"]).read_text() == full_body
+        status = call_tool("ka_delphi", {**base, **identity, "action": "status", "limit": 1})
+        assert status["ok"] and status["has_more"]
+        assert len(status["artifacts"] if workflow == "idea_spark" else status["reports"]) == 1
+        assert full_body not in json.dumps(status)
+        if workflow == "ponder_forge":
+            draft = project / "draft.md"
+            draft.write_text("Complete original answer.\n")
+            verification = project / "verification.json"
+            verification.write_text(json.dumps({"mode": "final", "draft_path": str(draft)}))
+            arguments = {**base, **identity, "action": "verify", "input_path": str(verification), "request_id": "verification"}
+            original = call_tool("ka_delphi", arguments)
+            assert original["ok"] and "Complete original answer." in original["assignments"][0]["instructions"]
+            draft.write_text("Different answer needing fresh verification.\n")
+            assert not call_tool("ka_delphi", arguments)["ok"]

@@ -12,9 +12,9 @@
 | Profiles, hidden executor aliases and generic CLI handler calls | Removed from public execution |
 | Project creation and old state migration | Explicit human maintenance; see [ADMIN_CLI.md](ADMIN_CLI.md) |
 
-There are exactly three MCP tools and one registered research skill. Old names fail closed, including schema lookup aliases. State v3 uses stable identity and explicit migration. Existing v2/quest data is never implicitly converted on a read or first business write. Scientific judgment, novelty analysis and prose review belong to Codex; previous file-presence heuristics are not a scientific approval gate.
+There are three evidence MCP tools plus one ka_delphi workflow tool, with one research skill and two Delphi entry skills. Old names fail closed, including schema lookup aliases. State v3 uses stable identity and explicit migration. Existing v2/quest data is never implicitly converted on a read or first evidence write. Scientific judgment, novelty analysis and prose review belong to the host parent; previous file-presence heuristics are not a scientific approval gate.
 
-General memory cleanup also removes the internal `ka_memory_search/read/list_recent/write` implementations and `ContextPackService`. There is no replacement memory switch or automatic memory injection. The retired runtime/vendor, auto controllers and old internal service APIs are removed from the package. Paper/idea documents, history, negative results and trajectory files remain accessible through ordinary files and the explicit research index, as are all three current tools. Existing files are not erased or automatically migrated.
+General memory cleanup also removes the internal `ka_memory_search/read/list_recent/write` implementations and `ContextPackService`. There is no replacement memory switch or automatic memory injection. The retired runtime/vendor, auto controllers and old internal service APIs are removed from the package. Paper/idea documents, history, negative results and trajectory files remain accessible through ordinary files and the explicit research index, as are the three evidence tools. Existing files are not erased or automatically migrated.
 
 ## Migration from the five-tool interface
 
@@ -25,4 +25,8 @@ General memory cleanup also removes the internal `ka_memory_search/read/list_rec
 | `ka_evidence_check` | `ka_evidence(action=check)`, with the same project and spec_path |
 | `ka_evidence_import` | `ka_evidence(action=import)`, passing the former manifest_path as spec_path |
 
-The previous names are not aliases and are no longer advertised or dispatched. Update clients and reload the MCP connection to discover the three-tool catalog. This interface change requires no migration of existing runs, evidence files or project state. Already-running wrappers retain their recorded identities and retry behavior.
+The previous names are not aliases and are no longer advertised or dispatched. Update clients and reload the MCP connection to discover the merged evidence catalog. This interface change requires no migration of existing runs, evidence files or project state. Already-running wrappers retain their recorded identities and retry behavior.
+
+## Delphi entrypoint
+
+ka_delphi adds one aggregated tool to the same server, giving four tools total. Existing Idea-Spark/Ponder CLI data and workflows remain usable. The two entry skills prefer MCP; fallback CLI remains for maintenance and hosts without the connection. Open creates only the selected Delphi workflow, and does not replace manual evidence-project init. No database merge or migration is required. See [MCP.md](MCP.md#delphi).

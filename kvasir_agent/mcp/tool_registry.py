@@ -1,4 +1,4 @@
-"""Three public tools, routed through action-validated project operations."""
+"""Four public tools, routed through action-validated project operations."""
 from __future__ import annotations
 from dataclasses import dataclass
 from jsonschema import Draft202012Validator
@@ -44,6 +44,9 @@ def call_tool(name, args=None):
         if set(args) - required - {"project", "action"}:
             return {"ok": False, "error_type": "invalid_arguments", "error": "Invalid tool arguments (additionalProperties)."}
     try:
+        if name == "ka_delphi":
+            from ..services.delphi import call_delphi
+            return call_delphi(args)
         service = EvidenceService(args["project"])
         if name == "ka_research_status":
             return service.status(args.get("run_id"))

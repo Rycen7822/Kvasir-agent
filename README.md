@@ -2,13 +2,14 @@
 
 [中文](README.zh-CN.md) · [Install](docs/INSTALL.md) · [Usage](docs/USAGE.md) · [MCP](docs/MCP.md)
 
-A compact research evidence plugin: **three MCP tools**, the research skill and two Delphi workflow skills, explicit project state and automatic experiment records. Codex/Pi handles planning, files, literature, code and research interpretation.
+A compact research plugin: **four MCP tools in one server**, the research skill and two Delphi workflow skills, explicit project state and automatic experiment records. Codex/Pi handles planning, files, literature, code, native agents and research interpretation.
 
 | Tool | Purpose |
 | --- | --- |
 | `ka_research_status` | Read bounded project/run state without writes |
 | `ka_experiment` | `action=run` starts a managed run; `action=stop` stops a recorded run and preserves terminal facts |
 | `ka_evidence` | `action=check` checks evidence and saves a report; `action=import` preserves external results and unverified origin |
+| `ka_delphi` | One entrypoint for Idea-Spark modes and Ponder high/max: prepare native work, collect complete files and query state |
 
 Specifications are versioned files, loaded only as needed. Runs retain declared inputs, metrics, logs and request snapshots; a detached wrapper completes recording even after MCP disconnects. Ordinary research needs no hash identifiers or repeated byte checks. Research versions use automatic `v1`, `v2`, etc. and retain material copies. Execution, available evidence and scientific validity remain separate.
 

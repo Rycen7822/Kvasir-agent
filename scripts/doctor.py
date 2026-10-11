@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Read-only diagnostics for the installed three-tool evidence plugin."""
+"""Read-only diagnostics for the installed four-tool research plugin."""
 import json
 import subprocess
 import sys
@@ -24,9 +24,9 @@ def main():
             problems.append("Evidence server discovery failed.")
         else:
             tools = [item["name"] for item in json.loads(proc.stdout)["tools"]]
-            expected = {"ka_research_status", "ka_experiment", "ka_evidence"}
+            expected = {"ka_research_status", "ka_experiment", "ka_evidence", "ka_delphi"}
             if set(tools) != expected:
-                problems.append("Evidence server does not expose exactly three expected tools.")
+                problems.append("Research server does not expose exactly four expected tools.")
     except (OSError, ValueError, KeyError, TypeError, subprocess.TimeoutExpired):
         problems.append("Plugin files or server discovery are unavailable.")
     result = {"ok": not problems, "plugin_root": str(ROOT), "tools": tools,

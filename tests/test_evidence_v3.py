@@ -71,7 +71,7 @@ def start(project, key="one"):
 def test_discovery_and_missing_project_never_write(tmp_path):
     before = snapshot(tmp_path)
     tools = tools_list_payload()["tools"]
-    assert {tool["name"] for tool in tools} == {"ka_research_status", "ka_experiment", "ka_evidence"}
+    assert {tool["name"] for tool in tools} == {"ka_research_status", "ka_experiment", "ka_evidence", "ka_delphi"}
     assert sum(t["annotations"]["readOnlyHint"] for t in tools) == 1
     assert not any("init" in t["description"] for t in tools)
     for name, args in [

@@ -34,7 +34,7 @@ def _attach_reports(store, run_id: str, prompt: str) -> str:
     return ATTACH.sub(replace, prompt)
 
 
-def prepare_delegations(store, run_id: str, payload: dict | None = None) -> dict:
+def prepare_delegations(store, run_id: str, payload: dict | None = None, *, allocation_ids: list[str] | None = None) -> dict:
     run = require_active_run(store, run_id)
     # Old runs may retain retired topology settings; only the batch size is relevant now.
     limit = json.loads(run.get("budget_json") or "{}").get("delegate_batch_size", 20)
@@ -45,6 +45,8 @@ def prepare_delegations(store, run_id: str, payload: dict | None = None) -> dict
         items = payload.get("tasks")
         if not isinstance(items, list) or not 1 <= len(items) <= limit:
             raise ValueError(f"assignments must contain 1 to {limit} tasks")
+        if allocation_ids is not None and (len(allocation_ids) != len(items) or len(set(allocation_ids)) != len(items)):
+            raise ValueError("allocation identities must match the assignment batch")
         board = {x["id"]: x for x in task_board(store, run_id)}
         normalized, names = [], set()
         for item in items:
@@ -65,11 +67,16 @@ def prepare_delegations(store, run_id: str, payload: dict | None = None) -> dict
             prompt = _attach_reports(store, run_id, prompt)
             normalized.append((name, prompt, role, list(dict.fromkeys(ids))))
         selected = []
-        for name, prompt, role, ids in normalized:
-            task = store.create_task(run_id, name, prompt, context=worker_prompt(name, role)
+        for index, (name, prompt, role, ids) in enumerate(normalized):
+            task_id = allocation_ids[index] if allocation_ids else None
+            task = store.get_task(task_id) if task_id else None
+            raw = {"agent": name, "system_prompt": role, "task_ids": ids}
+            if task and (task["run_id"] != run_id or json.loads(task["raw_json"] or "{}") != raw):
+                raise ValueError("allocation identity belongs to a different assignment")
+            task = task or store.create_task(run_id, name, prompt, context=worker_prompt(name, role)
                     + f"\n# Current assignment\nOriginal question: {run['user_goal']}\n"
                     + f"Constraints: {json.loads(run.get('config_json') or '{}').get('constraints', '')}\n",
-                raw={"agent": name, "system_prompt": role, "task_ids": ids})
+                raw=raw, task_id=task_id)
             selected.append(task)
         # Bind logical owners; this does not claim execution or resolve a research question.
         updates = [{"id": tid, "owners": [name]} for name, _, _, ids in normalized for tid in ids]

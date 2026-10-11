@@ -15,7 +15,7 @@ except ImportError:
     from tools import idea_spark_artifact_create
 
 
-def prepare_file(args) -> dict:
+def prepare_file(args, *, artifact_id: str | None = None) -> dict:
     for field in ("room_id", "agent_id", "title"):
         if not getattr(args, field).strip():
             raise ValueError(f"{field} must be nonempty")
@@ -26,9 +26,11 @@ def prepare_file(args) -> dict:
     with store.connect() as conn:
         if not conn.execute("select 1 from rooms where room_id = ?", (args.room_id,)).fetchone():
             raise ValueError("unknown room_id")
-    artifact_id = "artifact_" + uuid.uuid4().hex
+    artifact_id = artifact_id or "artifact_" + uuid.uuid4().hex
+    if not artifact_id.replace("_", "").replace("-", "").isalnum():
+        raise ValueError("invalid delivery identity")
     directory = store.db_path.resolve().parent / "deliveries" / artifact_id
-    directory.mkdir(parents=True)
+    directory.mkdir(parents=True, exist_ok=True)
     metadata = {key: getattr(args, key) for key in ("role", "phase", "round_id") if getattr(args, key)}
     receipt = {
         "version": 1,
@@ -43,7 +45,11 @@ def prepare_file(args) -> dict:
         "metadata": metadata,
     }
     receipt_path = directory / "receipt.json"
-    receipt_path.write_text(canonical_json(receipt) + "\n", encoding="utf-8")
+    if receipt_path.exists():
+        if json.loads(receipt_path.read_text(encoding="utf-8")) != receipt:
+            raise ValueError("delivery identity already has a different receipt")
+    else:
+        receipt_path.write_text(canonical_json(receipt) + "\n", encoding="utf-8")
     return {"success": True, "receipt_path": str(receipt_path), **receipt}
 
 

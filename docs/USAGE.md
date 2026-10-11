@@ -1,6 +1,6 @@
 # Research workflow
 
-Kvasir-agent supplies three tools for managed runs and evidence. Codex supplies research reasoning, file editing, literature work, coding, tests and task coordination.
+Kvasir-agent supplies three tools for managed runs/evidence and one ka_delphi entrypoint for research workflows, all in one MCP server. Codex/Pi supplies research reasoning, file editing, literature work, coding, tests and native agent coordination. Start Delphi with $kvasir-agent:delphi-idea-spark or $kvasir-agent:delphi-ponder-forge; follow returned policies, editable templates and next_call examples. See [MCP.md](MCP.md#delphi) for file delivery and mode selection.
 
 1. Call `ka_research_status(project=absolute_path)` to inspect saved evidence.
 2. When a managed experiment is needed, read the relevant [file contract](EVIDENCE_SPECS.md), write the environment and RunSpec files, and obtain the task's normal execution authorization.
